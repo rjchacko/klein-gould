@@ -10,6 +10,7 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DoubleValue;
 import static java.lang.Math.PI;
 import static java.lang.Math.abs;
 import static java.lang.Math.floor;
@@ -40,12 +41,12 @@ public class LinearTheoryApp extends Simulation{
 		frameTogether("Plots", grid, sfVsKR, structurePeakV, variance);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Circle", "Square"));
-		params.addm("Noise", new ChoiceValue("Off","On"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin Conserve M", "Langevin No M Convervation"));
 		params.add("Init Conditions", new ChoiceValue("Random Gaussian", 
 				"Artificial Stripe 3", "Read From File", "Constant" ));
 		params.addm("Approx", new ChoiceValue("Exact Stable",
 				"Avoid Boundaries", "Exact SemiStable", "Exact", "Linear",  "Phi4"));
+		params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
 		//params.addm("Conserve M?", new ChoiceValue("Yes", "No"));
 		params.addm("T", 0.05);
 		params.addm("H", 0.0);
@@ -82,7 +83,13 @@ public class LinearTheoryApp extends Simulation{
 			variance.registerLines("Variance", varianceAcc, Color.BLACK);
 			sfVsKR.registerLines("SF", sf.getAccumulatorC(), Color.BLACK);
 		}else{
-			structurePeakV.registerLines("Vertical Peak", sf.getPeakV(), Color.CYAN);
+			structurePeakV.registerLines("Peak Value", sf.getPeakC(), Color.BLACK);
+			//structurePeakV.registerLines("Vertical Peak", sf.getPeakV(), Color.CYAN);
+			structurePeakV.registerLines("Theory", sfTheoryAcc, Color.BLUE);
+			structurePeakV.registerLines("Theory2", sfTheory2Acc, Color.BLUE);
+			structurePeakV.registerLines("2nd Peak", sf.get2PeakC(), Color.RED);
+			variance.registerLines("Variance", varianceAcc, Color.BLACK);
+			sfVsKR.registerLines("SF", sf.getAccumulatorC(), Color.BLACK);
 		}
 	}
 
@@ -143,10 +150,22 @@ public class LinearTheoryApp extends Simulation{
 		return ising.mean(ising.phi);
 	}
 	
-	public double linearTheory(double kR, double mu, double time){
+	public double circleLinearTheory(double kR, double mu, double time){
 		//double V = ising.Lp*ising.Lp;
 		double rho = ising.DENSITY;
 		double D = -circlePotential(kR) - ising.T/ (1-rho*rho);
+		D *= pow(1-rho*rho,2);
+		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
+		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
+		
+		double sf = exp(2*time*D);
+		return sf;
+	}
+
+	public double squareLinearTheory(double kR, double mu, double time){
+		//double V = ising.Lp*ising.Lp;
+		double rho = ising.DENSITY;
+		double D = -squarePotential(kR) - ising.T/ (1-rho*rho);
 		D *= pow(1-rho*rho,2);
 		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
 		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
@@ -162,9 +181,25 @@ public class LinearTheoryApp extends Simulation{
 		double kR1 = ising.R*2*PI*kR1int/ising.L;
 		double kR2 = ising.R*2*PI*kR2int/ising.L;
 		for(double time = 0.0; time < params.fget("Max Time"); time = time + params.fget("dt")){
-			sfTheoryAcc.accum(time, linearTheory(kR1, 0, time));
-			sfTheory2Acc.accum(time, linearTheory(kR2, 0, time));
+			sfTheoryAcc.accum(time, squareLinearTheory(kR1, 0, time));
+			sfTheory2Acc.accum(time, squareLinearTheory(kR2, 0, time));
 		}
+	}
+
+	public void fillSquareTheoryAccum(double density, int kR1int, int kR2int){
+		sfTheoryAcc = new Accumulator(ising.dt);
+		sfTheory2Acc = new Accumulator(ising.dt);
+		//double kR = sf.circlekRValue();
+		double kR1 = ising.R*2*PI*kR1int/ising.L;
+		double kR2 = ising.R*2*PI*kR2int/ising.L;
+		for(double time = 0.0; time < params.fget("Max Time"); time = time + params.fget("dt")){
+			sfTheoryAcc.accum(time, circleLinearTheory(kR1, 0, time));
+			sfTheory2Acc.accum(time, circleLinearTheory(kR2, 0, time));
+		}
+	}
+	
+	public double squarePotential(double kR){
+		return sin(kR)/kR;
 	}
 	
 	public double circlePotential(double kR){

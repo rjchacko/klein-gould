@@ -27,6 +27,7 @@ import rachele.util.FileUtil;
 
 public class IsingField2DApp extends Simulation {
     Grid grid = new Grid("Phi(x)");
+    Grid grid2 = new Grid("Phi(x)");
     Grid sfGrid = new Grid("S(k)");
     Grid delPhiGrid = new Grid("DelPhi");
 	Plot hSlice = new Plot("Horizontal Slice");
@@ -60,6 +61,7 @@ public class IsingField2DApp extends Simulation {
 	
 	public void load(Control c) {
 		c.frameTogether("Grids", grid, delPhiGrid, sfGrid, freeEnergyPlot);
+		c.frame(grid2);
 		//frame(grid);
 		//frameTogether("ring", ring, ringInput);
 		//frameTogether("landscapes", landscape, brLandscape);
@@ -84,7 +86,7 @@ public class IsingField2DApp extends Simulation {
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
 		params.addm("T", 0.04);
 		params.addm("H", 0.80);
-		params.addm("H Stripe", 0.8);
+		//params.addm("H Stripe", 0.8);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.0001);
 		params.addm("dt", 1.0);
@@ -118,10 +120,12 @@ public class IsingField2DApp extends Simulation {
 		
 		if (params.sget("Zoom").equals("Yes")) {
 			grid.setAutoScale();
+			grid2.setAutoScale();
 			delPhiGrid.setAutoScale();
 		}
 		else {
 			grid.setScale(-1, 1);
+			grid2.setScale(-1, 1);
 			delPhiGrid.setScale(0, 1);
 		}
 		
@@ -143,6 +147,7 @@ public class IsingField2DApp extends Simulation {
 		
 		sfGrid.registerData(ising.Lp, ising.Lp, sf.sFactor);
 		grid.registerData(ising.Lp, ising.Lp, ising.phi);
+		grid2.registerData(ising.Lp, ising.Lp, ising.phi);
 		String dyn = params.sget("Dynamics?");
 		landscape.registerLines("FE landscape", landscapeFiller, Color.BLACK);
 		brLandscape.registerLines("FE landscape", brLandscapeFiller, Color.BLUE);
