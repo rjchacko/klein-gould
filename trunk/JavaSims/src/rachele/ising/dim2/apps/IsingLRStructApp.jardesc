@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jardesc>
+    <jar path="/home/erdomi/Desktop/IsingLRStructApp.jar"/>
+    <options overwrite="false" compress="true" exportErrors="true" exportWarnings="true" saveDescription="true" descriptionLocation="/JavaSims/src/rachele/ising/dim2/apps/IsingLRStructApp.jardesc" useSourceFolders="false" buildIfNeeded="true" includeDirectoryEntries="false" storeRefactorings="false"/>
+    <storedRefactorings structuralOnly="false" deprecationInfo="true"/>
+    <selectedProjects/>
+    <manifest manifestVersion="1.0" usesManifest="true" reuseManifest="false" saveManifest="false" generateManifest="true" manifestLocation="" mainClassHandleIdentifier="=JavaSims/src&lt;rachele.ising.dim2.apps{IsingLRStructApp.java[IsingLRStructApp">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportOutputFolder="false" exportJavaFiles="false">
+        <javaElement handleIdentifier="=JavaSims/src&lt;rachele.ising.dim2.apps{IsingLRStructApp.java"/>
+    </selectedElements>
+</jardesc>

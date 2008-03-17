@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<jardesc>
+    <jar path="/home/erdomi/Desktop/path_sampling.jar"/>
+    <options overwrite="false" compress="true" exportErrors="true" exportWarnings="true" saveDescription="true" descriptionLocation="/JavaSims/src/rachele/ising/dim2/apps/sampling.jardesc" useSourceFolders="false" buildIfNeeded="true" includeDirectoryEntries="false" storeRefactorings="false"/>
+    <storedRefactorings structuralOnly="false" deprecationInfo="true"/>
+    <selectedProjects/>
+    <manifest manifestVersion="1.0" usesManifest="true" reuseManifest="false" saveManifest="false" generateManifest="true" manifestLocation="" mainClassHandleIdentifier="=JavaSims/src&lt;rachele.ising.dim1.apps{SaddlePoint1DApp.java[SaddlePoint1DApp">
+        <sealing sealJar="false">
+            <packagesToSeal/>
+            <packagesToUnSeal/>
+        </sealing>
+    </manifest>
+    <selectedElements exportClassFiles="true" exportOutputFolder="false" exportJavaFiles="false">
+        <file path="/JavaSims/inputPath.txt~"/>
+        <file path="/JavaSims/.classpath"/>
+        <file path="/JavaSims/.project"/>
+        <javaElement handleIdentifier="=JavaSims/src"/>
+    </selectedElements>
+</jardesc>
