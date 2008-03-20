@@ -18,6 +18,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 	 public Boolean ShowGrid;
 	 public double SonFS[];
 
+	 //String outfileCHK;
+	 
 	// Constructor
 	public NfailDamage2D(Parameters params) {
 		
@@ -37,6 +39,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 		outdir        = params.sget("Data Directory");
 
 		outfile=outdir+File.separator+"Damage.txt";
+		//outfileCHK=outdir+File.separator+"DamageCHK.txt";
+		
 		PicDir=outdir+"/Pics/";
 		DirUtil.MkDir(PicDir);
 		
@@ -587,10 +591,15 @@ public class NfailDamage2D extends SimpleDamage2D{
 			}
 			
 			// remove failure of imax 
-			ret-=ret;
+			ret--;
 			
 			// divide by all sites save imax
 			ret=ret/(DSnbs.length-1);
+			
+			// ret is the density of life site so use 
+			// rho_live + rho_dead = 1
+			
+			ret=1-ret;
 
 		}
 		return ret;

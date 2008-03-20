@@ -104,6 +104,8 @@ public class NFailApp extends Simulation {
 
 	public void run() {
 		
+		model = new NfailDamage2D(params);
+		
 		String anmt = params.sget("Animation");
 		
 		if (anmt.equals("On")){
@@ -114,8 +116,6 @@ public class NFailApp extends Simulation {
 		}
 		
 		PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
-		
-		model = new NfailDamage2D(params);
 				
 		model.Initialize(params.sget("Stress Distribution"));
 		
