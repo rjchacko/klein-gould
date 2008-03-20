@@ -3,7 +3,7 @@ package chris.ofc.apps;
 
 import java.io.File;
 import java.text.DecimalFormat;
-
+import chris.ofc.NfailDamage2D;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.jobs.Control;
@@ -12,7 +12,6 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.NfailDamage2D;
 import chris.util.PrintUtil;
 
 public class NFailSeedLoopApp extends Simulation {
@@ -37,9 +36,7 @@ public class NFailSeedLoopApp extends Simulation {
 		
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
 		params.add("Random Seed",0);
-		params.add("Looping Parameter", new ChoiceValue("LatticeSize","NumberofLives","CriticalStress","ResidualStress","InteractionRadius","DissipationConstant"));
-		params.add("Max Value of LP",10.);
-		params.add("LP Step Size",2.);
+		params.add("Number of Sims", 1);
 		params.add("Lattice Size",1<<9);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
@@ -78,187 +75,33 @@ public class NFailSeedLoopApp extends Simulation {
 	}
 
 	public void run() {
-		
-		cyclevar=0;
-		
+
 		PrintUtil.printlnToFile(params.sget("Data Directory")+File.separator+"Params.txt",params.toString());
-
-		switch(LoopParams.valueOf(params.sget("Looping Parameter"))) {
 		
-		case LatticeSize:
+		for (cyclevar=0; cyclevar < params.iget("Number of Sims") ; cyclevar++){
+		
+			model = new NfailDamage2D(params);
 			
-			for (int lpv = params.iget("Lattice Size") ; lpv <= (int)(params.fget("Max Value of LP")) ; lpv+=(int)(params.fget("LP Step Size"))){
-
-				model = new NfailDamage2D(params);
+			model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar) +".txt";
+			model.Initialize(params.sget("Stress Distribution"));
+			PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
+		
+			while(!(model.crack)) {
 				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
-				model.Initialize(params.sget("Stress Distribution"));
+				model.Avalanche();
+				TakeData();
 				
-				// Set up file
-					
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
-				while(!(model.crack)) {
-					
-					model.Avalanche();
-	
-					TakeData();
-					
-				}
-				
-				Job.animate();
 			}
 			
-			break;
+			//update seed
+			params.set("Random Seed",params.iget("Random Seed")+1);
 			
-		case NumberofLives:
-			
-			for (int lpv = params.iget("Number of Lives") ; lpv <= (int)(params.fget("Max Value of LP")) ; lpv+=(int)(params.fget("LP Step Size"))){
+			Job.animate();
 
-				model = new NfailDamage2D(params);
-				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
-				model.Initialize(params.sget("Stress Distribution"));
-				
-				// Set up file
-					
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
-				while(!(model.crack)) {
-					
-					model.Avalanche();
-	
-					TakeData();
-					
-				}
-				
-				Job.animate();
-			}
-			
-			
-			break;
-			
-		case CriticalStress:
-			
-			for (double lpv = params.iget("Critical Stress (\u03C3_c)") ; lpv <= params.fget("Max Value of LP"); lpv+=params.fget("LP Step Size")){
-
-				model = new NfailDamage2D(params);
-				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
-				model.Initialize(params.sget("Stress Distribution"));
-				
-				// Set up file
-					
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
-				while(!(model.crack)) {
-					
-					model.Avalanche();
-	
-					TakeData();
-					
-				}
-				
-				Job.animate();
-			}
-			
-			
-			break;
-			
-		case Residualtress:
-			
-			for (double lpv = params.iget("Residual Stress (\u03C3_r)") ; lpv <= params.fget("Max Value of LP") ; lpv+=params.fget("LP Step Size")){
-
-				model = new NfailDamage2D(params);
-				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
-				model.Initialize(params.sget("Stress Distribution"));
-				
-				// Set up file
-					
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
-				while(!(model.crack)) {
-					
-					model.Avalanche();
-	
-					TakeData();
-					
-				}
-				
-				Job.animate();
-			}
-			
-			
-			break;
-			
-		case InteractionRadius:
-			
-			for (int lpv = params.iget("Interaction Radius (R)") ; lpv <= (int)(params.fget("Max Value of LP")) ; lpv+=(int)(params.fget("LP Step Size"))){
-
-				model = new NfailDamage2D(params);
-				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
-				model.Initialize(params.sget("Stress Distribution"));
-				
-				// Set up file
-					
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
-				while(!(model.crack)) {
-					
-					model.Avalanche();
-	
-					TakeData();
-					
-				}
-				
-				Job.animate();
-			}
-			
-			
-			break;
-			
-		case DissipationConstant:
-			
-			for (double lpv = params.iget("Dissipation (\u03B1)") ; lpv <= params.fget("Max Value of LP") ; lpv+=params.fget("LP Step Size")){
-
-				model = new NfailDamage2D(params);
-				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
-				model.Initialize(params.sget("Stress Distribution"));
-				
-				// Set up file
-					
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
-				while(!(model.crack)) {
-					
-					model.Avalanche();
-	
-					TakeData();
-					
-				}
-				
-				Job.animate();
-			}
-			
-			
-			break;
-			
-		default:
-			System.err.println("Loop Parameter Not Recognized.");
-			break;
 		}
-
-		System.out.println("Job Finished.");
 		
+		System.out.println("All simulations done.");
+	
 	}
 	
 	public void TakeData(){
@@ -274,10 +117,6 @@ public class NFailSeedLoopApp extends Simulation {
 		PrintUtil.printlnToFile(model.outfile,model.time,model.Nshowers,rgyr,model.EFmetric(),model.GetAve(model.SonFS,model.SonFSindex),model.DaboutFS);
 				
 		return;
-	}
-	
-	public enum LoopParams {
-		LatticeSize, NumberofLives, CriticalStress, Residualtress, InteractionRadius, DissipationConstant;
 	}
 	
 }
