@@ -12,7 +12,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 	
 	// Parameters
 	 public double Sr0, Sc0, Srwidth, Scwidth, alphawidth, lifewidth, DaboutFS;
-	 public int Nlives, rmin, hammersize, Nshowers, SonFSindex;
+	 public int Nlives, rmin, hammersize, Nshowers, SonFSindex, NdeadS;
 	 public String lifeshape, residualnoise, criticalnoise, outdir, outfile, PicDir;
 	 public double Sr[], Sc[], SsoFar[];
 	 public Boolean ShowGrid;
@@ -467,6 +467,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 	
 	public int[] LiveSites(){
 		
+		NdeadS = 0;
+		
 		int[] tmp, rtn;
 		int j=0, nonzero=0;
 		
@@ -475,6 +477,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		for( int i = 0 ; i < N ; i++) {
 			tmp[i] = alive[i+N];
 			if (alive[i+N] != 0) nonzero++;
+			if (alive[i] == 0) NdeadS++;
 		}
 		
 		rtn = new int[nonzero];
