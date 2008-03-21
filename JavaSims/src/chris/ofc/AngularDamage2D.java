@@ -11,8 +11,7 @@ public class AngularDamage2D extends NfailDamage2D {
 	}
 	
 	public void Avalanche() {
-							
-		int Nalive, search;
+					
 		SonFSindex=0;
 		showernumber=0;
 		Nshowers=0;
@@ -28,23 +27,23 @@ public class AngularDamage2D extends NfailDamage2D {
 	
 		// redistribute stress from the failed site
 	
-		int[] nbs = neighbors.get(imax);
-	
-		Nalive = 0;
-		for (int i = 0; i<nbs.length; i++){
-			Nalive+=alive[nbs[i]+N];
-		}
-		if(Nalive>0){
-			if (alive[imax]>0){
-				release=(1-alpha)*(stress[imax]-Sr[imax])/Nalive;
-			}
-			else{
-				release=(1-alpha)*stress[imax]/Nalive;
-			}
-			for (int i = 0; i<nbs.length; i++){
-				stress[nbs[i]]+=release*alive[nbs[i]+N];
-			}
-		}
+//		int[] nbs = neighbors.get(imax);
+//	
+//		Nalive = 0;
+//		for (int i = 0; i<nbs.length; i++){
+//			Nalive+=alive[nbs[i]+N];
+//		}
+//		if(Nalive>0){
+//			if (alive[imax]>0){
+//				release=(1-alpha)*(stress[imax]-Sr[imax])/Nalive;
+//			}
+//			else{
+//				release=(1-alpha)*stress[imax]/Nalive;
+//			}
+//			for (int i = 0; i<nbs.length; i++){
+//				stress[nbs[i]]+=release*alive[nbs[i]+N];
+//			}
+//		}
 	
 		// reset plate conditionally
 	
@@ -77,22 +76,22 @@ public class AngularDamage2D extends NfailDamage2D {
 	
 			for (int i = 0; i<search; i++){
 	
-				nbs = neighbors.get(dead[i]);
-				Nalive=0;
-				for (int j = 0; j<nbs.length; j++){
-					Nalive+=alive[nbs[j]+N];
-				}			
-				if(Nalive>0){			
-					if(alive[dead[i]]>0){
-						release=(1-alpha)*(stress[dead[i]]-Sr[dead[i]])/Nalive;
-					}
-					else{
-						release=(1-alpha)*stress[dead[i]]/Nalive;
-					}
-					for (int j = 0; j<nbs.length; j++){
-						stress[nbs[j]]+=release*alive[nbs[j]+N];
-					}
-				}
+//				nbs = neighbors.get(dead[i]);
+//				Nalive=0;
+//				for (int j = 0; j<nbs.length; j++){
+//					Nalive+=alive[nbs[j]+N];
+//				}			
+//				if(Nalive>0){			
+//					if(alive[dead[i]]>0){
+//						release=(1-alpha)*(stress[dead[i]]-Sr[dead[i]])/Nalive;
+//					}
+//					else{
+//						release=(1-alpha)*stress[dead[i]]/Nalive;
+//					}
+//					for (int j = 0; j<nbs.length; j++){
+//						stress[nbs[j]]+=release*alive[nbs[j]+N];
+//					}
+//				}
 			}
 	
 			// reset plate conditionally

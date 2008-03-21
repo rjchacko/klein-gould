@@ -141,29 +141,10 @@ public class NFailApp extends Simulation {
 			
 			model.Avalanche();
 
-			TakeData();
+			model.TakeData();
 			
 		}
 		
-	}
-	
-	public void TakeData(){
-	
-		// FIX THIS EVERYWHERE OR BETTER YET
-		// MOVE IT TO NFAILDAMAGE2D
-		
-		int[] LS = model.LiveSites(); 
-		int LSlength = LS.length;
-		if(LSlength>0){
-			rgyr=model.radiusGyration(LS[model.rand.nextInt(LSlength)]);
-		}
-		else{
-			rgyr=0;
-		}
-		
-		PrintUtil.printlnToFile(model.outfile,model.time,model.Nshowers,model.NdeadS,rgyr,model.EFmetric(),model.GetAve(model.SonFS,model.SonFSindex),model.DaboutFS);
-				
-		return;
 	}
 	
 	public void GridPicture(String which){
