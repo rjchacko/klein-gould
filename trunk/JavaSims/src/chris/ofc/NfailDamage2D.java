@@ -7,12 +7,13 @@ import scikit.jobs.Job;
 import scikit.jobs.params.Parameters;
 import chris.util.DirUtil;
 import chris.util.LatticeNeighbors;
+import chris.util.PrintUtil;
 
 public class NfailDamage2D extends SimpleDamage2D{
 	
 	// Parameters
 	 public double Sr0, Sc0, Srwidth, Scwidth, alphawidth, lifewidth, DaboutFS;
-	 public int Nlives, rmin, hammersize, Nshowers, SonFSindex, NdeadS;
+	 public int Nlives, rmin, hammersize, Nshowers, SonFSindex, NdeadS, Nalive, search;
 	 public String lifeshape, residualnoise, criticalnoise, outdir, outfile, PicDir;
 	 public double Sr[], Sc[], SsoFar[];
 	 public Boolean ShowGrid;
@@ -221,9 +222,22 @@ public class NfailDamage2D extends SimpleDamage2D{
 		return;
 	}
 	
+	
+	public void NewAvalanche() {
+		
+		time++;
+		
+		DaboutFS = FSdensity(imax);
+		
+		
+		
+		
+		
+		return;
+	}
+	
 	public void Avalanche() {
-				
-		int Nalive, search;
+
 		SonFSindex=0;
 		showernumber=0;
 		Nshowers=0;
@@ -638,6 +652,89 @@ public class NfailDamage2D extends SimpleDamage2D{
 		}
 		
 		return ret;
+	}
+	
+
+	public void TakeData(){
+		 double rgyr;
+		
+		int[] LS = LiveSites(); 
+		int LSlength = LS.length;
+		if(LSlength>0){
+			rgyr=radiusGyration(LS[rand.nextInt(LSlength)]);
+		}
+		else{
+			rgyr=0;
+		}
+		
+		PrintUtil.printlnToFile(outfile,time,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
+				
+		return;
+	}
+	
+	public void DistStress(int site, String HowToDumpStress, Boolean AlphaNoiseOn){
+		
+		
+		/*
+		 *  noise in dissipation constant ON
+		 */
+
+		
+		
+		int[] nbs = neighbors.get(imax);
+		
+		Nalive = 0;
+		for (int i = 0; i<nbs.length; i++){
+			Nalive+=alive[nbs[i]+N];
+		}
+		if(Nalive>0){
+			if(alive[imax]>0){
+				release=(stress[imax]-Sr[imax])/Nalive;
+			}
+			else{
+				release=stress[imax]/Nalive;
+			}
+			for (int i = 0; i<nbs.length; i++){
+				stress[nbs[i]]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[nbs[i]+N];
+			}
+		}
+		
+		/*
+		 *  noise in dissipation constant ON
+		 */
+		
+		/*
+		 *  noise in dissipation constant OFF
+		 */
+	
+		// only commented so no error when loading into subversion
+		
+//		int[] nbs = neighbors.get(imax);
+		
+		Nalive = 0;
+		for (int i = 0; i<nbs.length; i++){
+			Nalive+=alive[nbs[i]+N];
+		}
+		if(Nalive>0){
+			if (alive[imax]>0){
+				release=(1-alpha)*(stress[imax]-Sr[imax])/Nalive;
+			}
+			else{
+				release=(1-alpha)*stress[imax]/Nalive;
+			}
+			for (int i = 0; i<nbs.length; i++){
+				stress[nbs[i]]+=release*alive[nbs[i]+N];
+			}
+		}
+		
+		/*
+		 *  noise in dissipation constant OFF
+		 */
+		
+		
+		
+		
+		return;
 	}
 	
 	
