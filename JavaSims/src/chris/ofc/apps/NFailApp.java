@@ -135,7 +135,7 @@ public class NFailApp extends Simulation {
 		
 		// Set up file
 			
-		PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
+		PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
 		
 		while(!(model.crack)) {
 			
@@ -149,15 +149,19 @@ public class NFailApp extends Simulation {
 	
 	public void TakeData(){
 	
+		// FIX THIS EVERYWHERE OR BETTER YET
+		// MOVE IT TO NFAILDAMAGE2D
+		
 		int[] LS = model.LiveSites(); 
-		if(!(model.crack)){
-			rgyr=model.radiusGyration(LS[model.rand.nextInt(LS.length)]);
+		int LSlength = LS.length;
+		if(LSlength>0){
+			rgyr=model.radiusGyration(LS[model.rand.nextInt(LSlength)]);
 		}
 		else{
 			rgyr=0;
 		}
 		
-		PrintUtil.printlnToFile(model.outfile,model.time,model.Nshowers,rgyr,model.EFmetric(),model.GetAve(model.SonFS,model.SonFSindex),model.DaboutFS);
+		PrintUtil.printlnToFile(model.outfile,model.time,model.Nshowers,model.NdeadS,rgyr,model.EFmetric(),model.GetAve(model.SonFS,model.SonFSindex),model.DaboutFS);
 				
 		return;
 	}
