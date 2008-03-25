@@ -24,7 +24,7 @@ public class IsingField2D {
 	public double[] phi, phiVector;
 	public double freeEnergy;
 	public int aveCount;
-	double [] phi_bar, delPhi, Lambda, A;
+	public double [] phi_bar, delPhi, Lambda, A;
 	public double horizontalSlice;
 	public double verticalSlice;
 	ComplexDouble2DFFT fft;	// Object to perform transforms
@@ -208,7 +208,8 @@ public class IsingField2D {
 	
 	public void randomizeField(double m) {
 		for (int i = 0; i < Lp*Lp; i++)
-			phi[i] = random.nextGaussian()/(dx);
+			
+			phi[i] = 0.00001*random.nextGaussian()/(dx);
 			//phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
 			//whether or not you start the system at the specified density doesn't matter too much because
 			//the mag conservation algorithm will quickly take it to the correct density
@@ -378,9 +379,7 @@ public class IsingField2D {
 		accEitherFreeEnergy.accum(T, freeEnergy);
 	}
 	
-//	public void useNoiselessDynamics() {
-//		noiselessDynamics = true;
-//	}	
+
 	
 	public double phiVariance() {
 		double var = 0;

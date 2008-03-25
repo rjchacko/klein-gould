@@ -23,6 +23,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
 import rachele.util.FileUtil;
+import static java.lang.Math.pow;
 
 
 public class IsingField2DApp extends Simulation {
@@ -45,6 +46,7 @@ public class IsingField2DApp extends Simulation {
 	Plot brLandscape = new Plot("Br Free Energy Landscape");
 	Plot ring = new Plot("Circle SF Ring");
 	Plot ringInput = new Plot("Input for Ring");
+	Plot dS_dtPlot = new Plot("SF change");
 	StructureFactor sf;
     IsingField2D ising;
     SteepestDescentMin opt;
@@ -53,6 +55,7 @@ public class IsingField2DApp extends Simulation {
 	boolean initFile = false;
     Accumulator landscapeFiller;
     Accumulator brLandscapeFiller;
+    Accumulator sfChange;
     public int lastClear;
     public int maxi=0;
 	public static void main(String[] args) {
@@ -60,24 +63,26 @@ public class IsingField2DApp extends Simulation {
 	}
 	
 	public void load(Control c) {
+		//uncomment next line
 		c.frameTogether("Grids", grid, delPhiGrid, sfGrid, freeEnergyPlot);
-		c.frame(grid2);
+		c.frame(dS_dtPlot);
+		//c.frame(grid2);
 		//frame(grid);
 		//frameTogether("ring", ring, ringInput);
 		//frameTogether("landscapes", landscape, brLandscape);
 		//frameTogether("Plots", vSlice, sfPlot, structurePeakV, hSlice, sfHPlot, structurePeakH, del_hSlice, del_vSlice, landscape);
-		frameTogether("Slices", vSlice, hSlice, del_hSlice, del_vSlice);
+		//uncomment next line
+		//c.frameTogether("Slices", vSlice, hSlice, del_hSlice, del_vSlice);
 		//frameTogether("SF", structurePeakV, 
 		//structurePeakH, freeEnergyPlot, sfPeakBoth, sfHor, sfVert);
-		//c.frameTogether("SF", structurePeakV, structurePeakH);
+		//c.frameTogether("SF", sfHor, sfVert);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M","Conjugate Gradient Min", 
 				"Steepest Decent" ));
-		params.add("Init Conditions", new ChoiceValue("Random Gaussian", 
-				"Read From File", "Artificial Stripe 3", "Artificial Stripe 2","Constant" ));
-		params.addm("Approx", new ChoiceValue("Slow","TimeAdjust",
-				"HalfStep", "Phi4","Phi4HalfStep"));
+		params.add("Init Conditions", new ChoiceValue("Read From File","Random Gaussian", 
+				 "Artificial Stripe 3", "Artificial Stripe 2","Constant" ));
+		params.addm("Approx", new ChoiceValue("Slow", "HalfStep", "TimeAdjust", "Phi4","Phi4HalfStep"));
 		//params.addm("Plot FEvT", new ChoiceValue("Off", "On"));
 		params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
 		params.addm("Stripe Strength", new DoubleValue(0.0, 0.0, 1.0).withSlider());
@@ -105,13 +110,10 @@ public class IsingField2DApp extends Simulation {
 		flags.add("Clear");
 		flags.add("SF");
 		flags.add("new RS");
-		//flags.add("Stripe");
-		//flags.add("Clump");
-		//flags.add("ClearFT");
-		//params.addm("Slow CG?", new ChoiceValue( "Yes, some", "No", "Yes, lots"));
+		flags.add("Integrate");
 		landscapeFiller = new Accumulator(.01);
 		brLandscapeFiller = new Accumulator(.01);
-
+		sfChange = new Accumulator(1);
 	}
 	
 	public void animate() {
@@ -142,28 +144,29 @@ public class IsingField2DApp extends Simulation {
 		sfVert.setAutoScale(true);
 		sfHor.setAutoScale(true);
 		ring.setAutoScale(true);
+		dS_dtPlot.setAutoScale(true);
 		
 		params.set("Free Energy", ising.freeEnergy);
-		
+		for(int i=0; i < ising.Lp; i++){
+			int j = ising.Lp*ising.Lp/2 + i;
+			sf.sFactor[j]=0;
+		}
 		sfGrid.registerData(ising.Lp, ising.Lp, sf.sFactor);
 		grid.registerData(ising.Lp, ising.Lp, ising.phi);
 		grid2.registerData(ising.Lp, ising.Lp, ising.phi);
-		String dyn = params.sget("Dynamics?");
+		//String dyn = params.sget("Dynamics?");
 		landscape.registerLines("FE landscape", landscapeFiller, Color.BLACK);
 		brLandscape.registerLines("FE landscape", brLandscapeFiller, Color.BLUE);
-		if (dyn.equals("Steepest Decent")) {
-			delPhiGrid.registerData(ising.Lp, ising.Lp, opt.direction);
-			del_hSlice.registerLines("Slice", opt.get_delHslice(), Color.RED);
-			del_vSlice.registerLines("Slice", opt.get_delVslice(), Color.YELLOW);
-		} else if (dyn.equals("Conjugate Gradient Min")) {
-			delPhiGrid.registerData(ising.Lp, ising.Lp, min.xi);
-			del_hSlice.registerLines("Slice", min.get_delHslice(), Color.RED);
-			del_vSlice.registerLines("Slice", min.get_delVslice(), Color.YELLOW);			
-		} else {
-			delPhiGrid.registerData(ising.Lp, ising.Lp, ising.phiVector);
-			del_hSlice.registerLines("Slice", ising.get_delHslice(), Color.RED);
-			del_vSlice.registerLines("Slice", ising.get_delVslice(), Color.YELLOW);
+		delPhiGrid.registerData(ising.Lp, ising.Lp, ising.phiVector);
+		del_hSlice.registerLines("Slice", ising.get_delHslice(), Color.RED);
+		del_vSlice.registerLines("Slice", ising.get_delVslice(), Color.YELLOW);
+
+		for (int i =0; i<ising.Lp; i++){
+			int j = (ising.Lp*ising.Lp)/2 +2*ising.Lp + i;
+			sfChange.accum(i, sf.sFactor[j]);
 		}
+		dS_dtPlot.registerLines("sf change slice", sfChange, Color.BLACK);
+
 		
 		grid.setDrawables(asList(
 				Geom2D.line(0, ising.horizontalSlice, 1, ising.horizontalSlice, Color.GREEN),
@@ -190,7 +193,6 @@ public class IsingField2DApp extends Simulation {
 			sfHor.registerLines("Hor SF", sf.getAccumulatorH(), Color.ORANGE);
 			sfVert.registerLines("Vert SF Ave", sf.getAccumulatorVA(), Color.BLACK);
 			sfVert.registerLines("Vert SF", sf.getAccumulatorV(), Color.CYAN);
-
 		}	
  
 		if (flags.contains("Stripe")){
@@ -224,13 +226,26 @@ public class IsingField2DApp extends Simulation {
 			maxi=sf.clumpsOrStripes(ising.phi);
 		}
 		if(flags.contains("new RS")) ising.randomizeSeed(params.iget("Random seed", 0));
+		if (flags.contains("Integrate")){
+			double V_k = -0.2067483214;
+			double a0H = integrate(true);
+			double a0V = integrate(false);
+			double a1termH = find_2a1(true);
+			double a1termV = find_2a1(false);
+			double a2termH = find_2a2(true);
+			double a2termV = find_2a2(false);
+			double slope1 =2*(-V_k-ising.T*a0H);
+			double slope2 =2*(-V_k-ising.T*a0V);
+			double slope3 = slope1 - ising.T*a1termH;
+			double slope4 = slope1 - ising.T*a1termV;
+			double slope5 = slope3 - ising.T*a2termH;
+			double slope6 = slope4 - ising.T*a2termV;
+			double linearSlope = 2*(-V_k-ising.T/(1.0-pow(ising.mean(ising.phi),2)));
+			System.out.println("slope1 = " + slope1 + " slope2 = " + slope2 + " linear slope = " + linearSlope);
+			System.out.println("slope3 = " + slope3 + " slope4 = " + slope4);
+			System.out.println("slope5 = " + slope5 + " slope6 = " + slope6);
+		}
 		flags.clear();
-
-//		if(flags.contains("ClearFT")){
-//			ising.getClumpFreeEnergyAcc().clear();
-//			ising.getStripeFreeEnergyAcc().clear();
-//		}
-		
 	}
 	
 	public void clear() {
@@ -248,29 +263,7 @@ public class IsingField2DApp extends Simulation {
 		sf.setBounds(0.1, 14);
 		int recordSteps = 0;
 		
-//		for (int i = 0; i < 100; i ++){
-//			ising.simulate();
-//			Job.animate();
-//		}
 		maxi=sf.clumpsOrStripes(ising.phi);
-		
-//		opt = new SteepestDescentMin(ising.phi, ising.verticalSlice, ising.horizontalSlice, ising.dx) {
-//			public double freeEnergyCalc(double[] point) {
-//				return ising.isingFreeEnergyCalc(point);
-//			}
-//			public double[] steepestAscentCalc(double[] point) {
-//				return ising.steepestAscentCalc(point);
-//			}
-//		};
-//		
-//		min = new ConjugateGradientMin(ising.phi,ising.verticalSlice, ising.horizontalSlice, ising.dx) {
-//			public double freeEnergyCalc(double[] point) {
-//				return ising.isingFreeEnergyCalc(point);
-//			}
-//			public double[] steepestAscentCalc(double[] point) {
-//				return ising.steepestAscentCalc(point);
-//			}
-//		};
 		
         while (true) {
         	ising.readParams(params);
@@ -301,20 +294,22 @@ public class IsingField2DApp extends Simulation {
 			}
 			sf.getAccumulatorV().clear();
 			sf.getAccumulatorH().clear();
-			sf.accumulateAll(ising.time(), ising.coarseGrained());
-			//if (ising.time()%10 == 0){
+			sf.accumulateAll(ising.time(), ising.delPhi);
+			//sf.accumulateAll(ising.time(), ising.coarseGrained());
+			
 			if (ising.time() > recordSteps){
 
 				//sf.accumMin(ising.coarseGrained(), params.fget("kR"));
-				boolean circleOn=true;
+				boolean circleOn=false;
 				sf.accumulateMelt(circleOn, ising.phi, maxi);
-				//sf.getSF(ising.phi);
+				//sf.accumulateAll(ising.t, ising.delPhi);
+				//sf.accumulateAll(ising.t, ising.phi);
 				recordSFvTime();
-				recordSteps += 10;
+				recordSteps += 1;
 				//writeDataToFile();
 			}
-			//sf.accumulateAll(ising.time(), ising.coarseGrained());
 			Job.animate();
+			sfChange.clear();
 		}
  	}
 	
@@ -328,11 +323,6 @@ public class IsingField2DApp extends Simulation {
 			System.out.println(readData);
 			params.set("J", readData);
 			dis.readChar();				
-		
-//			readData = dis.readDouble();
-//			System.out.println(readData);
-//			params.set("H", readData);
-//			dis.readChar();
 			
 			readData = dis.readDouble();
 			System.out.println(readData);
@@ -478,5 +468,50 @@ public class IsingField2DApp extends Simulation {
 			System.out.println("Data written to file for time = " + ising.time());
 		}
 	}
+
+	private double integrate(boolean direction){
+		double sum = 0;
+			if (direction){
+				for(int i = 0; i < ising.Lp; i ++)
+					sum += 1.0/(1-pow(ising.phi[i],2));
+			}else{
+				for(int i = 0; i < ising.Lp; i ++){
+					int j = i*ising.Lp;
+					sum += 1.0/(1-pow(ising.phi[j],2));
+				}
+			}
+		double ave = sum/(double)ising.Lp;
+		return ave;
+	}
+	
+	private double find_2a1(boolean direction){
+		double sum = 0;
+		if (direction){
+			for(int i = 0; i < ising.Lp; i ++)
+				sum += Math.cos(4.18879*(double)(i-ising.Lp/2))/(1-pow(ising.phi[i],2));
+		}else{
+			for(int i = 0; i < ising.Lp; i ++){
+				int j = (i)*ising.Lp;
+				sum += Math.cos(4.18879*((double)(i-ising.Lp/2)))/(1-pow(ising.phi[j],2));
+			}
+		}
+		double ave = sum/(double)ising.Lp;
+		return ave;
+	}
+
+	private double find_2a2(boolean direction){
+		double sum = 0;
+		if (direction){
+			for(int i = 0; i < ising.Lp; i ++)
+				sum += Math.cos(2*4.18879*(double)(i-ising.Lp/2))/(1-pow(ising.phi[i],2));
+		}else{
+			for(int i = 0; i < ising.Lp; i ++){
+				int j = (i)*ising.Lp;
+				sum += Math.cos(2*4.18879*((double)(i-ising.Lp/2)))/(1-pow(ising.phi[j],2));
+			}
+		}
+		double ave = sum/(double)ising.Lp;
+		return ave;
+	}
 }
- //		params.add("L/R", 4.0);
+

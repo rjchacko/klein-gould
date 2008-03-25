@@ -53,6 +53,7 @@ public class StructureFactor {
 		kRmin = (2*PI*2/L)*R; // explicitly exclude constant (k=0) mode
 		kRmax = (2*PI*(Lp/2)/L)*R;
 		
+		
 		double dblePeakLength = squarePeakValue*L/(2*PI*R);
 		squarePeakInt = (int)dblePeakLength;
 		//if(abs(2*PI*squarePeakInt*R/L - squarePeakValue) >= abs(2*PI*(squarePeakInt+1)*R/L - squarePeakValue))
@@ -389,12 +390,12 @@ public class StructureFactor {
 			double kR = (2*PI*sqrt(x*x+y*y)/L)*R;
 			if (kR >= kRmin && kR <= kRmax) {
 				int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
-				//accVertical.accum(kR, sFactor[i]);
-				//accAvV.accum(kR, sFactor[i]);
+				accVertical.accum(kR, sFactor[i]);
+				accAvV.accum(kR, sFactor[i]);
 				if(abs(y) == squarePeakInt){
 					//accPeakV.accum(t, sFactor[i]);
 					//dP_dt = (sFactor[i] - lastVpeak)/dt;
-					lastVpeak = sFactor[i];
+					//lastVpeak = sFactor[i];
 					//accPeakVslope.accum(t, dP_dt);
 				}
 				if(abs(y) == circlePeakInt){
@@ -413,10 +414,10 @@ public class StructureFactor {
 				//double re = fftData[2*i];
 				//double im = fftData[2*i+1];
 				//double sfValue = (re*re + im*im)/(L*L);
-				//accHorizontal.accum(kR, sFactor[i]);
-				//accAvH.accum(kR, sFactor[i]);
+				accHorizontal.accum(kR, sFactor[i]);
+				accAvH.accum(kR, sFactor[i]);
 				if(abs(x) == squarePeakInt){
-					//accPeakH.accum(t, sFactor[i]);
+					accPeakH.accum(t, sFactor[i]);
 					//dP_dt = (sFactor[i] - lastHpeak)/dt;
 					lastHpeak = sFactor[i];
 					//accPeakHslope.accum(t, dP_dt);
@@ -493,37 +494,45 @@ public class StructureFactor {
 	public void accumulateMelt(boolean circleOn, double[] data, int maxi) {
 		takeFT(data);
 		if (circleOn==false){
-		//vertical component
-		for (int y = -Lp/2; y < Lp/2; y++) {
-			int x=0;
+			//vertical component
+			//for (int y = -Lp/2; y < Lp/2; y++) {
+			//int x=0;
+			int x = 0;
+			int y = squarePeakInt;
 			int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
-			if(abs(y) == squarePeakInt){
-				lastVpeak = sFactor[i];
-			}
-		}
-		
-		//horizontal component
-		for (int x = -Lp/2; x < Lp/2; x++) {
-			int y=0;
-			int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
-			if(abs(x) == squarePeakInt){
-				lastHpeak = sFactor[i];
-			}
-		}		
+			//if(abs(y) == squarePeakInt){
+			lastVpeak = sFactor[i];
+			//}
+			//}
+
+			//horizontal component
+			x = 1;
+			y = squarePeakInt;
+			i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
+			//if(abs(y) == squarePeakInt){
+			lastHpeak = sFactor[i];
+			
+			//			for (int x = -Lp/2; x < Lp/2; x++) {
+//				int y=0;
+//				int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
+//				if(abs(x) == squarePeakInt){
+//					lastHpeak = sFactor[i];
+//				}
+//			}		
 		}else{
-		//circularly averaged	
-		//int count = 0;
-		lastCpeak = 0;
-		accCircle.clear();
-		for (int y = -Lp/2; y < Lp/2; y++) {
-			for (int x = -Lp/2; x < Lp/2; x++) {
-				int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
-				if(i==maxi)
+			//circularly averaged	
+			//int count = 0;
+			lastCpeak = 0;
+			accCircle.clear();
+			for (int y = -Lp/2; y < Lp/2; y++) {
+				for (int x = -Lp/2; x < Lp/2; x++) {
+					int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
+					if(i==maxi)
 						lastCpeak += sFactor[i];
 				}
 			}
 		}
-		
+
 	}	
 
 	public boolean findStripeDirection(double [] data){
