@@ -1,4 +1,5 @@
-package chris.ofc.apps;
+package chris.tests;
+
 
 
 import java.io.File;
@@ -13,7 +14,7 @@ import scikit.jobs.params.DoubleValue;
 import chris.ofc.NfailDamage2D;
 import chris.util.PrintUtil;
 
-public class NFailApp extends Simulation {
+public class NewMethodsTest extends Simulation {
 
 	Grid grid1 = new Grid ("Stress Lattice");
 	Grid grid2 = new Grid ("Failed Sites");
@@ -28,7 +29,7 @@ public class NFailApp extends Simulation {
 	
 
 	public static void main(String[] args) {
-		new Control(new NFailApp(), "OFC Model");
+		new Control(new NewMethodsTest(), "OFC Model");
 	}
 	
 	public void load(Control c) {
@@ -36,14 +37,11 @@ public class NFailApp extends Simulation {
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
 		params.add("Random Seed",0);
 		params.add("Animation", new ChoiceValue("On","Off"));
-		//params.addm("Auto Scale", new ChoiceValue("Yes", "No"));
 		params.add("Lattice Size",1<<9);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
-		params.add("Stress Distribution", new ChoiceValue("Flat","Hammer Blow"));
-		params.add("Hammer Size",1);	
 		params.add("Critical Stress (\u03C3_c)",4.0);
 		params.add("\u03C3_c Noise", new ChoiceValue("Off","On"));	
 		params.add("\u03C3_c width",Math.sqrt(Math.sqrt(0.4)));
@@ -114,7 +112,7 @@ public class NFailApp extends Simulation {
 		
 		PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
 				
-		model.Initialize(params.sget("Stress Distribution"));
+		model.NewInitialize("Flat");
 		
 		ScMax=model.GetMax(model.Sc);		
 
@@ -136,7 +134,7 @@ public class NFailApp extends Simulation {
 		
 		while(!(model.crack)) {
 			
-			model.Avalanche();
+			model.NewAvalanche();
 
 			model.TakeData();
 			
