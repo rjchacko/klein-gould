@@ -43,6 +43,7 @@ public class FieldIsing1D{
 		T = params.fget("T");
 		dx = R/params.fget("R/dx");
 		dt = params.fget("dt");
+		J = params.fget("J");
 		DENSITY = params.fget("Density");
 		H = params.fget("H");
 		Lp = Integer.highestOneBit((int)rint((L/dx)));
@@ -50,11 +51,10 @@ public class FieldIsing1D{
 		double RoverDx = R/dx;
 		params.set("R/dx", RoverDx);
 		params.set("Lp", Lp);
-		if (params.sget("Zoom").equals("A"))
+		if (params.sget("Model").equals("A"))
 			modelA = true;
 		else
 			modelA = false;
-		
 		t = 0;
 
 		phi = new double[Lp];
@@ -81,7 +81,7 @@ public class FieldIsing1D{
 		Lp = Integer.highestOneBit((int)rint((L/dx)));
 		dx = L / Lp;
 		params.set("R/dx", R/dx);
-		if (params.sget("Zoom").equals("A"))
+		if (params.sget("Model").equals("A"))
 			modelA = true;
 		else
 			modelA = false;
@@ -153,7 +153,7 @@ public class FieldIsing1D{
 		if (modelA){
 			for (int i = 0; i < Lp; i++) {
 				//del_phi[i] = - dt*( phi_bar[i]-H-T*log(1.0-phi[i])/2.0+T*log(1.0+phi[i])/2.0) + sqrt(dt*2*T/dx)*random.nextGaussian();
-				del_phi[i] = - dt*( phi_bar[i]-H + T*atanh(phi[i]));
+				del_phi[i] = - dt*(phi_bar[i]-H + T*atanh(phi[i]));
 				if(noise)
 					del_phi[i] += sqrt(dt*2*T/dx)*random.nextGaussian();
 			}
