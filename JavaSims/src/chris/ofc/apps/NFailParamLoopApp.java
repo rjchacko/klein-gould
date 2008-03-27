@@ -107,7 +107,7 @@ public class NFailParamLoopApp extends Simulation {
 					
 					model.Avalanche();
 		
-					TakeData();
+					model.TakeData();
 					
 				}
 				
@@ -136,7 +136,7 @@ public class NFailParamLoopApp extends Simulation {
 					
 					model.Avalanche();
 		
-					TakeData();
+					model.TakeData();
 					
 				}
 				
@@ -166,7 +166,7 @@ public class NFailParamLoopApp extends Simulation {
 					
 					model.Avalanche();
 		
-					TakeData();
+					model.TakeData();
 					
 				}
 				
@@ -196,7 +196,7 @@ public class NFailParamLoopApp extends Simulation {
 					
 					model.Avalanche();
 		
-					TakeData();
+					model.TakeData();
 					
 				}
 				
@@ -226,7 +226,7 @@ public class NFailParamLoopApp extends Simulation {
 					
 					model.Avalanche();
 		
-					TakeData();
+					model.TakeData();
 					
 				}
 				
@@ -256,7 +256,7 @@ public class NFailParamLoopApp extends Simulation {
 					
 					model.Avalanche();
 		
-					TakeData();
+					model.TakeData();
 					
 				}
 				
@@ -276,21 +276,6 @@ public class NFailParamLoopApp extends Simulation {
 		
 		}
 		
-	}
-	
-	public void TakeData(){
-	
-		int[] LS = model.LiveSites(); 
-		if(LS.length>0){
-			rgyr=model.radiusGyration(LS[model.rand.nextInt(LS.length)]);
-		}
-		else{
-			rgyr=0;
-		}
-		
-		PrintUtil.printlnToFile(model.outfile,model.time,model.Nshowers,rgyr,model.EFmetric(),model.GetAve(model.SonFS,model.SonFSindex),model.DaboutFS);
-				
-		return;
 	}
 	
 	public enum LVtype {

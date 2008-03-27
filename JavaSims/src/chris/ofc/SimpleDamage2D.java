@@ -236,32 +236,6 @@ public class SimpleDamage2D {
 		return;
 	}
 	
-	public double radiusGyration(int index){
-		
-		int x0,y0,x,y;
-		int mass=0;
-		double rg=0;
-		
-		int[] nbs = neighbors.get(index);
-		
-		x0=index%L;
-		y0=(int)(index/L);
-		
-		for (int i=0 ; i<nbs.length ; i++){
-			x=nbs[i]%L;
-			y=(int)(nbs[i]/L);
-			mass+=alive[nbs[i]];
-			rg+=alive[nbs[i]]*((x-x0)*(x-x0)+(y-y0)*(y-y0));
-		}
-		
-		if(mass>0){
-			rg=rg/mass;
-			rg=Math.sqrt(rg);
-		}
-		
-		return rg;
-	}
-	
 	public int getCenter(int index){
 		
 		double xc=0;

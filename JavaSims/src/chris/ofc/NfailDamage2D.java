@@ -97,86 +97,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 			}
 		}
 				
-		if(str.equals("Hammer Blow")){
-
-			LatticeNeighbors Hneighbors;
-			
-			for (int i = 0 ; i < N ; i++){
-				stress[i]  = 0.1*Sc0*rand.nextDouble();
-				SsoFar[i]=stress[i];
-				alive[i+N] = 1;
-				
-				if(criticalnoise.equals("On")) {
-					Sc[i]=Scwidth*rand.nextGaussian()+Sc0;
-				}
-				else{
-					Sc[i]=Sc0;
-				}
-				
-				
-				if (residualnoise.equals("On")) {
-					Sr[i]=Srwidth*rand.nextGaussian()+Sr0;
-				}
-				else{
-					Sr[i]=Sr0;
-				}
-				
-				if (lifeshape.equals("Flat")){
-					alive[i]=rand.nextInt(Nlives)+1;
-				}
-				else if (lifeshape.equals("Gaussian")){
-					alive[i]=(int)(Math.floor((lifewidth*rand.nextGaussian()+1.*Nlives)+0.5));
-				}
-				else if(lifeshape.equals("Constant")){
-					alive[i]=Nlives;
-				}
-			}
-			
-			
-			if (L%2 == 1){
-				imax = N/2 + 1;
-			}
-			else{
-				imax = N/2 - L/2;
-			}
-			
-			if(hammersize > 1){
-				
-				if (BCs.equals("Bordered")){
-					if(shape.equals("Circle")){
-						Hneighbors = new LatticeNeighbors(L,L,0,hammersize,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Circle);
-					}
-					else if(shape.equals("Square")){
-						Hneighbors = new LatticeNeighbors(L,L,0,hammersize,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Square);
-					}
-					else{
-						Hneighbors = new LatticeNeighbors(L,L,0,hammersize,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Diamond);
-					}
-				}
-				else{
-					if(shape.equals("Circle")){
-						Hneighbors = new LatticeNeighbors(L,L,0,hammersize,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Circle);
-					}
-					else if(shape.equals("Square")){
-						Hneighbors = new LatticeNeighbors(L,L,0,hammersize,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Square);
-					}
-					else{
-						Hneighbors = new LatticeNeighbors(L,L,0,hammersize,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Diamond);
-					}
-				}
-				
-				int[] Hnbs = Hneighbors.get(imax);
-	
-	
-				for (int i = 0 ; i < Hnbs.length ; i++){
-					stress[Hnbs[i]] += 0.85*Sc[imax];
-					SsoFar[Hnbs[i]]=stress[Hnbs[i]];
-				}
-				
-			}
-			
-		}
-		else if(str.equals("Flat")){
+		if(str.equals("Flat")){
 			
 			for (int i = 0 ; i < N ; i++){
 				
@@ -230,242 +151,69 @@ public class NfailDamage2D extends SimpleDamage2D{
 		showernumber=0;
 				
 		return;
-	}
-	
-	
-	
-	public void Avalanche() {
+	}	
 
+	public void Avalanche() {
+		
 		SonFSindex=0;
 		showernumber=0;
 		Nshowers=0;
-
-		// get density of failed sites about imax site
+		
+		String PLACEHOLDER = "foobar";
+		
+		time++;
 		
 		DaboutFS = FSdensity(imax);
 		
-		time++;
-
-		if(Nbool){
-
-			// redistribute stress from the failed site
-						
-			int[] nbs = neighbors.get(imax);
+		// Distribute stress from initial failure
+		
+		dead[0]=imax;
+		search = 1;
+		DistStress(PLACEHOLDER);
+		
+		// reset plate
+		resetPlate();
+		
+		// search for an avalanche
+		findAvalanche();
+		
+		while (search>0){
+			
+			showernumber++;
+			// redistribute stress of failure(s)
+			DistStress(PLACEHOLDER);
+			
+			// reset plates
+			resetPlate();
+			
+			// look for subsequent avalanche
+			findAvalanche();
+			
+			showering=true;
+			Job.animate();
 	
-			Nalive = 0;
-			for (int i = 0; i<nbs.length; i++){
-				Nalive+=alive[nbs[i]+N];
-			}
-			if(Nalive>0){
-				if(alive[imax]>0){
-					release=(stress[imax]-Sr[imax])/Nalive;
-				}
-				else{
-					release=stress[imax]/Nalive;
-				}
-				for (int i = 0; i<nbs.length; i++){
-					stress[nbs[i]]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[nbs[i]+N];
-				}
-			}
-			
-			// reset plate conditionally
-						
-			if (alive[imax]>0) {
-				stress[imax]=Sr[imax];
-				alive[imax+N]=1;
-			}
-			else {
-				stress[imax]=-2;
-			}
-			
-			// search for the beginning of an avalanche
-			
-			search=0;
-			
-			for (int i = 0; i<N ; i++){
-				if(stress[i]>Sc[i]){
-					SonFS[SonFSindex++]=stress[i];
-					dead[search++]=i;
-					alive[i+N]=0;
-					alive[i]--;
-				}
-			}
-			
-			Nshowers+=search;
-			
-			while (search>0){
-				showernumber++;
-				// Redistribute avalanche stress
-				
-				for (int i = 0; i<search; i++){
-								
-					nbs = neighbors.get(dead[i]);
-					Nalive=0;
-					for (int j = 0; j<nbs.length; j++){
-						Nalive+=alive[nbs[j]+N];
-					}			
-					if(Nalive>0){									
-						if(alive[dead[i]]>0){
-							release=(stress[dead[i]]-Sr[dead[i]])/Nalive;
-						}
-						else{
-							release=stress[dead[i]]/Nalive;
-						}
-						for (int j = 0; j<nbs.length; j++){
-							stress[nbs[j]]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[nbs[j]+N];
-						}
-					}
-				}
-				
-				// reset plate conditionally
-				
-				for (int i = 0; i<search; i++){
-					if (alive[dead[i]]>0) {
-						stress[dead[i]]=Sr[dead[i]];
-						alive[dead[i]+N]=1;
-					}
-					else {
-						stress[dead[i]]=-2;
-					}
-				}
-
-				// Look for subsequent avalanche
-				
-				search=0;
-				for (int i = 0; i<N ; i++){
-					if(stress[i]>Sc[i]){
-						SonFS[SonFSindex++]=stress[i];
-						dead[search]=i;
-						alive[i+N]=0;
-						alive[i]--;
-						search++;
-					}
-				}
-
-				Nshowers+=search;
-				showering=true;
-				Job.animate();	
-			}
-			
-			
 		}
-		else{
+		// set up next failure
 
-			// redistribute stress from the failed site
-			
-			int[] nbs = neighbors.get(imax);
-	
-			Nalive = 0;
-			for (int i = 0; i<nbs.length; i++){
-				Nalive+=alive[nbs[i]+N];
-			}
-			if(Nalive>0){
-				if (alive[imax]>0){
-					release=(1-alpha)*(stress[imax]-Sr[imax])/Nalive;
-				}
-				else{
-					release=(1-alpha)*stress[imax]/Nalive;
-				}
-				for (int i = 0; i<nbs.length; i++){
-					stress[nbs[i]]+=release*alive[nbs[i]+N];
-				}
-			}
-			
-			// reset plate conditionally
-			
-			if (alive[imax]>0) {
-				stress[imax]=Sr[imax];
-				alive[imax+N]=1;
-			}
-			else {
-				stress[imax]=-2;
-			}
-			
-			
-			// search for the beginning of an avalanche
-			
-			search=0;
-			for (int i = 0; i<N ; i++){
-				if(stress[i]>Sc[i]){
-					SonFS[SonFSindex++]=stress[i];
-					dead[search++]=i;
-					alive[i+N]=0;
-					alive[i]--;
-				}
-			}
-			
-			Nshowers+=search;
-			
-			while (search>0){
-				showernumber++;
-				// Redistribute avalanche stress
-				
-				for (int i = 0; i<search; i++){
-					
-					nbs = neighbors.get(dead[i]);
-					Nalive=0;
-					for (int j = 0; j<nbs.length; j++){
-						Nalive+=alive[nbs[j]+N];
-					}			
-					if(Nalive>0){			
-						if(alive[dead[i]]>0){
-							release=(1-alpha)*(stress[dead[i]]-Sr[dead[i]])/Nalive;
-						}
-						else{
-							release=(1-alpha)*stress[dead[i]]/Nalive;
-						}
-						for (int j = 0; j<nbs.length; j++){
-							stress[nbs[j]]+=release*alive[nbs[j]+N];
-						}
-					}
-				}
-				
-				// reset plate conditionally
-				
-				for (int i = 0; i<search; i++){
-					if (alive[dead[i]]>0) {
-						stress[dead[i]]=Sr[dead[i]];
-						alive[dead[i]+N]=1;
-					}
-					else {
-						stress[dead[i]]=-2;
-					}
-				}
-
-				// Look for subsequent avalanche
-				
-				search=0;
-				for (int i = 0; i<N ; i++){
-					if(stress[i]>Sc[i]){
-						SonFS[SonFSindex++]=stress[i];
-						dead[search]=i;
-						alive[i+N]=0;
-						alive[i]--;
-						search++;
-					}
-				}
-				
-				Nshowers+=search;
-				showering=true;
-				Job.animate();	
-			}
-			
-		}
-				
+		
+		// Find most stressed site
 		imax=0;
 		for (int i = 0 ; i < N ; i++){
 			if((Sc[i]-stress[i])<(Sc[imax]-stress[imax])) imax=i;
 		}
 		
+		// check if most stressed site has already failed
 		if(alive[imax] == 0){
 			System.out.println("All Sites Failed!");
 			crack=true;
 			return;
 		}
 		
+		// kill the site 
 		alive[imax]--;
 		alive[imax+N]=0;
 		
+		// bring the most stressed site to failure
 		stressMax = stress[imax];
 		for (int i = 0; i<N; i++){
 			stress[i]+=Sc[imax]-stressMax;
@@ -473,10 +221,87 @@ public class NfailDamage2D extends SimpleDamage2D{
 		
 		showering=false;
 		Job.animate();
+				
+		return;
+	}
+
+	public void DistStress(String HowToDumpStress){
+
+		// HowToDumpStress = evenly
+		// angular bias (and then which angular bias)
+		//				elipse
+		//				uniform + random angle ~ cos\theta
+		//				all at one cos\theta
+		//				multiple cos\theta # ~ \pi R
+		
+		
+		// if string means to distribute stress evenly . . . 
+		
+		for (int i = 0; i<search; i++){
+			
+			int[] nbs = neighbors.get(dead[i]);
+			Nalive=0;
+			for (int j = 0; j<nbs.length; j++){
+				Nalive+=alive[nbs[j]+N];
+			}			
+			if(Nalive>0){									
+				if(alive[dead[i]]>0){
+					release=(stress[dead[i]]-Sr[dead[i]])/Nalive;
+				}
+				else{
+					release=stress[dead[i]]/Nalive;
+				}
+				for (int j = 0; j<nbs.length; j++){
+					
+					if (Nbool){
+						stress[nbs[j]]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[nbs[j]+N];
+					}
+					else{
+						stress[nbs[j]]+=(1-alpha)*release*alive[nbs[j]+N];
+					}
+					
+				}
+			}
+		}
 		
 		return;
 	}
 	
+	public void resetPlate(){
+
+		for (int i = 0; i<search; i++){
+			if (alive[dead[i]]>0) {
+				stress[dead[i]]=Sr[dead[i]];
+				alive[dead[i]+N]=1;
+			}
+			else {
+				stress[dead[i]]=-2;
+			}
+		}
+		
+		return;
+	}
+	
+	public void findAvalanche(){
+		
+		// can really reduce the search to the neighbor sites
+		
+		search=0;
+		
+		for (int i = 0; i<N ; i++){
+			if(stress[i]>Sc[i]){
+				SonFS[SonFSindex++]=stress[i];
+				dead[search++]=i;
+				alive[i+N]=0;
+				alive[i]--;
+			}
+		}
+		
+		Nshowers+=search;
+		
+		return;
+	}
+
 	public int[] LiveSites(){
 		
 		NdeadS = 0;
@@ -652,7 +477,6 @@ public class NfailDamage2D extends SimpleDamage2D{
 		return ret;
 	}
 	
-
 	public void TakeData(){
 		 double rgyr;
 		
@@ -682,240 +506,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		
 		return;
 	}
-	
 
-	public void NewInitialize(String str){
-		
-		
-		
-		if (BCs.equals("Bordered")){
-			if(shape.equals("Circle")){
-				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Circle);
-			}
-			else if(shape.equals("Square")){
-				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Square);
-			}
-			else{
-				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Diamond);
-			}
-		}
-		else{
-			if(shape.equals("Circle")){
-				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Circle);
-			}
-			else if(shape.equals("Square")){
-				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Square);
-			}
-			else{
-				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Diamond);
-			}
-		}
-				
-		if(str.equals("Flat")){
-			
-			for (int i = 0 ; i < N ; i++){
-				
-				if(criticalnoise.equals("On")) {
-					Sc[i]=Scwidth*rand.nextGaussian()+Sc0;
-				}
-				else{
-					Sc[i]=Sc0;
-				}
-				
-				stress[i]  = Sc0*rand.nextDouble();
-				if((Sc[i]-stress[i])<(Sc[imax]-stress[imax])) imax=i;
-				alive[i+N] = 1;
-				
-				if (residualnoise.equals("On")) {
-					Sr[i]=Srwidth*rand.nextGaussian()+Sr0;
-				}
-				else{
-					Sr[i]=Sr0;
-				}
-				
-				if (lifeshape.equals("Flat")){
-					alive[i]=rand.nextInt(Nlives)+1;
-				}
-				else if (lifeshape.equals("Gaussian")){
-					alive[i]=(int)(Math.floor((lifewidth*rand.nextGaussian()+1.*Nlives)+0.5));
-				}
-				else if(lifeshape.equals("Constant")){
-					alive[i]=Nlives;
-				}
-			}
-			
-			alive[imax]--;
-			alive[imax+N]=0;
-			
-			// Bring Site with Most Stress to Failure
-			
-			stressMax = stress[imax];
-			for (int i = 0; i<N; i++){
-				stress[i]+=Sc[imax]-stressMax;
-				SsoFar[i]=stress[i];
-			}
-			
-		}
-		else {
-			System.out.println("Error! Intialization type " + str + " does not exist!");
-		}
-	
-		
-		time=0;
-		showernumber=0;
-				
-		return;
-	}	
-
-	public void NewAvalanche() {
-		
-		SonFSindex=0;
-		showernumber=0;
-		Nshowers=0;
-		
-		String PLACEHOLDER = "foobar";
-		
-		time++;
-		
-		DaboutFS = FSdensity(imax);
-		
-		// Distribute stress from initial failure
-		
-		dead[0]=imax;
-		search = 1;
-		DistStress(PLACEHOLDER);
-		
-		// reset plate
-		resetPlate();
-		
-		// search for an avalanche
-		findAvalanche();
-		
-		while (search>0){
-			
-			showernumber++;
-			// redistribute stress of failure(s)
-			DistStress(PLACEHOLDER);
-			
-			// reset plates
-			resetPlate();
-			
-			// look for subsequent avalanche
-			findAvalanche();
-			
-			showering=true;
-			Job.animate();
-	
-		}
-		// set up next failure
-
-		
-		// Find most stressed site
-		imax=0;
-		for (int i = 0 ; i < N ; i++){
-			if((Sc[i]-stress[i])<(Sc[imax]-stress[imax])) imax=i;
-		}
-		
-		// check if most stressed site has already failed
-		if(alive[imax] == 0){
-			System.out.println("All Sites Failed!");
-			crack=true;
-			return;
-		}
-		
-		// kill the site 
-		alive[imax]--;
-		alive[imax+N]=0;
-		
-		// bring the most stressed site to failure
-		stressMax = stress[imax];
-		for (int i = 0; i<N; i++){
-			stress[i]+=Sc[imax]-stressMax;
-		}
-		
-		showering=false;
-		Job.animate();
-				
-		return;
-	}
-	
-	public void resetPlate(){
-
-		for (int i = 0; i<search; i++){
-			if (alive[dead[i]]>0) {
-				stress[dead[i]]=Sr[dead[i]];
-				alive[dead[i]+N]=1;
-			}
-			else {
-				stress[dead[i]]=-2;
-			}
-		}
-		
-		return;
-	}
-	
-	public void findAvalanche(){
-		
-		// can really reduce the search to the neighbor sites
-		
-		search=0;
-		
-		for (int i = 0; i<N ; i++){
-			if(stress[i]>Sc[i]){
-				SonFS[SonFSindex++]=stress[i];
-				dead[search++]=i;
-				alive[i+N]=0;
-				alive[i]--;
-			}
-		}
-		
-		Nshowers+=search;
-		
-		return;
-	}
-	
-	
-	public void DistStress(String HowToDumpStress){
-
-		// HowToDumpStress = evenly
-		// angular bias (and then which angular bias)
-		//				elipse
-		//				uniform + random angle ~ cos\theta
-		//				all at one cos\theta
-		//				multiple cos\theta # ~ \pi R
-		
-		
-		// if string means to distribute stress evenly . . . 
-		
-		for (int i = 0; i<search; i++){
-			
-			int[] nbs = neighbors.get(dead[i]);
-			Nalive=0;
-			for (int j = 0; j<nbs.length; j++){
-				Nalive+=alive[nbs[j]+N];
-			}			
-			if(Nalive>0){									
-				if(alive[dead[i]]>0){
-					release=(stress[dead[i]]-Sr[dead[i]])/Nalive;
-				}
-				else{
-					release=stress[dead[i]]/Nalive;
-				}
-				for (int j = 0; j<nbs.length; j++){
-					
-					if (Nbool){
-						stress[nbs[j]]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[nbs[j]+N];
-					}
-					else{
-						stress[nbs[j]]+=(1-alpha)*release*alive[nbs[j]+N];
-					}
-					
-				}
-			}
-		}
-		
-		return;
-	}
 		
 
 	
