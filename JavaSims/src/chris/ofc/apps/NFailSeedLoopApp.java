@@ -42,8 +42,6 @@ public class NFailSeedLoopApp extends Simulation {
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
-		params.add("Stress Distribution", new ChoiceValue("Flat","Hammer Blow"));
-		params.add("Hammer Size",1);	
 		params.add("Critical Stress (\u03C3_c)",4.0);
 		params.add("\u03C3_c Noise", new ChoiceValue("Off","On"));	
 		params.add("\u03C3_c width",Math.sqrt(Math.sqrt(0.4)));

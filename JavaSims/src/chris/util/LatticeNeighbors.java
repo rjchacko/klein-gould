@@ -17,7 +17,7 @@ public class LatticeNeighbors {
 	 */
 	public static enum Type {BORDERED, PERIODIC};
 	
-	public static enum Shape {Circle, Square, Diamond};
+	public static enum Shape {Circle, Square, Diamond, Ellipse};
 
 	public LatticeNeighbors(int Nx, int Ny, double r_lo, double r_hi, Type type, Shape shape) {
 		this.Nx = Nx;
@@ -30,6 +30,18 @@ public class LatticeNeighbors {
 		list = new int[d*d];
 	}
 	
+	public LatticeNeighbors(int Nx, int Ny, double eps, double r_lo, double r_hi, Type type, Shape shape) {
+		this.Nx = Nx;
+		this.Ny = Ny;
+		this.eps = eps;
+		this.r_lo = r_lo;
+		this.r_hi = r_hi;
+		this.type = type; 
+		this.shape = shape;
+		int d = (int)r_hi*2 + 1;
+		list = new int[d*d];
+		eps2 = eps*eps;
+	}
 	/**
 	 * Returns a neighbor list array.
 	 * For each lattice index i, neighbor[i] is an array containing all of i's neighbor
@@ -63,6 +75,7 @@ public class LatticeNeighbors {
 	double r_lo, r_hi; // neighbor list range
 	Type type;
 	Shape shape;
+	double eps, eps2; //eccentricity and its square (respectively) of the ellipse
 
 	// These variables are set be calculateNeighborList()
 	int[] list;    // most recently computed neighbor list
@@ -114,6 +127,45 @@ public class LatticeNeighbors {
 				}
 				break;
 			
+
+		case Ellipse:
+		
+				switch (type) {
+				case BORDERED:
+					for (int jy = Math.max(0, iy-_r); jy <= Math.min(Ny-1, iy+_r); jy++) {
+						for (int jx = Math.max(0, ix-_r); jx <= Math.min(Nx-1, ix+_r); jx++) {
+							double d2 = sqr(jx-ix) + sqr(jy-iy)/(1-eps2);
+							if (sqr(r_lo) <= d2 && d2 <= sqr(r_hi))
+								list[num++] = jy*Nx + jx;
+						}
+					}
+					break;
+
+				case PERIODIC:
+					// take advantage of rounding down when Ny or Nx is even.  this way
+					// we avoid double counting (-Ny/2 == +Ny/2).
+					// for odd Ny or Nx, this ambiguity does not exist, but the subtraction
+					// by one will not have an effect.
+					int ylo = iy - min(_r, (Ny-1)/2);
+					int yhi = iy + min(_r, Ny/2);
+					int xlo = ix - min(_r, (Nx-1)/2);
+					int xhi = ix + min(_r, Nx/2);
+			
+					for (int jy = ylo; jy <= yhi; jy++) {
+						for (int jx = xlo; jx <= xhi; jx++) {
+							double d2 = sqr(jx-ix) + sqr(jy-iy)/(1-eps2);
+							if (sqr(r_lo) <= d2 && d2 <= sqr(r_hi)) {
+								int _jy = (jy + Ny) % Ny;
+								int _jx = (jx + Nx) % Nx;
+								list[num++] = _jy*Nx + _jx;
+							}
+						}
+					}
+					break;
+				}
+				break;		
+				
+				
 		case Square:
 			
 			switch (type) {
