@@ -230,20 +230,10 @@ public class IsingField2DApp extends Simulation {
 			double V_k = -0.2067483214;
 			double a0H = integrate(true);
 			double a0V = integrate(false);
-			double a1termH = find_2a1(true);
-			double a1termV = find_2a1(false);
-			double a2termH = find_2a2(true);
-			double a2termV = find_2a2(false);
 			double slope1 =2*(-V_k-ising.T*a0H);
 			double slope2 =2*(-V_k-ising.T*a0V);
-			double slope3 = slope1 - ising.T*a1termH;
-			double slope4 = slope1 - ising.T*a1termV;
-			double slope5 = slope3 - ising.T*a2termH;
-			double slope6 = slope4 - ising.T*a2termV;
 			double linearSlope = 2*(-V_k-ising.T/(1.0-pow(ising.mean(ising.phi),2)));
 			System.out.println("slope1 = " + slope1 + " slope2 = " + slope2 + " linear slope = " + linearSlope);
-			System.out.println("slope3 = " + slope3 + " slope4 = " + slope4);
-			System.out.println("slope5 = " + slope5 + " slope6 = " + slope6);
 		}
 		flags.clear();
 	}
@@ -304,7 +294,8 @@ public class IsingField2DApp extends Simulation {
 				sf.accumulateMelt(circleOn, ising.phi, maxi);
 				//sf.accumulateAll(ising.t, ising.delPhi);
 				//sf.accumulateAll(ising.t, ising.phi);
-				recordSFvTime();
+				//recordSFvTime();
+				record3Ddata();
 				recordSteps += 1;
 				//writeDataToFile();
 			}
@@ -313,6 +304,8 @@ public class IsingField2DApp extends Simulation {
 		}
  	}
 	
+
+
 	public void readInputParams(String FileName){
 		try {
 			File inputFile = new File(FileName);
@@ -469,49 +462,46 @@ public class IsingField2DApp extends Simulation {
 		}
 	}
 
-	private double integrate(boolean direction){
-		double sum = 0;
-			if (direction){
-				for(int i = 0; i < ising.Lp; i ++)
-					sum += 1.0/(1-pow(ising.phi[i],2));
-			}else{
-				for(int i = 0; i < ising.Lp; i ++){
-					int j = i*ising.Lp;
-					sum += 1.0/(1-pow(ising.phi[j],2));
-				}
+	private void record3Ddata() {
+			String dataFile = "../../../research/javaData/sfData/3d";
+
+			if (initFile == false){
+				initFile(dataFile, true);
+				initFile = true;
 			}
-		double ave = sum/(double)ising.Lp;
+			for(int i = 0; i < ising.Lp; i ++){
+				FileUtil.printlnToFile(dataFile, ising.time(), (double)i, sf.sFactor[ising.Lp*ising.Lp/2 + i]);
+			}
+	}
+	
+	private double integrate(boolean direction){
+		double integralSum = 0;
+		if (direction){
+			for(int k = 0; k < ising.Lp; k ++){
+				double lineSum = 0;
+				for(int i = 0; i < ising.Lp; i ++){
+					int point = ising.Lp*k + i;
+					lineSum += 1.0/(1-pow(ising.phi[point],2));
+				}
+				double sumAve = lineSum/(double)ising.Lp;
+				integralSum += sumAve;
+			}
+		}else{
+			for (int k = 0; k < ising.Lp; k ++){
+				double lineSum = 0;
+				for(int i = 0; i < ising.Lp; i ++){
+					int point = i*ising.Lp + k;
+					lineSum += 1.0/(1-pow(ising.phi[point],2));
+				}
+				double sumAve = lineSum/(double)ising.Lp;
+				integralSum += sumAve;
+			}
+
+		}
+		double ave = integralSum/(double)ising.Lp;
 		return ave;
 	}
 	
-	private double find_2a1(boolean direction){
-		double sum = 0;
-		if (direction){
-			for(int i = 0; i < ising.Lp; i ++)
-				sum += Math.cos(4.18879*(double)(i-ising.Lp/2))/(1-pow(ising.phi[i],2));
-		}else{
-			for(int i = 0; i < ising.Lp; i ++){
-				int j = (i)*ising.Lp;
-				sum += Math.cos(4.18879*((double)(i-ising.Lp/2)))/(1-pow(ising.phi[j],2));
-			}
-		}
-		double ave = sum/(double)ising.Lp;
-		return ave;
-	}
 
-	private double find_2a2(boolean direction){
-		double sum = 0;
-		if (direction){
-			for(int i = 0; i < ising.Lp; i ++)
-				sum += Math.cos(2*4.18879*(double)(i-ising.Lp/2))/(1-pow(ising.phi[i],2));
-		}else{
-			for(int i = 0; i < ising.Lp; i ++){
-				int j = (i)*ising.Lp;
-				sum += Math.cos(2*4.18879*((double)(i-ising.Lp/2)))/(1-pow(ising.phi[j],2));
-			}
-		}
-		double ave = sum/(double)ising.Lp;
-		return ave;
-	}
 }
 

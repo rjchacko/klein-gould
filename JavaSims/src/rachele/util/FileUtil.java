@@ -54,7 +54,7 @@ public class FileUtil {
 			ex.printStackTrace();
 		}
 	}
-	
+
 	static public void printlnToFile(String fileName, double d1, double d2, double d3, double d4){
 		try{
 			File file = new File(fileName);
