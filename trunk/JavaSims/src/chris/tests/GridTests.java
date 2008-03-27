@@ -173,7 +173,7 @@ public class GridTests extends Simulation{
 		 *	Test the ellipse method for lattice neighbors
 		 */
 		
-		
+		////////////////////////////////////////////////////////////////////
 		
 		/**
 		 * 	Test getStressLines(int center, int Nlines) method	
