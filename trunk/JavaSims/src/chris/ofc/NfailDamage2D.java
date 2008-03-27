@@ -266,6 +266,142 @@ public class NfailDamage2D extends SimpleDamage2D{
 		return;
 	}
 	
+	public int[] getStressLines(int center, int Nlines){
+		
+		int[] temp = new int[Nlines*(2*R+2)];
+		int[] ret;
+		int count = 0;
+		
+		if(BCs.equals("Bordered")){
+		
+			int x0 = center%L;
+			int y0 = (int)(center/L);
+			int minG, maxG, xg, yg;
+			
+			for (int countlines = 0 ; countlines < Nlines ; countlines++){
+				
+				// Generate the trig fns
+				
+				double theta    = Math.asin(2*rand.nextDouble() + 1);	// quick skip, set sintheta = to arg of asin
+				double sintheta = Math.sin(theta);
+				double costheta = Math.sqrt(1-sintheta*sintheta);
+				double tantheta = sintheta/costheta;
+				
+				
+				// Separate cases for  | slope | > / < 1
+				
+				if(costheta > 1/Math.sqrt(2)){		// |slope| < 1
+					
+					minG = x0 - (int)(R*costheta);
+					if (minG < 0) minG = 0;
+		
+					maxG = x0 + (int)(R*costheta);
+					if (maxG > L) maxG = L;
+				
+					for (int ii = 0 ; ii < maxG - minG + 1 ; ii++){
+						xg = x0 - minG + ii;
+						yg = (int)(Math.round(tantheta*(xg-x0) + y0));
+						
+						if (yg > 0 && yg < L) temp[count++] = yg*L + xg;
+					}
+				}
+				else{	// |slope| > 1
+					
+					minG = y0 - Math.abs((int)(R*sintheta));
+					if (minG < 0) minG = 0;
+					
+					maxG = y0 + Math.abs((int)(R*sintheta));
+					if (maxG > L) maxG = L;
+					
+					for (int ii = 0 ; ii < maxG - minG + 1 ; ii++){
+						yg = y0 - minG + ii;
+						xg = (int)(Math.round((yg-y0)/tantheta + x0));
+						
+						if (xg > 0 && xg < L) temp[count++] = yg*L + xg;
+					}	
+				}
+			}
+		}
+		else{		// BCs are periodic
+			
+			int x0 = center%L;
+			int y0 = (int)(center/L);
+			int minl, xl, yl;
+			
+			for (int countlines = 0 ; countlines < Nlines ; countlines++){
+				
+				// Generate the trig fns
+				
+				double theta    = Math.asin(2*rand.nextDouble() + 1);	// quick skip, set sintheta = to arg of asin
+				double sintheta = Math.sin(theta);
+				double costheta = Math.sqrt(1-sintheta*sintheta);
+				double tantheta = sintheta/costheta;
+				
+				if(costheta > 1/Math.sqrt(2)){		// |slope| < 1
+				
+					minl = x0 - (int)(R*costheta);
+					
+					for (int ii = 0 ; ii < (int)(2*R*costheta)+1 ; ii++){
+						xl = minl + x0 + ii;
+						yl = (int)(Math.round(tantheta*(xl-x0) + y0));
+						
+						if(xl < 0){
+							xl+=L;
+						}
+						else if(xl > L){
+							xl = L - xl;
+						}
+						if(yl < 0){
+							yl+=L;
+						}
+						else if(yl > L){
+							yl = L - yl;
+						}
+						
+						temp[count++] = yl*L + xl;
+						
+					}
+					
+					
+				}
+				else{	// |slope| > 1
+					
+					minl = y0 - Math.abs((int)(R*sintheta));
+					
+					for (int ii = 0 ; ii < (int)(2*Math.abs((int)(R*sintheta)))+1 ; ii++){
+						yl = minl + y0 + ii;
+						xl = (int)(Math.round((yl-y0)/tantheta + x0));
+						
+						if(xl < 0){
+							xl+=L;
+						}
+						else if(xl > L){
+							xl = L - xl;
+						}
+						if(yl < 0){
+							yl+=L;
+						}
+						else if(yl > L){
+							yl = L - yl;
+						}
+						
+						temp[count++] = yl*L + xl;
+						
+					}
+				}
+			}
+		}
+		
+		ret = new int[count];
+		
+		for (int ii = 0 ; ii < count ; ii++){
+			ret[ii] = temp[ii];
+		}
+		
+		
+		return ret;
+	}
+	
 	public void resetPlate(){
 
 		for (int i = 0; i<search; i++){
