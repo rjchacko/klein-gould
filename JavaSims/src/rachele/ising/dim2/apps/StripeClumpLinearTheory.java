@@ -23,6 +23,12 @@ public class StripeClumpLinearTheory extends Simulation {
     public double [] a = new double [matrixDim];
     public double [] v = new double [matrixDim-2];
 	
+
+    
+	public static void main(String[] args) {
+		new Control(new StripeClumpLinearTheory(), "Stripe -> Clump");
+	}
+    
     public void load(Control c) {
     	c.frame(clumps);
     	params.addm("Model", new ChoiceValue("A", "B"));
