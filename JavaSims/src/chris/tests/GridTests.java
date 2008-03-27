@@ -26,6 +26,8 @@ public class GridTests extends Simulation{
 
 	LatticeNeighbors LN;
 	
+	double displaycounter;
+	
 	int x0,y0,i0;
 	int[] foo;
 	
@@ -78,6 +80,7 @@ public class GridTests extends Simulation{
 	public void animate() {
 		
 		grid1.registerData(model.L,model.L,foo);
+		params.set("Number of Resets",displaycounter);
 
 	}
 
@@ -144,28 +147,73 @@ public class GridTests extends Simulation{
 		
 		foo = new int[model.N];
 		
+		// Set time = 0
+		
+		displaycounter = 0;
 		
 		/**
 		 *	Test the ellipse method for lattice neighbors
 		 */
 		
-		int[] thenbs = LN.get(i0);
-		
-		for (int ii = 0 ; ii < model.N ; ii++){
-			foo[ii]=0;
-		}
-		
-		for (int ii = 0 ; ii < thenbs.length; ii++){
-			foo[thenbs[ii]]=1;
-		}
-		
-		Job.animate();
+//		int[] thenbs = LN.get(i0);
+//		
+//		for (int ii = 0 ; ii < model.N ; ii++){
+//			foo[ii]=0;
+//		}
+//		
+//		for (int ii = 0 ; ii < thenbs.length; ii++){
+//			foo[thenbs[ii]]=1;
+//		}
+//		
+//		Job.animate();
 		
 		/**
 		 * 			E-N-D
 		 * 	
 		 *	Test the ellipse method for lattice neighbors
 		 */
+		
+		
+		
+		/**
+		 * 	Test getStressLines(int center, int Nlines) method	
+		 */
+		
+		palette1.setColor(2,Color.RED);
+		grid1.setColors(palette1);
+		
+			while(true){
+				
+				displaycounter++;
+				
+				int[] thenbs = LN.get(i0);
+				
+				for (int ii = 0 ; ii < model.N ; ii++){
+					foo[ii]=0;
+				}
+				
+				for (int ii = 0 ; ii < thenbs.length; ii++){
+					foo[thenbs[ii]]=1;
+				}	
+				
+				int[] SLs = model.getStressLines(i0, 1);
+				
+				for (int ii = 0 ; ii < SLs.length ; ii++){
+					foo[SLs[ii]]=2;
+				}
+				
+				
+				Job.animate();
+			}
+		
+		
+		
+		/**
+		 * 			E-N-D
+		 * 
+		 * 	Test getStressLines(int center, int Nlines) method	
+		 */
+		
 		
 	}	
 		
