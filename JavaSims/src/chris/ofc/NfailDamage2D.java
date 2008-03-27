@@ -282,7 +282,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 				
 				// Generate the trig fns
 				
-				double theta    = Math.asin(2*rand.nextDouble() + 1);	// quick skip, set sintheta = to arg of asin
+				double theta    = Math.asin(2*rand.nextDouble() - 1);	// quick skip, set sintheta = to arg of asin
 				double sintheta = Math.sin(theta);
 				double costheta = Math.sqrt(1-sintheta*sintheta);
 				double tantheta = sintheta/costheta;
@@ -299,7 +299,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 					if (maxG > L) maxG = L;
 				
 					for (int ii = 0 ; ii < maxG - minG + 1 ; ii++){
-						xg = x0 - minG + ii;
+						xg = minG + ii;
 						yg = (int)(Math.round(tantheta*(xg-x0) + y0));
 						
 						if (yg > 0 && yg < L) temp[count++] = yg*L + xg;
@@ -314,7 +314,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 					if (maxG > L) maxG = L;
 					
 					for (int ii = 0 ; ii < maxG - minG + 1 ; ii++){
-						yg = y0 - minG + ii;
+						yg = minG + ii;
 						xg = (int)(Math.round((yg-y0)/tantheta + x0));
 						
 						if (xg > 0 && xg < L) temp[count++] = yg*L + xg;
@@ -332,7 +332,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 				
 				// Generate the trig fns
 				
-				double theta    = Math.asin(2*rand.nextDouble() + 1);	// quick skip, set sintheta = to arg of asin
+				double theta    = Math.asin(2*rand.nextDouble() - 1);	// quick skip, set sintheta = to arg of asin
 				double sintheta = Math.sin(theta);
 				double costheta = Math.sqrt(1-sintheta*sintheta);
 				double tantheta = sintheta/costheta;
@@ -342,7 +342,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 					minl = x0 - (int)(R*costheta);
 					
 					for (int ii = 0 ; ii < (int)(2*R*costheta)+1 ; ii++){
-						xl = minl + x0 + ii;
+						xl = minl + ii;
 						yl = (int)(Math.round(tantheta*(xl-x0) + y0));
 						
 						if(xl < 0){
@@ -369,7 +369,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 					minl = y0 - Math.abs((int)(R*sintheta));
 					
 					for (int ii = 0 ; ii < (int)(2*Math.abs((int)(R*sintheta)))+1 ; ii++){
-						yl = minl + y0 + ii;
+						yl = minl + ii;
 						xl = (int)(Math.round((yl-y0)/tantheta + x0));
 						
 						if(xl < 0){
