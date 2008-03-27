@@ -42,8 +42,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		Scwidth       = params.fget("\u03C3_c width");
 		lifewidth     = params.fget("Nlives Width");
 		Nlives        = params.iget("Number of Lives");
-		rmin          = params.iget("Minimum Interaction Radius (r)");
-		//hammersize    = params.iget("Hammer Size");		
+		rmin          = params.iget("Minimum Interaction Radius (r)");	
 		lifeshape     = params.sget("Life Style");
 		residualnoise = params.sget("\u03C3_r Noise");
 		criticalnoise = params.sget("\u03C3_r Noise");
@@ -81,7 +80,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 			else if(shape.equals("Square")){
 				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Square);
 			}
-			else{
+			else if(shape.equals("Diamond")){
 				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Diamond);
 			}
 		}
@@ -92,7 +91,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 			else if(shape.equals("Square")){
 				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Square);
 			}
-			else{
+			else if(shape.equals("Diamond")){
 				neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Diamond);
 			}
 		}
