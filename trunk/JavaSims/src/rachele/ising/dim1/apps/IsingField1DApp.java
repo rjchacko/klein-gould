@@ -33,26 +33,47 @@ public class IsingField1DApp extends Simulation{
 	
 	public IsingField1DApp(){
 		frameTogether("Displays", fieldPlot, freeEngPlot, freeEngDenPlot, SFPlot);
-//	Default parameters for nucleation
-		params.addm("Model", new ChoiceValue("A", "B"));
+////	Default parameters for nucleation
+//		//params.addm("Model", new ChoiceValue("A", "B"));
+//		params.addm("Noise", new ChoiceValue("On", "Off"));
+//		params.addm("T", 0.85);
+//		params.addm("J", -1.0);
+//		params.addm("H", 0.04);
+//		params.addm("R", 100000);
+//		params.add("L/R", 32.0);
+//		params.add("R/dx", 4.0);
+//		params.add("kR bin-width", 0.1);
+//		params.add("Random seed", 0);
+//		params.add("Density", -.4);
+//		params.add("dt", 0.1);
+//		params.add("Time Allocation");
+//		params.add("max Write Time", 30.0);
+//		params.add("Time Count");
+//		params.add("Time");
+//		params.add("DENSITY");
+//		params.add("Lp");
+//		params.add("F");
+		
+//  Default params for clump model
+		//params.addm("Model", new ChoiceValue("A", "B"));
 		params.addm("Noise", new ChoiceValue("On", "Off"));
-		params.addm("T", 0.85);
-		params.addm("J", -1.0);
-		params.addm("H", 0.04);
-		params.addm("R", 100000);
-		params.add("L/R", 32.0);
-		params.add("R/dx", 4.0);
+		params.addm("T", 0.04);
+		params.addm("J", +1.0);
+		params.addm("H", 0.8);
+		params.addm("R", 2000000);
+		params.add("L/R", 3.0);
+		params.add("R/dx", 42.9);
 		params.add("kR bin-width", 0.1);
 		params.add("Random seed", 0);
 		params.add("Density", -.4);
-		params.add("dt", 0.1);
+		params.add("dt", 1);
 		params.add("Time Allocation");
 		params.add("max Write Time", 30.0);
 		params.add("Time Count");
 		params.add("Time");
 		params.add("DENSITY");
 		params.add("Lp");
-		params.add("F");
+		params.add("F");		
 		
 		flags.add("Write");
 	}
@@ -138,8 +159,10 @@ public class IsingField1DApp extends Simulation{
 	public void run(){
 		ising = new FieldIsing1D(params);
 		
-		String pathFileName = "racheleDataFiles/inputPath";
-		String inputFileName = "racheleDataFiles/inputParams";
+		//String pathFileName = "racheleDataFiles/inputPath";
+		//String inputFileName = "racheleDataFiles/inputParams";
+		String inputFileName = "../../../research/javaData/configs1d/inputConfig";
+		String configFileName = "../../../research/javaData/configs1d/config";
 	    int maxWriteCount = (int)(params.fget("max Write Time")/ising.dt);
 	    params.set("Time Allocation", maxWriteCount);
 	    double maxWriteTime = maxWriteCount*ising.dt;
@@ -156,12 +179,12 @@ public class IsingField1DApp extends Simulation{
 		while (true) {
 			if (flags.contains("Write")) {
 				timeCount = 0;
-				deleteFile(pathFileName);
+				deleteFile(configFileName);
 				deleteFile(inputFileName);
 				writeInputParams(inputFileName);
 				while (timeCount <= maxWriteCount){
 					ising.simulate();			
-					writeConfigToFile(pathFileName);				
+					writeConfigToFile(configFileName);				
 					Job.animate();					
 					params.set("Time Count", timeCount);
 					timeCount += 1;

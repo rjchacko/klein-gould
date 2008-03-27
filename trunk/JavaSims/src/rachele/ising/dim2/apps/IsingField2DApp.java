@@ -65,14 +65,14 @@ public class IsingField2DApp extends Simulation {
 	public void load(Control c) {
 		//uncomment next line
 		c.frameTogether("Grids", grid, delPhiGrid, sfGrid, freeEnergyPlot);
-		c.frame(dS_dtPlot);
+		//c.frame(dS_dtPlot);
 		//c.frame(grid2);
 		//frame(grid);
 		//frameTogether("ring", ring, ringInput);
 		//frameTogether("landscapes", landscape, brLandscape);
 		//frameTogether("Plots", vSlice, sfPlot, structurePeakV, hSlice, sfHPlot, structurePeakH, del_hSlice, del_vSlice, landscape);
 		//uncomment next line
-		//c.frameTogether("Slices", vSlice, hSlice, del_hSlice, del_vSlice);
+		c.frameTogether("Slices", vSlice, hSlice, del_hSlice, del_vSlice);
 		//frameTogether("SF", structurePeakV, 
 		//structurePeakH, freeEnergyPlot, sfPeakBoth, sfHor, sfVert);
 		//c.frameTogether("SF", sfHor, sfVert);
