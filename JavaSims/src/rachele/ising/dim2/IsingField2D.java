@@ -232,7 +232,7 @@ public class IsingField2D {
 		//setExternalField(backgroundH, stripeH);
 		//dT = params.fget("dT");
 		params.set("R/dx", R/dx);
-		//params.set("Lp", Lp);
+		params.set("Lp", Lp);
 		//params.set("Free Energy", freeEnergy);
 		
 		if(params.sget("Interaction") == "Circle"){

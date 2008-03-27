@@ -11,6 +11,7 @@ import static java.lang.Math.rint;
 import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.atanh;
+import static scikit.numerics.Math2.sqr;
 import static scikit.util.DoubleArray.*;
 
 //import java.util.*;
@@ -21,7 +22,7 @@ public class FieldIsing1D{
 	public double[] phi, F;
 	double DENSITY;
 	double [] phi_bar, del_phi;
-	boolean modelA, noise;
+	boolean noise;
 	
 	public double L, R, T, J, dx, H;
 	Random random = new Random();
@@ -51,10 +52,10 @@ public class FieldIsing1D{
 		double RoverDx = R/dx;
 		params.set("R/dx", RoverDx);
 		params.set("Lp", Lp);
-		if (params.sget("Model").equals("A"))
-			modelA = true;
-		else
-			modelA = false;
+//		if (params.sget("Model").equals("A"))
+//			modelA = true;
+//		else
+//			modelA = false;
 		t = 0;
 
 		phi = new double[Lp];
@@ -67,7 +68,7 @@ public class FieldIsing1D{
 		freeEngAcc = new Accumulator(dt);
 		
 		for (int i = 0; i < Lp; i++)
-			phi[i] = DENSITY;
+			phi[i] = DENSITY+ random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));;
 	}
 	
 	public void readParams(Parameters params) {
@@ -81,10 +82,10 @@ public class FieldIsing1D{
 		Lp = Integer.highestOneBit((int)rint((L/dx)));
 		dx = L / Lp;
 		params.set("R/dx", R/dx);
-		if (params.sget("Model").equals("A"))
-			modelA = true;
-		else
-			modelA = false;
+//		if (params.sget("Model").equals("A"))
+//			modelA = true;
+//		else
+//			modelA = false;
 		params.set("DENSITY", mean(phi));
 		if (params.sget("Noise").equals("On"))
 			noise = true;
@@ -150,28 +151,29 @@ public class FieldIsing1D{
 	public void simulate() {
 		convolveWithRange(phi, phi_bar, R);
 
-		if (modelA){
+//		if (modelA){
 			for (int i = 0; i < Lp; i++) {
 				//del_phi[i] = - dt*( phi_bar[i]-H-T*log(1.0-phi[i])/2.0+T*log(1.0+phi[i])/2.0) + sqrt(dt*2*T/dx)*random.nextGaussian();
-				del_phi[i] = - dt*(phi_bar[i]-H + T*atanh(phi[i]));
+				double Lambda = sqr(1 - phi[i]*phi[i]);	
+				del_phi[i] = - dt*Lambda*(phi_bar[i]-H + T*atanh(phi[i]));
 				if(noise)
-					del_phi[i] += sqrt(dt*2*T/dx)*random.nextGaussian();
+					del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
 			}
 			//double mu = mean(del_phi)-(DENSITY-mean(phi));
 			for (int i = 0; i < Lp; i++) {
 				phi[i] += del_phi[i];	
 			}		
-		}else{
-			for (int i = 0; i < Lp; i++) {
-				del_phi[i] = - dt*( phi_bar[i]-H-T*log(1.0-phi[i])+T*log(1.0+phi[i]));
-				if(noise)
-					del_phi[i] += sqrt(dt*2*T/dx)*random.nextGaussian();
-			}
-			double mu = mean(del_phi)-(DENSITY-mean(phi));
-			for (int i = 0; i < Lp; i++) {
-				phi[i] += del_phi[i] - mu;	
-			}			
-		}
+//		}else{
+//			for (int i = 0; i < Lp; i++) {
+//				del_phi[i] = - dt*( phi_bar[i]-H-T*log(1.0-phi[i])+T*log(1.0+phi[i]));
+//				if(noise)
+//					del_phi[i] += sqrt(dt*2*T/dx)*random.nextGaussian();
+//			}
+//			double mu = mean(del_phi)-(DENSITY-mean(phi));
+//			for (int i = 0; i < Lp; i++) {
+//				phi[i] += del_phi[i] - mu;	
+//			}			
+//		}
 		measureFreeEng();
 		t += dt;
 	}
