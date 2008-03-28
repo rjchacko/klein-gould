@@ -12,7 +12,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.graphics.dim2.Plot;
 import rachele.ising.dim1.FieldIsing1D;
 import rachele.ising.dim1.StructureFactor1D;
-
+import rachele.util.*;
 import java.awt.Color;
 import java.io.*;
 
@@ -64,23 +64,21 @@ public class IsingField1DApp extends Simulation{
 		params.add("L/R", 3.0);
 		params.add("R/dx", 42.9);
 		params.add("kR bin-width", 0.1);
-		params.add("Random seed", 0);
 		params.add("Density", -.4);
-		params.add("dt", 1);
 		params.add("Time Allocation");
 		params.add("max Write Time", 30.0);
-		params.add("Time Count");
 		params.add("Time");
 		params.add("DENSITY");
 		params.add("Lp");
-		params.add("F");		
-		
-		flags.add("Write");
+		//params.add("Time Count");
+		//params.add("F");		
+		//flags.add("Write");
+		flags.add("Write Config");
 	}
 	
 	public void animate() {
 		params.set("Time", format(ising.t));
-		params.set("F", format(ising.freeEnergyDensity));
+		//params.set("F", format(ising.freeEnergyDensity));
 		ising.readParams(params);
 		
 		SFPlot.registerLines("Structure factor", sf.getAccumulator(), Color.BLACK);
@@ -102,32 +100,54 @@ public class IsingField1DApp extends Simulation{
 		freeEngPlot.clear();
 	}
 	
-	public void deleteFile(String fileName){
-		File file = new File(fileName);
-		boolean success = file.delete();
-		if (success)
-			System.out.println("File deleted");
-		else
-			System.out.println("File delete failed");			
-	}
+	public void run(){
+		ising = new FieldIsing1D(params);
+		
+		//String pathFileName = "racheleDataFiles/inputPath";
+		//String inputFileName = "racheleDataFiles/inputParams";
+		String inputFileName = "../../../research/javaData/configs1d/inputConfig";
+		String configFileName = "../../../research/javaData/configs1d/config";
+	    int maxWriteCount = (int)(params.fget("max Write Time")/ising.dt);
+	    params.set("Time Allocation", maxWriteCount);
+	    double maxWriteTime = maxWriteCount*ising.dt;
+	    params.set("max Write Time", maxWriteTime);
+		double KR_SP = FieldIsing1D.KR_SP;
+		double binWidth = KR_SP / floor(KR_SP/params.fget("kR bin-width"));
 
-	public void writeConfigToFile(String FileName){
-		try {
-			File pathFile = new File(FileName);
-			DataOutputStream dos = new DataOutputStream(new FileOutputStream(pathFile, true));
-			for (int i = 0; i < ising.Lp; i ++){
-				dos.writeInt(timeCount);
-				dos.writeChar('\t');
-				dos.writeInt(i);
-				dos.writeChar('\t');
-				dos.writeDouble(ising.phi[i]);
-				dos.writeChar('\n');
+		sf = new StructureFactor1D(ising.Lp, ising.L, ising.R, binWidth);
+		Job.animate();
+		
+		//sf.getAccumulator().clear();
+		timeCount = maxWriteCount +1;
+		
+		while (true) {
+			if (flags.contains("Write")) {
+				timeCount = 0;
+				FileUtil.deleteFile(configFileName);
+				FileUtil.deleteFile(inputFileName);
+				writeInputParams(inputFileName);
+				while (timeCount <= maxWriteCount){
+					ising.simulate();			
+					writeConfigToFileWithTime(configFileName);				
+					Job.animate();					
+					params.set("Time Count", timeCount);
+					timeCount += 1;
+				}
+				flags.clear();
+			}else if(flags.contains("Write Config")){
+				FileUtil.deleteFile(configFileName);
+				FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
 			}
-			dos.close();
-		} catch (IOException ex){
-			ex.printStackTrace();
+			
+			ising.simulate();
+			sf.accumulate(ising.phi);
+			Job.animate();
+			//SFPlot.setDataSet(0, sf.getAccumulator());
+			//fieldPlot.setDataSet(0, new PointSet(0, ising.dx, ising.phi));
+			
 		}
 	}
+
 	
 	public void writeInputParams(String FileName){
 		try {
@@ -156,47 +176,22 @@ public class IsingField1DApp extends Simulation{
 		}
 	}
 
-	public void run(){
-		ising = new FieldIsing1D(params);
-		
-		//String pathFileName = "racheleDataFiles/inputPath";
-		//String inputFileName = "racheleDataFiles/inputParams";
-		String inputFileName = "../../../research/javaData/configs1d/inputConfig";
-		String configFileName = "../../../research/javaData/configs1d/config";
-	    int maxWriteCount = (int)(params.fget("max Write Time")/ising.dt);
-	    params.set("Time Allocation", maxWriteCount);
-	    double maxWriteTime = maxWriteCount*ising.dt;
-	    params.set("max Write Time", maxWriteTime);
-		double KR_SP = FieldIsing1D.KR_SP;
-		double binWidth = KR_SP / floor(KR_SP/params.fget("kR bin-width"));
 
-		sf = new StructureFactor1D(ising.Lp, ising.L, ising.R, binWidth);
-		Job.animate();
-		
-		//sf.getAccumulator().clear();
-		timeCount = maxWriteCount +1;
-		
-		while (true) {
-			if (flags.contains("Write")) {
-				timeCount = 0;
-				deleteFile(configFileName);
-				deleteFile(inputFileName);
-				writeInputParams(inputFileName);
-				while (timeCount <= maxWriteCount){
-					ising.simulate();			
-					writeConfigToFile(configFileName);				
-					Job.animate();					
-					params.set("Time Count", timeCount);
-					timeCount += 1;
-				}
-				flags.clear();
+	public void writeConfigToFileWithTime(String FileName){
+		try {
+			File pathFile = new File(FileName);
+			DataOutputStream dos = new DataOutputStream(new FileOutputStream(pathFile, true));
+			for (int i = 0; i < ising.Lp; i ++){
+				dos.writeInt(timeCount);
+				dos.writeChar('\t');
+				dos.writeInt(i);
+				dos.writeChar('\t');
+				dos.writeDouble(ising.phi[i]);
+				dos.writeChar('\n');
 			}
-			ising.simulate();
-			sf.accumulate(ising.phi);
-			Job.animate();
-			//SFPlot.setDataSet(0, sf.getAccumulator());
-			//fieldPlot.setDataSet(0, new PointSet(0, ising.dx, ising.phi));
-			
+			dos.close();
+		} catch (IOException ex){
+			ex.printStackTrace();
 		}
 	}
 	

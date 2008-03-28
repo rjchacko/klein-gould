@@ -1,6 +1,12 @@
 package rachele.util;
 
+import java.io.DataInputStream;
+import java.io.DataOutputStream;
+import java.io.EOFException;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -65,5 +71,48 @@ public class FileUtil {
 		}
 	}
 	
+	static public void writeConfigToFile(String FileName, int size, double [] A){
+	// write configuration A[] in binary
+		try {
+			File pathFile = new File(FileName);
+			DataOutputStream dos = new DataOutputStream(new FileOutputStream(pathFile, true));
+			for (int i = 0; i < size; i ++){
+				dos.writeInt(i);
+				dos.writeChar('\t');
+				dos.writeDouble(A[i]);
+				//System.out.println(A[i]);
+				dos.writeChar('\n');
+			}
+			dos.close();
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+		System.out.println("config written");
+	}
 
+	static public double [] readConfigFromFile(String FileName, int size){
+		
+		double [] A = new double [size];
+		try{
+			File myFile = new File(FileName);
+			DataInputStream dis = new DataInputStream(new FileInputStream(myFile));
+			try{
+				while(true){
+					int i = dis.readInt();
+					dis.readChar();       // throws out the tab
+					A[i] = dis.readDouble();
+					dis.readChar();
+				}
+			} catch (EOFException e) {
+			}
+
+		} catch (FileNotFoundException e) {
+			System.err.println("FileStreamsTest: " + e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}	
+		
+		return A;
+	}
+	
 }

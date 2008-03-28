@@ -1,145 +1,96 @@
 package rachele.ising.dim2.apps;
-
-import static scikit.util.Utilities.format;
-
-import java.awt.Color;
-//import java.io.DataInputStream;
-//import java.io.EOFException;
-//import java.io.File;
-//import java.io.FileInputStream;
-//import java.io.FileNotFoundException;
-//import static scikit.util.Utilities.frame;
-import scikit.dataset.PointSet;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
-import scikit.jobs.Job;
 import scikit.jobs.Simulation;
-import scikit.jobs.params.ChoiceValue;
 import scikit.numerics.Jama.EigenvalueDecomposition;
 import scikit.numerics.Jama.Matrix;
-import rachele.ising.dim1.FieldIsing1D;
+import scikit.util.*;
+import rachele.util.FileUtil;
 
-public class StripeClumpLinearTheory extends Simulation {
+public class StripeClumpLinearTheory extends Simulation{
 	Plot clumps = new Plot("Clumps");
-    FieldIsing1D ising;
     // 2D matrix has n x n dimensions
     // must have n = 2m+1 where m is positive integer
-    public int matrixDim = 11;
-    public static final double k0 = 4.4934092;
-    public int kyInt = 1; //ky = k0 * kyInt;
-    public double [] a = new double [matrixDim];
-    public double [] v = new double [matrixDim-2];
+	public int matrixDim;
+	public int vDim;
+	//input parameters:
+	public double T = 0.04;
+	public int configSize;
+	public double [] phi;
+		
+	//public static final double k0 = 4.4934092;
+	public static final double k0 = 4.188790204;
+	public int kyInt = 1; //ky = k0 * kyInt;
+    public double [] a; 
+    public double [] v; 
 	public EigenvalueDecomposition Eig;
-
     
 	public static void main(String[] args) {
 		new Control(new StripeClumpLinearTheory(), "Stripe -> Clump");
 	}
-    
-    public void load(Control c) {
-    	c.frame(clumps);
-    	params.addm("Model", new ChoiceValue("A", "B"));
-    	params.addm("Noise", new ChoiceValue("On", "Off"));
-    	params.addm("T", 0.85);
-    	params.addm("J", -1.0);
-    	params.addm("H", 0.04);
-    	params.addm("R", 100000);
-    	params.add("L/R", 32.0);
-    	params.add("R/dx", 4.0);
-    	params.add("kR bin-width", 0.1);
-    	params.add("Random seed", 0);
-    	params.add("Density", -.4);
-    	params.add("dt", 0.1);
-    	params.add("Time Allocation");
-    	params.add("max Write Time", 30.0);
-    	params.add("Time Count");
-    	params.add("Time");
-    	params.add("DENSITY");
-    	params.add("Lp");
-    	params.add("F");
-
-    	flags.add("Calculate");
-    }
 	
-	@Override
-	public void animate() {
-		params.set("Time", format(ising.t));
-		clumps.registerLines("Field", new PointSet(0, ising.dx, ising.phi), Color.BLACK);
-		if(flags.contains("Calculate")) calculate();
-			
+	public void load(Control c) {
+		params.addm("Matrix Dim", 5);
+		params.addm("Lp", 128);
 	}
-
-	public void clear() {
-	}
-
-	public void run() {
-		ising = new FieldIsing1D(params);
-		ising.simulate();
-		Job.animate();
-		//run the 1D antiferromagnetic ising model until satisfied	
-	}
-
-	private void calculate(){
+	public void calculate(){
+		matrixDim = params.iget("Matrix Dim");
+		configSize = params.iget("Lp");
+		phi = new double [configSize];
+		a = new double [matrixDim];
+		vDim = 1+(matrixDim-1)/2;
+		v = new double [vDim];
 		//find a_n coefficients of matrix
-		readInConfiguration();
-		findCoefficients();
+		String fileName = "../../../research/javaData/configs1d/config";
+		phi = FileUtil.readConfigFromFile(fileName, configSize);
+//		for (int i = 0; i < configSize; i ++)
+//			System.out.println(i + " " + phi[i]);
+		findCoefficients(phi, configSize);
 		constructMatrix();
-		//double maxEigenvalue = findMaxEigenvalue();
-			
+		double maxEigenvalue = findMaxEigenvalue();
+		System.out.println(matrixDim + "   " +2*maxEigenvalue);		
 	}
 	
-	public void readInConfiguration(){
-//		try{
-//			File myFile = new File("../../../research/javaData/configs1d/config");
-//			DataInputStream dis = new DataInputStream(new FileInputStream(myFile));
-//			int timeIndex, spaceIndex;
-//			double phiValue;
-//			try{
-//				while(true){
-//					timeIndex = dis.readInt();
-//					dis.readChar();       // throws out the tab
-//					spaceIndex =dis.readInt();
-//					dis.readChar();       // throws out the tab
-//					phiValue = dis.readDouble();
-//					dis.readChar();
-//					//phi[timeIndex][spaceIndex] = phiValue;
-//				}
-//			} catch (EOFException e) {
-//			}
-//
-//		} catch (FileNotFoundException e) {
-//			System.err.println("FileStreamsTest: " + e);
-//		} catch (Exception ex) {
-//			ex.printStackTrace();
-//		}
-	}
-	
-	private void findCoefficients(){
+	public void findCoefficients(double [] A, int size){
 		for(int i = 0; i < matrixDim; i ++){
 			double sum = 0;
-			for(int point = 0; point < ising.Lp; point ++){
-				sum += Math.cos(i*k0*point)/(1-Math.pow(ising.phi[point],2));
+			for(int point = 0; point < size; point ++){
+				sum += Math.cos(i*k0*point)/(1-Math.pow(A[point],2));
 			}
-			double ave = sum/(double)ising.Lp;
+			double ave = sum/(double)size;
 			a[i] = ave;
+			//System.out.println("a" + i + " = " + a[i]);			
 		}
-		for(int i = 0; i < matrixDim - 2; i++ ){
-			double V = (Math.sin(i*k0)/(i*k0))*(Math.sin(kyInt*k0)/(kyInt*k0));
-			
-			v[i] = -V-ising.T*a[0];
+		for(int i = 0; i < vDim; i++ ){
+			double Vx;
+			if (i ==0)
+				Vx = 1.0;
+			else
+				Vx = Math.sin(i*k0)/(i*k0);
+			double Vy;
+			if (kyInt == 0)
+				Vy = 1.0;
+			else 
+				Vy = Math.sin(kyInt*k0)/(kyInt*k0);
+			double V = Vx*Vy;
+			v[i] = -V-T*a[0];
+			//System.out.println("v" + i + " = " + v[i]);
 		}
 	}
-	private void constructMatrix(){
+	public void constructMatrix(){
 		double [][] matrix = new double [matrixDim][matrixDim];
 		for(int i = 0; i < matrixDim; i++){
 			int vIndex = Math.abs(i-((matrixDim-1)/2));
 			//System.out.println("i = " + i + " vIndex = " + vIndex);
 			matrix[i][i] = v[vIndex];
 			for (int j = 0; j < i; j++)
-				matrix[j][i] = a[i-j];
+				matrix[j][i] = matrix [i][j] = -T*a[i-j];
 		}
-		//for (int i = 0; i < matrixDim; i ++)
-			//System.out.println(matrix[i][j]);
+//		for (int i = 0; i < matrixDim; i ++){
+//			for (int j = 0; j < matrixDim; j ++){
+//				System.out.println(i + " " + j + " " + matrix[i][j]);	
+//			}
+//		}
 		Matrix A = new Matrix(matrix);	
 		Eig = A.eig();
 		//the matrix looks like:
@@ -151,11 +102,27 @@ public class StripeClumpLinearTheory extends Simulation {
 		//		a3		a2		a1		v1		a1
 		//		a4		a3		a2		a1		v2
 		//					...	
+		// where vi = v[i] = -V(k)-T a0
+		// and ai = -T a[i]
+		
 	}
-//	private double findMaxEigenvalue(){
-//		double [] eignevalue = new double [matrixDim];
+	private double findMaxEigenvalue(){
+		double [] eigenvalue = new double [matrixDim];
+		eigenvalue = Eig.getRealEigenvalues();
+		//for (int i = 0; i < matrixDim; i ++)
+			//System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
+		double maxEigenvalue = DoubleArray.max(eigenvalue);
+		return maxEigenvalue;
+	}
+
+	public void animate() {
+	}
+
+	public void clear() {
+	}
+
+	public void run() {
+		calculate();
+	}
 	
-//		double maxEigenvalue = 
-//		return 
-//	}
 }

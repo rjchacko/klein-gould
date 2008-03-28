@@ -18,7 +18,8 @@ import static scikit.util.DoubleArray.*;
 
 public class FieldIsing1D{
 	public int Lp;
-	public double dt, t;
+	public double dt = 1;
+	public double t;
 	public double[] phi, F;
 	double DENSITY;
 	double [] phi_bar, del_phi;
@@ -37,13 +38,12 @@ public class FieldIsing1D{
 	Accumulator freeEngAcc;
 	
 	public FieldIsing1D(Parameters params) {
-		random.setSeed(params.iget("Random seed", 0));
+		random.setSeed(0);
 		
 		R = params.fget("R");
 		L = R*params.fget("L/R");
 		T = params.fget("T");
 		dx = R/params.fget("R/dx");
-		dt = params.fget("dt");
 		J = params.fget("J");
 		DENSITY = params.fget("Density");
 		H = params.fget("H");
@@ -74,7 +74,6 @@ public class FieldIsing1D{
 	public void readParams(Parameters params) {
 		T = params.fget("T");
 		J = params.fget("J");
-		dt = params.fget("dt");
 		R = params.fget("R");
 		H = params.fget("H");
 		L = R*params.fget("L/R");

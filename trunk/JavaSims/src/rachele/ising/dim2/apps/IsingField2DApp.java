@@ -293,9 +293,9 @@ public class IsingField2DApp extends Simulation {
 				boolean circleOn=false;
 				sf.accumulateMelt(circleOn, ising.phi, maxi);
 				//sf.accumulateAll(ising.t, ising.delPhi);
-				//sf.accumulateAll(ising.t, ising.phi);
-				//recordSFvTime();
-				record3Ddata();
+				sf.accumulateAll(ising.t, ising.phi);
+				recordSFvTime();
+				//record3Ddata();
 				recordSteps += 1;
 				//writeDataToFile();
 			}
@@ -462,17 +462,17 @@ public class IsingField2DApp extends Simulation {
 		}
 	}
 
-	private void record3Ddata() {
-			String dataFile = "../../../research/javaData/sfData/3d";
-
-			if (initFile == false){
-				initFile(dataFile, true);
-				initFile = true;
-			}
-			for(int i = 0; i < ising.Lp; i ++){
-				FileUtil.printlnToFile(dataFile, ising.time(), (double)i, sf.sFactor[ising.Lp*ising.Lp/2 + i]);
-			}
-	}
+//	private void record3Ddata() {
+//			String dataFile = "../../../research/javaData/sfData/3d";
+//
+//			if (initFile == false){
+//				initFile(dataFile, true);
+//				initFile = true;
+//			}
+//			for(int i = 0; i < ising.Lp; i ++){
+//				FileUtil.printlnToFile(dataFile, ising.time(), (double)i, sf.sFactor[ising.Lp*ising.Lp/2 + i]);
+//			}
+//	}
 	
 	private double integrate(boolean direction){
 		double integralSum = 0;
