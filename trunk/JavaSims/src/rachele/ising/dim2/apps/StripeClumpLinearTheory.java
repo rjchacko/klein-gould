@@ -2,6 +2,7 @@ package rachele.ising.dim2.apps;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Simulation;
+import scikit.jobs.params.ChoiceValue;
 import scikit.numerics.Jama.EigenvalueDecomposition;
 import scikit.numerics.Jama.Matrix;
 import scikit.util.*;
@@ -30,12 +31,17 @@ public class StripeClumpLinearTheory extends Simulation{
 	}
 	
 	public void load(Control c) {
+		params.addm("Center On", new ChoiceValue("low frequencies", "high frequencies"));
 		params.addm("Matrix Dim", 5);
 		params.addm("Lp", 128);
+		params.addm("R", 2000000);
 	}
+	
 	public void calculate(){
 		matrixDim = params.iget("Matrix Dim");
 		configSize = params.iget("Lp");
+		double kStep = 2*Math.PI*params.fget("R")/configSize;
+		System.out.println("kstep = " + kStep);
 		phi = new double [configSize];
 		a = new double [matrixDim];
 		vDim = 1+(matrixDim-1)/2;
@@ -103,14 +109,13 @@ public class StripeClumpLinearTheory extends Simulation{
 		//		a4		a3		a2		a1		v2
 		//					...	
 		// where vi = v[i] = -V(k)-T a0
-		// and ai = -T a[i]
-		
+		// and ai = -T a[i]	
 	}
 	private double findMaxEigenvalue(){
 		double [] eigenvalue = new double [matrixDim];
 		eigenvalue = Eig.getRealEigenvalues();
-		//for (int i = 0; i < matrixDim; i ++)
-			//System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
+		for (int i = 0; i < matrixDim; i ++)
+			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
 		double maxEigenvalue = DoubleArray.max(eigenvalue);
 		return maxEigenvalue;
 	}
