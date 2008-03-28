@@ -117,6 +117,17 @@ public class StripeClumpLinearTheory extends Simulation{
 		for (int i = 0; i < matrixDim; i ++)
 			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
 		double maxEigenvalue = DoubleArray.max(eigenvalue);
+		Matrix V = Eig.getV();
+		//Matrix D = Eig.getD();
+		for (int i = 0; i < matrixDim; i ++){
+			for (int j = 0; j < matrixDim; ){
+				
+			}
+		}
+		double[] eigenvector0 = V.transpose().getArray()[0];
+		double[] eigenvector1 = V.transpose().getArray()[1];
+		System.out.println(eigenvector0[0] + " " + eigenvector0[1]);
+		System.out.println(eigenvector1[0] + " " + eigenvector1[1]);
 		return maxEigenvalue;
 	}
 
