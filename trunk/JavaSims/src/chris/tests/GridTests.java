@@ -3,6 +3,7 @@ package chris.tests;
 
 
 import java.awt.Color;
+import java.io.File;
 
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -14,6 +15,7 @@ import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.ofc.NfailDamage2D;
 import chris.util.LatticeNeighbors;
+import chris.util.PrintUtil;
 
 
 public class GridTests extends Simulation{
@@ -71,6 +73,7 @@ public class GridTests extends Simulation{
 		 * 	TEST PARAMETERS
 		 */
 		
+		params.add("Animation", new ChoiceValue("On","Off"));
 		params.add("x0", 250);
 		params.add("y0", 250);
 		
@@ -79,7 +82,7 @@ public class GridTests extends Simulation{
 	
 	public void animate() {
 		
-		grid1.registerData(model.L,model.L,foo);
+		if (params.sget("Animation").equals("On")) grid1.registerData(model.L,model.L,foo);
 		params.set("Number of Resets",displaycounter);
 
 	}
@@ -179,45 +182,68 @@ public class GridTests extends Simulation{
 		 * 	Test getStressLines(int center, int Nlines) method	
 		 */
 		
-		palette1.setColor(2,Color.RED);
-		grid1.setColors(palette1);
+//		palette1.setColor(2,Color.RED);
+//		grid1.setColors(palette1);
+//		
+//			while(true){
+//				
+//				displaycounter++;
+//				
+//				int[] thenbs = LN.get(i0);
+//				
+//				for (int ii = 0 ; ii < model.N ; ii++){
+//					foo[ii]=0;
+//				}
+//				
+//				for (int ii = 0 ; ii < thenbs.length; ii++){
+//					foo[thenbs[ii]]=1;
+//				}	
+//				
+//				int[] SLs = model.getStressLines(i0, 1);
+//				
+//				for (int ii = 0 ; ii < SLs.length ; ii++){
+//					foo[SLs[ii]]=2;
+//				}
+//				
+//				
+//				Job.animate();
+//			}
+//		
+	
+	/**
+	 * 			E-N-D
+	 * 
+	 * 	Test getStressLines(int center, int Nlines) method	
+	 */
+		////////////////////////////////////////////////////////////////////
+
 		
-			while(true){
-				
-				displaycounter++;
-				
-				int[] thenbs = LN.get(i0);
-				
-				for (int ii = 0 ; ii < model.N ; ii++){
-					foo[ii]=0;
-				}
-				
-				for (int ii = 0 ; ii < thenbs.length; ii++){
-					foo[thenbs[ii]]=1;
-				}	
-				
-				int[] SLs = model.getStressLines(i0, 1);
-				
-				for (int ii = 0 ; ii < SLs.length ; ii++){
-					foo[SLs[ii]]=2;
-				}
-				
-				
-				Job.animate();
-			}
+	/**
+	 *	Test method printArrayToFile(String fileName, int[] array, int m, int n) 
+	 */
+		
+
+	for (int ii = 0 ; ii < model.N ; ii++){
+		foo[ii]=ii+1;
+	}
+	
+	PrintUtil.printArrayToFile(model.outdir+File.separator+"ArrayTest.txt", foo, model.L, model.L);
+	
+	Job.animate();
+	
+	/**
+	 * 			E-N-D
+	 * 
+	 *	Test method printArrayToFile(String fileName, int[] array, int m, int n) 
+	 */
 		
 		
 		
-		/**
-		 * 			E-N-D
-		 * 
-		 * 	Test getStressLines(int center, int Nlines) method	
-		 */
+		
+		
 		
 		
 	}	
-		
-			
 }
 
 

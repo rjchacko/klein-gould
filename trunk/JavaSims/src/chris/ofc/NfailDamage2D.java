@@ -17,7 +17,7 @@ import chris.util.PrintUtil;
 public class NfailDamage2D extends SimpleDamage2D{
 	
 	// Parameters
-	 public double Sr0, Sc0, Srwidth, Scwidth, alphawidth, lifewidth, DaboutFS;
+	 public double Sr0, Sc0, Srwidth, Scwidth, alphawidth, lifewidth, DaboutFS, tkip, dtkip;
 	 public int Nlives, rmin, hammersize, Nshowers, SonFSindex, NdeadS, Nalive, search;
 	 public String lifeshape, residualnoise, criticalnoise, outdir, outfile, PicDir;
 	 public double Sr[], Sc[], SsoFar[];
@@ -139,6 +139,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 				stress[i]+=Sc[imax]-stressMax;
 				SsoFar[i]=stress[i];
 			}
+			dtkip = Sc[imax] - stressMax;
 			
 		}
 		else {
@@ -147,6 +148,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 	
 		
 		time=0;
+		tkip=0;
 		showernumber=0;
 				
 		return;
@@ -161,6 +163,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		String PLACEHOLDER = "foobar";
 		
 		time++;
+		tkip+=dtkip;
 		
 		DaboutFS = FSdensity(imax);
 		
@@ -217,6 +220,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		for (int i = 0; i<N; i++){
 			stress[i]+=Sc[imax]-stressMax;
 		}
+		dtkip = Sc[imax] - stressMax;
 		
 		showering=false;
 		Job.animate();
@@ -268,9 +272,17 @@ public class NfailDamage2D extends SimpleDamage2D{
 	
 	public int[] getStressLines(int center, int Nlines){
 		
+		// NB this method *assumes* a circular potential
+		
 		int[] temp = new int[Nlines*(2*R+2)];
 		int[] ret;
 		int count = 0;
+		
+		// Generate the trig fns
+		
+		double sintheta = 2*rand.nextDouble() - 1;
+		double costheta = Math.sqrt(1-sintheta*sintheta);
+		double tantheta = sintheta/costheta;
 		
 		if(BCs.equals("Bordered")){
 		
@@ -279,15 +291,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 			int minG, maxG, xg, yg;
 			
 			for (int countlines = 0 ; countlines < Nlines ; countlines++){
-				
-				// Generate the trig fns
-				
-				double theta    = Math.asin(2*rand.nextDouble() - 1);	// quick skip, set sintheta = to arg of asin
-				double sintheta = Math.sin(theta);
-				double costheta = Math.sqrt(1-sintheta*sintheta);
-				double tantheta = sintheta/costheta;
-				
-				
+
 				// Separate cases for  | slope | > / < 1
 				
 				if(costheta > 1/Math.sqrt(2)){		// |slope| < 1
@@ -329,13 +333,6 @@ public class NfailDamage2D extends SimpleDamage2D{
 			int minl, xl, yl;
 			
 			for (int countlines = 0 ; countlines < Nlines ; countlines++){
-				
-				// Generate the trig fns
-				
-				double theta    = Math.asin(2*rand.nextDouble() - 1);	// quick skip, set sintheta = to arg of asin
-				double sintheta = Math.sin(theta);
-				double costheta = Math.sqrt(1-sintheta*sintheta);
-				double tantheta = sintheta/costheta;
 				
 				if(costheta > 1/Math.sqrt(2)){		// |slope| < 1
 				
@@ -612,6 +609,13 @@ public class NfailDamage2D extends SimpleDamage2D{
 		return ret;
 	}
 	
+	public void WriteDataHeader(String fout){
+	
+		PrintUtil.printlnToFile(fout,"Time","t_kip","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
+
+		return;
+	}
+	
 	public void TakeData(){
 		 double rgyr;
 		
@@ -624,8 +628,32 @@ public class NfailDamage2D extends SimpleDamage2D{
 			rgyr=0;
 		}
 		
-		PrintUtil.printlnToFile(outfile,time,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
+		PrintUtil.printlnToFile(outfile,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
 				
+		return;
+	}
+	
+	public void TakeData(String fout){
+		 double rgyr;
+		
+		int[] LS = LiveSites(); 
+		int LSlength = LS.length;
+		if(LSlength>0){
+			rgyr=radiusGyration(LS[rand.nextInt(LSlength)]);
+		}
+		else{
+			rgyr=0;
+		}
+		
+		PrintUtil.printlnToFile(fout,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
+				
+		return;
+	}
+	
+	public void PrintParams(String fout, Parameters prms){
+		
+		PrintUtil.printlnToFile(fout,prms.toString());
+		
 		return;
 	}
 	
@@ -638,6 +666,20 @@ public class NfailDamage2D extends SimpleDamage2D{
 		} catch (IOException e) {
 			System.err.println("Error in Writing File" + SaveAs);
 		}
+		
+		return;
+	}
+	
+	public void CloneSim(Parameters prms){
+		
+		PrintParams(outdir + File.separator + "Params4Clone.txt", prms);
+		PrintUtil.printArrayToFile(outdir + File.separator + "Alive.txt", alive, 2*L, L);
+		PrintUtil.printArrayToFile(outdir + File.separator + "Stress.txt", stress, L, L);
+		PrintUtil.printArrayToFile(outdir + File.separator + "Residual_Stress.txt", Sr, L, L);
+		PrintUtil.printArrayToFile(outdir + File.separator + "Critical_Stress.txt", Sc, L, L);
+		PrintUtil.printArrayToFile(outdir + File.separator + "Stress_so_Far.txt", SsoFar, L, L);
+		WriteDataHeader(outdir + File.separator + "Data_LL.txt");
+		TakeData(outdir + File.separator + "Data_LL.txt");
 		
 		return;
 	}

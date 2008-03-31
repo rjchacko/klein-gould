@@ -137,6 +137,17 @@ public class SimpleDamage2D {
 		showernumber=0;
 	}
 	
+	public void Initialize(String Idir, Parameters prms){
+		
+		// Set everything up as if the method Avalanche() just returned
+		
+		
+		
+		// DID you set imax!!!!!!!???????!!!!!!!
+		
+		return;
+	}
+	
 	public void Avalanche() {
 	
 		int Nalive;

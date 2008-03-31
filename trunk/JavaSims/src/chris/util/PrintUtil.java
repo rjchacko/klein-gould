@@ -5,6 +5,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import scikit.util.FileUtil;
+
 public class PrintUtil {
 	static public void deleteFile(String fileName){
 		File file = new File(fileName);
@@ -75,11 +77,21 @@ public class PrintUtil {
 		}
 	}
 	
-	static public void printlnToFile(String fileName, String text1, String text2, String text3, String text4, String text5, String text6,String text7){
+	static public void printlnToFile(String fileName, String text1, String text2, String text3, String text4, String text5, String text6, String text7){
 		try{
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.println(text1 + "\t" + text2 + "\t" + text3 + "\t" + text4 + "\t" + text5 + "\t" + text6 + "\t" + text7);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void printlnToFile(String fileName, String text1, String text2, String text3, String text4, String text5, String text6, String text7, String text8){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(text1 + "\t" + text2 + "\t" + text3 + "\t" + text4 + "\t" + text5 + "\t" + text6 + "\t" + text7 + "\t" + text8);
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
@@ -90,6 +102,16 @@ public class PrintUtil {
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.println(text + "\t" + data);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void printlnToFile(String fileName, double d1){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(d1);
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
@@ -155,4 +177,83 @@ public class PrintUtil {
 		}
 	}
 
+	static public void printlnToFile(String fileName, double d1, double d2, double d3, double d4, double d5, double d6, double d7, double d8){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(d1 + "\t" + d2 + "\t" + d3 + "\t" + d4 + "\t" + d5 + "\t" + d6 + "\t" + d7 + "\t" + d8);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void printArrayToFile(String fileName, int[] array, int m, int n){
+		try{
+			
+			PrintWriter pw = FileUtil.pwFromString(fileName);
+			
+			// print info here
+			pw.println("m by n array");
+			pw.println("printing:");
+			pw.println("i = 0, 1, 2, . . . m-1 ");
+			pw.println("i = m, m+1 , . . . ");
+			pw.println("    .");
+			pw.println("    .");
+			pw.println("    .");
+			pw.println("    n, n+1, . . . n+m");
+			pw.print("m = ");
+			pw.println(m);
+			pw.print("n = ");
+			pw.println(n);
+			for (int ii = 0 ; ii < m*n ; ii++){
+				pw.print(array[ii]);
+				if ( (ii + 1)%n == 0){
+					pw.println();
+				}
+				else{
+					pw.print("\t");
+				}
+			}
+			
+			pw.close();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void printArrayToFile(String fileName, double[] array, int m, int n){
+		try{
+			
+			PrintWriter pw = FileUtil.pwFromString(fileName);
+			
+			// print info here
+			pw.println("m by n array");
+			pw.println("printing:");
+			pw.println("i = 0, 1, 2, . . . m-1 ");
+			pw.println("i = m, m+1 , . . . ");
+			pw.println("    .");
+			pw.println("    .");
+			pw.println("    .");
+			pw.println("    n, n+1, . . . n+m");
+			pw.print("m = ");
+			pw.println(m);
+			pw.print("n = ");
+			pw.println(n);
+			for (int ii = 0 ; ii < m*n ; ii++){
+				pw.print(array[ii]);
+				if ( (ii + 1)%n == 0){
+					pw.println();
+				}
+				else{
+					pw.print("\t");
+				}
+			}
+			
+			pw.close();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
 }
