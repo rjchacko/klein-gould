@@ -2,6 +2,7 @@ package chris.ofc.apps;
 
 
 import java.io.File;
+
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -12,13 +13,13 @@ import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.ofc.NfailDamage2D;
 
-public class NFailApp extends Simulation {
+public class startTapp extends Simulation {
 
 	Grid grid1 = new Grid ("Stress Lattice");
 	Grid grid2 = new Grid ("Failed Sites");
 
 	NfailDamage2D model;
-	double ScMax, rgyr;
+	double ScMax, rgyr, tMAX;
 	
 	ColorPalette palette1;
 	ColorGradient smooth;
@@ -27,7 +28,7 @@ public class NFailApp extends Simulation {
 	
 
 	public static void main(String[] args) {
-		new Control(new NFailApp(), "OFC Model");
+		new Control(new startTapp(), "OFC Model");
 	}
 	
 	public void load(Control c) {
@@ -40,6 +41,7 @@ public class NFailApp extends Simulation {
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
+		params.add("T_max",1000000.);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
 		params.add("Critical Stress (\u03C3_c)",4.0);
 		params.add("\u03C3_c Noise", new ChoiceValue("Off","On"));	
@@ -109,7 +111,6 @@ public class NFailApp extends Simulation {
 			model.ShowGrid=false;
 		}
 		
-		//PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
 		model.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		
 		model.Initialize(params.sget("Stress Distribution"));
@@ -127,20 +128,19 @@ public class NFailApp extends Simulation {
 		for (int i = 0 ; i <= max ; i++){
 			palette1.setColor(i,smooth.getColor(i, 0, max));
 		}
-		
-		// Set up file
-			
-		//PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
+				
 		model.WriteDataHeader(model.outfile);
 		
 		
-		while(!(model.crack)) {
+		while(!(model.crack) && model.time <= tMAX) {
 			
 			model.Avalanche();
 
 			model.TakeData();
 			
 		}
+		
+		if (model.time > tMAX) model.CloneSim(params);
 		
 	}
 

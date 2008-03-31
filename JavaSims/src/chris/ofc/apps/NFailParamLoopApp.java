@@ -79,8 +79,9 @@ public class NFailParamLoopApp extends Simulation {
 		
 		cyclevar=0;
 		
-		PrintUtil.printlnToFile(params.sget("Data Directory")+File.separator+"Params.txt",params.toString());
-		
+		//PrintUtil.printlnToFile(params.sget("Data Directory")+File.separator+"Params.txt",params.toString());
+		model.PrintParams(params.sget("Data Directory")+File.separator+"Params.txt", params);	
+
 		
 		switch (LVtype.valueOf(params.sget("Looping Parameter (LP)"))){
 		
@@ -99,7 +100,8 @@ public class NFailParamLoopApp extends Simulation {
 				// Set up file
 					
 				PrintUtil.printlnToFile(model.outfile,"Lattice Size = ", params.iget("Lattice Size"));
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
+				model.WriteDataHeader(model.outfile);
+
 				
 				while(!(model.crack)) {
 					
@@ -128,8 +130,8 @@ public class NFailParamLoopApp extends Simulation {
 				
 				// Set up file
 				PrintUtil.printlnToFile(model.outfile,"Number of Lives = ", params.iget("Number of Lives"));
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
+				model.WriteDataHeader(model.outfile);
+
 				while(!(model.crack)) {
 					
 					model.Avalanche();
@@ -158,8 +160,8 @@ public class NFailParamLoopApp extends Simulation {
 				// Set up file
 				
 				PrintUtil.printlnToFile(model.outfile,"Critical Stress (\u03C3_c) = ", params.fget("Critical Stress (\u03C3_c)"));
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
+				model.WriteDataHeader(model.outfile);
+
 				while(!(model.crack)) {
 					
 					model.Avalanche();
@@ -188,8 +190,8 @@ public class NFailParamLoopApp extends Simulation {
 				// Set up file
 				
 				PrintUtil.printlnToFile(model.outfile,"Residual Stress (\u03C3_r) = ", params.fget("Residual Stress (\u03C3_r)"));
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
-				
+				model.WriteDataHeader(model.outfile);
+
 				while(!(model.crack)) {
 					
 					model.Avalanche();
@@ -218,7 +220,7 @@ public class NFailParamLoopApp extends Simulation {
 				// Set up file
 				
 				PrintUtil.printlnToFile(model.outfile,"Interaction Radius (R) = ", params.iget("Interaction Radius (R)"));
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
+				model.WriteDataHeader(model.outfile);
 				
 				while(!(model.crack)) {
 					
@@ -248,7 +250,7 @@ public class NFailParamLoopApp extends Simulation {
 				// Set up file
 				
 				PrintUtil.printlnToFile(model.outfile,"Dissipation (\u03B1) = ", params.fget("Dissipation (\u03B1)"));
-				PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","Rgyr","Omega","<FS_stress>","rho_FS");
+				model.WriteDataHeader(model.outfile);
 				
 				while(!(model.crack)) {
 					
