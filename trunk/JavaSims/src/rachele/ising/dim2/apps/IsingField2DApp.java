@@ -107,10 +107,11 @@ public class IsingField2DApp extends Simulation {
 		params.add("Lp");
 		params.add("Free Energy");
 		flags.add("Write Config");
+		flags.add("Write 1D Config");
 		flags.add("Clear");
-		flags.add("SF");
-		flags.add("new RS");
-		flags.add("Integrate");
+		//flags.add("SF");
+		//flags.add("new RS");
+		//flags.add("Integrate");
 		landscapeFiller = new Accumulator(.01);
 		brLandscapeFiller = new Accumulator(.01);
 		sfChange = new Accumulator(1);
@@ -147,10 +148,10 @@ public class IsingField2DApp extends Simulation {
 		dS_dtPlot.setAutoScale(true);
 		
 		params.set("Free Energy", ising.freeEnergy);
-		for(int i=0; i < ising.Lp; i++){
-			int j = ising.Lp*ising.Lp/2 + i;
-			sf.sFactor[j]=0;
-		}
+//		for(int i=0; i < ising.Lp; i++){
+//			int j = ising.Lp*ising.Lp/2 + i;
+//			sf.sFactor[j]=0;
+//		}
 		sfGrid.registerData(ising.Lp, ising.Lp, sf.sFactor);
 		grid.registerData(ising.Lp, ising.Lp, ising.phi);
 		grid2.registerData(ising.Lp, ising.Lp, ising.phi);
@@ -158,7 +159,7 @@ public class IsingField2DApp extends Simulation {
 		landscape.registerLines("FE landscape", landscapeFiller, Color.BLACK);
 		brLandscape.registerLines("FE landscape", brLandscapeFiller, Color.BLUE);
 		delPhiGrid.registerData(ising.Lp, ising.Lp, ising.phiVector);
-		del_hSlice.registerLines("Slice", ising.get_delHslice(), Color.RED);
+		del_hSlice.registerLines("Slice", sf.get_sfSlice(), Color.RED);
 		del_vSlice.registerLines("Slice", ising.get_delVslice(), Color.YELLOW);
 
 		for (int i =0; i<ising.Lp; i++){
@@ -235,6 +236,7 @@ public class IsingField2DApp extends Simulation {
 			double linearSlope = 2*(-V_k-ising.T/(1.0-pow(ising.mean(ising.phi),2)));
 			System.out.println("slope1 = " + slope1 + " slope2 = " + slope2 + " linear slope = " + linearSlope);
 		}
+		if(flags.contains("Write 1D Config")) write1Dconfig();
 		flags.clear();
 	}
 	
@@ -284,7 +286,11 @@ public class IsingField2DApp extends Simulation {
 			}
 			sf.getAccumulatorV().clear();
 			sf.getAccumulatorH().clear();
-			sf.accumulateAll(ising.time(), ising.delPhi);
+			double [] input = new double [ising.Lp*ising.Lp];
+			for (int i = 0; i < ising.Lp*ising.Lp; i ++){
+				input[i] = 1.0/(1.0-Math.pow(ising.phi[i], 2));
+			}
+			sf.accumulateAll(ising.time(), input);
 			//sf.accumulateAll(ising.time(), ising.coarseGrained());
 			
 			if (ising.time() > recordSteps){
@@ -293,6 +299,7 @@ public class IsingField2DApp extends Simulation {
 				boolean circleOn=false;
 				sf.accumulateMelt(circleOn, ising.phi, maxi);
 				//sf.accumulateAll(ising.t, ising.delPhi);
+
 				sf.accumulateAll(ising.t, ising.phi);
 				recordSFvTime();
 				//record3Ddata();
@@ -502,6 +509,14 @@ public class IsingField2DApp extends Simulation {
 		return ave;
 	}
 	
+	private void write1Dconfig(){
+		String configFileName = "../../../research/javaData/configs1d/config";
+		FileUtil.deleteFile(configFileName);
+		double[] slice = new double [ising.Lp];
+		for (int i = 0; i < ising.Lp; i ++)
+			slice[i] = ising.phi[i];
+		FileUtil.writeConfigToFile(configFileName, ising.Lp, slice);
+	}
 
 }
 

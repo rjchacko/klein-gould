@@ -31,6 +31,4 @@ public class jamaTestApp{
 	double[] e = Eig.getRealEigenvalues();
 	System.out.println(e[0] + " " + e[1]);
     }
-
-	
 }

@@ -2,6 +2,7 @@ package rachele.ising.dim2;
 
 
 import scikit.dataset.Accumulator;
+import scikit.dataset.PointSet;
 import static java.lang.Math.*;
 import scikit.numerics.fft.FFT1D;
 import scikit.numerics.fft.managed.ComplexDouble2DFFT;
@@ -602,5 +603,14 @@ public class StructureFactor {
 			if(abs(y) == kR1int)	accPeakC.accum(t, sFactor[i]);
 			if(abs(y) == kR2int)    acc2PeakC.accum(t, sFactor[i]);
 		}		
+	}
+
+	public PointSet get_sfSlice() {
+		double [] slice = new double [Lp];
+		for (int i = 0; i < Lp; i ++){
+			int j = Lp*Lp/2 + i;
+			slice[i] = sFactor[j];			
+		}
+		return new PointSet (0,1,slice);
 	}		
 }

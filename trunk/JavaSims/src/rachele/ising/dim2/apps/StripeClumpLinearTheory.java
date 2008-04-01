@@ -1,29 +1,27 @@
 package rachele.ising.dim2.apps;
+import java.awt.Color;
+
+import scikit.dataset.PointSet;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.numerics.Jama.EigenvalueDecomposition;
 import scikit.numerics.Jama.Matrix;
+import scikit.numerics.fft.FFT1D;
 import scikit.util.*;
 import rachele.util.FileUtil;
 
 public class StripeClumpLinearTheory extends Simulation{
-	Plot clumps = new Plot("Clumps");
+	Plot sf = new Plot ("Structure Fuction");
+	Plot plot = new Plot ("Input Plot");
     // 2D matrix has n x n dimensions
     // must have n = 2m+1 where m is positive integer
-	public int matrixDim;
-	public int vDim;
-	//input parameters:
+	public int matrixDim, vDim, Lp;
 	public double T = 0.04;
-	public int configSize;
-	public double [] phi;
-		
-	//public static final double k0 = 4.4934092;
-	public static final double k0 = 4.188790204;
-	public int kyInt = 1; //ky = k0 * kyInt;
-    public double [] a; 
-    public double [] v; 
+	public double [] phi, inputFunction, a, v, phiSF;
+	public int kyInt = 1;
+	public double dx, L, R, kChunk;
 	public EigenvalueDecomposition Eig;
     
 	public static void main(String[] args) {
@@ -35,54 +33,82 @@ public class StripeClumpLinearTheory extends Simulation{
 		params.addm("Matrix Dim", 5);
 		params.addm("Lp", 128);
 		params.addm("R", 2000000);
+		params.addm("L/R", 3.0);
+		c.frameTogether("f(x) vs phi(x)", plot, sf);
 	}
 	
 	public void calculate(){
 		matrixDim = params.iget("Matrix Dim");
-		configSize = params.iget("Lp");
-		double kStep = 2*Math.PI*params.fget("R")/configSize;
-		System.out.println("kstep = " + kStep);
-		phi = new double [configSize];
-		a = new double [matrixDim];
+		Lp = params.iget("Lp");
+		R = params.fget("R");
+		L = params.fget("L/R")*R;
+		dx = L/Lp;
+		System.out.println("dx = " + dx);
+		kChunk = 2*Math.PI*R/L;
+		System.out.println("kstep = " + kChunk);
+		phi = new double [Lp];
+		phiSF = new double [Lp];
+	
+		inputFunction = new double [Lp];
+		a = new double [Lp];
 		vDim = 1+(matrixDim-1)/2;
 		v = new double [vDim];
 		//find a_n coefficients of matrix
 		String fileName = "../../../research/javaData/configs1d/config";
-		phi = FileUtil.readConfigFromFile(fileName, configSize);
-//		for (int i = 0; i < configSize; i ++)
-//			System.out.println(i + " " + phi[i]);
-		findCoefficients(phi, configSize);
+		phi = FileUtil.readConfigFromFile(fileName, Lp);
+		for(int i = 0; i < Lp; i++)
+			inputFunction[i] = 1.0/(1-Math.pow(phi[i],2));
+		findAllForierModes(inputFunction, Lp);
+		findVelements();
 		constructMatrix();
 		double maxEigenvalue = findMaxEigenvalue();
-		System.out.println(matrixDim + "   " +2*maxEigenvalue);		
+		System.out.println("matrix dim = " + matrixDim + " final slope = " +2*maxEigenvalue);		
 	}
 	
-	public void findCoefficients(double [] A, int size){
-		for(int i = 0; i < matrixDim; i ++){
-			double sum = 0;
-			for(int point = 0; point < size; point ++){
-				sum += Math.cos(i*k0*point)/(1-Math.pow(A[point],2));
+
+
+//	public void findCoefficients(double [] A, int size){
+//		for(int i = 0; i < matrixDim; i ++){
+//			double sum = 0;
+//			for(int j = 0; j < size; j ++){
+//				double point = j*dx;
+//				sum += Math.cos(i*kChunk*point)/(1.0-Math.pow(A[j],2));
+//			}
+//			double ave = sum/(double)size;
+//			a[i] = ave;
+//			//System.out.println("a" + i + " = " + a[i]);			
+//		}
+//		for(int i = 0; i < vDim; i++ ){
+//			double Vx = (i == 0) ? 1.0 :  Math.sin(i*kChunk)/(i*kChunk);
+//			double Vy = (i == 0) ? 1.0 :  Math.sin(kyInt*kChunk)/(kyInt*kChunk);
+//			double V = Vx*Vy;
+//			v[i] = -V-T*a[0];
+//			//System.out.println("v" + i + " = " + v[i]);
+//		}
+//	}
+	
+	private void findAllForierModes(double [] A, int size) {
+		FFT1D fft = new FFT1D(Lp);
+		fft.setLength(L);
+		fft.transform(A, new FFT1D.MapFn() {
+			public void apply(double k, double re, double im) {
+				double kR = k*R;
+				int kRLatticePoint = (int)Math.abs(kR/kChunk);
+				a[kRLatticePoint] = (re)/(L*L);
+				System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
 			}
-			double ave = sum/(double)size;
-			a[i] = ave;
-			//System.out.println("a" + i + " = " + a[i]);			
-		}
+		});
+	}
+	
+	private void findVelements(){
 		for(int i = 0; i < vDim; i++ ){
-			double Vx;
-			if (i ==0)
-				Vx = 1.0;
-			else
-				Vx = Math.sin(i*k0)/(i*k0);
-			double Vy;
-			if (kyInt == 0)
-				Vy = 1.0;
-			else 
-				Vy = Math.sin(kyInt*k0)/(kyInt*k0);
+			double Vx = (i == 0) ? 1.0 :  Math.sin(i*kChunk)/(i*kChunk);
+			double Vy = (i == 0) ? 1.0 :  Math.sin(kyInt*kChunk)/(kyInt*kChunk);
 			double V = Vx*Vy;
 			v[i] = -V-T*a[0];
-			//System.out.println("v" + i + " = " + v[i]);
-		}
+		}		
 	}
+	
 	public void constructMatrix(){
 		double [][] matrix = new double [matrixDim][matrixDim];
 		for(int i = 0; i < matrixDim; i++){
@@ -118,20 +144,47 @@ public class StripeClumpLinearTheory extends Simulation{
 			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
 		double maxEigenvalue = DoubleArray.max(eigenvalue);
 		Matrix V = Eig.getV();
-		//Matrix D = Eig.getD();
+		Matrix D = Eig.getD();
+		double[] finalDvector = D.transpose().getArray()[matrixDim - 1];
+		double[] finalEigenvector = V.transpose().getArray()[matrixDim - 1];
 		for (int i = 0; i < matrixDim; i ++){
-			for (int j = 0; j < matrixDim; ){
-				
-			}
+			System.out.println(i + " " + finalEigenvector[i]);
 		}
-		double[] eigenvector0 = V.transpose().getArray()[0];
-		double[] eigenvector1 = V.transpose().getArray()[1];
-		System.out.println(eigenvector0[0] + " " + eigenvector0[1]);
-		System.out.println(eigenvector1[0] + " " + eigenvector1[1]);
+		System.out.println("eigenvector ? " + finalDvector[matrixDim - 1]);
 		return maxEigenvalue;
 	}
 
+	public PointSet getPhi(){
+		return new PointSet(0, 1, phi);
+	}
+	
+	public PointSet getSF(){
+		return new PointSet(0, 1, a);
+	}
+	
+	public PointSet getInput(){
+		return new PointSet(0, 1, inputFunction);
+	}
+	
+	public PointSet getPhiSF(){
+		FFT1D fft = new FFT1D(Lp);
+		fft.setLength(L);
+		fft.transform(phi, new FFT1D.MapFn() {
+			public void apply(double k, double re, double im) {
+				double kR = k*R;
+				int kRLatticePoint = (int)Math.abs(kR/kChunk);
+				phiSF[kRLatticePoint] = (re)/(L*L);
+				System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
+			}
+		});		
+		return new PointSet(0, 1, phiSF);
+	}
+	
 	public void animate() {
+		plot.registerLines("Slice", getPhi(), Color.RED);
+		sf.registerLines("SF", getSF(), Color.BLACK);
+		sf.registerLines("Phi SF",getPhiSF(), Color.RED);
+		plot.registerLines("input", getInput(), Color.BLACK);
 	}
 
 	public void clear() {
