@@ -7,6 +7,7 @@ package rachele.ising.dim2.apps;
 import static java.lang.Math.floor;
 import static scikit.util.Utilities.*;
 import scikit.dataset.Accumulator;
+import scikit.dataset.PointSet;
 //import kip.util.Random;
 import java.awt.Color;
 import java.io.*;
@@ -33,8 +34,8 @@ public class IsingField2DApp extends Simulation {
     Grid delPhiGrid = new Grid("DelPhi");
 	Plot hSlice = new Plot("Horizontal Slice");
 	Plot vSlice = new Plot("Vertical Slice");    
-	Plot del_hSlice = new Plot("Horizontal Slice Change");
-	Plot del_vSlice = new Plot("Vertical Slice Change");
+	Plot slicePlot1 = new Plot("Input Slice FT");
+	Plot slicePlot2 = new Plot("Input function");
 	Plot sfHor = new Plot("H SF");
 	Plot sfVert = new Plot("V SF");
 	Plot structurePeakV = new Plot("Ver Structure Factor");
@@ -56,6 +57,7 @@ public class IsingField2DApp extends Simulation {
     Accumulator landscapeFiller;
     Accumulator brLandscapeFiller;
     Accumulator sfChange;
+    public double [] inputSlice;
     public int lastClear;
     public int maxi=0;
 	public static void main(String[] args) {
@@ -65,15 +67,7 @@ public class IsingField2DApp extends Simulation {
 	public void load(Control c) {
 		//uncomment next line
 		c.frameTogether("Grids", grid, delPhiGrid, sfGrid, freeEnergyPlot);
-		//c.frame(dS_dtPlot);
-		//c.frame(grid2);
-		//frame(grid);
-		//frameTogether("ring", ring, ringInput);
-		//frameTogether("landscapes", landscape, brLandscape);
-		//frameTogether("Plots", vSlice, sfPlot, structurePeakV, hSlice, sfHPlot, structurePeakH, del_hSlice, del_vSlice, landscape);
-		//uncomment next line
-		c.frameTogether("Slices", vSlice, hSlice, del_hSlice, del_vSlice);
-		//frameTogether("SF", structurePeakV, 
+		c.frameTogether("Slices", vSlice, hSlice, slicePlot1, slicePlot2);
 		//structurePeakH, freeEnergyPlot, sfPeakBoth, sfHor, sfVert);
 		//c.frameTogether("SF", sfHor, sfVert);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
@@ -133,8 +127,8 @@ public class IsingField2DApp extends Simulation {
 		}
 		
 		freeEnergyPlot.setAutoScale(true);
-		del_hSlice.setAutoScale(true);
-		del_vSlice.setAutoScale(true);
+		slicePlot1.setAutoScale(true);
+		slicePlot2.setAutoScale(true);
 		hSlice.setAutoScale(true);
 		vSlice.setAutoScale(true);
 		structurePeakV.setAutoScale(true);
@@ -159,8 +153,8 @@ public class IsingField2DApp extends Simulation {
 		landscape.registerLines("FE landscape", landscapeFiller, Color.BLACK);
 		brLandscape.registerLines("FE landscape", brLandscapeFiller, Color.BLUE);
 		delPhiGrid.registerData(ising.Lp, ising.Lp, ising.phiVector);
-		del_hSlice.registerLines("Slice", sf.get_sfSlice(), Color.RED);
-		del_vSlice.registerLines("Slice", ising.get_delVslice(), Color.YELLOW);
+		slicePlot1.registerLines("Slice", sf.get_sfSlice(), Color.RED);
+		slicePlot2.registerLines("Slice", getInput(), Color.YELLOW);
 
 		for (int i =0; i<ising.Lp; i++){
 			int j = (ising.Lp*ising.Lp)/2 +2*ising.Lp + i;
@@ -175,7 +169,7 @@ public class IsingField2DApp extends Simulation {
 
 		delPhiGrid.setDrawables(asList(
 				Geom2D.line(0, ising.horizontalSlice, 1, ising.horizontalSlice, Color.RED),
-				Geom2D.line(ising.verticalSlice, 0, ising.verticalSlice, 1, Color.YELLOW)));
+				Geom2D.line(ising.verticalSlice, 0, ising.verticalSlice, 1, Color.BLACK)));
 		
 		hSlice.registerLines("Slice", ising.getHslice(), Color.GREEN);
 		vSlice.registerLines("Slice", ising.getVslice(), Color.BLUE);
@@ -196,14 +190,6 @@ public class IsingField2DApp extends Simulation {
 			sfVert.registerLines("Vert SF", sf.getAccumulatorV(), Color.CYAN);
 		}	
  
-		if (flags.contains("Stripe")){
-			ising.accumStripeFreeEnergy();
-			System.out.println("accum Stripe free energy T = " + ising.T);
-		}else if(flags.contains("Clump")){
-			ising.accumClumpFreeEnergy();
-			System.out.println("accum Clump free energy T = " + ising.T);
-		}
-
 		freeEnergyTempPlot.registerLines("Stripe FE", ising.getStripeFreeEnergyAcc(), Color.GREEN);
 		freeEnergyTempPlot.registerLines("Clump FE", ising.getClumpFreeEnergyAcc(),Color.PINK);
 		freeEnergyTempPlot.registerLines("fe", ising.getEitherFreeEnergyAcc(), Color.BLACK);
@@ -245,15 +231,20 @@ public class IsingField2DApp extends Simulation {
 		initFile = false;
 	}
 	
+	public PointSet getInput(){
+		return new PointSet(0, 1, inputSlice);
+	}
+	
 	public void run() {
 		if(params.sget("Init Conditions") == "Read From File")
 			readInputParams("../../../research/javaData/configs/inputParams");
 		ising = new IsingField2D(params);
+		inputSlice = new double [ising.Lp];
 		double binWidth = params.fget("kR bin-width");
 		binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
         sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
 		sf.setBounds(0.1, 14);
-		int recordSteps = 0;
+		//int recordSteps = 0;
 		
 		maxi=sf.clumpsOrStripes(ising.phi);
 		
@@ -287,25 +278,27 @@ public class IsingField2DApp extends Simulation {
 			sf.getAccumulatorV().clear();
 			sf.getAccumulatorH().clear();
 			double [] input = new double [ising.Lp*ising.Lp];
-			for (int i = 0; i < ising.Lp*ising.Lp; i ++){
+			for (int i = 0; i < ising.Lp*ising.Lp; i ++)
 				input[i] = 1.0/(1.0-Math.pow(ising.phi[i], 2));
-			}
+			for (int i = 0; i < ising.Lp; i ++)
+				inputSlice[i] = input[i];
 			sf.accumulateAll(ising.time(), input);
+			
 			//sf.accumulateAll(ising.time(), ising.coarseGrained());
 			
-			if (ising.time() > recordSteps){
-
-				//sf.accumMin(ising.coarseGrained(), params.fget("kR"));
-				boolean circleOn=false;
-				sf.accumulateMelt(circleOn, ising.phi, maxi);
-				//sf.accumulateAll(ising.t, ising.delPhi);
-
-				sf.accumulateAll(ising.t, ising.phi);
-				recordSFvTime();
-				//record3Ddata();
-				recordSteps += 1;
-				//writeDataToFile();
-			}
+//			if (ising.time() > recordSteps){
+//
+//				//sf.accumMin(ising.coarseGrained(), params.fget("kR"));
+//				boolean circleOn=false;
+//				sf.accumulateMelt(circleOn, ising.phi, maxi);
+//				//sf.accumulateAll(ising.t, ising.delPhi);
+//
+//				sf.accumulateAll(ising.t, ising.phi);
+//				recordSFvTime();
+//				//record3Ddata();
+//				recordSteps += 1;
+//				//writeDataToFile();
+//			}
 			Job.animate();
 			sfChange.clear();
 		}
