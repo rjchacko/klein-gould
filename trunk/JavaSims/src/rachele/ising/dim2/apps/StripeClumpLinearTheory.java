@@ -1,6 +1,8 @@
 package rachele.ising.dim2.apps;
-import java.awt.Color;
+//import static java.lang.Math.PI;
+//import static java.lang.Math.sin;
 
+import java.awt.Color;
 import scikit.dataset.PointSet;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -11,6 +13,8 @@ import scikit.numerics.Jama.Matrix;
 import scikit.numerics.fft.FFT1D;
 import scikit.util.*;
 import rachele.util.FileUtil;
+import scikit.numerics.fft.managed.ComplexDoubleFFT;
+import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
 
 public class StripeClumpLinearTheory extends Simulation{
 	Plot sf = new Plot ("Structure Fuction");
@@ -23,6 +27,8 @@ public class StripeClumpLinearTheory extends Simulation{
 	public int kyInt = 1;
 	public double dx, L, R, kChunk;
 	public EigenvalueDecomposition Eig;
+	ComplexDoubleFFT fft;
+	public double[] fftScratch;
     
 	public static void main(String[] args) {
 		new Control(new StripeClumpLinearTheory(), "Stripe -> Clump");
@@ -30,7 +36,7 @@ public class StripeClumpLinearTheory extends Simulation{
 	
 	public void load(Control c) {
 		params.addm("Center On", new ChoiceValue("low frequencies", "high frequencies"));
-		params.addm("Matrix Dim", 5);
+		params.addm("Matrix Dim", 15);
 		params.addm("Lp", 128);
 		params.addm("R", 2000000);
 		params.addm("L/R", 3.0);
@@ -43,22 +49,25 @@ public class StripeClumpLinearTheory extends Simulation{
 		R = params.fget("R");
 		L = params.fget("L/R")*R;
 		dx = L/Lp;
-		System.out.println("dx = " + dx);
+		//System.out.println("dx = " + dx);
 		kChunk = 2*Math.PI*R/L;
-		System.out.println("kstep = " + kChunk);
+		//System.out.println("kstep = " + kChunk);
 		phi = new double [Lp];
 		phiSF = new double [Lp];
+		fftScratch = new double[2*Lp];
+		fft = new ComplexDoubleFFT_Mixed(Lp);
 	
 		inputFunction = new double [Lp];
 		a = new double [Lp];
 		vDim = 1+(matrixDim-1)/2;
 		v = new double [vDim];
-		//find a_n coefficients of matrix
 		String fileName = "../../../research/javaData/configs1d/config";
 		phi = FileUtil.readConfigFromFile(fileName, Lp);
 		for(int i = 0; i < Lp; i++)
 			inputFunction[i] = 1.0/(1-Math.pow(phi[i],2));
-		findAllForierModes(inputFunction, Lp);
+		//findAllForierModes(inputFunction, Lp);
+		//findAllCoefficients(inputFunction, Lp);
+		findAllCoefficients(inputFunction, Lp);
 		findVelements();
 		constructMatrix();
 		double maxEigenvalue = findMaxEigenvalue();
@@ -66,6 +75,16 @@ public class StripeClumpLinearTheory extends Simulation{
 	}
 	
 
+
+public void findAllCoefficients(double[] src, int lp2) {
+	for (int i = 0; i < Lp; i++) {
+		fftScratch[2*i] = src[i];
+		fftScratch[2*i+1] = 0;
+	}
+	fft.transform(fftScratch);
+	for (int i = 0; i < Lp; i++) 
+		a[i] = fftScratch[2*i];		
+	}
 
 //	public void findCoefficients(double [] A, int size){
 //		for(int i = 0; i < matrixDim; i ++){
@@ -81,24 +100,25 @@ public class StripeClumpLinearTheory extends Simulation{
 //		for(int i = 0; i < vDim; i++ ){
 //			double Vx = (i == 0) ? 1.0 :  Math.sin(i*kChunk)/(i*kChunk);
 //			double Vy = (i == 0) ? 1.0 :  Math.sin(kyInt*kChunk)/(kyInt*kChunk);
-//			double V = Vx*Vy;
+//			double V = Vx*Vy;Wellesley U. 
 //			v[i] = -V-T*a[0];
 //			//System.out.println("v" + i + " = " + v[i]);
 //		}
 //	}
 	
-	private void findAllForierModes(double [] A, int size) {
-		FFT1D fft = new FFT1D(Lp);
-		fft.setLength(L);
-		fft.transform(A, new FFT1D.MapFn() {
-			public void apply(double k, double re, double im) {
-				double kR = k*R;
-				int kRLatticePoint = (int)Math.abs(kR/kChunk);
-				a[kRLatticePoint] = (re)/(L*L);
-				System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
-			}
-		});
-	}
+//	private void findAllForierModes(double [] A, int size) {
+//		FFT1D fft = new FFT1D(Lp);
+//		fft.setLength(L);
+//		fft.transform(A, new FFT1D.MapFn() {
+//			public void apply(double k, double re, double im) {
+//				double kR = k*R;
+//				int kRLatticePoint = (int)Math.abs(kR/kChunk);
+//				a[kRLatticePoint] = (re)/(L*L);
+//				System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
+//			}
+//		});
+//	}
+	
 	
 	private void findVelements(){
 		for(int i = 0; i < vDim; i++ ){
@@ -123,6 +143,7 @@ public class StripeClumpLinearTheory extends Simulation{
 //				System.out.println(i + " " + j + " " + matrix[i][j]);	
 //			}
 //		}
+		printMatrix(matrix);
 		Matrix A = new Matrix(matrix);	
 		Eig = A.eig();
 		//the matrix looks like:
@@ -137,6 +158,17 @@ public class StripeClumpLinearTheory extends Simulation{
 		// where vi = v[i] = -V(k)-T a0
 		// and ai = -T a[i]	
 	}
+	
+	private void printMatrix(double[][] matrix) {
+		System.out.println("Here comes the matrix");
+		for (int i = 0; i < matrixDim; i ++){
+			for(int j = 0; j < matrixDim; j++){
+				System.out.print(matrix[i][j] + "     ");
+			}
+			System.out.println(" ");
+		}
+	}
+
 	private double findMaxEigenvalue(){
 		double [] eigenvalue = new double [matrixDim];
 		eigenvalue = Eig.getRealEigenvalues();
@@ -173,8 +205,8 @@ public class StripeClumpLinearTheory extends Simulation{
 			public void apply(double k, double re, double im) {
 				double kR = k*R;
 				int kRLatticePoint = (int)Math.abs(kR/kChunk);
-				phiSF[kRLatticePoint] = (re)/(L*L);
-				System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
+				phiSF[kRLatticePoint] = re;
+				//System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
 			}
 		});		
 		return new PointSet(0, 1, phiSF);
