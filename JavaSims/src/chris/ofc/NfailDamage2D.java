@@ -1,8 +1,12 @@
 package chris.ofc;
 
 
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.text.DecimalFormat;
 
 import javax.imageio.ImageIO;
@@ -153,6 +157,164 @@ public class NfailDamage2D extends SimpleDamage2D{
 				
 		return;
 	}	
+	
+	public void Initialize(Parameters prms){
+		
+		// Set everything up as if the method Avalanche() just returned
+		
+		// Find the directory in which the data files live
+		String InDir = prms.sget("Input Directory");
+		
+		// Read in the parameters
+		String ParamsIn = InDir + File.separator + "Params4Clone.txt";
+		
+		try{
+			String record;
+			int posDelimiter;
+
+			File f = new File(ParamsIn); 
+			FileInputStream fis = new FileInputStream(f); 
+			BufferedInputStream bis = new BufferedInputStream(fis); 
+			BufferedReader bir = new BufferedReader(new InputStreamReader(bis));	
+
+			// Make output directory
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 
+			String OD = record.substring(posDelimiter + 2);
+			OD += "/Continue";
+			DirUtil.MkDir(OD);
+			prms.set("Data Directory",OD);
+
+			// Read in the rest of the parameters and set them
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 
+			prms.set("Random Seed",(int)(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 
+			prms.set("Animation",record.substring(posDelimiter + 2));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 
+			prms.set("Lattice Size",(int)(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 
+			prms.set("Number of Lives",(int)(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 
+			prms.set("Life Style",record.substring(posDelimiter + 2));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 
+			prms.set("Nlives Width",(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			// skip T_max
+			record = bir.readLine();
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('=');  
+			prms.set("Boundary Condtions",record.substring(posDelimiter + 2));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 
+			prms.set("Critical Stress (\u03C3_c)",(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 		
+			prms.set("\u03C3_c Noise",record.substring(posDelimiter + 2));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 		
+			prms.set("\u03C3_c width",(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 		
+			prms.set("Residual Stress (\u03C3_r)",(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 		
+			prms.set("\u03C3_r Noise", record.substring(posDelimiter + 2));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 		
+			prms.set("\u03C3_r width",(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 	
+			prms.set("Interaction Shape", record.substring(posDelimiter + 2));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 		
+			prms.set("Interaction Radius (R)",(int)(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 		
+			prms.set("Minimum Interaction Radius (r)",(int)(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 	
+			prms.set("Dissipation (\u03B1)",(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 		
+			prms.set("\u03B1 Noise",record.substring(posDelimiter + 2));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 	
+			prms.set("\u03B1 Width",(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 	
+			prms.set("Record",record.substring(posDelimiter + 2));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 	
+			prms.set("Number of Resets",(Double.parseDouble(record.substring(posDelimiter + 2))));
+
+			record = bir.readLine();
+			posDelimiter = record.indexOf('='); 	
+			prms.set("Number of Showers",(int)(Double.parseDouble(record.substring(posDelimiter + 2))));
+			
+			// Print new params
+			PrintParams(OD + File.separator + "Params4Continue.txt", prms);
+			
+			
+			// Read in variable value (e.g. stess[])
+			
+
+		}
+   	 
+   	 
+		catch (IOException e) { 
+			System.out.println("ERROR!" + e.getMessage()); 
+			crack=true; // kill app
+		}
+	
+//		outfile=outdir+File.separator+"Damage.txt";
+//		//outfileCHK=outdir+File.separator+"DamageCHK.txt";
+//		
+//		PicDir=outdir+"/Pics/";
+//		DirUtil.MkDir(PicDir);
+//		
+//		alphawidth = Nwidth;
+//		
+//		alive  = new int[2*N];
+//		Sr     = new double[N];
+//		Sc     = new double[N];
+//		SsoFar = new double[N];
+//		SonFS  = new double[Nlives*N];
+//		
+//		if (Nlives == 1){
+//			Sr0=0.;
+//			Srwidth=0.;
+//		}
+		
+		// DID you set imax!!!!!!!???????!!!!!!!
+		
+		return;
+	}
 
 	public void Avalanche() {
 		

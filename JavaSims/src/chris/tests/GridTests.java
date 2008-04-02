@@ -3,7 +3,6 @@ package chris.tests;
 
 
 import java.awt.Color;
-import java.io.File;
 
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -15,7 +14,6 @@ import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.ofc.NfailDamage2D;
 import chris.util.LatticeNeighbors;
-import chris.util.PrintUtil;
 
 
 public class GridTests extends Simulation{
@@ -43,16 +41,15 @@ public class GridTests extends Simulation{
 		 * 	NEED THESE
 		 */
 		
+		params.add("Input Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/"));
 		params.add("Random Seed",0);
-		params.addm("Auto Scale", new ChoiceValue("Yes", "No"));
+		params.add("Animation", new ChoiceValue("On","Off"));
 		params.add("Lattice Size",500);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
-		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
-		params.add("Stress Distribution", new ChoiceValue("Flat","Hammer Blow"));
-		params.add("Hammer Size",1);	
+		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));	
 		params.add("Critical Stress (\u03C3_c)",4.0);
 		params.add("\u03C3_c Noise", new ChoiceValue("Off","On"));	
 		params.add("\u03C3_c width",Math.sqrt(Math.sqrt(0.4)));
@@ -66,6 +63,7 @@ public class GridTests extends Simulation{
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.2,0,1));
 		params.add("\u03B1 Noise", new ChoiceValue("On","Off"));
 		params.add("\u03B1 Width", 0.05);
+		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("Number of Resets");
 		params.add("Number of Showers");
 			
@@ -73,7 +71,6 @@ public class GridTests extends Simulation{
 		 * 	TEST PARAMETERS
 		 */
 		
-		params.add("Animation", new ChoiceValue("On","Off"));
 		params.add("x0", 250);
 		params.add("y0", 250);
 		
@@ -215,6 +212,8 @@ public class GridTests extends Simulation{
 	 * 
 	 * 	Test getStressLines(int center, int Nlines) method	
 	 */
+
+		
 		////////////////////////////////////////////////////////////////////
 
 		
@@ -223,22 +222,39 @@ public class GridTests extends Simulation{
 	 */
 		
 
-	for (int ii = 0 ; ii < model.N ; ii++){
-		foo[ii]=ii+1;
-	}
-	
-	PrintUtil.printArrayToFile(model.outdir+File.separator+"ArrayTest.txt", foo, model.L, model.L);
-	
-	Job.animate();
+//	for (int ii = 0 ; ii < model.N ; ii++){
+//		foo[ii]=ii+1;
+//	}
+//	
+//	PrintUtil.printArrayToFile(model.outdir+File.separator+"ArrayTest.txt", foo, model.L, model.L);
+//	
+//	Job.animate();
 	
 	/**
 	 * 			E-N-D
 	 * 
 	 *	Test method printArrayToFile(String fileName, int[] array, int m, int n) 
 	 */
+	
+	
+	////////////////////////////////////////////////////////////////////
+
+	
+	/**
+	 *	Test method Initialize(Parameters prms)
+	 */
 		
+	
+	model.Initialize(params);
+	
+	displaycounter = 77;
+	
+	Job.animate();
 		
-		
+	/**
+	 * 			E-N-D
+	 * 	Test method Initialize(Parameters prms)
+	 */
 		
 		
 		

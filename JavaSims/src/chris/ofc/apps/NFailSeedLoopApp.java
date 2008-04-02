@@ -82,7 +82,7 @@ public class NFailSeedLoopApp extends Simulation {
 			model = new NfailDamage2D(params);
 			
 			model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar) +".txt";
-			model.Initialize(params.sget("Stress Distribution"));
+			model.Initialize("Flat");
 			model.WriteDataHeader(model.outfile);
 		
 			while(!(model.crack)) {
