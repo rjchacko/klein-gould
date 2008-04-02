@@ -113,7 +113,7 @@ public class startTapp extends Simulation {
 		
 		model.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		
-		model.Initialize(params.sget("Stress Distribution"));
+		model.Initialize("Flat");
 		
 		ScMax=model.GetMax(model.Sc);		
 
@@ -132,6 +132,8 @@ public class startTapp extends Simulation {
 		model.WriteDataHeader(model.outfile);
 		
 		
+		tMAX = params.fget("T_max");
+		
 		while(!(model.crack) && model.time <= tMAX) {
 			
 			model.Avalanche();
@@ -140,7 +142,10 @@ public class startTapp extends Simulation {
 			
 		}
 		
-		if (model.time > tMAX) model.CloneSim(params);
+		if (model.time > tMAX) {
+			model.CloneSim(params);
+			System.out.println("t_max reached.");
+		}
 		
 	}
 

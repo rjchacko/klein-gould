@@ -112,7 +112,7 @@ public class NFailApp extends Simulation {
 		//PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
 		model.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		
-		model.Initialize(params.sget("Stress Distribution"));
+		model.Initialize("Flat");
 		
 		ScMax=model.GetMax(model.Sc);		
 

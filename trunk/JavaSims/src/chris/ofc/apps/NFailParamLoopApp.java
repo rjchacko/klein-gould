@@ -95,7 +95,7 @@ public class NFailParamLoopApp extends Simulation {
 				
 				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
 									
-				model.Initialize(params.sget("Stress Distribution"));
+				model.Initialize("Flat");
 				
 				// Set up file
 					
@@ -126,7 +126,7 @@ public class NFailParamLoopApp extends Simulation {
 							
 				params.set("Number of Lives",lpvar);
 				
-				model.Initialize(params.sget("Stress Distribution"));
+				model.Initialize("Flat");
 				
 				// Set up file
 				PrintUtil.printlnToFile(model.outfile,"Number of Lives = ", params.iget("Number of Lives"));
@@ -155,7 +155,7 @@ public class NFailParamLoopApp extends Simulation {
 				
 				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
 									
-				model.Initialize(params.sget("Stress Distribution"));
+				model.Initialize("Flat");
 				
 				// Set up file
 				
@@ -185,7 +185,7 @@ public class NFailParamLoopApp extends Simulation {
 							
 				params.set("Residual Stress (\u03C3_r)",lpvar);
 				
-				model.Initialize(params.sget("Stress Distribution"));
+				model.Initialize("Flat");
 				
 				// Set up file
 				
@@ -215,7 +215,7 @@ public class NFailParamLoopApp extends Simulation {
 						
 				params.set("Interaction Radius (R)",lpvar);
 				
-				model.Initialize(params.sget("Stress Distribution"));
+				model.Initialize("Flat");
 				
 				// Set up file
 				
@@ -245,7 +245,7 @@ public class NFailParamLoopApp extends Simulation {
 									
 				params.set("Dissipation (\u03B1)",lpvar);
 				
-				model.Initialize(params.sget("Stress Distribution"));
+				model.Initialize("Flat");
 				
 				// Set up file
 				

@@ -40,7 +40,6 @@ public class continueTapp2 extends Simulation {
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
-		params.add("T_max",1000000.);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
 		params.add("Critical Stress (\u03C3_c)",4.0);
 		params.add("\u03C3_c Noise", new ChoiceValue("Off","On"));	
@@ -110,7 +109,7 @@ public class continueTapp2 extends Simulation {
 			model.ShowGrid=false;
 		}
 		
-		model.Initialize(params.sget("Input Directory"),params);
+		model.Initialize(params);
 		
 		ScMax=model.GetMax(model.Sc);		
 
