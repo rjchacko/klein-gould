@@ -41,6 +41,12 @@ public class SimpleDamage2D {
 	// Constructor
 	public SimpleDamage2D(Parameters params) {
 		
+		PseudoConstructorSD(params);
+		
+	}
+	
+	public void PseudoConstructorSD(Parameters params){
+		
 		rand  = new Random(params.iget("Random Seed"));
 		L     = params.iget("Lattice Size");
 		N     = L*L;
@@ -62,14 +68,17 @@ public class SimpleDamage2D {
 	
 		Nwidth=Nwidth*noisey;
 
-		
-		histNS = new Histogram(1.);
 		crack=false;
 		
 		shape = params.sget("Interaction Shape");
 		BCs   = params.sget("Boundary Condtions");
 		
+		return;
+		
 	}
+	
+	
+	
 	
 	// Initialize Stress Lattice
 	

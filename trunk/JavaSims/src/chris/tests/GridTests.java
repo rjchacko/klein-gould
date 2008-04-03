@@ -41,7 +41,7 @@ public class GridTests extends Simulation{
 		 * 	NEED THESE
 		 */
 		
-		params.add("Input Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
+		params.add("Input Directory",new DirectoryValue("/Users/cserino/Desktop/test/"));
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/"));
 		params.add("Random Seed",0);
 		params.add("Animation", new ChoiceValue("On","Off"));
@@ -249,7 +249,14 @@ public class GridTests extends Simulation{
 	
 	displaycounter = 77;
 	
+	model.CloneSim(params);
+	
+	displaycounter = 7777;
+	
+	params.set("Animation","Off");
+	
 	Job.animate();
+
 		
 	/**
 	 * 			E-N-D

@@ -40,6 +40,13 @@ public class NfailDamage2D extends SimpleDamage2D{
 		
 		super(params); // I assume this is a call to SimpleDamage2D's constructor
 	
+		PseudoConstructorNF(params);
+		
+	}
+	
+	
+	public void PseudoConstructorNF(Parameters params){
+	
 		Sr0           = params.fget("Residual Stress (\u03C3_r)");
 		Srwidth       = params.fget("\u03C3_r width");
 		Sc0           = params.fget("Critical Stress (\u03C3_c)");
@@ -71,6 +78,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 			Srwidth=0.;
 		}
 		
+		return;
 	}
 	
 	public void Initialize(String str){
@@ -280,38 +288,184 @@ public class NfailDamage2D extends SimpleDamage2D{
 			// Print new params
 			PrintParams(OD + File.separator + "Params4Continue.txt", prms);
 			
+			// Reset all parameters that are set by the constructor(s)
+		
+			PseudoConstructorSD(prms);
+			PseudoConstructorNF(prms);
 			
+			// Set Up Lattice Neighbors Shape
+			
+			if (BCs.equals("Bordered")){
+				if(shape.equals("Circle")){
+					neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Circle);
+				}
+				else if(shape.equals("Square")){
+					neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Square);
+				}
+				else if(shape.equals("Diamond")){
+					neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.BORDERED,LatticeNeighbors.Shape.Diamond);
+				}
+			}
+			else{
+				if(shape.equals("Circle")){
+					neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Circle);
+				}
+				else if(shape.equals("Square")){
+					neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Square);
+				}
+				else if(shape.equals("Diamond")){
+					neighbors = new LatticeNeighbors(L,L,rmin,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Diamond);
+				}
+			}
+
 			// Read in variable value (e.g. stess[])
 			
+			// Need five data readers
+			
+			String rr1, rr2, rr3, rr4, rr5;
+			int pd1, pd2, pd3, pd4, pd5;
 
+			File f1 = new File(InDir + File.separator + "Alive.txt"); 
+			File f2 = new File(InDir + File.separator + "Critical_Stress.txt"); 
+			File f3 = new File(InDir + File.separator + "Residual_Stress.txt"); 
+			File f4 = new File(InDir + File.separator + "Stress_so_Far.txt"); 
+			File f5 = new File(InDir + File.separator + "Stress.txt"); 
+			
+			FileInputStream fis1 = new FileInputStream(f1); 
+			BufferedInputStream bis1 = new BufferedInputStream(fis1); 
+			FileInputStream fis2 = new FileInputStream(f2); 
+			BufferedInputStream bis2 = new BufferedInputStream(fis2); 
+			FileInputStream fis3 = new FileInputStream(f3); 
+			BufferedInputStream bis3 = new BufferedInputStream(fis3); 
+			FileInputStream fis4 = new FileInputStream(f4); 
+			BufferedInputStream bis4 = new BufferedInputStream(fis4); 
+			FileInputStream fis5 = new FileInputStream(f5); 
+			BufferedInputStream bis5 = new BufferedInputStream(fis5); 
+						
+			BufferedReader b1 = new BufferedReader(new InputStreamReader(bis1));	
+			BufferedReader b2 = new BufferedReader(new InputStreamReader(bis2));
+			BufferedReader b3 = new BufferedReader(new InputStreamReader(bis3));
+			BufferedReader b4 = new BufferedReader(new InputStreamReader(bis4));
+			BufferedReader b5 = new BufferedReader(new InputStreamReader(bis5));
+
+			// skip first ten (10) lines
+			
+			for (int headerskip = 0 ; headerskip < 10 ; headerskip++){
+			
+				rr1 = b1.readLine();
+				rr2 = b2.readLine();
+				rr3 = b3.readLine();
+				rr4 = b4.readLine();
+				rr5 = b5.readLine();
+			
+			}
+			
+			// start reading in values
+			
+			for (int jj = 0 ; jj < L ; jj++){
+				
+				rr1 = b1.readLine();
+				rr2 = b2.readLine();
+				rr3 = b3.readLine();
+				rr4 = b4.readLine();
+				rr5 = b5.readLine();			
+				pd1 = rr1.indexOf('\t'); 
+				pd2 = rr2.indexOf('\t'); 
+				pd3 = rr3.indexOf('\t'); 
+				pd4 = rr4.indexOf('\t'); 
+				pd5 = rr5.indexOf('\t'); 
+				
+				for (int kk = 0 ; kk < L-1 ; kk++){
+					
+					alive[jj*L+kk]  = (int)(Double.parseDouble(rr1.substring(0, pd1)));
+					Sc[jj*L+kk]     =       Double.parseDouble(rr2.substring(0, pd2));
+					Sr[jj*L+kk]     =       Double.parseDouble(rr3.substring(0, pd3));
+					SsoFar[jj*L+kk] =       Double.parseDouble(rr4.substring(0, pd4));
+					stress[jj*L+kk] =       Double.parseDouble(rr5.substring(0, pd5));
+					
+					rr1 = rr1.substring(pd1 + 1);
+					rr2 = rr2.substring(pd2 + 1);
+					rr3 = rr3.substring(pd3 + 1);
+					rr4 = rr4.substring(pd4 + 1);
+					rr5 = rr5.substring(pd5 + 1);
+					pd1 = rr1.indexOf('\t'); 
+					pd2 = rr2.indexOf('\t'); 
+					pd3 = rr3.indexOf('\t'); 
+					pd4 = rr4.indexOf('\t'); 
+					pd5 = rr5.indexOf('\t');
+
+				}
+				
+				// read in last value in row jj
+				
+				alive[jj*L+L-1]  = (int)(Double.parseDouble(rr1));
+				Sc[jj*L+L-1]     =       Double.parseDouble(rr2);
+				Sr[jj*L+L-1]     =       Double.parseDouble(rr3);
+				SsoFar[jj*L+L-1] =       Double.parseDouble(rr4);
+				stress[jj*L+L-1] =       Double.parseDouble(rr5);
+				
+			}
+			
+			// continue on for alive[] only
+			
+			for (int jj = 0 ; jj < L ; jj++){
+				
+				rr1 = b1.readLine();
+				pd1 = rr1.indexOf('\t'); 
+				
+				for (int kk = 0 ; kk < L - 1; kk++){
+					
+					alive[jj*L+kk+N]  = (int)(Double.parseDouble(rr1.substring(0, pd1)));
+					rr1 = rr1.substring(pd1 + 1);
+					pd1 = rr1.indexOf('\t'); 
+			
+				}
+				
+				alive[jj*L+L-1+N]  = (int)(Double.parseDouble(rr1));
+				
+			}
+			
+			// read in last line from data file
+			// set things like time etc.
+			
+			File fL = new File(InDir + File.separator + "Data_LL.txt");
+			FileInputStream fisL = new FileInputStream(fL); 
+			BufferedInputStream bisL = new BufferedInputStream(fisL); 
+			BufferedReader bL = new BufferedReader(new InputStreamReader(bisL));
+			
+			String rrL;
+			int pdL;
+			
+			// skip first line
+			rrL = bL.readLine();			
+			pdL = rrL.indexOf('\t');
+			
+			rrL = bL.readLine();			
+			pdL = rrL.indexOf('\t'); 
+			
+			time = Double.parseDouble(rrL.substring(0, pdL));
+			rrL = rrL.substring(pdL + 1);
+			tkip = Double.parseDouble(rrL.substring(0, pdL));
+			rrL = rrL.substring(pdL + 1);
+			Nshowers = (int) Double.parseDouble(rrL.substring(0, pdL));
+			rrL = rrL.substring(pdL + 1);
+			NdeadS = (int) Double.parseDouble(rrL.substring(0, pdL));
+			
+			showernumber=0;
+
+			// set imax
+			
+			imax = 0;
+			for (int kk = 0 ; kk < N ; kk++){
+				if(stress[kk] > stress[imax]) imax = kk;
+			}
+			
+			
 		}
-   	 
-   	 
 		catch (IOException e) { 
 			System.out.println("ERROR!" + e.getMessage()); 
 			crack=true; // kill app
 		}
-	
-//		outfile=outdir+File.separator+"Damage.txt";
-//		//outfileCHK=outdir+File.separator+"DamageCHK.txt";
-//		
-//		PicDir=outdir+"/Pics/";
-//		DirUtil.MkDir(PicDir);
-//		
-//		alphawidth = Nwidth;
-//		
-//		alive  = new int[2*N];
-//		Sr     = new double[N];
-//		Sc     = new double[N];
-//		SsoFar = new double[N];
-//		SonFS  = new double[Nlives*N];
-//		
-//		if (Nlives == 1){
-//			Sr0=0.;
-//			Srwidth=0.;
-//		}
-		
-		// DID you set imax!!!!!!!???????!!!!!!!
 		
 		return;
 	}
