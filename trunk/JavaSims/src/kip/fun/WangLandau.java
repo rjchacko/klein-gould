@@ -10,9 +10,9 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 
 public class WangLandau extends Simulation {
-	Plot histogramPlot = new Plot("Histogram vs. Energy");
-	Plot densityPlot = new Plot("Density of states vs Energy");
-	Plot heatPlot = new Plot("Heat capacity vs Temperature");
+	Plot histogramPlot = new Plot("Histogram", "Energy", "Histogram");
+	Plot densityPlot = new Plot("Density of states", "Energy", "Density of states");
+	Plot heatPlot = new Plot("Heat capacity", "Temperature", "Heat capacity");
 
 	int mcs;
 	int L, N;
