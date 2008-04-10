@@ -28,13 +28,14 @@ public class testLinearApp extends Simulation{
     public double kRChunk; //=2piR/L
     Grid etaDotLeftGrid = new Grid("eta dot");
     Grid etaDotRightGrid = new Grid("eta dot");
+    Grid phiGrid = new Grid("phi field");
     
     
 	public static void main(String[] args) {
 		new Control(new testLinearApp(), "Ising Linear Test");
 	}
 	public void load(Control c) {
-		c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid);
+		c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid, phiGrid);
 	params.addm("Zoom", new ChoiceValue("Yes", "No"));
 	params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 	params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -62,8 +63,12 @@ public class testLinearApp extends Simulation{
 	}
 
 	public void animate() {
+		params.set("Time", ising.time());
+		params.set("Mean Phi", ising.mean(ising.phi));
+		params.set("Lp", ising.Lp);
 		etaDotLeftGrid.registerData(ising.Lp, ising.Lp, eta_dot);
 		etaDotRightGrid.registerData(ising.Lp, ising.Lp, rhs);
+		phiGrid.registerData(ising.Lp, ising.Lp, ising.phi);
 	}
 
 	public void clear() {
@@ -79,18 +84,17 @@ public class testLinearApp extends Simulation{
 		binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
 		eta_dot = new double[ising.Lp*ising.Lp];
 		rhs = new double[ising.Lp*ising.Lp];
-		double [] eta_old = new double[ising.Lp*ising.Lp];
+		double [] eta_k_old = new double[ising.Lp*ising.Lp];
+		double [] eta_k_new = new double[ising.Lp*ising.Lp];
 		kRChunk = 2*Math.PI/params.fget("L/R");
 		
         while (true) {
-    		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
-    			eta_old[i] = ising.phi[i];
+    		eta_k_old = calculateEta_k();
     		findRightSide();
     		ising.simulate();
+    		eta_k_new = calculateEta_k();
 			for (int i = 0; i < ising.Lp*ising.Lp; i ++)
-				eta_dot[i] = (eta_old[i] - ising.phi[i])/ising.dt;
-    		params.set("Time", ising.time());
-			params.set("Mean Phi", ising.mean(ising.phi));
+				eta_dot[i] = (eta_k_old[i] - eta_k_new[i])/ising.dt;
 			Job.animate();
 		}
 		
@@ -194,7 +198,6 @@ public class testLinearApp extends Simulation{
 			ex.printStackTrace();
 		}
 	}
-	
 	
 	public void writeConfigToFile(String FileName){
 		try {
