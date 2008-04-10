@@ -12,9 +12,7 @@ import scikit.numerics.Jama.EigenvalueDecomposition;
 import scikit.numerics.Jama.Matrix;
 import scikit.numerics.fft.FFT1D;
 import scikit.util.*;
-import rachele.util.FileUtil;
-import scikit.numerics.fft.managed.ComplexDoubleFFT;
-import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
+import rachele.ising.dim2.FindCoefficients;
 
 public class StripeClumpLinearTheory extends Simulation{
 	Plot sf = new Plot ("Structure Fuction");
@@ -23,12 +21,12 @@ public class StripeClumpLinearTheory extends Simulation{
     // must have n = 2m+1 where m is positive integer
 	public int matrixDim, vDim, Lp;
 	public double T = 0.04;
-	public double [] phi, inputFunction, a, v, phiSF;
+	public double [] phi, inputFunction, v, phiSF;
 	public int kyInt = 1;
 	public double dx, L, R, kChunk;
 	public EigenvalueDecomposition Eig;
-	ComplexDoubleFFT fft;
 	public double[] fftScratch;
+	public FindCoefficients coeff;
     
 	public static void main(String[] args) {
 		new Control(new StripeClumpLinearTheory(), "Stripe -> Clump");
@@ -49,83 +47,26 @@ public class StripeClumpLinearTheory extends Simulation{
 		R = params.fget("R");
 		L = params.fget("L/R")*R;
 		dx = L/Lp;
-		//System.out.println("dx = " + dx);
 		kChunk = 2*Math.PI*R/L;
-		//System.out.println("kstep = " + kChunk);
 		phi = new double [Lp];
 		phiSF = new double [Lp];
-		fftScratch = new double[2*Lp];
-		fft = new ComplexDoubleFFT_Mixed(Lp);
 	
 		inputFunction = new double [Lp];
-		a = new double [Lp];
 		vDim = 1+(matrixDim-1)/2;
 		v = new double [vDim];
-		String fileName = "../../../research/javaData/configs1d/config";
-		phi = FileUtil.readConfigFromFile(fileName, Lp);
-		for(int i = 0; i < Lp; i++)
-			inputFunction[i] = 1.0/(1-Math.pow(phi[i],2));
-		//findAllForierModes(inputFunction, Lp);
-		//findAllCoefficients(inputFunction, Lp);
-		findAllCoefficients(inputFunction, Lp);
+		coeff = new FindCoefficients(Lp);
 		findVelements();
 		constructMatrix();
 		double maxEigenvalue = findMaxEigenvalue();
 		System.out.println("matrix dim = " + matrixDim + " final slope = " +2*maxEigenvalue);		
 	}
-	
 
-
-public void findAllCoefficients(double[] src, int lp2) {
-	for (int i = 0; i < Lp; i++) {
-		fftScratch[2*i] = src[i];
-		fftScratch[2*i+1] = 0;
-	}
-	fft.transform(fftScratch);
-	for (int i = 0; i < Lp; i++) 
-		a[i] = fftScratch[2*i];		
-	}
-
-//	public void findCoefficients(double [] A, int size){
-//		for(int i = 0; i < matrixDim; i ++){
-//			double sum = 0;
-//			for(int j = 0; j < size; j ++){
-//				double point = j*dx;
-//				sum += Math.cos(i*kChunk*point)/(1.0-Math.pow(A[j],2));
-//			}
-//			double ave = sum/(double)size;
-//			a[i] = ave;
-//			//System.out.println("a" + i + " = " + a[i]);			
-//		}
-//		for(int i = 0; i < vDim; i++ ){
-//			double Vx = (i == 0) ? 1.0 :  Math.sin(i*kChunk)/(i*kChunk);
-//			double Vy = (i == 0) ? 1.0 :  Math.sin(kyInt*kChunk)/(kyInt*kChunk);
-//			double V = Vx*Vy;Wellesley U. 
-//			v[i] = -V-T*a[0];
-//			//System.out.println("v" + i + " = " + v[i]);
-//		}
-//	}
-	
-//	private void findAllForierModes(double [] A, int size) {
-//		FFT1D fft = new FFT1D(Lp);
-//		fft.setLength(L);
-//		fft.transform(A, new FFT1D.MapFn() {
-//			public void apply(double k, double re, double im) {
-//				double kR = k*R;
-//				int kRLatticePoint = (int)Math.abs(kR/kChunk);
-//				a[kRLatticePoint] = (re)/(L*L);
-//				System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
-//			}
-//		});
-//	}
-	
-	
 	private void findVelements(){
 		for(int i = 0; i < vDim; i++ ){
 			double Vx = (i == 0) ? 1.0 :  Math.sin(i*kChunk)/(i*kChunk);
 			double Vy = (i == 0) ? 1.0 :  Math.sin(kyInt*kChunk)/(kyInt*kChunk);
 			double V = Vx*Vy;
-			v[i] = -V-T*a[0];
+			v[i] = -V-T*coeff.a[0];
 		}		
 	}
 	
@@ -136,7 +77,7 @@ public void findAllCoefficients(double[] src, int lp2) {
 			//System.out.println("i = " + i + " vIndex = " + vIndex);
 			matrix[i][i] = v[vIndex];
 			for (int j = 0; j < i; j++)
-				matrix[j][i] = matrix [i][j] = -T*a[i-j];
+				matrix[j][i] = matrix [i][j] = -T*coeff.a[i-j];
 		}
 //		for (int i = 0; i < matrixDim; i ++){
 //			for (int j = 0; j < matrixDim; j ++){
@@ -186,12 +127,10 @@ public void findAllCoefficients(double[] src, int lp2) {
 		return maxEigenvalue;
 	}
 
-	public PointSet getPhi(){
-		return new PointSet(0, 1, phi);
-	}
+
 	
 	public PointSet getSF(){
-		return new PointSet(0, 1, a);
+		return new PointSet(0, 1, coeff.a);
 	}
 	
 	public PointSet getInput(){
@@ -213,7 +152,7 @@ public void findAllCoefficients(double[] src, int lp2) {
 	}
 	
 	public void animate() {
-		plot.registerLines("Slice", getPhi(), Color.RED);
+		plot.registerLines("Slice", coeff.getPhiSlice(), Color.RED);
 		sf.registerLines("SF", getSF(), Color.BLACK);
 		sf.registerLines("Phi SF",getPhiSF(), Color.RED);
 		plot.registerLines("input", getInput(), Color.BLACK);
