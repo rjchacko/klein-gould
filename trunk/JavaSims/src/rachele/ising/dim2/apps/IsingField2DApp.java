@@ -244,7 +244,7 @@ public class IsingField2DApp extends Simulation {
 		binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
         sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
 		sf.setBounds(0.1, 14);
-		//int recordSteps = 0;
+		int recordSteps = 0;
 		
 		maxi=sf.clumpsOrStripes(ising.phi);
 		
@@ -286,19 +286,19 @@ public class IsingField2DApp extends Simulation {
 			
 			//sf.accumulateAll(ising.time(), ising.coarseGrained());
 			
-//			if (ising.time() > recordSteps){
-//
-//				//sf.accumMin(ising.coarseGrained(), params.fget("kR"));
-//				boolean circleOn=false;
-//				sf.accumulateMelt(circleOn, ising.phi, maxi);
-//				//sf.accumulateAll(ising.t, ising.delPhi);
-//
-//				sf.accumulateAll(ising.t, ising.phi);
-//				recordSFvTime();
-//				//record3Ddata();
-//				recordSteps += 1;
-//				//writeDataToFile();
-//			}
+			if (ising.time() > recordSteps){
+
+				//sf.accumMin(ising.coarseGrained(), params.fget("kR"));
+				boolean circleOn=false;
+				sf.accumulateMelt(circleOn, ising.phi, maxi);
+				//sf.accumulateAll(ising.t, ising.delPhi);
+
+				sf.accumulateAll(ising.t, ising.phi);
+				recordSFvTime();
+				//record3Ddata();
+				recordSteps += 1;
+				//writeDataToFile();
+			}
 			Job.animate();
 			sfChange.clear();
 		}
