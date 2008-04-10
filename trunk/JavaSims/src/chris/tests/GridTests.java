@@ -4,6 +4,7 @@ package chris.tests;
 
 import java.awt.Color;
 
+import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -12,17 +13,21 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
+import chris.ofc.Clusters;
 import chris.ofc.NfailDamage2D;
 import chris.util.LatticeNeighbors;
 
 
 public class GridTests extends Simulation{
 
-	Grid grid1 = new Grid ("Sites");
+	Grid grid1 = new Grid ("Grid 1");
+	Grid grid2 = new Grid ("Grid 2");
 
 	NfailDamage2D model;
 
 	ColorPalette palette1;
+	ColorPalette palette2;
+	ColorGradient smooth;
 
 	LatticeNeighbors LN;
 	
@@ -30,6 +35,8 @@ public class GridTests extends Simulation{
 	
 	int x0,y0,i0;
 	int[] foo;
+	double[] display;
+	int[] parent;
 	
 	public static void main(String[] args) {
 		new Control(new GridTests(), "OFC Model");
@@ -74,12 +81,15 @@ public class GridTests extends Simulation{
 		params.add("x0", 250);
 		params.add("y0", 250);
 		
-		c.frame(grid1);
+		c.frameTogether("Test",grid1,grid2);
 	}
 	
 	public void animate() {
 		
-		if (params.sget("Animation").equals("On")) grid1.registerData(model.L,model.L,foo);
+		if (params.sget("Animation").equals("On")){
+			grid1.registerData(model.L,model.L,foo);
+			grid2.registerData(model.L,model.L,display);
+		}
 		params.set("Number of Resets",displaycounter);
 
 	}
@@ -87,6 +97,7 @@ public class GridTests extends Simulation{
 	public void clear() {
 		
 		grid1.clear();
+		grid2.clear();
 
 	}
 
@@ -245,17 +256,17 @@ public class GridTests extends Simulation{
 	 */
 		
 	
-	model.Initialize(params);
-	
-	displaycounter = 77;
-	
-	model.CloneSim(params);
-	
-	displaycounter = 7777;
-	
-	params.set("Animation","Off");
-	
-	Job.animate();
+//	model.Initialize(params);
+//	
+//	displaycounter = 77;
+//	
+//	model.CloneSim(params);
+//	
+//	displaycounter = 7777;
+//	
+//	params.set("Animation","Off");
+//	
+//	Job.animate();
 
 		
 	/**
@@ -263,11 +274,82 @@ public class GridTests extends Simulation{
 	 * 	Test method Initialize(Parameters prms)
 	 */
 		
+		////////////////////////////////////////////////////////////////////
+
+		
+		/**
+		 *	Test class Clusters(Parameters prms)
+		 */	
+	
+		while(true){
+			
+			
+			Clusters dummy = new Clusters(model.L, "Periodic");
+			
+			foo = new int[model.N];
+			
+			for (int jj = 0 ; jj < model.N ; jj++){
+				foo[jj] = 0;
+			}
+			
+			int[] order = new int[model.N];
+			
+			for(int s = 0;s<model.N;s++) {
+				order[s] = s;
+			}
+			for(int s = 0;s<model.N-1;s++) {
+				int r = s+(int) (Math.random()*(model.N-s));
+				int temp = order[s];
+				order[s] = order[r];
+				order[r] = temp;
+			}
+			
+			
+			for (int ii = 0 ; ii < model.N ; ii++){
+				
+				if (model.rand.nextDouble() > 0.4){
+					dummy.addSite(order[ii]);
+					foo[order[ii]] = 1;
+				}
+			}
+				display = new double[model.N];
+			    for(int s = 0;s<model.N;s++) {
+			    	display[s] = dummy.getClusterSize(s);
+			    }
+			    
+				
+		    palette1 = new ColorPalette();
+		    palette2 = new ColorPalette();
+		    palette1.setColor(0,Color.WHITE);
+		    palette1.setColor(1,Color.BLACK);
+		    smooth   = new ColorGradient();
+		    grid1.setColors(palette1);
+
+		    double max = model.GetMax(display);
+
+		    for (int i = 0 ; i <= max ; i++){
+		    	palette2.setColor((int)(max)-i,smooth.getColor(i, 0, max));
+		    }
+		    grid2.setColors(palette2);
+		
+		    
+			Job.animate();
+			    
+		}
+			  
+
+			    
+			
+	}
+		
+		/**
+		 * 			E-N-D
+		 * 	Test class Clusters(Parameters prms)
+		 */
 		
 		
-		
-	}	
-}
+}	
+
 
 
 
