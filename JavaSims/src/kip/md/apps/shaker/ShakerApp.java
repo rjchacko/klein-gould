@@ -2,6 +2,8 @@ package kip.md.apps.shaker;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.exp;
+import static java.lang.Math.max;
+import static java.lang.Math.min;
 import static java.lang.Math.sqrt;
 
 import java.io.FileInputStream;
@@ -16,10 +18,83 @@ import scikit.dataset.Accumulator;
 import scikit.dataset.DynamicArray;
 import scikit.dataset.Function;
 import scikit.dataset.Histogram;
+import scikit.util.Bounds;
 import scikit.util.FileUtil;
 import scikit.util.Terminal;
 
-class Particle {
+
+class Scene {
+	Frame[] frames;
+	int nframes;
+	Bounds bds;
+	
+	private void getSceneBounds(Data d) {
+		double tmax = 0;
+		bds = new Bounds();
+		
+		d.reset();
+		while (d.hasRemaining()) {
+			Trajectory traj = d.nextTrajectory();
+			
+			for (int i = 0; i < traj.size(); i++) {
+				double t=traj.t(i), x=traj.x(i), y=traj.y(i);
+				tmax = max(tmax, t);
+				bds.xmin = min(bds.xmin, x);
+				bds.ymin = min(bds.ymin, y);
+				bds.xmax = max(bds.xmax, x);
+				bds.ymax = max(bds.ymax, y);
+			}
+		}
+		
+		nframes = 1+(int)tmax;
+	}
+
+	
+	public Scene(Data d) {
+		System.out.print("Counting frames... ");
+		getSceneBounds(d);
+		System.out.println(nframes + " counted.");
+		
+		System.out.print("Sorting frames...");
+		frames = new Frame[nframes];
+		for (int f = 0; f < frames.length; f++) {
+			frames[f] = new Frame();
+		}
+		d.reset();
+		while (d.hasRemaining()) {
+			Trajectory traj = d.nextTrajectory();
+			for (int i = 0; i < traj.size(); i++) {
+				double t=traj.t(i), x=traj.x(i), y=traj.y(i);
+				frames[(int)t].acc(traj.id, x, y);
+			}
+		}
+		System.out.println("done.");
+	}
+	
+	public void plot(int frame) {
+		
+	}
+}
+
+
+class Frame {
+	double t;
+	public DynamicArray id = new DynamicArray();
+	public DynamicArray x = new DynamicArray();
+	public DynamicArray y = new DynamicArray();
+	
+	public void acc(double id, double x, double y) {
+		this.id.append(id);
+		this.x.append(x);
+		this.y.append(y);
+	}
+	
+	public void plot() {
+	}
+}
+
+
+class Trajectory {
 	double radius, id;
 	public DynamicArray t = new DynamicArray();
 	public DynamicArray x = new DynamicArray();
@@ -46,13 +121,13 @@ class Particle {
 	public int size() {return t.size();}
 	public double x(int i) {return x.get(i); }
 	public double y(int i) {return y.get(i); }
-	
+	public double t(int i) {return t.get(i); }
 }
 
 class Data {
-	int maxCnt = Integer.MAX_VALUE;
-	int cnt;
-	FloatBuffer fb;
+	private int maxCnt = Integer.MAX_VALUE;
+	private int cnt;
+	private FloatBuffer fb;
 	
 	public Data(String fname) {
 		try {
@@ -92,11 +167,11 @@ class Data {
 		return cnt < maxCnt && fb.hasRemaining();
 	}
 	
-	public Particle nextParticle() {
+	public Trajectory nextTrajectory() {
 		if (!hasRemaining())
 			return null;
 		
-		Particle ret = new Particle();
+		Trajectory ret = new Trajectory();
 		double x, y, radius, time, id;
     	x = fb.get();
     	y = fb.get();
@@ -156,17 +231,35 @@ class Commands {
 		} catch(IOException e) {
 			term.println(e);
 			return null;
-		} 
+		}
+	}
+	
+	public Scene scene(Data data) {
+		return new Scene(data);
+	}
+	
+	public Histogram particlesPerFrame(Data data) {
+		int total = 0;
+		Histogram len = new Histogram(0.1);
+		data.reset();
+		while (data.hasRemaining()) {
+			Trajectory traj = data.nextTrajectory();
+			for (int i = 0; i < traj.size(); i++) {
+				len.accum(traj.t(i));
+				total += 1;
+			}
+		}
+		System.out.println(total);
+		return len;
 	}
 	
 	public Histogram trajectoryDistribution(Data data) {
 		data.reset();
 		Histogram len = new Histogram(100);
 		while (data.hasRemaining()) {
-			Particle p = data.nextParticle();
-			len.accum(p.t.size());
+			Trajectory traj = data.nextTrajectory();
+			len.accum(traj.t.size());
 		}
-		term.println(data.cnt + " trajectories");
 		return len;
 	}
 	
@@ -182,14 +275,14 @@ class Commands {
 		Accumulator x2 = new Accumulator(bw);
 		Accumulator x4 = new Accumulator(bw);
 		while (data.hasRemaining()) {
-			Particle p = data.nextParticle();
-			if (p.t.size() < minFrames) continue;
+			Trajectory traj = data.nextTrajectory();
+			if (traj.t.size() < minFrames) continue;
 			
-			for (int i = 0; i < p.size(); i += frameJump) {
+			for (int i = 0; i < traj.size(); i += frameJump) {
 				for (int s = 0; s < nsteps; s++) {
 					int j = i+steps[s];
-					if (j >= p.size()) break;
-					double d2 = p.dist2(i, j);
+					if (j >= traj.size()) break;
+					double d2 = traj.dist2(i, j);
 					x2.accum(j-i, d2);
 					x4.accum(j-i, d2*d2);
 				}
@@ -216,13 +309,13 @@ class Commands {
 		ret.setNormalizing(true);
 		data.reset();
 		while (data.hasRemaining()) {
-			Particle p = data.nextParticle();
-			if (p.t.size() < minFrames) continue;
+			Trajectory traj = data.nextTrajectory();
+			if (traj.t.size() < minFrames) continue;
 			
-			for (int i = 0; i < p.size(); i += frameJump) {
+			for (int i = 0; i < traj.size(); i += frameJump) {
 				int j = i + tstar;
-				if (j >= p.size()) break;
-				double r = sqrt(p.dist2(i, j));
+				if (j >= traj.size()) break;
+				double r = sqrt(traj.dist2(i, j));
 				ret.accum(r, 2*PI*r);
 			}
 		}
