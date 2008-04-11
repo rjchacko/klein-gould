@@ -26,7 +26,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 	 public String lifeshape, residualnoise, criticalnoise, outdir, outfile, PicDir;
 	 public double Sr[], Sc[], SsoFar[];
 	 public Boolean ShowGrid;
-	 public double SonFS[];
+	 public double SonFS[], NlivesLeft[];
 	 
 	 // Formats
 	 
@@ -67,11 +67,12 @@ public class NfailDamage2D extends SimpleDamage2D{
 		
 		alphawidth = Nwidth;
 		
-		alive  = new int[2*N];
-		Sr     = new double[N];
-		Sc     = new double[N];
-		SsoFar = new double[N];
-		SonFS  = new double[Nlives*N];
+		alive      = new int[2*N];
+		Sr         = new double[N];
+		Sc         = new double[N];
+		SsoFar     = new double[N];
+		SonFS      = new double[Nlives*N];
+		NlivesLeft = new double[Nlives+1];
 		
 		if (Nlives == 1){
 			Sr0=0.;
@@ -111,7 +112,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		if(str.equals("Flat")){
 			
 			for (int i = 0 ; i < N ; i++){
-				
+
 				if(criticalnoise.equals("On")) {
 					Sc[i]=Scwidth*rand.nextGaussian()+Sc0;
 				}
@@ -141,6 +142,10 @@ public class NfailDamage2D extends SimpleDamage2D{
 				}
 			}
 			
+			
+			NlivesLeft[alive[imax]]--;
+			NlivesLeft[alive[imax]-1]++;
+			
 			alive[imax]--;
 			alive[imax+N]=0;
 			
@@ -158,6 +163,11 @@ public class NfailDamage2D extends SimpleDamage2D{
 			System.out.println("Error! Intialization type " + str + " does not exist!");
 		}
 	
+		for (int ii = 0 ; ii < Nlives ; ii++){
+			NlivesLeft[ii] = 0;
+		}
+		NlivesLeft[Nlives] = N;
+		
 		
 		time=0;
 		tkip=0;
@@ -528,6 +538,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 		}
 		
 		// kill the site 
+		NlivesLeft[alive[imax]]--;
+		NlivesLeft[alive[imax]-1]++;
 		alive[imax]--;
 		alive[imax+N]=0;
 		
@@ -741,6 +753,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 				SonFS[SonFSindex++]=stress[i];
 				dead[search++]=i;
 				alive[i+N]=0;
+				NlivesLeft[alive[i]]--;
+				if(alive[i]>0) NlivesLeft[alive[i]-1]++;
 				alive[i]--;
 			}
 		}
@@ -943,6 +957,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 		else{
 			rgyr=0;
 		}
+		
+		// Record NlivesLeft (separate file?)
 		
 		PrintUtil.printlnToFile(outfile,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
 				
