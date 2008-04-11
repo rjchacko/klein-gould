@@ -22,6 +22,7 @@ public class GridTests extends Simulation{
 
 	Grid grid1 = new Grid ("Grid 1");
 	Grid grid2 = new Grid ("Grid 2");
+	Grid grid3 = new Grid ("Grid 3");
 
 	NfailDamage2D model;
 
@@ -36,7 +37,7 @@ public class GridTests extends Simulation{
 	int x0,y0,i0;
 	int[] foo;
 	double[] display;
-	int[] parent;
+	int[] parent, foo2;
 	
 	public static void main(String[] args) {
 		new Control(new GridTests(), "OFC Model");
@@ -81,7 +82,7 @@ public class GridTests extends Simulation{
 		params.add("x0", 250);
 		params.add("y0", 250);
 		
-		c.frameTogether("Test",grid1,grid2);
+		c.frameTogether("Test",grid1,grid2,grid3);
 	}
 	
 	public void animate() {
@@ -89,6 +90,7 @@ public class GridTests extends Simulation{
 		if (params.sget("Animation").equals("On")){
 			grid1.registerData(model.L,model.L,foo);
 			grid2.registerData(model.L,model.L,display);
+			grid3.registerData(model.L,model.L,foo2);
 		}
 		params.set("Number of Resets",displaycounter);
 
@@ -98,6 +100,7 @@ public class GridTests extends Simulation{
 		
 		grid1.clear();
 		grid2.clear();
+		grid3.clear();
 
 	}
 
@@ -286,7 +289,7 @@ public class GridTests extends Simulation{
 			
 			Clusters dummy = new Clusters(model.L, "Periodic");
 			
-			foo = new int[model.N];
+			foo2 = new int[model.N];
 			
 			for (int jj = 0 ; jj < model.N ; jj++){
 				foo[jj] = 0;
@@ -307,7 +310,7 @@ public class GridTests extends Simulation{
 			
 			for (int ii = 0 ; ii < model.N ; ii++){
 				
-				if (model.rand.nextDouble() > 0.4){
+				if (model.rand.nextDouble() > 0.9){
 					dummy.addSite(order[ii]);
 					foo[order[ii]] = 1;
 				}
@@ -315,6 +318,7 @@ public class GridTests extends Simulation{
 				display = new double[model.N];
 			    for(int s = 0;s<model.N;s++) {
 			    	display[s] = dummy.getClusterSize(s);
+			    	foo2[s]    = dummy.getClusterNumber(s);
 			    }
 			    
 				
@@ -325,14 +329,27 @@ public class GridTests extends Simulation{
 		    smooth   = new ColorGradient();
 		    grid1.setColors(palette1);
 
-		    double max = model.GetMax(display);
-
-		    for (int i = 0 ; i <= max ; i++){
-		    	palette2.setColor((int)(max)-i,smooth.getColor(i, 0, max));
+		    Color[] Carray = new Color[10];
+		    
+		    Carray[0] = Color.RED;
+		    Carray[1] = Color.ORANGE;
+		    Carray[2] = Color.YELLOW;
+		    Carray[3] = Color.GREEN;
+		    Carray[4] = Color.BLUE;
+		    Carray[5] = Color.GRAY;
+		    Carray[6] = Color.PINK;
+		    Carray[7] = Color.MAGENTA;
+		    Carray[8] = Color.CYAN;
+		    Carray[9] = Color.PINK;
+		    
+		    palette2.setColor(0,Color.WHITE);
+		    for (int i = 1 ; i <= model.N ; i++){
+		    	palette2.setColor(i,Carray[i%10]);
 		    }
 		    grid2.setColors(palette2);
-		
+		    grid3.setColors(palette2);
 		    
+		    displaycounter++;
 			Job.animate();
 			    
 		}

@@ -20,13 +20,14 @@ package chris.ofc;
  */
 public class Clusters {
   private static final int EMPTY = Integer.MIN_VALUE; 
-  //private static final int BIG = Integer.MAX_VALUE;
+  private static final int BIG = Integer.MAX_VALUE;
   public int L;                                      
   public int N;                                     
   public int numSitesOccupied;                     
   public int[] numClusters; 
   
-
+  private int[] cn, pcn; 
+  private int ClCt;
 
   private int[] parent;
   
@@ -39,6 +40,10 @@ public class Clusters {
     numClusters = new int[N+1];
     parent = new int[N];
 
+    ClCt = 1;
+    cn  = new int[N];	// takes a site
+    pcn = new int[N];	// takes a cn
+    
     if (BC.equals("Periodic")){
     	PERIODIC = true;
     }
@@ -57,23 +62,83 @@ public class Clusters {
     for(int s = 0;s<N;s++) {
       numClusters[s] = 0;
       parent[s] = EMPTY;
+      cn[s] = BIG;
+      pcn[s] = cn[s];
     }
   }
 
   public void addSite(int site){
 	  
+	  	int[] nbs = new int[4];
+	  
 	    numClusters[1]++;
 	    parent[site] = -1;
 	    int root = site;
-	    for(int j = 0;j<4;j++) {	
+	    for(int j = 0;j<4;j++) {		
 	      int neighborSite = getNeighbor(site, j);
+	      nbs[j] = neighborSite;
 	      if((neighborSite!=EMPTY)&&(parent[neighborSite]!=EMPTY)) {
 	        root = mergeRoots(root, findRoot(neighborSite));
 	      }
 	    }
 	    
+	    setClusterNumber(site,nbs);
+	    
 	  return;
   }
+  
+  private void setClusterNumber(int site, int[] nbs){
+	  
+	  // get the cn of the nbs
+	  
+	  int[] NBScn = new int[4];
+	  
+	  for (int i = 0 ; i < 4 ; i++){
+		  NBScn[i] = cn[nbs[i]];
+	  }
+	  
+	  // sort the nbs cn
+	  
+	  int[] order = sortVector(NBScn);
+	  
+	  if (NBScn[order[0]] == BIG){	// all neighbor sites are EMPTY
+		  // give the site a new cluster number and set it as a pcn
+		  cn[site] = ClCt++;
+		  pcn[cn[site]] = cn[site];
+		  
+	  }
+	  else if (NBScn[order[1]] == BIG){	// only one neighbor belongs to a cluster
+		  // give the site the cluster number of its neighbor
+		  cn[site] = pcn[NBScn[order[0]]];
+		  // the pcn for this cn has already been determined
+	  }
+	  else {	// more than one neighbor belongs to a cluster
+		  // determine which of the cn has the smallest pcn
+		  int Sorg = nbs[order[0]];
+		  for (int jj = 0 ; jj < 4 ; jj++){
+			  if (cn[nbs[jj]] != BIG){
+				  if (pcn[cn[nbs[jj]]] < pcn[cn[Sorg]]) Sorg = nbs[jj];
+			  }
+		  }
+		  // so Sorg belongs to the cluster with the smallest pcn
+		  cn[site] = pcn[cn[Sorg]];
+		  
+		  // now set the pcn of all other clusters = pcn ( cn ( Sorg ) ) 
+		  for (int jj = 0 ; jj < 4 ; jj++){
+			  if ( (nbs[jj] != Sorg) && (cn[nbs[jj]] != BIG) ){
+				  pcn[cn[nbs[jj]]] = pcn[cn[Sorg]];
+			  }
+		  }
+		  
+	  }
+	  
+	  return;
+  }
+  
+  
+  
+  
+  
   
   public int[] sortVector(int[] input){
 
@@ -114,6 +179,11 @@ public class Clusters {
     return(parent[s]==EMPTY) ? 0 : -parent[findRoot(s)];
   }
 
+  public int getClusterNumber(int s){
+	return(cn[s] == BIG) ? 0 : pcn[cn[s]];
+  }
+  
+  
   private int findRoot(int s) {
     if(parent[s]<0) {
       return s;
