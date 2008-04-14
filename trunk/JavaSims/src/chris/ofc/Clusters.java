@@ -113,6 +113,7 @@ public class Clusters {
 		  // the pcn for this cn has already been determined
 	  }
 	  else {	// more than one neighbor belongs to a cluster
+
 		  // determine which of the cn has the smallest pcn
 		  int Sorg = nbs[order[0]];
 		  for (int jj = 0 ; jj < 4 ; jj++){
@@ -121,15 +122,48 @@ public class Clusters {
 			  }
 		  }
 		  // so Sorg belongs to the cluster with the smallest pcn
-		  cn[site] = pcn[cn[Sorg]];
+		  // set up the new failed site
+		  int SorgPCN = pcn[cn[Sorg]];
+		  cn[site] = SorgPCN;
 		  
-		  // now set the pcn of all other clusters = pcn ( cn ( Sorg ) ) 
+		  // Initialize array to fix cn and pcn
+		  
+		  int[] temp = new int[3];
+		  int tempindex = 0;
+		  
+		  // loop over the neighbors and fix their pcn
+		  
 		  for (int jj = 0 ; jj < 4 ; jj++){
 			  if ( (nbs[jj] != Sorg) && (cn[nbs[jj]] != BIG) ){
-				  pcn[cn[nbs[jj]]] = pcn[cn[Sorg]];
+				  temp[tempindex++] = pcn[cn[nbs[jj]]];	// record the old pcn as it is no longer a pcn
+				  pcn[cn[nbs[jj]]] = SorgPCN;
 			  }
 		  }
 		  
+		  // loop over the array and fix all sites with pcn equal to one of the 
+		  // pcn adjusted in the above loop
+		  
+		  if(tempindex == 1){
+			  for(int kk = 0 ; kk < N ; kk++){
+				  if(cn[kk] != BIG){
+					  if(pcn[cn[kk]] == temp[0]) pcn[cn[kk]] = SorgPCN;	// fix the pcn
+				  }
+			  }
+		  }
+		  else if(tempindex == 2){
+			  for(int kk = 0 ; kk < N ; kk++){
+				  if(cn[kk] != BIG){
+					  if((pcn[cn[kk]] == temp[0]) || (pcn[cn[kk]] == temp[1]) ) pcn[cn[kk]] = SorgPCN;	// fix the pcn
+				  }
+			  }
+		  }
+		  else { //tempindex ==3
+			  for(int kk = 0 ; kk < N ; kk++){
+				  if(cn[kk] != BIG){
+					  if((pcn[cn[kk]] == temp[0]) || (pcn[cn[kk]] == temp[1]) || (pcn[cn[kk]] == temp[2])) pcn[cn[kk]] = SorgPCN;	// fix the pcn
+				  }
+			  }
+		  }		  
 	  }
 	  
 	  return;
