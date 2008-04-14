@@ -451,7 +451,7 @@ class Commands {
 public class ShakerApp extends Terminal {
 	public static void main(String[] args) {
 		ShakerApp term = new ShakerApp();
-		term.help = "Suggested command sequence:\n"+
+		term.help = "Suggested commands:\n"+
 			"\tdata = loadData(); // select tracking data (w/o velocity)\n"+
 			"\n"+
 			"\t// plot distribution of particle tracking duration\n"+
@@ -473,9 +473,10 @@ public class ShakerApp extends Terminal {
 			"\ts.plot(1); // plot the first frame of the data\n"+
 			"\ts.startAnimation(); // animate the tracked particles\n"+
 			"\ts.stopAnimation();\n"+
-			"\ts.plotMobile(1000, 100, 10); // plot mobile particles using t=1000, t*=100, r*=10\n"+
+			"\t// plot \"mobile\" particles using t=1000, t*=100, r*=10\n"+
+			"\ts.plotMobile(1000, 100, 10);\n"+
 			"\n"+
-			"(Right click in any plot to enable log scale and save data)\n";
+			"(Right click in any plot to change view options or to save data)\n";
 		term.importObject(new Commands(term));
 		term.runApplication();
 	}
