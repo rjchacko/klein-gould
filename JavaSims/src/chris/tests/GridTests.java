@@ -284,6 +284,34 @@ public class GridTests extends Simulation{
 		 *	Test class Clusters(Parameters prms)
 		 */	
 	
+		
+	    palette1 = new ColorPalette();
+	    palette2 = new ColorPalette();
+	    palette1.setColor(0,Color.WHITE);
+	    palette1.setColor(1,Color.BLACK);
+	    smooth   = new ColorGradient();
+	    grid1.setColors(palette1);
+
+	    Color[] Carray = new Color[10];
+	    
+	    Carray[0] = Color.RED;
+	    Carray[1] = Color.ORANGE;
+	    Carray[2] = Color.YELLOW;
+	    Carray[3] = Color.GREEN;
+	    Carray[4] = Color.BLUE;
+	    Carray[5] = Color.GRAY;
+	    Carray[6] = Color.PINK;
+	    Carray[7] = Color.MAGENTA;
+	    Carray[8] = Color.CYAN;
+	    Carray[9] = Color.PINK;
+	    
+	    palette2.setColor(0,Color.WHITE);
+	    for (int i = 1 ; i <= model.N ; i++){
+	    	palette2.setColor(i,Carray[i%10]);
+	    }
+	    grid2.setColors(palette2);
+	    grid3.setColors(palette2);
+		
 		while(true){
 			
 			
@@ -307,50 +335,26 @@ public class GridTests extends Simulation{
 				order[r] = temp;
 			}
 			
-			
 			for (int ii = 0 ; ii < model.N ; ii++){
 				
-				if (model.rand.nextDouble() > 0.9){
+				if (model.rand.nextDouble() > 0.5){
 					dummy.addSite(order[ii]);
 					foo[order[ii]] = 1;
 				}
-			}
-				display = new double[model.N];
-			    for(int s = 0;s<model.N;s++) {
-			    	display[s] = dummy.getClusterSize(s);
-			    	foo2[s]    = dummy.getClusterNumber(s);
-			    }
-			    
 				
-		    palette1 = new ColorPalette();
-		    palette2 = new ColorPalette();
-		    palette1.setColor(0,Color.WHITE);
-		    palette1.setColor(1,Color.BLACK);
-		    smooth   = new ColorGradient();
-		    grid1.setColors(palette1);
-
-		    Color[] Carray = new Color[10];
-		    
-		    Carray[0] = Color.RED;
-		    Carray[1] = Color.ORANGE;
-		    Carray[2] = Color.YELLOW;
-		    Carray[3] = Color.GREEN;
-		    Carray[4] = Color.BLUE;
-		    Carray[5] = Color.GRAY;
-		    Carray[6] = Color.PINK;
-		    Carray[7] = Color.MAGENTA;
-		    Carray[8] = Color.CYAN;
-		    Carray[9] = Color.PINK;
-		    
-		    palette2.setColor(0,Color.WHITE);
-		    for (int i = 1 ; i <= model.N ; i++){
-		    	palette2.setColor(i,Carray[i%10]);
-		    }
-		    grid2.setColors(palette2);
-		    grid3.setColors(palette2);
+			}
+			
+			display = new double[model.N];
+			for(int s = 0;s<model.N;s++) {
+				display[s] = dummy.getClusterSize(s);
+				 foo2[s]    = dummy.getClusterNumber(s);
+			}
 		    
 		    displaycounter++;
 			Job.animate();
+				
+
+			clear();	
 			    
 		}
 			  
