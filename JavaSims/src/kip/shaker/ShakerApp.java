@@ -1,11 +1,15 @@
-package kip.md.apps.shaker;
+package kip.shaker;
 
 import static java.lang.Math.PI;
 import static java.lang.Math.exp;
 import static java.lang.Math.max;
 import static java.lang.Math.min;
 import static java.lang.Math.sqrt;
+import static scikit.numerics.Math2.sqr;
 
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -13,22 +17,131 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.Hashtable;
+
+import javax.swing.Timer;
 
 import scikit.dataset.Accumulator;
 import scikit.dataset.DynamicArray;
 import scikit.dataset.Function;
 import scikit.dataset.Histogram;
+import scikit.graphics.Drawable;
+import scikit.graphics.dim2.Geom2D;
+import scikit.graphics.dim2.Gfx2D;
+import scikit.graphics.dim2.Scene2D;
 import scikit.util.Bounds;
 import scikit.util.FileUtil;
 import scikit.util.Terminal;
+import scikit.util.Utilities;
 
-
-class Scene {
+class FrameSequence {
+	Terminal term;
 	Frame[] frames;
 	int nframes;
 	Bounds bds;
+	Scene2D plot = new Scene2D("Tracked particles");
+	Timer timer;
+	int timerFrame;
 	
-	private void getSceneBounds(Data d) {
+	public FrameSequence(Terminal term, ShakerData d) {
+		this.term = term;
+		
+		term.print("Counting frames... ");
+		calculateSceneBounds(d);
+		term.println(nframes + " counted.");
+		
+		term.print("Sorting frames...");
+		frames = new Frame[nframes];
+		for (int f = 0; f < frames.length; f++) {
+			frames[f] = new Frame(f);
+		}
+		d.reset();
+		while (d.hasRemaining()) {
+			Trajectory traj = d.nextTrajectory();
+			for (int i = 0; i < traj.size(); i++) {
+				double t=traj.t(i), x=traj.x(i), y=traj.y(i);
+				frames[(int)t].acc(traj.id, x, y);
+			}
+		}
+		term.println("done.");
+		
+		plot(0);
+		Utilities.frame(plot.getComponent(), plot.getTitle());
+	}
+	
+	public Frame getMobileParticles(int t, int tstar, double rstar) {
+		int t2 = t;
+		int t1 = t2 - tstar;
+		if (t1 <= 0) {
+			term.println("Too early to print mobile particles");
+			return null;
+		}
+		else {
+			Frame f1 = frames[t1];
+			Frame f2 = frames[t2];
+			Hashtable<Integer,Integer> hash = f1.getIndexHash();
+			Frame mobile = new Frame(t2);
+			
+			for (int i2 = 0; i2 < f2.size(); i2++) {
+				int id = (int)f2.id.get(i2);
+				
+				if (!hash.containsKey(id))
+					continue;
+				
+				int i1 = hash.get(id);
+				double x1 = f1.x.get(i1);
+				double y1 = f1.y.get(i1);				
+				double x2 = f2.x.get(i2);
+				double y2 = f2.y.get(i2);				
+				
+				double d2 = sqr(x2-x1) + sqr(y2-y1);
+				if (d2 > sqr(rstar))
+					mobile.acc(id, x2, y2);
+			}
+			return mobile;
+		}
+	}
+	
+	public Scene2D plot(int t) {
+		if (t >= frames.length)
+			term.println("Time " + t + " exceeds maximum frame " + (frames.length-1));
+		plot.clearDrawables();
+		plot.addDrawable(Geom2D.rectangle(bds, Color.BLACK));
+		plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.5f)));
+		return plot;
+	}
+	
+	public void plotMobile(int t, int tstar, double rstar) {
+		if (t >= frames.length)
+			term.println("Time " + t + " exceeds maximum frame " + (frames.length-1));
+		Frame mobile = getMobileParticles(t, tstar, rstar);			
+		plot.clearDrawables();
+		plot.addDrawable(Geom2D.rectangle(bds, Color.BLACK));
+		plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.3f)));
+		plot.addDrawable(mobile.getDrawable(new Color(0f, 0f, 1f, 1f)));
+	}
+	
+	public void startAnimation() {
+		timerFrame = 0;
+		ActionListener taskPerformer = new ActionListener() {
+		    public void actionPerformed(ActionEvent evt) {
+		    	if (timerFrame >= frames.length)
+		    		timer.stop();
+		    	else
+		    		plot(timerFrame++);
+		    }
+		};
+		int delay = 50; // milliseconds
+		timer = new Timer(delay, taskPerformer);
+		timer.start();
+	}
+	
+	public void stopAnimation() {
+		if (timer != null)
+			timer.stop();
+	}
+	
+	private void calculateSceneBounds(ShakerData d) {
 		double tmax = 0;
 		bds = new Bounds();
 		
@@ -45,43 +158,19 @@ class Scene {
 				bds.ymax = max(bds.ymax, y);
 			}
 		}
-		
 		nframes = 1+(int)tmax;
-	}
-
-	
-	public Scene(Data d) {
-		System.out.print("Counting frames... ");
-		getSceneBounds(d);
-		System.out.println(nframes + " counted.");
-		
-		System.out.print("Sorting frames...");
-		frames = new Frame[nframes];
-		for (int f = 0; f < frames.length; f++) {
-			frames[f] = new Frame();
-		}
-		d.reset();
-		while (d.hasRemaining()) {
-			Trajectory traj = d.nextTrajectory();
-			for (int i = 0; i < traj.size(); i++) {
-				double t=traj.t(i), x=traj.x(i), y=traj.y(i);
-				frames[(int)t].acc(traj.id, x, y);
-			}
-		}
-		System.out.println("done.");
-	}
-	
-	public void plot(int frame) {
-		
 	}
 }
 
-
 class Frame {
-	double t;
+	int t;
 	public DynamicArray id = new DynamicArray();
 	public DynamicArray x = new DynamicArray();
 	public DynamicArray y = new DynamicArray();
+	
+	public Frame(int t) {
+		this.t = t;
+	}
 	
 	public void acc(double id, double x, double y) {
 		this.id.append(id);
@@ -89,7 +178,35 @@ class Frame {
 		this.y.append(y);
 	}
 	
-	public void plot() {
+	public int size() {
+		return id.size();
+	}
+	
+	public Drawable<Gfx2D> getDrawable(final Color color) {
+		return new Drawable<Gfx2D>() {
+			public void draw(Gfx2D g) {
+				for (int i = 0; i < id.size(); i++) {
+					g.setColor(color);
+					g.fillCircle(x.get(i), y.get(i), 4.0);
+				}
+				g.setColor(Color.RED);
+				
+				g.setProjection(g.pixelBounds());
+				g.drawString("Frame " + t, 4, 4);
+				g.setProjection(g.viewBounds());
+			}
+			public Bounds getBounds() {
+				return new Bounds();
+			}
+		};
+	}
+	
+	public Hashtable<Integer,Integer> getIndexHash() {
+		Hashtable<Integer,Integer> ret = new Hashtable<Integer,Integer>();
+		for (int i = 0; i < size(); i++) {
+			ret.put((int)id.get(i), i);
+		}
+		return ret;
 	}
 }
 
@@ -124,12 +241,12 @@ class Trajectory {
 	public double t(int i) {return t.get(i); }
 }
 
-class Data {
+class ShakerData {
 	private int maxCnt = Integer.MAX_VALUE;
 	private int cnt;
 	private FloatBuffer fb;
 	
-	public Data(String fname) {
+	public ShakerData(String fname) {
 		try {
 			FileChannel channel = new FileInputStream(fname).getChannel();
 			MappedByteBuffer bb = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
@@ -218,27 +335,27 @@ class Commands {
 		this.term = term;
 	}
 	
-	public Data loadData(String fname) {
+	public ShakerData loadData(String fname) {
 		term.println("Opening " + fname);
-		return new Data(fname);
+		return new ShakerData(fname);
 	}
 	
-	public Data loadData() {
+	public ShakerData loadData() {
 		try {
 			String fname = FileUtil.loadDialog(term.getConsole(), "Open Shaker Data");
 			term.println("Opening " + fname);
-			return new Data(fname);
+			return new ShakerData(fname);
 		} catch(IOException e) {
 			term.println(e);
 			return null;
 		}
 	}
 	
-	public Scene scene(Data data) {
-		return new Scene(data);
+	public FrameSequence sequence(ShakerData data) {
+		return new FrameSequence(term, data);
 	}
 	
-	public Histogram particlesPerFrame(Data data) {
+	public Histogram particlesPerFrame(ShakerData data) {
 		int total = 0;
 		Histogram len = new Histogram(0.1);
 		data.reset();
@@ -249,11 +366,10 @@ class Commands {
 				total += 1;
 			}
 		}
-		System.out.println(total);
 		return len;
 	}
 	
-	public Histogram trajectoryDistribution(Data data) {
+	public Histogram trajectoryDistribution(ShakerData data) {
 		data.reset();
 		Histogram len = new Histogram(100);
 		while (data.hasRemaining()) {
@@ -263,7 +379,7 @@ class Commands {
 		return len;
 	}
 	
-	public Alpha analyze(Data data) {
+	public Alpha analyze(ShakerData data) {
 		int nsteps = 500;
 		int[] steps = new int[nsteps];
 		for (int i = 0; i < nsteps; i++) {
@@ -304,7 +420,7 @@ class Commands {
 		return ret;
 	}
 	
-	public Histogram vanHove(Data data, int tstar) {
+	public Histogram vanHove(ShakerData data, int tstar) {
 		Histogram ret = new Histogram(0.05);
 		ret.setNormalizing(true);
 		data.reset();
@@ -336,7 +452,8 @@ public class ShakerApp extends Terminal {
 	public static void main(String[] args) {
 		ShakerApp term = new ShakerApp();
 		term.help = "Suggested command sequence:\n"+
-			"\tdata = loadData();\n"+
+			"\tdata = loadData(); // select tracking data (w/o velocity)\n"+
+			"\n"+
 			"\t// plot distribution of particle tracking duration\n"+
 			"\tplot(trajectoryDistribution(data));\n"+
 			"\t// neglect particles tracked for less than, e.g., 500 frames\n"+
@@ -350,7 +467,15 @@ public class ShakerApp extends Terminal {
 			"\tplot(vanHove(data, 1000), \"Experiment\");\n"+
 			"\t// compare to gaussian with t* = 1000, diffusion coef = 0.003\n"+
 			"\treplot(vanHoveTheory(1000, 0.003), \"Theory\");\n"+
-			"(Right click in the plot windows to enable log scale and save data)";
+			"\n"+
+			"\t// Display the data\n"+
+			"\ts = sequence(data); // sequence particles by time\n"+
+			"\ts.plot(1); // plot the first frame of the data\n"+
+			"\ts.startAnimation(); // animate the tracked particles\n"+
+			"\ts.stopAnimation();\n"+
+			"\ts.plotMobile(1000, 100, 10); // plot mobile particles using t=1000, t*=100, r*=10\n"+
+			"\n"+
+			"(Right click in any plot to enable log scale and save data)\n";
 		term.importObject(new Commands(term));
 		term.runApplication();
 	}
