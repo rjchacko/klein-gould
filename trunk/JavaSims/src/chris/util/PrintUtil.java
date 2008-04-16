@@ -256,4 +256,25 @@ public class PrintUtil {
 			ex.printStackTrace();
 		}
 	}
+	
+	static public void printTimeAndVectorToFile(String fileName, double T, double[] vector){
+
+		int Length = vector.length;	
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.print(T);
+			pw.print("\t");
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.print(vector[ii]);
+				pw.print("\t");
+			}
+			pw.println();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	
 }

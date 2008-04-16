@@ -21,10 +21,11 @@ package chris.ofc;
 public class ClustersV3 {
   private static final int EMPTY = Integer.MIN_VALUE; 
   private static final int BIG = Integer.MAX_VALUE;
-  public int L;                                      
-  public int N;                                     
+  private int L, N;                                                                        
   public int numSitesOccupied;                     
-  public int[] numClusters; 
+  private int[] numClusters; 
+  
+  private int PercolationCluster;
   
   private int[] cnARRAY, pcn, cDist, refSite;
   private int ClCt;
@@ -45,6 +46,8 @@ public class ClustersV3 {
     pcn = new int[N];	// takes a cn
     cDist = new int[2*N]; // takes a site ( CDist[site] = x ; CDist[site+N] = y )
     refSite = new int[N]; // takes a pcn
+    
+    PercolationCluster = EMPTY;
     
     if (BC.equals("Periodic")){
     	PERIODIC = true;
@@ -90,7 +93,7 @@ public class ClustersV3 {
 	    setClusterNumber(site,nbs);
 	    
 	    // did adding this site cause percolation?
-	    return false;
+	    return ( PercolationCluster != EMPTY );
   }
 
   private void setClusterNumber(int site, int[] nbs){
@@ -322,6 +325,18 @@ public class ClustersV3 {
 	  
 	  return;
   }
+  
+//  private void mergeANDmeasure(int site, int[] same, int[] unique){
+//	  
+//	  int Lsame = same.length;
+//	  int Lunique = unique.length;
+//	  
+//	  
+//	  
+//	  
+//	  return;
+//  }
+  
   
   private void setCdist2(int ns, int os){
 	  
