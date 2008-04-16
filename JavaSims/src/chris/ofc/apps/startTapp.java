@@ -129,7 +129,7 @@ public class startTapp extends Simulation {
 			palette1.setColor(i,smooth.getColor(i, 0, max));
 		}
 				
-		model.WriteDataHeader(model.outfile);
+		model.WriteDataHeader();
 		
 		
 		tMAX = params.fget("T_max");

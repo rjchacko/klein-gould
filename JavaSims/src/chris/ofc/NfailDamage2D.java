@@ -23,7 +23,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 	// Parameters
 	 public double Sr0, Sc0, Srwidth, Scwidth, alphawidth, lifewidth, DaboutFS, tkip, dtkip;
 	 public int Nlives, rmin, hammersize, Nshowers, SonFSindex, NdeadS, Nalive, search;
-	 public String lifeshape, residualnoise, criticalnoise, outdir, outfile, PicDir;
+	 public String lifeshape, residualnoise, criticalnoise, outdir, outfile1, PicDir, outfile2;
 	 public double Sr[], Sc[], SsoFar[];
 	 public Boolean ShowGrid;
 	 public double SonFS[], NlivesLeft[];
@@ -59,7 +59,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 		criticalnoise = params.sget("\u03C3_r Noise");
 		outdir        = params.sget("Data Directory");
 
-		outfile=outdir+File.separator+"Damage.txt";
+		outfile1=outdir+File.separator+"Damage1.txt";
+		outfile2=outdir+File.separator+"Damage2.txt";
 		//outfileCHK=outdir+File.separator+"DamageCHK.txt";
 		
 		PicDir=outdir+"/Pics/";
@@ -142,6 +143,10 @@ public class NfailDamage2D extends SimpleDamage2D{
 				}
 			}
 			
+			for (int ii = 0 ; ii < Nlives ; ii++){
+				NlivesLeft[ii] = 0;
+			}
+			NlivesLeft[Nlives] = N;
 			
 			NlivesLeft[alive[imax]]--;
 			NlivesLeft[alive[imax]-1]++;
@@ -162,12 +167,6 @@ public class NfailDamage2D extends SimpleDamage2D{
 		else {
 			System.out.println("Error! Intialization type " + str + " does not exist!");
 		}
-	
-		for (int ii = 0 ; ii < Nlives ; ii++){
-			NlivesLeft[ii] = 0;
-		}
-		NlivesLeft[Nlives] = N;
-		
 		
 		time=0;
 		tkip=0;
@@ -939,10 +938,28 @@ public class NfailDamage2D extends SimpleDamage2D{
 		return ret;
 	}
 	
-	public void WriteDataHeader(String fout){
+	public void WriteDataHeader(){
 	
-		PrintUtil.printlnToFile(fout,"Time","t_kip","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
-
+		PrintUtil.printlnToFile(outfile1,"Time","t_kip","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
+		PrintUtil.printlnToFile(outfile2,"Time","Nlives=0","Nlives=1","Nlives=2",". . .","Nlives=Nmax");
+		
+		return;
+	}
+	
+	public void WriteDataHeader(String fout, int Num){
+		
+		switch(Num){
+		
+			case 1:
+				PrintUtil.printlnToFile(fout,"Time","t_kip","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
+				break;
+			case 2:
+				PrintUtil.printlnToFile(fout,"Time","Nlives=0","Nlives=1","Nlives=2",". . .","Nlives=Nmax");
+				break;
+			default:
+				System.err.println("File Not Found!");
+				break;
+		}
 		return;
 	}
 	
@@ -958,10 +975,9 @@ public class NfailDamage2D extends SimpleDamage2D{
 			rgyr=0;
 		}
 		
-		// Record NlivesLeft (separate file?)
+		PrintUtil.printlnToFile(outfile1,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
+		PrintUtil.printTimeAndVectorToFile(outfile2, time, NlivesLeft);
 		
-		PrintUtil.printlnToFile(outfile,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
-				
 		return;
 	}
 	
@@ -1010,7 +1026,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		PrintUtil.printArrayToFile(outdir + File.separator + "Residual_Stress.txt", Sr, L, L);
 		PrintUtil.printArrayToFile(outdir + File.separator + "Critical_Stress.txt", Sc, L, L);
 		PrintUtil.printArrayToFile(outdir + File.separator + "Stress_so_Far.txt", SsoFar, L, L);
-		WriteDataHeader(outdir + File.separator + "Data_LL.txt");
+		WriteDataHeader(outdir + File.separator + "Data_LL.txt",1);
 		TakeData(outdir + File.separator + "Data_LL.txt");
 		
 		return;

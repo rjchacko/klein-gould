@@ -131,7 +131,7 @@ public class NFailApp extends Simulation {
 		// Set up file
 			
 		//PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
-		model.WriteDataHeader(model.outfile);
+		model.WriteDataHeader();
 		
 		
 		while(!(model.crack)) {

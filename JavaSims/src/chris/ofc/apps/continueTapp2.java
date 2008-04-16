@@ -1,6 +1,16 @@
 package chris.ofc.apps;
 
 
+/*
+ * 
+ * 	THERE IS A PROBLEM WITH THE WRITE DATA METHOD
+ * 	NOW THERE ARE TWO DATA FILES TO WRITE!!!!
+ * 
+ * 	CHECK THIS BEFORE USE!!!!!!
+ * 
+ */
+
+
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -125,14 +135,14 @@ public class continueTapp2 extends Simulation {
 			palette1.setColor(i,smooth.getColor(i, 0, max));
 		}
 				
-		model.WriteDataHeader(model.outfile);
+		//model.WriteDataHeader(model.outfile1);
 		
 		
 		while(!(model.crack)) {
 			
 			model.Avalanche();
 
-			model.TakeData(model.outfile);
+			model.TakeData(model.outfile1);
 			
 		}
 		

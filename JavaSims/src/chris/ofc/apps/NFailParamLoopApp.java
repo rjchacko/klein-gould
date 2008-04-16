@@ -92,15 +92,16 @@ public class NFailParamLoopApp extends Simulation {
 				model = new NfailDamage2D(params);
 				
 				params.set("Lattice Size",lpvar);
+										
+				model.outfile1 = model.outdir + File.separator+ "Damage1_" + fmts.format(cyclevar) +".txt";
+				model.outfile2 = model.outdir + File.separator+ "Damage2_" + fmts.format(cyclevar) +".txt";
 				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
 				model.Initialize("Flat");
 				
 				// Set up file
 					
-				PrintUtil.printlnToFile(model.outfile,"Lattice Size = ", params.iget("Lattice Size"));
-				model.WriteDataHeader(model.outfile);
+				PrintUtil.printlnToFile(model.outfile1,"Lattice Size = ", params.iget("Lattice Size"));
+				model.WriteDataHeader();
 
 				
 				while(!(model.crack)) {
@@ -122,16 +123,17 @@ public class NFailParamLoopApp extends Simulation {
 				
 				model = new NfailDamage2D(params);
 				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-							
+				model.outfile1 = model.outdir + File.separator+ "Damage1_" + fmts.format(cyclevar) +".txt";
+				model.outfile2 = model.outdir + File.separator+ "Damage2_" + fmts.format(cyclevar) +".txt";
+				
 				params.set("Number of Lives",lpvar);
 				
 				model.Initialize("Flat");
 				
 				// Set up file
-				PrintUtil.printlnToFile(model.outfile,"Number of Lives = ", params.iget("Number of Lives"));
-				model.WriteDataHeader(model.outfile);
-
+				PrintUtil.printlnToFile(model.outfile1,"Number of Lives = ", params.iget("Number of Lives"));
+				model.WriteDataHeader();
+				
 				while(!(model.crack)) {
 					
 					model.Avalanche();
@@ -153,15 +155,16 @@ public class NFailParamLoopApp extends Simulation {
 				
 				params.set("Critical Stress (\u03C3_c)",lpvar);
 				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
+				model.outfile1 = model.outdir + File.separator+ "Damage1_" + fmts.format(cyclevar) +".txt";
+				model.outfile2 = model.outdir + File.separator+ "Damage2_" + fmts.format(cyclevar) +".txt";
+				
 				model.Initialize("Flat");
 				
 				// Set up file
 				
-				PrintUtil.printlnToFile(model.outfile,"Critical Stress (\u03C3_c) = ", params.fget("Critical Stress (\u03C3_c)"));
-				model.WriteDataHeader(model.outfile);
-
+				PrintUtil.printlnToFile(model.outfile1,"Critical Stress (\u03C3_c) = ", params.fget("Critical Stress (\u03C3_c)"));
+				model.WriteDataHeader();
+				
 				while(!(model.crack)) {
 					
 					model.Avalanche();
@@ -181,17 +184,18 @@ public class NFailParamLoopApp extends Simulation {
 				
 				model = new NfailDamage2D(params);
 				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-							
+				model.outfile1 = model.outdir + File.separator+ "Damage1_" + fmts.format(cyclevar) +".txt";
+				model.outfile2 = model.outdir + File.separator+ "Damage2_" + fmts.format(cyclevar) +".txt";
+				
 				params.set("Residual Stress (\u03C3_r)",lpvar);
 				
 				model.Initialize("Flat");
 				
 				// Set up file
 				
-				PrintUtil.printlnToFile(model.outfile,"Residual Stress (\u03C3_r) = ", params.fget("Residual Stress (\u03C3_r)"));
-				model.WriteDataHeader(model.outfile);
-
+				PrintUtil.printlnToFile(model.outfile1,"Residual Stress (\u03C3_r) = ", params.fget("Residual Stress (\u03C3_r)"));
+				model.WriteDataHeader();
+				
 				while(!(model.crack)) {
 					
 					model.Avalanche();
@@ -211,16 +215,17 @@ public class NFailParamLoopApp extends Simulation {
 				
 				model = new NfailDamage2D(params);
 				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-						
+				model.outfile1 = model.outdir + File.separator+ "Damage1_" + fmts.format(cyclevar) +".txt";
+				model.outfile2 = model.outdir + File.separator+ "Damage2_" + fmts.format(cyclevar) +".txt";
+				
 				params.set("Interaction Radius (R)",lpvar);
 				
 				model.Initialize("Flat");
 				
 				// Set up file
 				
-				PrintUtil.printlnToFile(model.outfile,"Interaction Radius (R) = ", params.iget("Interaction Radius (R)"));
-				model.WriteDataHeader(model.outfile);
+				PrintUtil.printlnToFile(model.outfile1,"Interaction Radius (R) = ", params.iget("Interaction Radius (R)"));
+				model.WriteDataHeader();
 				
 				while(!(model.crack)) {
 					
@@ -241,16 +246,17 @@ public class NFailParamLoopApp extends Simulation {
 				
 				model = new NfailDamage2D(params);
 				
-				model.outfile = model.outdir + File.separator+ "Damage" + fmts.format(cyclevar++) +".txt";
-									
+				model.outfile1 = model.outdir + File.separator+ "Damage1_" + fmts.format(cyclevar) +".txt";
+				model.outfile2 = model.outdir + File.separator+ "Damage2_" + fmts.format(cyclevar) +".txt";
+				
 				params.set("Dissipation (\u03B1)",lpvar);
 				
 				model.Initialize("Flat");
 				
 				// Set up file
 				
-				PrintUtil.printlnToFile(model.outfile,"Dissipation (\u03B1) = ", params.fget("Dissipation (\u03B1)"));
-				model.WriteDataHeader(model.outfile);
+				PrintUtil.printlnToFile(model.outfile1,"Dissipation (\u03B1) = ", params.fget("Dissipation (\u03B1)"));
+				model.WriteDataHeader();
 				
 				while(!(model.crack)) {
 					
