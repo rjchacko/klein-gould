@@ -31,13 +31,14 @@ public class testLinearApp extends Simulation{
     Grid etaDotRightGrid = new Grid("eta dot");
     Grid phiGrid = new Grid("phi field");
     Grid ftPhiField = new Grid("ft phi field");
-    
+    Grid phiDotGrid = new Grid("phi dot");
     
 	public static void main(String[] args) {
 		new Control(new testLinearApp(), "Ising Linear Test");
 	}
 	public void load(Control c) {
-		c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid, phiGrid, ftPhiField);
+	c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid, ftPhiField);
+	c.frameTogether("Fields", phiGrid, phiDotGrid);	
 	params.addm("Zoom", new ChoiceValue("Yes", "No"));
 	params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 	params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -68,10 +69,13 @@ public class testLinearApp extends Simulation{
 		params.set("Time", ising.time());
 		params.set("Mean Phi", ising.mean(ising.phi));
 		params.set("Lp", ising.Lp);
+		for(int i = 0; i < ising.Lp; i ++)
+			eta_dot[i]=0;
 		etaDotLeftGrid.registerData(ising.Lp, ising.Lp, eta_dot);
 		etaDotRightGrid.registerData(ising.Lp, ising.Lp, rhs);
 		phiGrid.registerData(ising.Lp, ising.Lp, ising.phi);
 		ftPhiField.registerData(ising.Lp, ising.Lp, phiFT);
+		phiDotGrid.registerData(ising.Lp, ising.Lp, ising.delPhi);
 	}
 
 	public void clear() {
@@ -109,7 +113,13 @@ public class testLinearApp extends Simulation{
 	public void findRightSide(){
 		double [] eta_k = new double [ising.Lp*ising.Lp];
 		eta_k = calculateEta_k();
+		double [] slice = new double [ising.Lp];
+		for(int j = 0; j < ising.Lp; j++)
+			slice [j] = ising.phi[j];
+		//new set of coefficients for every time step
+		coeff.findCoefficientsFromSlice(slice);
 		for(int i = 0; i < ising.Lp*ising.Lp; i++){
+			coeff.findCoefficientsFromSlice(slice);
 			int kx = i%ising.Lp;
 			int ky = i/ising.Lp;
 			double kRxValue = kRChunk*kx;

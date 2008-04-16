@@ -66,6 +66,7 @@ public class StripeClumpLinearTheory extends Simulation{
 			double Vx = (i == 0) ? 1.0 :  Math.sin(i*kChunk)/(i*kChunk);
 			double Vy = (i == 0) ? 1.0 :  Math.sin(kyInt*kChunk)/(kyInt*kChunk);
 			double V = Vx*Vy;
+			coeff.findCoefficientsFromFile();
 			v[i] = -V-T*coeff.a[0];
 		}		
 	}
