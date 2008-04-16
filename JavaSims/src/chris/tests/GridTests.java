@@ -13,7 +13,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.Clusters;
+import chris.ofc.ClustersV2;
 import chris.ofc.NfailDamage2D;
 import chris.util.LatticeNeighbors;
 
@@ -315,7 +315,10 @@ public class GridTests extends Simulation{
 		while(true){
 			
 			
-			Clusters dummy = new Clusters(model.L, "Periodic");
+			///////// YOU ARE TESTING ClusterV2 !!!!!!!!!!!!
+			
+			
+			ClustersV2 dummy = new ClustersV2(model.L, "Periodic");
 			
 			foo2 = new int[model.N];
 			
@@ -335,12 +338,41 @@ public class GridTests extends Simulation{
 				order[r] = temp;
 			}
 			
+//			int mnst = 25;
+//			
+//			order[0] = mnst+1;
+//			order[1] = mnst-1;
+//			order[2] = mnst+model.L;
+//			order[3] = mnst-model.L;
+//			order[4] = mnst;
+//			order[5] = mnst+model.L+1;
+//			
+//			mnst=48;
+//			
+//			order[6] = mnst+1;
+//			order[7] = mnst-1;
+//			order[8] = mnst+model.L;
+//			order[9] = mnst-model.L;
+//			order[10] = mnst;
+//			order[11] = mnst-model.L-1;
+			
+			
 			for (int ii = 0 ; ii < model.N ; ii++){
 				
 				if (model.rand.nextDouble() > 0.5){
 					dummy.addSite(order[ii]);
 					foo[order[ii]] = 1;
 				}
+				
+				
+//				display = new double[model.N];
+//				for(int s = 0;s<model.N;s++) {
+//					display[s] = dummy.getClusterSize(s);
+//					 foo2[s]    = dummy.getClusterNumber(s);
+//				}
+//			    
+//			    displaycounter++;
+//				Job.animate();
 				
 			}
 			
