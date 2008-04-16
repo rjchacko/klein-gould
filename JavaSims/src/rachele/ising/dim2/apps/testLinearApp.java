@@ -23,7 +23,7 @@ import scikit.numerics.fft.managed.ComplexDouble2DFFT;
 public class testLinearApp extends Simulation{
     IsingField2D ising;
     public double [] eta_dot;
-    public double [] phiFT;
+    public double [] phiFT, del_phi_k;
     public double [] rhs;  // right hand side of equation
     public FindCoefficients coeff;
     public double kRChunk; //=2piR/L
@@ -32,12 +32,13 @@ public class testLinearApp extends Simulation{
     Grid phiGrid = new Grid("phi field");
     Grid ftPhiField = new Grid("ft phi field");
     Grid phiDotGrid = new Grid("phi dot");
+    Grid delPhiKGrid = new Grid("delPhi_k");
     
 	public static void main(String[] args) {
 		new Control(new testLinearApp(), "Ising Linear Test");
 	}
 	public void load(Control c) {
-	c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid, ftPhiField);
+	c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid, ftPhiField, delPhiKGrid);
 	c.frameTogether("Fields", phiGrid, phiDotGrid);	
 	params.addm("Zoom", new ChoiceValue("Yes", "No"));
 	params.addm("Interaction", new ChoiceValue("Square", "Circle"));
@@ -69,9 +70,12 @@ public class testLinearApp extends Simulation{
 		params.set("Time", ising.time());
 		params.set("Mean Phi", ising.mean(ising.phi));
 		params.set("Lp", ising.Lp);
-		for(int i = 0; i < ising.Lp; i ++)
+		for(int i = 0; i < ising.Lp; i ++){
 			eta_dot[i]=0;
+			del_phi_k[i] = 0;
+		}
 		etaDotLeftGrid.registerData(ising.Lp, ising.Lp, eta_dot);
+		delPhiKGrid.registerData(ising.Lp, ising.Lp, del_phi_k);
 		etaDotRightGrid.registerData(ising.Lp, ising.Lp, rhs);
 		phiGrid.registerData(ising.Lp, ising.Lp, ising.phi);
 		ftPhiField.registerData(ising.Lp, ising.Lp, phiFT);
@@ -92,31 +96,40 @@ public class testLinearApp extends Simulation{
 		eta_dot = new double[ising.Lp*ising.Lp];
 		phiFT = new double[ising.Lp*ising.Lp];
 		rhs = new double[ising.Lp*ising.Lp];
-		double [] eta_k_old = new double[ising.Lp*ising.Lp];
-		double [] eta_k_new = new double[ising.Lp*ising.Lp];
+		del_phi_k = new double[ising.Lp*ising.Lp];
+		double [] phi_k_old = new double[ising.Lp*ising.Lp];
+		double [] phi_k_new = new double[ising.Lp*ising.Lp];
+		double [] previousSlice = new double[ising.Lp];
+		double [] eta_x = new double[ising.Lp*ising.Lp];
+		
+		for (int i = 0; i < ising.Lp; i ++)
+			previousSlice[i] = ising.phi[i];
+		ising.simulate();
 		kRChunk = 2*Math.PI/params.fget("L/R");
 		
         while (true) {
-    		eta_k_old = calculateEta_k();
-    		findRightSide();
-    		ising.simulate();
-    		eta_k_new = calculateEta_k();
+    		phi_k_old = calculate2DFT(ising.phi);
     		for (int i = 0; i < ising.Lp*ising.Lp; i ++){
-				eta_dot[i] = (eta_k_old[i] - eta_k_new[i])/ising.dt;
-				phiFT[i] = eta_k_new[i];
+    			eta_x[i] = ising.phi[i]-previousSlice[i%ising.Lp];
     		}
+    		findRightSide(eta_x, previousSlice);
+    		ising.simulate();
+    		for (int i = 0; i < ising.Lp; i ++)
+    			previousSlice[i] = ising.phi[i];
+    		phi_k_new = calculate2DFT(ising.phi);
+    		for (int i = 0; i < ising.Lp*ising.Lp; i ++){
+				eta_dot[i] = (phi_k_old[i] - phi_k_new[i])/ising.dt;
+				phiFT[i] = phi_k_new[i];
+    		}
+    		del_phi_k = calculate2DFT(ising.delPhi);
 			Job.animate();
 		}
 		
 	}
 	
-	public void findRightSide(){
+	public void findRightSide(double [] eta_x, double [] slice){
 		double [] eta_k = new double [ising.Lp*ising.Lp];
-		eta_k = calculateEta_k();
-		double [] slice = new double [ising.Lp];
-		for(int j = 0; j < ising.Lp; j++)
-			slice [j] = ising.phi[j];
-		//new set of coefficients for every time step
+		eta_k = calculate2DFT(eta_x);
 		coeff.findCoefficientsFromSlice(slice);
 		for(int i = 0; i < ising.Lp*ising.Lp; i++){
 			coeff.findCoefficientsFromSlice(slice);
@@ -139,18 +152,18 @@ public class testLinearApp extends Simulation{
 		return Vk;
 	}
 	
-	public double [] calculateEta_k(){
-		double [] eta_k = new double [ising.Lp*ising.Lp];
+	public double [] calculate2DFT(double [] data){
 		ComplexDouble2DFFT fft = new ComplexDouble2DFFT(ising.Lp, ising.Lp);
 		double [] fftScratch = new double [2*ising.Lp*ising.Lp];
 		for (int i = 0; i < ising.Lp*ising.Lp; i ++){
-			fftScratch[2*i] = ising.phi[i];
+			fftScratch[2*i] = data[i];
 			fftScratch[2*i+1] = 0;
 		}
 		fft.transform(fftScratch);
+		double [] dataFT = new double [ising.Lp*ising.Lp];
 		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
-			eta_k[i] = fftScratch[2*i];
-		return eta_k;
+			dataFT[i] = fftScratch[2*i];
+		return dataFT;
 	}
 	
 	public void readInputParams(String FileName){
