@@ -1,7 +1,6 @@
 package kip.clump.dim2.apps;
 
 import static scikit.util.Utilities.format;
-import static scikit.util.Utilities.frame;
 
 import java.awt.Color;
 import java.io.DataOutputStream;
@@ -29,14 +28,14 @@ public class Clump2DApp extends Simulation {
     Plot plot = new Plot("Structure factor");
     Accumulator sf;
     AbstractClump2D clump;
-    boolean fieldDynamics = true;
+    boolean fieldDynamics = false;
 	
 	public static void main(String[] args) {
 		new Control(new Clump2DApp(), "Clump Model");
 	}
 	
-	public Clump2DApp() {
-		frame(grid, plot);
+	public void load(Control c) {
+		c.frame(grid, plot);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		if (fieldDynamics) {
 			params.addm("T", new DoubleValue(0.15, 0, 0.4).withSlider());
@@ -46,7 +45,7 @@ public class Clump2DApp extends Simulation {
 			params.add("dx", 100.0);
 		}
 		else {
-			params.addm("T", 0.15);
+			params.addm("T", 0.14);
 			params.add("R", 12.0);
 			params.add("L", 192.0);
 			params.add("dx", 3.0);
