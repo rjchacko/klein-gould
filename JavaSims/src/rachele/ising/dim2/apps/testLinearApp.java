@@ -23,19 +23,21 @@ import scikit.numerics.fft.managed.ComplexDouble2DFFT;
 public class testLinearApp extends Simulation{
     IsingField2D ising;
     public double [] eta_dot;
+    public double [] phiFT;
     public double [] rhs;  // right hand side of equation
     public FindCoefficients coeff;
     public double kRChunk; //=2piR/L
     Grid etaDotLeftGrid = new Grid("eta dot");
     Grid etaDotRightGrid = new Grid("eta dot");
     Grid phiGrid = new Grid("phi field");
+    Grid ftPhiField = new Grid("ft phi field");
     
     
 	public static void main(String[] args) {
 		new Control(new testLinearApp(), "Ising Linear Test");
 	}
 	public void load(Control c) {
-		c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid, phiGrid);
+		c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid, phiGrid, ftPhiField);
 	params.addm("Zoom", new ChoiceValue("Yes", "No"));
 	params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 	params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -69,6 +71,7 @@ public class testLinearApp extends Simulation{
 		etaDotLeftGrid.registerData(ising.Lp, ising.Lp, eta_dot);
 		etaDotRightGrid.registerData(ising.Lp, ising.Lp, rhs);
 		phiGrid.registerData(ising.Lp, ising.Lp, ising.phi);
+		ftPhiField.registerData(ising.Lp, ising.Lp, phiFT);
 	}
 
 	public void clear() {
@@ -83,6 +86,7 @@ public class testLinearApp extends Simulation{
 		double binWidth = params.fget("kR bin-width");
 		binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
 		eta_dot = new double[ising.Lp*ising.Lp];
+		phiFT = new double[ising.Lp*ising.Lp];
 		rhs = new double[ising.Lp*ising.Lp];
 		double [] eta_k_old = new double[ising.Lp*ising.Lp];
 		double [] eta_k_new = new double[ising.Lp*ising.Lp];
@@ -93,8 +97,10 @@ public class testLinearApp extends Simulation{
     		findRightSide();
     		ising.simulate();
     		eta_k_new = calculateEta_k();
-			for (int i = 0; i < ising.Lp*ising.Lp; i ++)
+    		for (int i = 0; i < ising.Lp*ising.Lp; i ++){
 				eta_dot[i] = (eta_k_old[i] - eta_k_new[i])/ising.dt;
+				phiFT[i] = eta_k_new[i];
+    		}
 			Job.animate();
 		}
 		
