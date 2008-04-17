@@ -47,6 +47,8 @@ public class LinearTheoryApp extends Simulation{
 		params.addm("Approx", new ChoiceValue("Exact Stable",
 				"Avoid Boundaries", "Exact SemiStable", "Exact", "Linear",  "Phi4"));
 		params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
+		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
+		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		//params.addm("Conserve M?", new ChoiceValue("Yes", "No"));
 		params.addm("T", 0.05);
 		params.addm("H", 0.0);
@@ -62,6 +64,7 @@ public class LinearTheoryApp extends Simulation{
 		params.add("Time");
 		params.add("Reps");
 		params.add("Mean Phi");
+		params.add("Lp");
 		
 	}
 	

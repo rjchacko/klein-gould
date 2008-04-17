@@ -10,6 +10,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import kip.util.Random;
+import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
 import scikit.jobs.params.Parameters;
@@ -138,6 +139,13 @@ public class IsingField2D {
 		if(init == "Random Gaussian"){
 			randomizeField(DENSITY);
 			System.out.println("Random Gaussian");
+		}else if(init == "Read 1D Soln"){
+			System.out.println("Read in 1D solution");
+			String fileName = "../../../research/javaData/configs1d/config";
+			double[] phiSlice = new double [Lp];
+			phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
+			for(int i = 0; i < Lp*Lp; i++)
+				phi[i]=phiSlice[i%Lp] + (random.nextGaussian()*2.0 - 1.0)/1000000;
 		}else if (init == "Constant"){
 			System.out.println("Constant");
 			for (int i = 0; i < Lp*Lp; i ++)
@@ -295,6 +303,43 @@ public class IsingField2D {
 		for (int i = 0; i < Lp*Lp; i++) {
 			dest[i] = fftScratch[2*i] / (Lp*Lp);
 		}		
+	}
+	
+	public double [] simulateLinear(double [] eta, double [] background){
+		double [] linearTheoryGrowth = new double[Lp*Lp];
+		double [] eta_bar = new double[Lp*Lp];
+		convolveWithRange(eta, eta_bar, R);
+		for (int i = 0; i < Lp*Lp; i++)
+			linearTheoryGrowth[i] = -eta_bar[i]+T*eta[i]/(1.0-Math.pow(background[i],2));
+		return linearTheoryGrowth;
+
+	}
+	
+	public double [] simulateLinearWithModDynamics(){
+		double [] linearTheoryGrowth = new double [Lp*Lp];
+		double[] phiSlice = new double [Lp];
+		double [] eta = new double [Lp*Lp];
+		double [] eta_bar = new double[Lp*Lp];
+		double [] phi0_bar = new double[Lp*Lp];
+		double [] phi0 = new double[Lp*Lp];
+		
+		String fileName = "../../../research/javaData/configs1d/config";
+		phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
+		for (int i = 0; i < Lp*Lp; i++){
+			phi0[i] = phiSlice[i%Lp];
+			eta[i] = phi[i] - phi0[i];
+		}
+		
+		convolveWithRange(eta, eta_bar, R);
+		convolveWithRange(phi0, phi0_bar, R);
+		for (int i = 0; i < Lp*Lp; i++){
+			double dynFactor1 = 1.0 - 2.0*Math.pow(phi0[i],2) + Math.pow(phi0[i],4);
+			double dynFactor2 = 4.0*(Math.pow(phi0[i],3) - phi0[i]);
+			linearTheoryGrowth[i] = -eta_bar[i]*dynFactor1;
+			linearTheoryGrowth[i] -= eta[i]*(dynFactor1*(T/(1.0-Math.pow(phi0[i],2))));
+			linearTheoryGrowth[i] -= eta[i]*(dynFactor2*(phi0_bar[i] - H + T*(Math.log(1.0 + phi0[i])-Math.log(1.0 - phi0[i]))/2.0)); 
+		}
+		return linearTheoryGrowth;
 	}
 	
 	public void simulate() {

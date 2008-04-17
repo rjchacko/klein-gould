@@ -1,29 +1,30 @@
 package rachele.ising.dim2.apps;
 
 import static java.lang.Math.floor;
-
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
-
+import java.awt.Color;
 import rachele.ising.dim2.FindCoefficients;
 import rachele.ising.dim2.IsingField2D;
 import rachele.util.FileUtil;
 import scikit.graphics.dim2.Grid;
+import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
 import scikit.numerics.fft.managed.ComplexDouble2DFFT;
+import scikit.dataset.PointSet;
 
 public class testLinearApp extends Simulation{
     IsingField2D ising;
-    public double [] eta_dot;
-    public double [] phiFT, del_phi_k;
+    public double [] eta_dot, eta_dot_x;
+    public double [] phiFT, del_phi_k, linearConfig;
     public double [] rhs;  // right hand side of equation
     public FindCoefficients coeff;
     public double kRChunk; //=2piR/L
@@ -33,6 +34,8 @@ public class testLinearApp extends Simulation{
     Grid ftPhiField = new Grid("ft phi field");
     Grid phiDotGrid = new Grid("phi dot");
     Grid delPhiKGrid = new Grid("delPhi_k");
+    Plot slicePlot1 = new Plot("slices");
+    Plot slicePlot2 = new Plot("slices");
     
 	public static void main(String[] args) {
 		new Control(new testLinearApp(), "Ising Linear Test");
@@ -40,10 +43,14 @@ public class testLinearApp extends Simulation{
 	public void load(Control c) {
 	c.frameTogether("Grids", etaDotLeftGrid, etaDotRightGrid, ftPhiField, delPhiKGrid);
 	c.frameTogether("Fields", phiGrid, phiDotGrid);	
+	c.frameTogether("slices", slicePlot1, slicePlot2);
+	slicePlot1.setAutoScale(true);
+	slicePlot2.setAutoScale(true);
+	
 	params.addm("Zoom", new ChoiceValue("Yes", "No"));
 	params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 	params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
-	params.add("Init Conditions", new ChoiceValue("Read From File","Random Gaussian"));
+	params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian"));
 	params.addm("Approx", new ChoiceValue("Slow", "HalfStep", "TimeAdjust", "Phi4","Phi4HalfStep"));
 	params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
 	params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
@@ -58,7 +65,7 @@ public class testLinearApp extends Simulation{
 	params.addm("R", 2000000.0);
 	params.addm("Random seed", 0);
 	params.add("L/R", 3.0);
-	params.add("R/dx", 21.40);
+	params.add("R/dx", 43.0);
 	params.add("kR bin-width", 0.1);
 	params.add("Magnetization", 0.0);
 	params.add("Time");
@@ -70,16 +77,25 @@ public class testLinearApp extends Simulation{
 		params.set("Time", ising.time());
 		params.set("Mean Phi", ising.mean(ising.phi));
 		params.set("Lp", ising.Lp);
-		for(int i = 0; i < ising.Lp; i ++){
-			eta_dot[i]=0;
-			del_phi_k[i] = 0;
-		}
-		etaDotLeftGrid.registerData(ising.Lp, ising.Lp, eta_dot);
+//		for(int i = 0; i < ising.Lp; i ++){
+//			eta_dot[i]=0;
+//			del_phi_k[i] = 0;
+//		}
+		etaDotLeftGrid.registerData(ising.Lp, ising.Lp, eta_dot_x);
 		delPhiKGrid.registerData(ising.Lp, ising.Lp, del_phi_k);
 		etaDotRightGrid.registerData(ising.Lp, ising.Lp, rhs);
 		phiGrid.registerData(ising.Lp, ising.Lp, ising.phi);
 		ftPhiField.registerData(ising.Lp, ising.Lp, phiFT);
 		phiDotGrid.registerData(ising.Lp, ising.Lp, ising.delPhi);
+		double [] etaDotSlice = new double [ising.Lp];
+		double [] rhsSlice = new double [ising.Lp];
+		for (int i = 0; i < ising.Lp; i ++){
+			etaDotSlice[i] = eta_dot[i];
+			rhsSlice[i] = rhs[i];
+		}
+		slicePlot1.registerLines("eta dot slice", new PointSet(0, 1, etaDotSlice), Color.BLUE);
+		slicePlot2.registerLines("eta dot slice", new PointSet(0, 1, etaDotSlice), Color.BLUE);
+		slicePlot2.registerLines("rhs slice", new PointSet(0, 1, rhsSlice), Color.RED);
 	}
 
 	public void clear() {
@@ -94,32 +110,46 @@ public class testLinearApp extends Simulation{
 		double binWidth = params.fget("kR bin-width");
 		binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
 		eta_dot = new double[ising.Lp*ising.Lp];
+		eta_dot_x = new double[ising.Lp*ising.Lp];
 		phiFT = new double[ising.Lp*ising.Lp];
 		rhs = new double[ising.Lp*ising.Lp];
 		del_phi_k = new double[ising.Lp*ising.Lp];
+		linearConfig = new double[ising.Lp*ising.Lp];
 		double [] phi_k_old = new double[ising.Lp*ising.Lp];
 		double [] phi_k_new = new double[ising.Lp*ising.Lp];
-		double [] previousSlice = new double[ising.Lp];
+		double [] previousConfig = new double[ising.Lp*ising.Lp];
 		double [] eta_x = new double[ising.Lp*ising.Lp];
-		
-		for (int i = 0; i < ising.Lp; i ++)
-			previousSlice[i] = ising.phi[i];
+
+		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
+			previousConfig[i] = ising.phi[i];
 		ising.simulate();
 		kRChunk = 2*Math.PI/params.fget("L/R");
 		
         while (true) {
+        	double [] background = new double [ising.Lp*ising.Lp];
+        	double [] backgroundSlice = new double [ising.Lp];
+        	for (int i = 0; i < ising.Lp*ising.Lp; i++){
+        		if(i<ising.Lp)
+        			backgroundSlice[i] = previousConfig[i%ising.Lp];
+        		background[i] = previousConfig[i];
+        	}
     		phi_k_old = calculate2DFT(ising.phi);
-    		for (int i = 0; i < ising.Lp*ising.Lp; i ++){
-    			eta_x[i] = ising.phi[i]-previousSlice[i%ising.Lp];
-    		}
-    		findRightSide(eta_x, previousSlice);
+    		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
+    			eta_x[i] = ising.phi[i]-background[i];
+    		//findRightSide(eta_x, previousSlice);
+    		//findRightSideNoAssumptions(eta_x, previousConfig);
+    		//String fileName = "../../../research/javaData/configs1d/config";
+    		//rhs = ising.simulateLinear(eta_x, FileUtil.readConfigFromFile(fileName, ising.Lp));
+    		//rhs = ising.simulateLinear(eta_x, background);
+    		rhs = ising.simulateLinearWithModDynamics();
+    		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
+    			previousConfig[i] = ising.phi[i];
     		ising.simulate();
-    		for (int i = 0; i < ising.Lp; i ++)
-    			previousSlice[i] = ising.phi[i];
     		phi_k_new = calculate2DFT(ising.phi);
     		for (int i = 0; i < ising.Lp*ising.Lp; i ++){
 				eta_dot[i] = (phi_k_old[i] - phi_k_new[i])/ising.dt;
 				phiFT[i] = phi_k_new[i];
+				eta_dot_x[i] = ising.phi[i]-background[i] -eta_x[i];
     		}
     		del_phi_k = calculate2DFT(ising.delPhi);
 			Job.animate();
@@ -127,20 +157,49 @@ public class testLinearApp extends Simulation{
 		
 	}
 	
+
+	public void findRightSideNoAssumptions(double [] eta_x, double [] config){
+		double [] eta_k = new double [ising.Lp*ising.Lp];
+		eta_k = calculate2DFT(eta_x);
+		coeff.findCoefficientsFromConfig(config);
+		for(int i = 0; i < ising.Lp*ising.Lp; i++){
+			int currentKx = i%ising.Lp;
+			int currentKy = i/ising.Lp;
+			double kRxValue = kRChunk*currentKx;
+			double kRyValue = kRChunk*currentKy;
+			double V_k = findVk(kRxValue, kRyValue);
+			double sum = -V_k*eta_k[i];
+			for (int j = 0; j < ising.Lp*ising.Lp; j ++){
+				int shiftedKx = j%ising.Lp;
+				int shiftedKy = j/ising.Lp;
+				double coefficient = coeff.aa[shiftedKx][shiftedKy];
+				int etaXindex = (currentKx+shiftedKx)%ising.Lp;
+				int etaYindex = (currentKy+shiftedKy)%ising.Lp;
+				int	etaIndex = etaYindex*ising.Lp + etaXindex;
+				sum -= ising.T*coefficient*eta_k[etaIndex];
+			}
+			rhs[i] = sum;
+		}
+	}
+	
 	public void findRightSide(double [] eta_x, double [] slice){
 		double [] eta_k = new double [ising.Lp*ising.Lp];
 		eta_k = calculate2DFT(eta_x);
-		coeff.findCoefficientsFromSlice(slice);
+		//coeff.findCoefficientsFromSlice(slice);
+		coeff.findCoefficientsFromFile();
 		for(int i = 0; i < ising.Lp*ising.Lp; i++){
-			coeff.findCoefficientsFromSlice(slice);
+			//coeff.findCoefficientsFromSlice(slice);
+			//coeff.findCoefficientsFromFile();
 			int kx = i%ising.Lp;
 			int ky = i/ising.Lp;
 			double kRxValue = kRChunk*kx;
 			double kRyValue = kRChunk*ky;
 			double V_k = findVk(kRxValue, kRyValue);
 			double sum = -V_k*eta_k[i];
-			for (int j = 0; j < ising.Lp; j++)
-				sum -= ising.T*coeff.a[j]*eta_k[j+ky];
+			for (int j = 0; j + kx < ising.Lp; j++)
+				sum -= ising.T*coeff.a[j]*eta_k[ i + j ];
+			for (int j = ising.Lp - kx; j < ising.Lp; j++)
+				sum -= ising.T*coeff.a[j]*eta_k[ i + j - ising.Lp ];
 			rhs[i] = sum;
 		}
 	}
