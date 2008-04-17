@@ -153,7 +153,7 @@ public class StripeClumpLinearTheory extends Simulation{
 	}
 	
 	public void animate() {
-		plot.registerLines("Slice", coeff.getPhiSlice(), Color.RED);
+	//	plot.registerLines("Slice", coeff.getPhiSlice(), Color.RED);
 		sf.registerLines("SF", getSF(), Color.BLACK);
 		sf.registerLines("Phi SF",getPhiSF(), Color.RED);
 		plot.registerLines("input", getInput(), Color.BLACK);
