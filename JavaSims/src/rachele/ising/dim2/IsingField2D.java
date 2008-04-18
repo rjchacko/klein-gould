@@ -145,7 +145,7 @@ public class IsingField2D {
 			double[] phiSlice = new double [Lp];
 			phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
 			for(int i = 0; i < Lp*Lp; i++)
-				phi[i]=phiSlice[i%Lp] + (random.nextGaussian()*2.0 - 1.0)/1000000;
+				phi[i]=phiSlice[i%Lp] + (random.nextGaussian())/1000000;
 		}else if (init == "Constant"){
 			System.out.println("Constant");
 			for (int i = 0; i < Lp*Lp; i ++)
@@ -172,7 +172,6 @@ public class IsingField2D {
 			}
 		}else if(init == "Artificial Stripe 2"){
 			System.out.println("Artificial Stripe 2");
-
 			randomizeField(DENSITY);
 			double m = DENSITY - (1.0-DENSITY)*stripeStrength;
 			for (int i = 0; i < Lp; i ++)
@@ -310,7 +309,7 @@ public class IsingField2D {
 		double [] eta_bar = new double[Lp*Lp];
 		convolveWithRange(eta, eta_bar, R);
 		for (int i = 0; i < Lp*Lp; i++)
-			linearTheoryGrowth[i] = -eta_bar[i]+T*eta[i]/(1.0-Math.pow(background[i],2));
+			linearTheoryGrowth[i] = +eta_bar[i]-T*eta[i]/(1.0-Math.pow(background[i],2));
 		return linearTheoryGrowth;
 
 	}
@@ -335,7 +334,7 @@ public class IsingField2D {
 		for (int i = 0; i < Lp*Lp; i++){
 			double dynFactor1 = 1.0 - 2.0*Math.pow(phi0[i],2) + Math.pow(phi0[i],4);
 			double dynFactor2 = 4.0*(Math.pow(phi0[i],3) - phi0[i]);
-			linearTheoryGrowth[i] = -eta_bar[i]*dynFactor1;
+			linearTheoryGrowth[i] = eta_bar[i]*dynFactor1;
 			linearTheoryGrowth[i] -= eta[i]*(dynFactor1*(T/(1.0-Math.pow(phi0[i],2))));
 			linearTheoryGrowth[i] -= eta[i]*(dynFactor2*(phi0_bar[i] - H + T*(Math.log(1.0 + phi0[i])-Math.log(1.0 - phi0[i]))/2.0)); 
 		}
