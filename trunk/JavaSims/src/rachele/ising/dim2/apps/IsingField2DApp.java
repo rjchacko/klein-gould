@@ -73,9 +73,9 @@ public class IsingField2DApp extends Simulation {
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M","Conjugate Gradient Min", 
-				"Steepest Decent" ));
+				"Steepest Decent"));
 		params.add("Init Conditions", new ChoiceValue("Read From File","Random Gaussian", 
-				 "Artificial Stripe 3", "Artificial Stripe 2","Constant" ));
+				 "Artificial Stripe 3", "Artificial Stripe 2","Constant", "Read 1D Soln"));
 		params.addm("Approx", new ChoiceValue("Slow", "HalfStep", "TimeAdjust", "Phi4","Phi4HalfStep"));
 		//params.addm("Plot FEvT", new ChoiceValue("Off", "On"));
 		params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
