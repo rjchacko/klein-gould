@@ -1,7 +1,5 @@
 package rachele.ising.dim2;
 
-/* This is a slight modification of kip.clump.dim2.FieldClump2D.java  */
-
 import static java.lang.Math.*;
 import static scikit.numerics.Math2.*;
 import java.io.DataInputStream;
@@ -16,9 +14,9 @@ import scikit.dataset.PointSet;
 import scikit.jobs.params.Parameters;
 import scikit.numerics.fft.managed.ComplexDouble2DFFT;
 
-public class IsingField2D {
-	public double L, R, T, dx, J, dT, H;
-	public int Lp, N;
+public class IsingField2D extends AbstractIsing2D{
+	public double J, dT;
+	public int N;
 	public double DENSITY;
 	public double dt, t;
 	public double lastMu;
@@ -30,19 +28,7 @@ public class IsingField2D {
 	public double verticalSlice;
 	ComplexDouble2DFFT fft;	// Object to perform transforms
 	double[] fftScratch;
-	public static final double KR_SP = 5.13562230184068255630140;
-	public static final double T_SP = 0.132279487396100031736846;	
 	
-	
-	//conjugate gradient parameters
-	public int conjIterations;
-	static double GOLD = 1.618034;
-	static double GOLDR = 0.61803399;
-	static double GOLDC = 1-GOLDR;
-	static double maxIterations = 1000;
-	static double tolerance = 1e-16;
-	static double EPS = 1e-16;
-	public boolean checked = false;
 	public double lambda;
 	static double delta = 1e-10;
 	public double switchD = 1;
@@ -94,13 +80,9 @@ public class IsingField2D {
 		
 		horizontalSlice = params.fget("Horizontal Slice");
 		verticalSlice = params.fget("Vertical Slice");
-		
 		if(params.sget("Interaction") == "Circle")
 			circleInteraction = true;
-
 		noiseParameter = params.fget("Noise");
-//		stripeStrength = params.fget("Stripe Strength");
-		
 		slowPower = 2;
 		if(params.sget("Dynamics?") == "Langevin Conserve M") magConservation = true;
 		else if(params.sget("Dynamics?") == "Langevin No M Conservation") magConservation = false;
@@ -178,14 +160,6 @@ public class IsingField2D {
 				phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
 			for (int i = Lp*Lp/2; i < Lp + Lp*Lp/2; i ++)
 				phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
-//			for (int i = 0; i < Lp*Lp; i ++){
-////				int x = i%Lp;
-////				if (x == 0 || x == Lp/2)
-//					phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
-//				if (phi[i] > 1.0){
-//					System.out.println(i + " " + phi[i]);
-//				}
-//			}
 		}
 	}
 	
@@ -264,7 +238,7 @@ public class IsingField2D {
 			double r = sqrt(x*x+y*y);
 			double mag = 0.8 / (1+sqr(r/R));
 			
-			double kR = KR_SP; // it's fun to try different values
+			double kR = KRcircle; // it's fun to try different values
 			double x1 = x*cos(1*PI/6) + y*sin(1*PI/6);
 			double x2 = x*cos(3*PI/6) + y*sin(3*PI/6);
 			double x3 = x*cos(5*PI/6) + y*sin(5*PI/6);
@@ -314,29 +288,22 @@ public class IsingField2D {
 
 	}
 	
-	public double [] simulateLinearWithModDynamics(){
+	public double [] simulateLinearWithModDynamics(double [] phi0){
 		double [] linearTheoryGrowth = new double [Lp*Lp];
-		double[] phiSlice = new double [Lp];
 		double [] eta = new double [Lp*Lp];
 		double [] eta_bar = new double[Lp*Lp];
-		double [] phi0_bar = new double[Lp*Lp];
-		double [] phi0 = new double[Lp*Lp];
-		
-		String fileName = "../../../research/javaData/configs1d/config";
-		phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
-		for (int i = 0; i < Lp*Lp; i++){
-			phi0[i] = phiSlice[i%Lp];
+		double [] phi0_bar = new double[Lp*Lp];		
+		for (int i = 0; i < Lp*Lp; i++)
 			eta[i] = phi[i] - phi0[i];
-		}
-		
+
 		convolveWithRange(eta, eta_bar, R);
 		convolveWithRange(phi0, phi0_bar, R);
 		for (int i = 0; i < Lp*Lp; i++){
 			double dynFactor1 = 1.0 - 2.0*Math.pow(phi0[i],2) + Math.pow(phi0[i],4);
-			double dynFactor2 = 4.0*(Math.pow(phi0[i],3) - phi0[i]);
+			double dynFactor2 = 4.0*(phi0[i] - Math.pow(phi0[i],3));
 			linearTheoryGrowth[i] = eta_bar[i]*dynFactor1;
 			linearTheoryGrowth[i] -= eta[i]*(dynFactor1*(T/(1.0-Math.pow(phi0[i],2))));
-			linearTheoryGrowth[i] -= eta[i]*(dynFactor2*(phi0_bar[i] - H + T*(Math.log(1.0 + phi0[i])-Math.log(1.0 - phi0[i]))/2.0)); 
+			linearTheoryGrowth[i] += eta[i]*(dynFactor2*(-phi0_bar[i] - H + T*scikit.numerics.Math2.atanh(phi0[i])));
 		}
 		return linearTheoryGrowth;
 	}

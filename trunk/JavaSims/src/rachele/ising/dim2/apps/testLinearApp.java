@@ -1,11 +1,8 @@
 package rachele.ising.dim2.apps;
 
-import static java.lang.Math.floor;
 import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.awt.Color;
 import rachele.ising.dim2.FindCoefficients;
@@ -20,34 +17,44 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
 //import scikit.numerics.fft.managed.ComplexDouble2DFFT;
+import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
+import scikit.util.*;
 
 public class testLinearApp extends Simulation{
     IsingField2D ising;
     public FindCoefficients coeff;
     public FourierTransformer fft;
-    public double [] eta_dot, eta_dot_x;
-    public double [] phiFT, del_phi_k, linearConfig;
-    public double [] rhs;  // right hand side of equation
+    public double [] rhs, etaLT, eta; //right hand side
     public double kRChunk; //=2piR/L
-    Grid etaDotLeftGrid = new Grid("ising delta phi");
-    Grid etaDotRightGrid = new Grid("linear theory");
+    public Accumulator etaAcc = new Accumulator(1.0);
+    public Accumulator etaLTAcc = new Accumulator(1.0);
+    public Accumulator etaAcc2 = new Accumulator(1.0);
+    public Accumulator etaLTAcc2 = new Accumulator(1.0);
+    public Accumulator etaAcc3 = new Accumulator(1.0);
+    public Accumulator etaLTAcc3 = new Accumulator(1.0);
+    public Accumulator etaAcc4 = new Accumulator(1.0);
+    public Accumulator etaLTAcc4 = new Accumulator(1.0);
+    public int Lp;
+    Grid etaDot = new Grid("ising delta phi");
+    Grid etaDotLinear = new Grid("linear theory");
     Grid phiGrid = new Grid("phi field");
-    Grid ftPhiField = new Grid("sf phi field");
-    Grid phiDotGrid = new Grid("sf linear theory");
-    Grid delPhiKGrid = new Grid("delPhi_k");
-    Plot slicePlot1 = new Plot("slices");
-    Plot slicePlot2 = new Plot("slices");
+    Grid etaDotSF = new Grid("sf phi field");
+    Grid etaDotLinearSF = new Grid("sf linear theory");
+    Plot slice1 = new Plot("delphi mid slice");
+    Plot slice2 = new Plot("rhs mid slice");
+    Plot slice3 = new Plot("delphi slice");
+    Plot slice4 = new Plot("rhs slice");
+    Plot etaVt1 = new Plot("eta v t");
+    Plot etaVt2 = new Plot("eta v t LT");
     
 	public static void main(String[] args) {
 		new Control(new testLinearApp(), "Ising Linear Test");
 	}
 	public void load(Control c) {
-	c.frameTogether("Grids", etaDotLeftGrid, delPhiKGrid,phiGrid,etaDotRightGrid,ftPhiField  );
-	//c.frameTogether("slices", slicePlot1, slicePlot2);
-	slicePlot1.setAutoScale(true);
-	slicePlot2.setAutoScale(true);
-	
+	c.frameTogether("Grids", etaDot, etaDotSF, phiGrid, etaDotLinear, etaDotLinearSF);
+	c.frameTogether("Slices", slice1, slice2,slice3, slice4);
+	c.frameTogether("accs", etaVt1, etaVt2);
 	params.addm("Zoom", new ChoiceValue("Yes", "No"));
 	params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 	params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -78,107 +85,130 @@ public class testLinearApp extends Simulation{
 		params.set("Time", ising.time());
 		params.set("Mean Phi", ising.mean(ising.phi));
 		params.set("Lp", ising.Lp);
-//		for(int i = 0; i < ising.Lp; i ++){
-//			eta_dot[i]=0;
-//			del_phi_k[i] = 0;
-//		}
-		etaDotLeftGrid.registerData(ising.Lp, ising.Lp, ising.delPhi);
-		delPhiKGrid.registerData(ising.Lp, ising.Lp, del_phi_k);
-		etaDotRightGrid.registerData(ising.Lp, ising.Lp, rhs);
+		etaDot.registerData(ising.Lp, ising.Lp, ising.delPhi);
+		etaDotLinear.registerData(ising.Lp, ising.Lp, rhs);
 		phiGrid.registerData(ising.Lp, ising.Lp, ising.phi);
-		ftPhiField.registerData(ising.Lp, ising.Lp, phiFT);
-		phiDotGrid.registerData(ising.Lp, ising.Lp, ising.delPhi);
-		double [] etaDotSlice = new double [ising.Lp];
-		double [] rhsSlice = new double [ising.Lp];
-		for (int i = 0; i < ising.Lp; i ++){
-			etaDotSlice[i] = eta_dot[i];
-			rhsSlice[i] = rhs[i];
+		
+		double [] delPhiFT = fft.calculateSF2D(ising.delPhi, false, false);
+		double [] rhsFT = fft.calculateSF2D(rhs, false, false);
+
+		//System.out.println(delPhiFT [2*Lp] + " " + delPhiFT [0]);
+		double factor = delPhiFT [2*Lp]/DoubleArray.max(delPhiFT);
+		double factorRHS = rhsFT[2*Lp]/DoubleArray.max(rhs);
+		for (int i = 0; i < Lp; i++){
+			delPhiFT[i] *= factor;
+			rhsFT[i] *= factorRHS;
 		}
-		slicePlot1.registerLines("eta dot slice", new PointSet(0, 1, etaDotSlice), Color.BLUE);
-		slicePlot2.registerLines("eta dot slice", new PointSet(0, 1, etaDotSlice), Color.BLUE);
-		slicePlot2.registerLines("rhs slice", new PointSet(0, 1, rhsSlice), Color.RED);
+		//System.out.println(delPhiFT[0] + " " + delPhiFT[2*Lp] + " " + factor);
+		fft.center(delPhiFT);
+		fft.center(rhsFT);
+		etaDotSF.registerData(ising.Lp, ising.Lp, delPhiFT);
+		etaDotLinearSF.registerData(ising.Lp, ising.Lp, rhsFT);
+		
+		fft.center(delPhiFT);
+		fft.center(rhsFT);
+		double [] delPhiMidSlice = new double [Lp];
+		double [] rhsMidSlice = new double [Lp];
+		double [] delPhiSlice = new double [Lp];
+		double [] rhsSlice = new double [Lp];
+		for(int i = 0; i < Lp; i++){
+			delPhiMidSlice[i] = delPhiFT[i];
+			rhsMidSlice[i] = rhsFT[i];
+			delPhiSlice[i] = delPhiFT[i*Lp+2];
+			rhsSlice[i] = rhsFT[i*Lp+2];
+		}
+		slice1.setAutoScale(true);
+		slice2.setAutoScale(true);
+		slice3.setAutoScale(true);
+		slice4.setAutoScale(true);
+		
+		slice1.registerLines("mid slice", new PointSet(0,1,delPhiMidSlice), Color.BLACK);
+		slice2.registerLines("mid slice", new PointSet(0,1,rhsMidSlice), Color.BLUE);
+		slice3.registerLines("slice", new PointSet(0,1,delPhiSlice), Color.BLACK);
+		slice4.registerLines("slice", new PointSet(0,1,rhsSlice), Color.BLUE);
+		
+		double [] etaSF = new double[Lp*Lp];
+		double [] etaLTSF = new double[Lp*Lp];
+		etaSF = fft.calculateSF2D(eta, false, false);
+		etaLTSF = fft.calculateSF2D(etaLT, false, false);
+		etaLTAcc.accum(ising.time(), etaLTSF[2*Lp ]);
+		etaAcc.accum(ising.time(), etaSF[2*Lp ]);
+		etaLTAcc2.accum(ising.time(), etaLTSF[2*Lp +2]);
+		etaAcc2.accum(ising.time(), etaSF[2*Lp +2]);
+		etaLTAcc3.accum(ising.time(), etaLTSF[2*Lp +3]);
+		etaAcc3.accum(ising.time(), etaSF[2*Lp + 3]);
+		etaLTAcc4.accum(ising.time(), etaLTSF[2*Lp +8]);
+		etaAcc4.accum(ising.time(), etaSF[2*Lp + 8]);
+		etaVt1.registerLines("acc", etaAcc, Color.BLACK);
+		etaVt2.registerLines("acc", etaLTAcc, Color.BLACK);
+		etaVt1.registerLines("acc2", etaAcc2, Color.BLUE);
+		etaVt2.registerLines("acc2", etaLTAcc2, Color.BLUE);
+		etaVt1.registerLines("acc3", etaAcc3, Color.RED);
+		etaVt2.registerLines("acc3", etaLTAcc3, Color.RED);
+		etaVt1.registerLines("acc4", etaAcc4, Color.ORANGE);
+		etaVt2.registerLines("acc4", etaLTAcc4, Color.ORANGE);
+		
 	}
 
 	public void clear() {
-		
+		etaAcc.clear();
+		etaLTAcc.clear();
+		etaAcc2.clear();
+		etaLTAcc2.clear();
+		etaAcc3.clear();
+		etaLTAcc3.clear();
+		etaAcc4.clear();
+		etaLTAcc4.clear();
 	}
 
 	public void run() {
 		if(params.sget("Init Conditions") == "Read From File")
 			readInputParams("../../../research/javaData/configs/inputParams");
 		ising = new IsingField2D(params);
-		coeff = new FindCoefficients(ising.Lp);
-		fft = new FourierTransformer(ising.Lp);
-		double binWidth = params.fget("kR bin-width");
-		binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
-		eta_dot = new double[ising.Lp*ising.Lp];
-		eta_dot_x = new double[ising.Lp*ising.Lp];
-		phiFT = new double[ising.Lp*ising.Lp];
-		rhs = new double[ising.Lp*ising.Lp];
-		del_phi_k = new double[ising.Lp*ising.Lp];
-		linearConfig = new double[ising.Lp*ising.Lp];
-		double [] phi_k_old = new double[ising.Lp*ising.Lp];
-		double [] phi_k_new = new double[ising.Lp*ising.Lp];
-		double [] previousConfig = new double[ising.Lp*ising.Lp];
-		double [] eta_x = new double[ising.Lp*ising.Lp];
-
-		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
-			previousConfig[i] = ising.phi[i];
-		ising.simulate();
-		kRChunk = 2*Math.PI/params.fget("L/R");
-		
-        while (true) {
-        	double [] background = new double [ising.Lp*ising.Lp];
-        	double [] backgroundSlice = new double [ising.Lp];
-        	for (int i = 0; i < ising.Lp*ising.Lp; i++){
-        		if(i<ising.Lp)
-        			backgroundSlice[i] = previousConfig[i%ising.Lp];
-        		background[i] = previousConfig[i];
-        	}
-        	
-    		phi_k_old = fft.calculate2DFT(ising.phi);
-    		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
-    			eta_x[i] = ising.phi[i]-background[i];
-    		//findRightSide(eta_x, previousSlice);
-    		//findRightSideNoAssumptions(eta_x, previousConfig);
-    		//String fileName = "../../../research/javaData/configs1d/config";
-    		//rhs = ising.simulateLinear(eta_x, FileUtil.readConfigFromFile(fileName, ising.Lp));
-    		//rhs = ising.simulateLinear(eta_x, background);
-    		rhs = ising.simulateLinearWithModDynamics();
-    		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
-    			previousConfig[i] = ising.phi[i];
-    		ising.simulate();
-    		phi_k_new = fft.calculate2DFT(ising.phi);
-    		for (int i = 0; i < ising.Lp*ising.Lp; i ++){
-				eta_dot[i] = (phi_k_old[i] - phi_k_new[i])/ising.dt;
-				phiFT[i] = phi_k_new[i];
-				eta_dot_x[i] = ising.phi[i]-background[i] -eta_x[i];
-    		}
-    		del_phi_k = fft.calculate2DFT(ising.delPhi);
-			Job.animate();
+		this.Lp = ising.Lp;
+		coeff = new FindCoefficients(Lp);
+		fft = new FourierTransformer(Lp);
+		rhs = new double[Lp*Lp];
+		eta = new double[Lp*Lp];
+		etaLT = new double[Lp*Lp];
+		double [] phiSlice = new double [Lp];
+		String fileName = "../../../research/javaData/configs1d/config";
+		phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
+		double [] phi0 = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++){
+			phi0[i] = phiSlice[i%Lp];
+			etaLT[i] = ising.phi[i] - phi0[i];
 		}
-		
+        while (true) {
+    		rhs = ising.simulateLinearWithModDynamics(phi0);
+    		ising.simulate();
+    		for (int i = 0; i < Lp*Lp; i++){
+    			etaLT[i] += rhs[i];
+    			eta[i] = ising.phi[i] - phi0[i];
+    		}
+    		Job.animate();
+		}	
 	}
 	
 
 	public void findRightSideNoAssumptions(double [] eta_x, double [] config){
-		double [] eta_k = new double [ising.Lp*ising.Lp];
+		double [] eta_k = new double [Lp*Lp];
 		eta_k = fft.calculate2DFT(eta_x);
 		coeff.findCoefficientsFromConfig(config);
-		for(int i = 0; i < ising.Lp*ising.Lp; i++){
-			int currentKx = i%ising.Lp;
-			int currentKy = i/ising.Lp;
+		for(int i = 0; i < Lp*Lp; i++){
+			int currentKx = i%Lp;
+			int currentKy = i/Lp;
 			double kRxValue = kRChunk*currentKx;
 			double kRyValue = kRChunk*currentKy;
-			double V_k = findVk(kRxValue, kRyValue);
+			double V_k = ising.findVkSquare(kRxValue, kRyValue);
 			double sum = -V_k*eta_k[i];
-			for (int j = 0; j < ising.Lp*ising.Lp; j ++){
-				int shiftedKx = j%ising.Lp;
-				int shiftedKy = j/ising.Lp;
+			for (int j = 0; j < Lp*Lp; j ++){
+				int shiftedKx = j%Lp;
+				int shiftedKy = j/Lp;
 				double coefficient = coeff.aa[shiftedKx][shiftedKy];
-				int etaXindex = (currentKx+shiftedKx)%ising.Lp;
-				int etaYindex = (currentKy+shiftedKy)%ising.Lp;
-				int	etaIndex = etaYindex*ising.Lp + etaXindex;
+				int etaXindex = (currentKx+shiftedKx)%Lp;
+				int etaYindex = (currentKy+shiftedKy)%Lp;
+				int	etaIndex = etaYindex*Lp + etaXindex;
 				sum -= ising.T*coefficient*eta_k[etaIndex];
 			}
 			rhs[i] = sum;
@@ -186,48 +216,26 @@ public class testLinearApp extends Simulation{
 	}
 	
 	public void findRightSide(double [] eta_x, double [] slice){
-		double [] eta_k = new double [ising.Lp*ising.Lp];
+		double [] eta_k = new double [Lp*Lp];
 		eta_k = fft.calculate2DFT(eta_x);
 		//coeff.findCoefficientsFromSlice(slice);
 		coeff.findCoefficientsFromFile();
-		for(int i = 0; i < ising.Lp*ising.Lp; i++){
+		for(int i = 0; i < Lp*Lp; i++){
 			//coeff.findCoefficientsFromSlice(slice);
 			//coeff.findCoefficientsFromFile();
-			int kx = i%ising.Lp;
-			int ky = i/ising.Lp;
+			int kx = i%Lp;
+			int ky = i/Lp;
 			double kRxValue = kRChunk*kx;
 			double kRyValue = kRChunk*ky;
-			double V_k = findVk(kRxValue, kRyValue);
+			double V_k = ising.findVkSquare(kRxValue, kRyValue);
 			double sum = -V_k*eta_k[i];
-			for (int j = 0; j + kx < ising.Lp; j++)
+			for (int j = 0; j + kx < Lp; j++)
 				sum -= ising.T*coeff.a[j]*eta_k[ i + j ];
-			for (int j = ising.Lp - kx; j < ising.Lp; j++)
-				sum -= ising.T*coeff.a[j]*eta_k[ i + j - ising.Lp ];
+			for (int j = Lp - kx; j < Lp; j++)
+				sum -= ising.T*coeff.a[j]*eta_k[ i + j - Lp ];
 			rhs[i] = sum;
 		}
 	}
-	
-	public double findVk(double kRx, double kRy){
-		double Vkx = (kRx == 0) ? 1 : Math.sin(kRx)/kRx;
-		double Vky = (kRy == 0) ? 1 : Math.sin(kRy)/kRy;
-		double Vk = Vkx*Vky;
-		return Vk;
-	}
-	
-//	public double [] calculate2DFT(double [] data){
-//		ComplexDouble2DFFT fft = new ComplexDouble2DFFT(ising.Lp, ising.Lp);
-//		double [] fftScratch = new double [2*ising.Lp*ising.Lp];
-//		for (int i = 0; i < ising.Lp*ising.Lp; i ++){
-//			fftScratch[2*i] = data[i];
-//			fftScratch[2*i+1] = 0;
-//		}
-//		fft.transform(fftScratch);
-//		double [] dataFT = new double [ising.Lp*ising.Lp];
-//		for (int i = 0; i < ising.Lp*ising.Lp; i ++)
-//			dataFT[i] = fftScratch[2*i];
-//		return dataFT;
-//	}
-	
 	public void readInputParams(String FileName){
 		try {
 			File inputFile = new File(FileName);
@@ -260,64 +268,5 @@ public class testLinearApp extends Simulation{
 		}
 	}
 	
-	public void writeConfiguration(){
-		String configFileName = "../../../research/javaData/configs/inputConfig";
-		String inputFileName = "../../../research/javaData/configs/inputParams";
-		FileUtil.deleteFile(configFileName);
-		FileUtil.deleteFile(inputFileName);
-		writeInputParams(inputFileName);	
-		writeConfigToFile(configFileName);
-		System.out.println("Config writtern to file");
-	}
-	
-	public void writeInputParams(String FileName){
-		try {
-			File inputFile = new File(FileName);
-			DataOutputStream dos = new DataOutputStream(new FileOutputStream(inputFile, true));
-			
-			dos.writeDouble(params.fget("J"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("R"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("L/R"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("R/dx"));
-			dos.writeChar('\t');
-			dos.writeChar('\n');
-			dos.close();
-		}catch(IOException ex){
-			ex.printStackTrace();
-		}
-	}
-	
-	public void writeConfigToFile(String FileName){
-		try {
-			File pathFile = new File(FileName);
-			DataOutputStream dos = new DataOutputStream(new FileOutputStream(pathFile, true));
-			for (int i = 0; i < ising.Lp*ising.Lp; i ++){
-				dos.writeInt(i);
-				dos.writeChar('\t');
-				dos.writeDouble(ising.phi[i]);
-				dos.writeChar('\n');
-			}
-			dos.close();
-		} catch (IOException ex){
-			ex.printStackTrace();
-		}
-	}
-
-	public void initFile(String file, boolean SvH){
-		FileUtil.deleteFile(file);
-		if(SvH){
-			FileUtil.printlnToFile(file, " # SF vs H data ");			
-			FileUtil.printlnToFile(file, " # Temperature = ", ising.T);
-			FileUtil.printlnToFile(file, " # Data = H, S(k*), Free Energy, time");
-		}else{
-			FileUtil.printlnToFile(file, " # SF vs T data ");				
-			//FileUtil.printlnToFile(file, " # External field = ", ising.H);
-			FileUtil.printlnToFile(file, " # Data = H, S(k*), Free Energy, time");
-		}
-		FileUtil.printlnToFile(file, " # Density = ", ising.DENSITY);		
-	}
 
 }
