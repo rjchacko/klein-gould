@@ -46,7 +46,30 @@ public class FourierTransformer {
 		return dst2D;
 	}
 	
-	public double [] calculateSF2D(double [] src){
+	public double [] calculateSF2D(double [] src, boolean centered, boolean zeroCenter){
+		dst2D = find2DSF(src);
+		if (zeroCenter) dst2D[0] = 0;
+		if (centered) center(dst2D);
+		return dst2D;
+	}
+	
+	public void center(double [] src){
+		double [] temp = new double [L*L];
+		for (int i = 0; i<L*L; i++){
+			int x = i%L;
+			int y = i/L;
+			x += L/2; y += L/2;
+			x = x%L; y = y%L;
+			int j = L*((y+L)%L) + (x+L)%L;
+			temp[j] = src[i];
+		}
+		for(int i = 0; i<L*L; i++)
+			src[i] = temp[i];	
+	}
+	
+	
+	private double [] find2DSF(double [] src){
+		double [] dst = new double [L*L];
 		for (int i = 0; i < L*L; i++) {
 			scratch2D[2*i] = src[i];
 			scratch2D[2*i+1] = 0;
@@ -57,9 +80,11 @@ public class FourierTransformer {
 		for (int i=0; i < L*L; i++){
 			double re = scratch2D[2*i];
 			double im = scratch2D[2*i+1];
-			dst2D[i] = (re*re + im*im)/(L*L);
+			dst[i] = (re*re + im*im)/(L*L);
 		}
-		return dst2D;
+		return dst;
 	}
+	
+
 	
 }

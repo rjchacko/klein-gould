@@ -1,14 +1,10 @@
 
 package rachele.ising.dim2.apps;
 
-/* The Langevin Dynamics part of this is basically the same as kip.clump.dim2.FiledClump2D.java */
 
-
-import static java.lang.Math.floor;
 import static scikit.util.Utilities.*;
 import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
-//import kip.util.Random;
 import java.awt.Color;
 import java.io.*;
 import rachele.ising.dim2.ConjugateGradientMin;
@@ -241,11 +237,10 @@ public class IsingField2DApp extends Simulation {
 		ising = new IsingField2D(params);
 		inputSlice = new double [ising.Lp];
 		double binWidth = params.fget("kR bin-width");
-		binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
+		//binWidth = ising.KRcircle / floor(IsingField2D.KR_SP/binWidth);
         sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
 		sf.setBounds(0.1, 14);
-		int recordSteps = 0;
-		
+		int recordSteps = 1;
 		maxi=sf.clumpsOrStripes(ising.phi);
 		
         while (true) {

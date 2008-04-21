@@ -1,7 +1,6 @@
 package rachele.ising.dim2.apps;
 
 import static java.lang.Math.PI;
-import static java.lang.Math.floor;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.j1;
 import static scikit.util.Utilities.frame;
@@ -99,7 +98,7 @@ public class MeltSpinodalApp extends Simulation{
 	public void run() {
 		ising = new IsingField2D(params);
 		double binWidth = params.fget("kR bin-width");
-		binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
+		//binWidth = IsingField2D.KR_SP / floor(IsingField2D.KR_SP/binWidth);
         sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
 		sf.setBounds(0.1, 14);
 		double dT = .001;
