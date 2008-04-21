@@ -131,14 +131,14 @@ public class testLinearApp extends Simulation{
 		double [] etaLTSF = new double[Lp*Lp];
 		etaSF = fft.calculateSF2D(eta, false, false);
 		etaLTSF = fft.calculateSF2D(etaLT, false, false);
-		etaLTAcc.accum(ising.time(), etaLTSF[2*Lp ]);
-		etaAcc.accum(ising.time(), etaSF[2*Lp ]);
-		etaLTAcc2.accum(ising.time(), etaLTSF[2*Lp +2]);
-		etaAcc2.accum(ising.time(), etaSF[2*Lp +2]);
-		etaLTAcc3.accum(ising.time(), etaLTSF[2*Lp +3]);
-		etaAcc3.accum(ising.time(), etaSF[2*Lp + 3]);
-		etaLTAcc4.accum(ising.time(), etaLTSF[2*Lp +8]);
-		etaAcc4.accum(ising.time(), etaSF[2*Lp + 8]);
+		etaLTAcc.accum(ising.time(), etaLTSF[2*Lp]);
+		etaAcc.accum(ising.time(), etaSF[2*Lp]);
+		etaLTAcc2.accum(ising.time(), etaLTSF[2*Lp + 1]);
+		etaAcc2.accum(ising.time(), etaSF[2*Lp + 1]);
+		etaLTAcc3.accum(ising.time(), etaLTSF[2*Lp + 2]);
+		etaAcc3.accum(ising.time(), etaSF[2*Lp + 2]);
+		etaLTAcc4.accum(ising.time(), etaLTSF[2*Lp + 3]);
+		etaAcc4.accum(ising.time(), etaSF[2*Lp + 3]);
 		etaVt1.registerLines("acc", etaAcc, Color.BLACK);
 		etaVt2.registerLines("acc", etaLTAcc, Color.BLACK);
 		etaVt1.registerLines("acc2", etaAcc2, Color.BLUE);
@@ -160,7 +160,7 @@ public class testLinearApp extends Simulation{
 		etaAcc4.clear();
 		etaLTAcc4.clear();
 	}
-
+ 
 	public void run() {
 		if(params.sget("Init Conditions") == "Read From File")
 			readInputParams("../../../research/javaData/configs/inputParams");
@@ -180,7 +180,7 @@ public class testLinearApp extends Simulation{
 			etaLT[i] = ising.phi[i] - phi0[i];
 		}
         while (true) {
-    		rhs = ising.simulateLinearWithModDynamics(phi0);
+    		rhs = ising.simulateLinearWithModDynamics(phi0, etaLT);
     		ising.simulate();
     		for (int i = 0; i < Lp*Lp; i++){
     			etaLT[i] += rhs[i];

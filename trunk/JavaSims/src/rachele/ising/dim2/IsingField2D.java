@@ -288,13 +288,13 @@ public class IsingField2D extends AbstractIsing2D{
 
 	}
 	
-	public double [] simulateLinearWithModDynamics(double [] phi0){
+	public double [] simulateLinearWithModDynamics(double [] phi0, double [] eta){
 		double [] linearTheoryGrowth = new double [Lp*Lp];
-		double [] eta = new double [Lp*Lp];
+		//double [] eta = new double [Lp*Lp];
 		double [] eta_bar = new double[Lp*Lp];
 		double [] phi0_bar = new double[Lp*Lp];		
-		for (int i = 0; i < Lp*Lp; i++)
-			eta[i] = phi[i] - phi0[i];
+//		for (int i = 0; i < Lp*Lp; i++)
+//			eta[i] = phi[i] - phi0[i];
 
 		convolveWithRange(eta, eta_bar, R);
 		convolveWithRange(phi0, phi0_bar, R);
