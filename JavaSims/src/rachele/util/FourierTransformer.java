@@ -1,4 +1,4 @@
-package rachele.ising.dim2;
+package rachele.util;
 import scikit.numerics.fft.managed.ComplexDouble2DFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
@@ -9,6 +9,7 @@ public class FourierTransformer {
 	ComplexDouble2DFFT fft2D;
 	public double [] scratch1D;
 	public double [] scratch2D;
+	public double [] scratch2D2;
 	public double [] dst1D;
 	public double [] dst2D;
 	public int L;
@@ -20,6 +21,7 @@ public class FourierTransformer {
 		fft2D = new ComplexDouble2DFFT(L,L);
 		scratch1D = new double[2*L];
 		scratch2D = new double[2*L*L];
+		scratch2D2 = new double[2*L*L];
 		dst1D = new double[L];
 		dst2D = new double[L*L];
 	}
@@ -67,6 +69,27 @@ public class FourierTransformer {
 			src[i] = temp[i];	
 	}
 	
+	public double [] convolve(double [] src1, double [] src2){
+		
+		for (int i = 0; i < L*L; i++) {
+			scratch2D[2*i] = src1[i];
+			scratch2D[2*i+1] = 0;
+			scratch2D2[2*i] = src2[i];
+			scratch2D2[2*i+1] = 0;
+		}		
+		fft2D.transform(scratch2D);
+		fft2D.transform(scratch2D2);
+		scratch2D = fft2D.toWraparoundOrder(scratch2D);
+		scratch2D2 = fft2D.toWraparoundOrder(scratch2D2);
+		
+		for (int i = 0; i < 2 * L * L; i++)
+			scratch2D[i] *= scratch2D2[i];
+		
+		fft2D.backtransform(scratch2D);
+		for (int i = 0; i < L * L; i++)		
+			dst2D[i] = scratch2D[2*i]/(L*L);
+		return dst2D;
+	}
 	
 	private double [] find2DSF(double [] src){
 		double [] dst = new double [L*L];
@@ -84,7 +107,6 @@ public class FourierTransformer {
 		}
 		return dst;
 	}
-	
+}	
 
-	
-}
+
