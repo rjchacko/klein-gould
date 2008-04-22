@@ -29,17 +29,18 @@ public class CDM extends Simulation{
 		new Control(new CDM(), "Classical Droplet Model");
 	}
 	public void load(Control c){
-		params.add("h",-0.01);
-		params.add("T",1.0);
+		params.add("h",-0.1);
+		params.add("T",10.0);
 		params.add("L",10000);
 		params.add("dimension",2);
-		
+		params.add("max L");
 		c.frameTogether("Classical Droplet Model", delE, moft, mag, numDown);
 		numDown.setAutoScale(false);
 	}
 	
 	@Override
 	public void animate() {
+		params.set("max L", Math.pow(Math.abs(h), -dimension));
 		numDown.registerPoints("Number of Down Spins", N, Color.RED);	
 		mag.registerBars("magnetization", magnetization, Color.RED);
 		moft.registerPoints("m(t)", mt, Color.RED);
@@ -68,16 +69,29 @@ public class CDM extends Simulation{
 		total=(int) Math.pow(params.iget("L"), dimension);
 		
 //		double maxL= criticalLength();
-		double maxL= Math.pow(Math.abs(h), -dimension);
+		double maxL= Math.pow(Math.abs(h), -dimension)*2;
+		
+		
 		Nl=new int[(int)maxL];
+		
 		deltaE=new double[(int)maxL];
 		for(int i=0;i<deltaE.length;i++){
 			deltaE[i]=deltaE(i);
 			delta.accum(i, deltaE[i]);
 		}
 		Job.animate();
+		
 		int mag=total;
-		System.out.println("maxL="+maxL);
+		mag = equilibrate(r, mag);
+		while(true){
+			mag = oneMCS(r, mag);			
+			magnetization.accum(mag);
+			Job.animate();
+			N.clear();
+		}
+	}
+	
+	private int equilibrate(Random r, int mag) {
 		int dN;
 		for(int j=0;j<100000;j++){
 			for(int i=0;i<Nl.length;i++){
@@ -87,34 +101,33 @@ public class CDM extends Simulation{
 				double dE=dN*deltaE[index];
 				int newN=Nl[index]+dN;
 				int newM=mag+dM;
-				if((dE<0 ||(r.nextDouble()<Math.exp(-dE/T))) && newN>0 && Math.abs(newM)<total){
+				if((dE<0 ||(r.nextDouble()<Math.exp(-dE/T))) && newN>0 && newM>total*0.9){
 					Nl[index]+=dN;
 					mag=newM;
 				}
 			}
 		}
-		while(true){
-			for(int i=0;i<Nl.length;i++){
-				int index=r.nextInt(Nl.length);
-				if(r.nextDouble()<0.5)dN=1; else dN=-1;			
-				int dM=-2*index*dN;
-				double dE=dN*deltaE[index];
-				int newN=Nl[index]+dN;
-				int newM=mag+dM;
-				if((dE<0 ||(r.nextDouble()<Math.exp(-dE/T))) && newN>0 && Math.abs(newM)<total){
-					Nl[index]+=dN;
-					mag=newM;
-				}
-				N.accum(index, Nl[index]);
-				mt.accum(mcs,mag/(double)total);
-				mcs++;
+		return mag;
+	}
+	
+	private int oneMCS(Random r, int mag) {
+		int dN;
+		for(int i=0;i<Nl.length;i++){
+			int index=r.nextInt(Nl.length);
+			if(r.nextDouble()<0.5)dN=1; else dN=-1;			
+			int dM=-2*index*dN;
+			double dE=dN*deltaE[index];
+			int newN=Nl[index]+dN;
+			int newM=mag+dM;
+			if((dE<0 ||(r.nextDouble()<Math.exp(-dE/T))) && newN>0 && newM>total*0.9){
+				Nl[index]+=dN;
+				mag=newM;
 			}
-			
-			
-			magnetization.accum(mag);
-			Job.animate();
-			N.clear();
+			N.accum(index, Nl[index]);
+			mt.accum(mcs,mag/(double)total);
+			mcs++;
 		}
+		return mag;
 	}
 	
 	double criticalLength(){
@@ -125,7 +138,6 @@ public class CDM extends Simulation{
 	double deltaE(int l){	
 		double x=((double)dimension-1)/(double)dimension;
 		return h*l+Math.pow(l, x);
-//		return (h*l+Math.sqrt(l));
 	}
 
 }
