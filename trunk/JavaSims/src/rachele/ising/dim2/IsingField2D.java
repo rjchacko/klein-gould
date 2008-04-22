@@ -246,7 +246,7 @@ public class IsingField2D extends AbstractIsing2D{
 		}
 	}
 	
-	void convolveWithRange(double[] src, double[] dest, double R) {
+	public void convolveWithRange(double[] src, double[] dest, double R) {
 		double V;
 		for (int i = 0; i < Lp*Lp; i++) {
 			fftScratch[2*i] = src[i];
@@ -278,34 +278,17 @@ public class IsingField2D extends AbstractIsing2D{
 		}		
 	}
 	
-	public double [] simulateLinear(double [] eta, double [] background){
-		double [] linearTheoryGrowth = new double[Lp*Lp];
-		double [] eta_bar = new double[Lp*Lp];
-		convolveWithRange(eta, eta_bar, R);
-		for (int i = 0; i < Lp*Lp; i++)
-			linearTheoryGrowth[i] = +eta_bar[i]-T*eta[i]/(1.0-Math.pow(background[i],2));
-		return linearTheoryGrowth;
 
-	}
 	
-	public double [] simulateLinearWithModDynamics(double [] phi0, double [] eta){
-		double [] linearTheoryGrowth = new double [Lp*Lp];
-		//double [] eta = new double [Lp*Lp];
-		double [] eta_bar = new double[Lp*Lp];
-		double [] phi0_bar = new double[Lp*Lp];		
-//		for (int i = 0; i < Lp*Lp; i++)
-//			eta[i] = phi[i] - phi0[i];
 
-		convolveWithRange(eta, eta_bar, R);
-		convolveWithRange(phi0, phi0_bar, R);
+	
+	public void simulateUnstable(){
+		convolveWithRange(phi, phi_bar, R);		
 		for (int i = 0; i < Lp*Lp; i++){
-			double dynFactor1 = 1.0 - 2.0*Math.pow(phi0[i],2) + Math.pow(phi0[i],4);
-			double dynFactor2 = 4.0*(phi0[i] - Math.pow(phi0[i],3));
-			linearTheoryGrowth[i] = eta_bar[i]*dynFactor1;
-			linearTheoryGrowth[i] -= eta[i]*(dynFactor1*(T/(1.0-Math.pow(phi0[i],2))));
-			linearTheoryGrowth[i] += eta[i]*(dynFactor2*(-phi0_bar[i] - H + T*scikit.numerics.Math2.atanh(phi0[i])));
+			delPhi[i] = -dt*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H);
+			phi[i] += delPhi[i];
 		}
-		return linearTheoryGrowth;
+		t += dt;
 	}
 	
 	public void simulate() {
