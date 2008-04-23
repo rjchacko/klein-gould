@@ -1,5 +1,5 @@
 package rachele.ising.dim2.apps;
-
+ 
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -23,7 +23,7 @@ public class testLinearApp extends Simulation{
     IsingField2D ising;
     public FindCoefficients coeff;
     public FourierTransformer fft;
-    public double [] rhs, etaLT, eta, etaLT_k, phi0; //right hand side
+    public double [] rhs, etaLT, eta, etaLT_k, phi0, phi0_bar; //right hand side
     public double kRChunk; //=2piR/L
     public Accumulator etaAcc;
     public Accumulator etaLTAcc; 
@@ -114,7 +114,7 @@ public class testLinearApp extends Simulation{
 		double [] etaSF = new double[Lp*Lp];
 		double [] etaLTSF = new double[Lp*Lp];
 		etaSF = fft.calculateSF2D(eta, false, false);
-		//etaLTSF = fft.calculateSF2D(etaLT, false, false);
+		etaLTSF = fft.calculateSF2D(etaLT, false, false);
 		etaLTAcc.accum(ising.time(), etaLTSF[2*Lp]);
 		etaAcc.accum(ising.time(), etaSF[2*Lp]);
 		etaLTAcc2.accum(ising.time(), etaLTSF[2*Lp + 1]);
@@ -158,6 +158,34 @@ public class testLinearApp extends Simulation{
 	}
  
 	public void run() {
+		initialize();
+		for (int i = 0; i < Lp*Lp; i++){
+			etaLT[i] = ising.phi[i] - phi0[i];
+		}
+		etaLT_k = fft.calculate2DFT(etaLT);
+        while (true) {
+    		rhs = simulateLinearWithModDynamics(etaLT);
+    		//rhs = simulateLinear(phi0, etaLT);
+        	//simulateLinearMod_kSpace();
+        	ising.simulate();
+    		for (int i = 0; i < Lp*Lp; i++){
+    			etaLT[i] += rhs[i];
+    			eta[i] = ising.phi[i] - phi0[i];
+    		}
+    		Job.animate();
+		}	
+	}
+	
+	void findPhi0andPhi0_bar(){
+		String fileName = "../../../research/javaData/configs1d/config";
+		double [] phi0_slice = new double [Lp];
+		phi0_slice = FileUtil.readConfigFromFile(fileName, Lp);
+		for (int i = 0; i < Lp*Lp; i++)
+			phi0[i] = phi0_slice[i%Lp];
+		ising.convolveWithRange(phi0, phi0_bar, ising.R);
+	}
+	
+	void initialize(){
 		if(params.sget("Init Conditions") == "Read From File")
 			readInputParams("../../../research/javaData/configs/inputParams");
 		ising = new IsingField2D(params);
@@ -176,55 +204,46 @@ public class testLinearApp extends Simulation{
 		eta = new double[Lp*Lp];
 		etaLT = new double[Lp*Lp];
 		etaLT_k = new double[Lp*Lp];
-		double [] phiSlice = new double [Lp];
-		String fileName = "../../../research/javaData/configs1d/config";
-		phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
 		phi0 = new double [Lp*Lp];
-		for (int i = 0; i < Lp*Lp; i++){
-			phi0[i] = phiSlice[i%Lp];
-			etaLT[i] = ising.phi[i] - phi0[i];
-		}
-		etaLT_k = fft.calculate2DFT(etaLT);
-        while (true) {
-    		//rhs = simulateLinearWithModDynamics(etaLT);
-    		//rhs = simulateLinear(phi0, etaLT);
-        	simulateLinearMod_kSpace();
-        	ising.simulate();
-    		for (int i = 0; i < Lp*Lp; i++){
-    			//etaLT[i] += rhs[i];
-    			eta[i] = ising.phi[i] - phi0[i];
-    		}
-    		Job.animate();
-		}	
+		phi0_bar = new double [Lp*Lp];
+		findPhi0andPhi0_bar();
 	}
-	
-	void simulateLinearMod_kSpace(){
-		double [] f = new double [Lp*Lp];
-		double [] g = new double [Lp*Lp];
-		double [] phi0_bar = new double[Lp*Lp];
-		//double [] eta_bar = new double[Lp*Lp];
-		//ising.convolveWithRange(etaLT_k, eta_bar, ising.R);
-		ising.convolveWithRange(phi0, phi0_bar, ising.R);
-		for (int i = 0; i < Lp*Lp; i++){
-			double dynFactor1 = 1.0 - 2.0*Math.pow(phi0[i],2) + Math.pow(phi0[i],4);
-			double dynFactor2 = 4.0*(phi0[i] - Math.pow(phi0[i],3));
-			f[i] = -dynFactor1*ising.T/(1-phi0[i]*phi0[i])
-					+dynFactor2*(phi0_bar[i]+ising.T*scikit.numerics.Math2.atanh(phi0[i])-ising.H);
-					
-			g[i] = -dynFactor1;
-		}
-		
-		
-		
-	}
+//	void simulateLinearMod_kSpace(){
+//		double [] f = new double [Lp*Lp];
+//		double [] g = new double [Lp*Lp];
+////		double [] phiSlice_bar = new double[Lp*Lp];
+//		//double [] eta_bar = new double[Lp*Lp];
+//		//ising.convolveWithRange(etaLT_k, eta_bar, ising.R);
+//
+//
+////				fft.convolve(phi, phi_bar, new Function2D() {
+////			public double eval(double k1, double k2) {
+////				return potential(hypot(k1*Rx,k2*Ry));
+////			}
+////		});
+//		
+//		
+//		ising.convolveWithRange(phi0, phi0_bar, ising.R);
+//		for (int i = 0; i < Lp*Lp; i++){
+//			double dynFactor1 = 1.0 - 2.0*Math.pow(phi0[i],2) + Math.pow(phi0[i],4);
+//			double dynFactor2 = 4.0*(phi0[i] - Math.pow(phi0[i],3));
+//			f[i] = -dynFactor1*ising.T/(1-phi0[i]*phi0[i])
+//					+dynFactor2*(phi0_bar[i]+ising.T*scikit.numerics.Math2.atanh(phi0[i])-ising.H);
+//					
+//			g[i] = -dynFactor1;
+//		}
+//		
+//		
+//		
+//	}
 	
 	double [] simulateLinearWithModDynamics(double [] etaLinear){
 		double [] linearTheoryGrowth = new double [Lp*Lp];
 		double [] eta_bar = new double[Lp*Lp];
-		double [] phi0_bar = new double[Lp*Lp];		
+		//double [] phi0_bar = new double[Lp*Lp];		
 
 		ising.convolveWithRange(etaLinear, eta_bar, ising.R);
-		ising.convolveWithRange(phi0, phi0_bar, ising.R);
+		//ising.convolveWithRange(phi0, phi0_bar, ising.R);
 		for (int i = 0; i < Lp*Lp; i++){
 			double dynFactor1 = 1.0 - 2.0*Math.pow(phi0[i],2) + Math.pow(phi0[i],4);
 			double dynFactor2 = 4.0*(phi0[i] - Math.pow(phi0[i],3));
