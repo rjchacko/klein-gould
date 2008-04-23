@@ -2,6 +2,7 @@ package rachele.util;
 import scikit.numerics.fft.managed.ComplexDouble2DFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
+import scikit.numerics.fn.Function2D;
 
 public class FourierTransformer {
 
@@ -69,7 +70,27 @@ public class FourierTransformer {
 			src[i] = temp[i];	
 	}
 	
-	public double [] convolve(double [] src1, double [] src2){
+	public double [] convolve1DwithFunction(double [] src, Function2D fn){
+		for (int i = 0; i < L; i++){
+			scratch1D[2*i] = src[i];
+			scratch1D[2*i + 1] = 0;
+		}
+		fft1D.transform(scratch1D);
+		scratch1D = fft1D.toWraparoundOrder(scratch1D);		
+		for (int i = 0; i < L; i++){
+			scratch1D[2*i] *= -1*fn.eval((double)i,1.0);
+			scratch1D[2*i+1] *= -1*fn.eval((double)i,1.0);
+		}
+		fft1D.backtransform(scratch1D);
+		for (int i = 0; i < L; i++){
+			dst1D[i] = scratch1D[2*i]/(L*L);
+			//System.out.println(dst1D[i]);
+		}
+		return dst1D;
+	}
+	
+	
+	public double [] convolve2D(double [] src1, double [] src2){
 		
 		for (int i = 0; i < L*L; i++) {
 			scratch2D[2*i] = src1[i];
