@@ -299,8 +299,9 @@ class ShakerData {
 	private int maxCnt = Integer.MAX_VALUE;
 	private int cnt;
 	private FloatBuffer fb;
+	Terminal term;
 	
-	public ShakerData(String fname) {
+	public ShakerData(Terminal term, String fname) {
 		try {
 			FileChannel channel = new FileInputStream(fname).getChannel();
 			MappedByteBuffer bb = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
@@ -325,7 +326,7 @@ class ShakerData {
 		    fb = bb.asFloatBuffer();
 		    
 		} catch (Exception e) {
-			System.out.println(e);
+			term.println(e);
 		}
 	}
 	
@@ -391,14 +392,14 @@ class Commands {
 	
 	public ShakerData loadData(String fname) {
 		term.println("Opening " + fname);
-		return new ShakerData(fname);
+		return new ShakerData(term, fname);
 	}
 	
 	public ShakerData loadData() {
 		try {
 			String fname = FileUtil.loadDialog(term.getConsole(), "Open Shaker Data");
 			term.println("Opening " + fname);
-			return new ShakerData(fname);
+			return new ShakerData(term, fname);
 		} catch(IOException e) {
 			term.println(e);
 			return null;
