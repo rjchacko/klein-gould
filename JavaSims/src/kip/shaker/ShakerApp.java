@@ -10,6 +10,7 @@ import static scikit.numerics.Math2.sqr;
 import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.nio.ByteOrder;
@@ -19,6 +20,7 @@ import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.util.Hashtable;
 
+import javax.imageio.ImageIO;
 import javax.swing.Timer;
 
 import scikit.dataset.Accumulator;
@@ -34,14 +36,80 @@ import scikit.util.FileUtil;
 import scikit.util.Terminal;
 import scikit.util.Utilities;
 
+class FrameAnimator {
+	FrameSequence seq;
+	Terminal term;
+	int delay = 50; // milliseconds
+	Timer timer;
+	int timerFrame;
+	boolean animateMobile = false;
+	int tstar;
+	double rstar;
+	File imageDir = null;
+	
+	
+	public FrameAnimator(FrameSequence seq) {
+		this.seq = seq;
+		this.term = seq.term;
+		timer = new Timer(delay, taskPerformer);
+	}
+	
+	ActionListener taskPerformer = new ActionListener() {
+	    public void actionPerformed(ActionEvent evt) {
+	    	if (timerFrame >= seq.frames.length) {
+	    		timer.stop();
+	    	}
+	    	else {
+	    		if (!animateMobile)
+	    			seq.plot(timerFrame);
+	    		else
+	    			seq.plotMobile(timerFrame, tstar, rstar);
+	    		if (imageDir != null) {
+					try {
+						String fname = Utilities.formatI4(timerFrame);
+						String imgName = imageDir+File.separator+fname+".png";
+						ImageIO.write(seq.plot.getImage(), "png", new File(imgName));
+					} catch (IOException e) {
+						term.println(e.getMessage());
+					}
+	    		}
+	    		timerFrame++;
+	    	}
+	    }
+	};
+	
+	void setMobileParams(int tstar, double rstar) {
+		animateMobile = true;
+		this.tstar = tstar;
+		this.rstar = rstar;
+		timerFrame = max(tstar+2, timerFrame);
+	}
+	
+	public void start() {
+		timer.start();
+	}
+	
+	public void stop() {
+		if (timer != null)
+			timer.stop();
+	}
+	
+	public void selectImageDir() {
+		try {
+			imageDir = FileUtil.directoryDialog("Select output directory");
+			term.println("Directory: " + imageDir);
+		} catch(IOException e) {
+			term.println(e);
+		}
+	}
+}
+
 class FrameSequence {
 	Terminal term;
 	Frame[] frames;
 	int nframes;
 	Bounds bds;
 	Scene2D plot = new Scene2D("Tracked particles");
-	Timer timer;
-	int timerFrame;
 	
 	public FrameSequence(Terminal term, ShakerData d) {
 		this.term = term;
@@ -67,6 +135,10 @@ class FrameSequence {
 		
 		plot(0);
 		Utilities.frame(plot.getComponent(), plot.getTitle());
+	}
+	
+	public FrameAnimator animator() {
+		return new FrameAnimator(this);
 	}
 	
 	public Frame getMobileParticles(int t, int tstar, double rstar) {
@@ -114,31 +186,13 @@ class FrameSequence {
 	public void plotMobile(int t, int tstar, double rstar) {
 		if (t >= frames.length)
 			term.println("Time " + t + " exceeds maximum frame " + (frames.length-1));
-		Frame mobile = getMobileParticles(t, tstar, rstar);			
-		plot.clearDrawables();
-		plot.addDrawable(Geom2D.rectangle(bds, Color.BLACK));
-		plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.3f)));
-		plot.addDrawable(mobile.getDrawable(new Color(0f, 0f, 1f, 1f)));
-	}
-	
-	public void startAnimation() {
-		timerFrame = 0;
-		ActionListener taskPerformer = new ActionListener() {
-		    public void actionPerformed(ActionEvent evt) {
-		    	if (timerFrame >= frames.length)
-		    		timer.stop();
-		    	else
-		    		plot(timerFrame++);
-		    }
-		};
-		int delay = 50; // milliseconds
-		timer = new Timer(delay, taskPerformer);
-		timer.start();
-	}
-	
-	public void stopAnimation() {
-		if (timer != null)
-			timer.stop();
+		Frame mobile = getMobileParticles(t, tstar, rstar);
+		if (mobile != null) {
+			plot.clearDrawables();
+			plot.addDrawable(Geom2D.rectangle(bds, Color.BLACK));
+			plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.3f)));
+			plot.addDrawable(mobile.getDrawable(new Color(0f, 0f, 1f, 1f)));
+		}
 	}
 	
 	private void calculateSceneBounds(ShakerData d) {
@@ -452,31 +506,39 @@ public class ShakerApp extends Terminal {
 	public static void main(String[] args) {
 		ShakerApp term = new ShakerApp();
 		term.help = "Suggested commands:\n"+
+			"(Right click in any plot to change view options or to save data)\n"+
 			"\tdata = loadData(); // select tracking data (w/o velocity)\n"+
 			"\n"+
-			"\t// plot distribution of particle tracking duration\n"+
+			"\t// plot a histogram showing the number of frames over which\n" +
+			"\t// individual particles have been tracked\n"+
 			"\tplot(trajectoryDistribution(data));\n"+
-			"\t// neglect particles tracked for less than, e.g., 500 frames\n"+
+			"\t// in the following analysis commands, neglect particles tracked\n" +
+			"\t// for less than, e.g., 500 frames\n"+
 			"\tdata.minFrames = 500; // default 500\n"+
 			"\t// smaller frameJump means more averages and slower to process\n"+
 			"\tdata.frameJump = 100; // default 100\n"+
 			"\ta = analyze(data);\n"+
-			"\tplot(a.x2);\n"+
-			"\tplot(a.alpha);\n"+
+			"\tplot(a.x2); // coefficient of x2 gives diffusion coef.\n"+
+			"\tplot(a.alpha); // maximum of alpha gives t*\n"+
 			"\t// do van-hove calculation with t* = 1000\n"+
 			"\tplot(vanHove(data, 1000), \"Experiment\");\n"+
 			"\t// compare to gaussian with t* = 1000, diffusion coef = 0.003\n"+
+			"\t// (the intersection of the two plots gives r*)\n"+
 			"\treplot(vanHoveTheory(1000, 0.003), \"Theory\");\n"+
 			"\n"+
 			"\t// Display the data\n"+
 			"\ts = sequence(data); // sequence particles by time\n"+
 			"\ts.plot(1); // plot the first frame of the data\n"+
-			"\ts.startAnimation(); // animate the tracked particles\n"+
-			"\ts.stopAnimation();\n"+
 			"\t// plot \"mobile\" particles using t=1000, t*=100, r*=10\n"+
 			"\ts.plotMobile(1000, 100, 10);\n"+
 			"\n"+
-			"(Right click in any plot to change view options or to save data)\n";
+			"\t// Animate the data\n"+
+			"\ta = s.animator();\n" +
+			"\ta.start(); // animate the tracked particles\n"+
+			"\ta.stop();\n" +
+			"\ta.setMobileParams(100, 10); // set (t*, r*) for mobile particles\n"+
+			"\ta.selectImageDir(); // (optional) write animation frames to images\n"+
+			"\ta.start(); // animate mobile particles\n";
 		term.importObject(new Commands(term));
 		term.runApplication();
 	}
