@@ -76,16 +76,14 @@ public class FourierTransformer {
 			scratch1D[2*i + 1] = 0;
 		}
 		fft1D.transform(scratch1D);
-		scratch1D = fft1D.toWraparoundOrder(scratch1D);		
-		for (int i = 0; i < L; i++){
-			scratch1D[2*i] *= -1*fn.eval((double)i,1.0);
-			scratch1D[2*i+1] *= -1*fn.eval((double)i,1.0);
+		for (int x = -L/2; x < L/2; x++) {
+			int i = (x+L)%L;
+			scratch1D[2*i] *=  fn.eval((double)x,0.0);
+			scratch1D[2*i+1] *=  fn.eval((double)x,0.0);
 		}
 		fft1D.backtransform(scratch1D);
-		for (int i = 0; i < L; i++){
-			dst1D[i] = scratch1D[2*i]/(L*L);
-			//System.out.println(dst1D[i]);
-		}
+		for (int i = 0; i < L; i++)
+			dst1D[i] = scratch1D[2*i]/(L);
 		return dst1D;
 	}
 	
