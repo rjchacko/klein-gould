@@ -1,5 +1,5 @@
 package rachele.ising.dim2.apps;
- 
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -16,14 +16,16 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
+import scikit.numerics.fn.Function2D;
 import scikit.dataset.Accumulator;
+//import scikit.dataset.PointSet;
 import scikit.util.*;
 
 public class testLinearApp extends Simulation{
     IsingField2D ising;
     public FindCoefficients coeff;
     public FourierTransformer fft;
-    public double [] rhs, etaLT, eta, etaLT_k, phi0, phi0_bar; //right hand side
+    public double [] rhs, etaLT, eta, etaLT_k, phi0, phi0_bar,phi0_slice_bar; //right hand side
     public double kRChunk; //=2piR/L
     public Accumulator etaAcc;
     public Accumulator etaLTAcc; 
@@ -39,14 +41,16 @@ public class testLinearApp extends Simulation{
     Grid phiGrid = new Grid("phi field");
     Grid etaDotSF = new Grid("sf phi field");
     Grid etaDotLinearSF = new Grid("sf linear theory");
+    Grid phi0Grid = new Grid("phi_0");
+    Grid phi0SliceGrid = new Grid("phi_0 slice");
     Plot etaVt1 = new Plot("eta v t");
     Plot etaVt2 = new Plot("eta v t LT");
-    
+        
 	public static void main(String[] args) {
 		new Control(new testLinearApp(), "Ising Linear Test");
 	}
 	public void load(Control c) {
-	c.frameTogether("Grids", etaDot, etaDotSF, phiGrid, etaDotLinear, etaDotLinearSF);
+	c.frameTogether("Grids", etaDot, etaDotSF, phiGrid, etaDotLinear, etaDotLinearSF, phi0Grid, phi0SliceGrid);
 	c.frameTogether("accs", etaVt1, etaVt2);
 	params.addm("Zoom", new ChoiceValue("Yes", "No"));
 	params.addm("Interaction", new ChoiceValue("Square", "Circle"));
@@ -79,9 +83,17 @@ public class testLinearApp extends Simulation{
 		params.set("Time", ising.time());
 		params.set("Mean Phi", ising.mean(ising.phi));
 		params.set("Lp", ising.Lp);
-		etaDot.registerData(ising.Lp, ising.Lp, ising.delPhi);
-		etaDotLinear.registerData(ising.Lp, ising.Lp, rhs);
-		phiGrid.registerData(ising.Lp, ising.Lp, ising.phi);
+		etaDot.registerData(Lp, Lp, ising.delPhi);
+		etaDotLinear.registerData(Lp, Lp, rhs);
+		phiGrid.registerData(Lp, Lp, ising.phi);
+		double [] slice = new double [Lp];
+		for(int i = 0; i < Lp; i++)
+			slice[i] = phi0_bar[i];
+		phi0Grid.registerData(Lp, Lp, phi0_bar);
+		double [] temp = new double [Lp*Lp];
+		for(int i = 0; i < Lp*Lp; i++)
+			temp[i] = phi0_slice_bar[i%Lp];
+		phi0SliceGrid.registerData(Lp,Lp, temp);
 		
 		double [] delPhiFT = fft.calculateSF2D(ising.delPhi, false, false);
 		double [] rhsFT = fft.calculateSF2D(rhs, false, false);
@@ -180,6 +192,14 @@ public class testLinearApp extends Simulation{
 		String fileName = "../../../research/javaData/configs1d/config";
 		double [] phi0_slice = new double [Lp];
 		phi0_slice = FileUtil.readConfigFromFile(fileName, Lp);
+
+		phi0_slice_bar = fft.convolve1DwithFunction(phi0_slice, new Function2D(){
+			public double eval(double k1, double k2) {
+				double kRx = 2*Math.PI*ising.R*k1/ising.L;
+				//double kRy = 2*Math.PI*ising.R*k2/ising.L;
+				return ising.findVkSquare(kRx, 0);
+			}
+		});
 		for (int i = 0; i < Lp*Lp; i++)
 			phi0[i] = phi0_slice[i%Lp];
 		ising.convolveWithRange(phi0, phi0_bar, ising.R);
@@ -206,8 +226,10 @@ public class testLinearApp extends Simulation{
 		etaLT_k = new double[Lp*Lp];
 		phi0 = new double [Lp*Lp];
 		phi0_bar = new double [Lp*Lp];
+		phi0_slice_bar = new double [Lp];
 		findPhi0andPhi0_bar();
 	}
+	
 //	void simulateLinearMod_kSpace(){
 //		double [] f = new double [Lp*Lp];
 //		double [] g = new double [Lp*Lp];
@@ -249,7 +271,7 @@ public class testLinearApp extends Simulation{
 			double dynFactor2 = 4.0*(phi0[i] - Math.pow(phi0[i],3));
 			linearTheoryGrowth[i] = eta_bar[i]*dynFactor1;
 			linearTheoryGrowth[i] -= etaLinear[i]*(dynFactor1*(ising.T/(1.0-Math.pow(phi0[i],2))));
-			linearTheoryGrowth[i] += etaLinear[i]*(dynFactor2*(-phi0_bar[i] - ising.H + ising.T*scikit.numerics.Math2.atanh(phi0[i])));
+			linearTheoryGrowth[i] += etaLinear[i]*(dynFactor2*(phi0_slice_bar[i%Lp] - ising.H + ising.T*scikit.numerics.Math2.atanh(phi0[i])));
 		}
 		return linearTheoryGrowth;
 	}
