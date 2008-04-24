@@ -21,6 +21,7 @@ public class FindCoefficients {
 		fft = new ComplexDoubleFFT_Mixed(Lp);
 		fft2D = new ComplexDouble2DFFT(Lp,Lp);
 	}
+	
 	public void findCoefficientsFromFile(){
 		double [] phiSlice = new double [Lp];
 		phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
@@ -68,5 +69,19 @@ public class FindCoefficients {
 			aa[kx][ky] = fftScratch[2*i];			
 		}
 	}
+	
+//	public void findCoefficientsMod(double T, ){
+//		double [] phiSlice = new double [Lp];
+//		phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
+//		double [] G = new double [Lp];
+//		double [] F = new double [Lp];
+//		for (int i = 0; i < Lp; i++){
+//			G[i] = -(1.0-2.0*Math.pow(phiSlice[i],2)+Math.pow(phiSlice[i],4));
+//			F[i] = G[i]*T/(1-Math.pow(phiSlice[i],2)) 
+//			+ 4 * phiSlice[i]*(1.0-Math.pow(a, phiSlice,2))*();
+//		}
+//	}
+
+	
 }
 
