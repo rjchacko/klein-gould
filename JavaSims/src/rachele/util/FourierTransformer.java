@@ -28,14 +28,15 @@ public class FourierTransformer {
 	}
 
 	public double [] calculate1DFT(double [] src){
+		double [] dst = new double[L];
 		for (int i = 0; i < L; i ++){
 			scratch1D[2*i] = src[i];
 			scratch1D[2*i+1] = 0;
 		}
 		fft1D.transform(scratch1D);
-		for (int i = 0; i < L*L; i ++)
-			dst1D[i] = scratch1D[2*i];
-		return dst1D;
+		for (int i = 0; i < L; i ++)
+			dst[i] = scratch1D[2*i];
+		return dst;
 	}
 	
 	public double [] calculate2DFT(double [] src){
