@@ -50,7 +50,7 @@ public class FourierTransformer {
 		return dst2D;
 	}
 	
-	public double [] calculateSF2D(double [] src, boolean centered, boolean zeroCenter){
+	public double [] calculate2DSF(double [] src, boolean centered, boolean zeroCenter){
 		dst2D = find2DSF(src);
 		if (zeroCenter) dst2D[0] = 0;
 		if (centered) center(dst2D);
