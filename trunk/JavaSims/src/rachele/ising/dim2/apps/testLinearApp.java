@@ -16,17 +16,21 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
+import scikit.numerics.Jama.EigenvalueDecomposition;
+import scikit.numerics.Jama.Matrix;
 import scikit.numerics.fn.Function1D;
+//import scikit.util.DoubleArray;
 import scikit.dataset.Accumulator;
-import scikit.dataset.PointSet;
-import scikit.util.*;
+//import scikit.dataset.PointSet;
+//import scikit.util.*;
 
 public class testLinearApp extends Simulation{
     IsingField2D ising;
     public FindCoefficients coeff;
     public FourierTransformer fft;
-    public double [] rhs, etaLT, eta, etaLT_k, phi0_bar, phi0; //right hand side
+    public double [] rhs, etaLT, eta, etaLT_k_slice, phi0_bar, phi0; //right hand side
     public double [] g_k, f_k, f, g;
+    public double [][] M;
     public double kRChunk; //=2piR/L
     public Accumulator etaAcc;
     public Accumulator etaLTAcc; 
@@ -55,83 +59,83 @@ public class testLinearApp extends Simulation{
 		new Control(new testLinearApp(), "Ising Linear Test");
 	}
 	public void load(Control c) {
-	c.frameTogether("Grids", etaDot, etaDotSF, phiGrid, eta_k_LTGrid, etaDotLinearSF);
-	c.frameTogether("accs", etaVt1, etaVt2);
-	c.frameTogether("f and g",fPlot, gPlot);
-	params.addm("Zoom", new ChoiceValue("Yes", "No"));
-	params.addm("Interaction", new ChoiceValue("Square", "Circle"));
-	params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
-	params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian"));
-	params.addm("Approx", new ChoiceValue("Slow", "HalfStep", "TimeAdjust", "Phi4","Phi4HalfStep"));
-	params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
-	params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
-	params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
-	params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
-	params.addm("T", 0.04);
-	params.addm("H", 0.80);
-	params.addm("dT", 0.001);
-	params.addm("tolerance", 0.0001);
-	params.addm("dt", 1.0);
-	params.addm("J", -1.0);
-	params.addm("R", 2000000.0);
-	params.addm("Random seed", 0);
-	params.add("L/R", 3.0);
-	params.add("R/dx", 43.0);
-	params.add("kR bin-width", 0.1);
-	params.add("Magnetization", 0.0);
-	params.add("Time");
-	params.add("Mean Phi");
-	params.add("Lp");
-	flags.add("Clear");
+		//c.frame(phiGrid);
+		//c.frameTogether("Grids", etaDot,eta_k_LTGrid, phiGrid);
+		c.frameTogether("accs", etaVt1, etaVt2, phiGrid);
+		params.addm("Zoom", new ChoiceValue("Yes", "No"));
+		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
+		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
+		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian"));
+		params.addm("Approx", new ChoiceValue("Slow", "HalfStep", "TimeAdjust", "Phi4","Phi4HalfStep"));
+		params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
+		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
+		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
+		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
+		params.addm("T", 0.04);
+		params.addm("H", 0.80);
+		params.addm("dT", 0.001);
+		params.addm("tolerance", 0.0001);
+		params.addm("dt", 1.0);
+		params.addm("J", -1.0);
+		params.addm("R", 2000000.0);
+		params.addm("Random seed", 0);
+		params.add("L/R", 3.0);
+		params.add("R/dx", 43.0);
+		params.add("kR bin-width", 0.1);
+		params.add("Magnetization", 0.0);
+		params.add("Time");
+		params.add("Mean Phi");
+		params.add("Lp");
+		flags.add("Clear");
 	}
 
 	public void animate() {
 		params.set("Time", ising.time());
 		params.set("Mean Phi", ising.mean(ising.phi));
 		params.set("Lp", ising.Lp);
-		etaDot.registerData(Lp, Lp, ising.delPhi);
-		eta_k_LTGrid.registerData(Lp, Lp, rhs);
+//		etaDot.registerData(Lp, Lp, ising.delPhi);
+//		eta_k_LTGrid.registerData(Lp, Lp, rhs);
 		phiGrid.registerData(Lp, Lp, ising.phi);
-		double [] delPhiFT = fft.calculateSF2D(ising.delPhi, false, false);
-		double [] rhsFT = fft.calculateSF2D(rhs, false, false);
-		double factor = delPhiFT [2*Lp]/DoubleArray.max(delPhiFT);
-		double factorRHS = rhsFT[2*Lp]/DoubleArray.max(rhs);
-		for (int i = 0; i < Lp; i++){
-			delPhiFT[i] *= factor;
-			rhsFT[i] *= factorRHS;
-		}		
-
-		fft.center(delPhiFT);
-		fft.center(rhsFT);
-		etaDotSF.registerData(ising.Lp, ising.Lp, delPhiFT);
-
-		
-		fft.center(delPhiFT);
-		fft.center(rhsFT);
-		double [] delPhiMidSlice = new double [Lp];
-		double [] rhsMidSlice = new double [Lp];
-		double [] delPhiSlice = new double [Lp];
-		double [] rhsSlice = new double [Lp];
-		for(int i = 0; i < Lp; i++){
-			delPhiMidSlice[i] = delPhiFT[i];
-			rhsMidSlice[i] = rhsFT[i];
-			delPhiSlice[i] = delPhiFT[i*Lp+2];
-			rhsSlice[i] = rhsFT[i*Lp+2];
-		}
+//		double [] delPhiFT = fft.calculateSF2D(ising.delPhi, false, false);
+//		//double [] rhsFT = fft.calculateSF2D(rhs, false, false);
+//		double factor = delPhiFT [2*Lp]/DoubleArray.max(delPhiFT);
+//		double factorRHS = rhsFT[2*Lp]/DoubleArray.max(rhs);
+//		for (int i = 0; i < Lp; i++){
+//			delPhiFT[i] *= factor;
+//			rhsFT[i] *= factorRHS;
+//		}		
+//
+//		fft.center(delPhiFT);
+//		fft.center(rhsFT);
+//		etaDotSF.registerData(ising.Lp, ising.Lp, delPhiFT);
+//
+//		
+//		fft.center(delPhiFT);
+//		fft.center(rhsFT);
+//		double [] delPhiMidSlice = new double [Lp];
+//		double [] rhsMidSlice = new double [Lp];
+//		double [] delPhiSlice = new double [Lp];
+//		double [] rhsSlice = new double [Lp];
+//		for(int i = 0; i < Lp; i++){
+//			delPhiMidSlice[i] = delPhiFT[i];
+//			rhsMidSlice[i] = rhsFT[i];
+//			delPhiSlice[i] = delPhiFT[i*Lp+2];
+//			rhsSlice[i] = rhsFT[i*Lp+2];
+//		}
 
 		double [] etaSF = new double[Lp*Lp];
 		//double [] etaLTSF = new double[Lp*Lp];
-		etaSF = fft.calculate2DFT(eta);
+		etaSF = fft.calculate2DSF(eta, false, false);
 		//etaDotLinearSF.registerData(ising.Lp, ising.Lp, etaSF);
 		//etaLTSF = fft.calculateSF2D(etaLT, false, false);
-		etaLTAcc.accum(ising.time(),Math.pow(etaLT_k[2*Lp],2));
+		etaLTAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));
 		etaAcc.accum(ising.time(), Math.pow(etaSF[2*Lp],2));
-		etaLTAcc2.accum(ising.time(), Math.pow(etaLT_k[2*Lp+1],2));
-		etaAcc2.accum(ising.time(),Math.pow(etaSF[2*Lp + 1],2));
-		etaLTAcc3.accum(ising.time(),Math.pow(etaLT_k[2*Lp+2],2));
-		etaAcc3.accum(ising.time(), Math.pow(etaSF[2*Lp + 2],2));
-		etaLTAcc4.accum(ising.time(), Math.pow(etaLT_k[2*Lp+3],2));
-		etaAcc4.accum(ising.time(), Math.pow(etaSF[2*Lp + 3],2));
+		etaLTAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
+		etaAcc2.accum(ising.time(),Math.pow(etaSF[2*Lp+1],2));
+		etaLTAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
+		etaAcc3.accum(ising.time(), Math.pow(etaSF[2*Lp+2],2));
+		etaLTAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2));
+		etaAcc4.accum(ising.time(), Math.pow(etaSF[2*Lp+3],2));
 		etaVt1.registerLines("acc", etaAcc, Color.BLACK);
 		etaVt2.registerLines("acc", etaLTAcc, Color.BLACK);
 		etaVt1.registerLines("acc2", etaAcc2, Color.BLUE);
@@ -146,14 +150,14 @@ public class testLinearApp extends Simulation{
 		//gPlot.registerLines("f(x)", new PointSet(1,1,f), Color.BLACK);
 		//gPlot.registerLines("g(x)", new PointSet(1,1,g), Color.BLUE);
 		//gPlot.registerLines("phi0", new PointSet(1,1,phi0), Color.RED);
-		double [] etaSFslice = new double [Lp];
-		double [] etaLTslice = new double[Lp];
-		for (int i = 0; i < Lp; i++){
-			etaSFslice[i] = etaSF[2*Lp+i];
-			etaLTslice[i] = etaLT_k[2*Lp+i];
-		}
-		fPlot.registerLines("etaSlice", new PointSet(1,1,etaSFslice), Color.YELLOW);
-		gPlot.registerLines("etaSlice2", new PointSet(1,1,etaLTslice), Color.GREEN);
+//		double [] etaSFslice = new double [Lp];
+//		double [] etaLTslice = new double[Lp];
+//		for (int i = 0; i < Lp; i++){
+//			etaSFslice[i] = etaSF[2*Lp+i];
+//			etaLTslice[i] = etaLT_k[2*Lp+i];
+//		}
+//		fPlot.registerLines("etaSlice", new PointSet(1,1,etaSFslice), Color.YELLOW);
+//		gPlot.registerLines("etaSlice2", new PointSet(1,1,etaLTslice), Color.GREEN);
 		
 		if(flags.contains("Clear")){
 			etaAcc.clear();
@@ -182,24 +186,51 @@ public class testLinearApp extends Simulation{
  
 	public void run() {
 		initialize();
+		int ky = 2;
 		for (int i = 0; i < Lp*Lp; i++){
 			etaLT[i] = ising.phi[i] - phi0[i%Lp];
 		}
-		etaLT_k = fft.calculate2DFT(etaLT);
-		findGF();
+		double [] temp = new double [Lp*Lp];
+		temp = fft.calculate2DFT(etaLT);
+		for (int i = ky*Lp; i < Lp*(ky+1); i++)
+			etaLT_k_slice[i-ky*Lp] = temp[i]; 
+		findGF(ky);
+		diagonalize();
         while (true) {
     		//rhs = simulateLinearWithModDynamics(etaLT);
     		//rhs = simulateLinear(phi0, etaLT);
         	//simulateLinearMod_kSpace();
-       		rhs = simulateLinearMod_kSpace();
+       		rhs = simulateLinearMod_kSpace(ky);
         	ising.simulate();
-    		for (int i = 0; i < Lp*Lp; i++){
+        	for (int i = 0; i < Lp; i++)    		
+        		etaLT_k_slice[i] += rhs[i];
+        	for (int i = 0; i < Lp*Lp; i++){
     			//etaLT[i] += rhs[i];
-    			etaLT_k[i] += rhs[i];
+    			//etaLT_k[i] += rhs[i];
     			eta[i] = ising.phi[i] - phi0[i%Lp];
     		}
     		Job.animate();
 		}	
+	}
+	
+	void diagonalize(){
+		Matrix matrix = new Matrix(M);
+		EigenvalueDecomposition Eig;
+		Eig = matrix.eig();
+		double [] eigenvalue = new double [Lp];
+		eigenvalue = Eig.getRealEigenvalues();
+		for (int i = 0; i < Lp; i ++)
+			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
+		//double maxEigenvalue = DoubleArray.max(eigenvalue);
+		Matrix V = Eig.getV();
+		Matrix D = Eig.getD();
+		double[] finalDvector = D.transpose().getArray()[Lp - 1];
+		double[] finalEigenvector = V.transpose().getArray()[Lp - 1];
+		for (int i = 0; i < Lp; i ++){
+			System.out.println(i + " " + finalEigenvector[i]);
+		}
+		System.out.println("eigenvector ? " + finalDvector[Lp - 1]);
+	//	return maxEigenvalue;
 	}
 	
 	void findPhi0andPhi0_bar(){
@@ -213,7 +244,7 @@ public class testLinearApp extends Simulation{
 		});
 	}
 		
-	void findGF(){
+	void findGF(int ky){
 		for (int i = 0; i < Lp; i++){
 			double alpha_x = 1.0-Math.pow(phi0[i],2);
 			g[i] = -alpha_x*alpha_x;
@@ -221,26 +252,36 @@ public class testLinearApp extends Simulation{
 		}
 		g_k = fft.calculate1DFT(g);
 		f_k = fft.calculate1DFT(f);
+
+		//for (int ky = -Lp/2; ky < Lp/2; ky++){
+		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
+		for(int kx = -Lp/2; kx < Lp/2; kx++){	
+			//int i = Lp*((ky+Lp)%Lp) + (kx+Lp)%Lp;
+			//double sum = 0;				
+			for (int kxx = -Lp/2; kxx < Lp/2; kxx++){
+				double kxxValue = 2.0*Math.PI*ising.R*kxx/ising.L;
+				//int eta_k_int = Lp*((ky+Lp)%Lp) + (kxx+Lp)%Lp;
+				M[(kx+Lp)%Lp][(kxx+Lp)%Lp] += (g_k [(kxx-kx+Lp)%Lp] * ising.findVkSquare(kxxValue,kyValue) + f_k[(kxx-kx+Lp)%Lp]);				
+			}
+		}
 	}
 	
-	double [] simulateLinearMod_kSpace(){
+	double [] simulateLinearMod_kSpace(int ky){
 		double [] change = new double [Lp*Lp];
 
 //		for (int ky = -Lp/2; ky < Lp/2; ky++){
-		for (int ky = 0; ky < Lp; ky++){
-		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
-			for (int kx = 0; kx < Lp; kx++){
-				int i = Lp*((ky+Lp)%Lp) + (kx+Lp)%Lp;
+//		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
+			for(int kx = -Lp/2; kx < Lp/2; kx++){	
+				//int i = Lp*((ky+Lp)%Lp) + (kx+Lp)%Lp;
 				double sum = 0;				
-				for (int kxx = 0; kxx < Lp; kxx++){
-					double kxxValue = 2.0*Math.PI*ising.R*kxx/ising.L;
-					int eta_k_int = Lp*((ky+Lp)%Lp) + (kxx+Lp)%Lp;
-					sum += (g_k [(kxx-kx+Lp)%Lp] * ising.findVkSquare(kxxValue,kyValue) + f_k[(kxx-kx+Lp)%Lp])*etaLT_k[eta_k_int];				
-					
+				for (int kxx = -Lp/2; kxx < Lp/2; kxx++){
+					//double kxxValue = 2.0*Math.PI*ising.R*kxx/ising.L;
+					//int eta_k_int = Lp*((ky+Lp)%Lp) + (kxx+Lp)%Lp;
+					sum += M[(kx+Lp)%Lp][(kxx+Lp)%Lp]*etaLT_k_slice[(kxx+Lp)%Lp];				
 				}
-				change[i] = sum/Lp;
+				change[(kx+Lp)%Lp] = sum/Lp;
 			}
-		}
+	//	}
 		return change;
 	}
 	
@@ -354,16 +395,18 @@ public class testLinearApp extends Simulation{
 		this.Lp = ising.Lp;
 		coeff = new FindCoefficients(Lp);
 		fft = new FourierTransformer(Lp);
-		rhs = new double[Lp*Lp];
+		rhs = new double[Lp];
 		eta = new double[Lp*Lp];
 		etaLT = new double[Lp*Lp];
-		etaLT_k = new double[Lp*Lp];
+		//etaLT_k = new double[Lp*Lp];
+		etaLT_k_slice = new double [Lp];
 		phi0 = new double [Lp];
 		phi0_bar = new double [Lp];
 		g_k = new double[Lp];
 		f_k = new double[Lp];
 		f = new double[Lp];
 		g = new double[Lp];
+		M = new double [Lp][Lp];
 		findPhi0andPhi0_bar();
 	}	
 
