@@ -28,7 +28,7 @@ public class testLinearApp extends Simulation{
     IsingField2D ising;
     public FindCoefficients coeff;
     public FourierTransformer fft;
-    public double [] rhs, etaLT, eta, etaLT_k_slice, phi0_bar, phi0; //right hand side
+    public double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice, phi0_bar, phi0; //right hand side
     public double [] g_k, f_k, f, g;
     public double [][] M;
     public double kRChunk; //=2piR/L
@@ -75,7 +75,7 @@ public class testLinearApp extends Simulation{
 		params.addm("H", 0.80);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.0001);
-		params.addm("dt", 1.0);
+		params.addm("dt", 0.01);
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
@@ -124,26 +124,29 @@ public class testLinearApp extends Simulation{
 //		}
 
 		double [] etaSF = new double[Lp*Lp];
-		//double [] etaLTSF = new double[Lp*Lp];
-		etaSF = fft.calculate2DSF(eta, false, false);
-		//etaDotLinearSF.registerData(ising.Lp, ising.Lp, etaSF);
-		//etaLTSF = fft.calculateSF2D(etaLT, false, false);
-		etaLTAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));
+		etaSF = fft.calculate2DFT(eta);
+//		double [] etaLTSF = new double[Lp*Lp];
+//		etaLTSF = fft.calculate2DFT(etaLT);
 		etaAcc.accum(ising.time(), Math.pow(etaSF[2*Lp],2));
-		etaLTAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
 		etaAcc2.accum(ising.time(),Math.pow(etaSF[2*Lp+1],2));
-		etaLTAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
 		etaAcc3.accum(ising.time(), Math.pow(etaSF[2*Lp+2],2));
-		etaLTAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2));
 		etaAcc4.accum(ising.time(), Math.pow(etaSF[2*Lp+3],2));
+//		etaLTAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
+//		etaLTAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
+//		etaLTAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
+//		etaLTAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2));
+//		etaLTAcc.accum(ising.time(),Math.pow(etaLTSF[2*Lp],2));		
+//		etaLTAcc2.accum(ising.time(), Math.pow(etaLTSF[2*Lp+1],2));
+//		etaLTAcc3.accum(ising.time(),Math.pow(etaLTSF[2*Lp+2],2));
+//		etaLTAcc4.accum(ising.time(), Math.pow(etaLTSF[2*Lp+3],2));
 		etaVt1.registerLines("acc", etaAcc, Color.BLACK);
-		etaVt2.registerLines("acc", etaLTAcc, Color.BLACK);
 		etaVt1.registerLines("acc2", etaAcc2, Color.BLUE);
-		etaVt2.registerLines("acc2", etaLTAcc2, Color.BLUE);
 		etaVt1.registerLines("acc3", etaAcc3, Color.RED);
-		etaVt2.registerLines("acc3", etaLTAcc3, Color.RED);
 		etaVt1.registerLines("acc4", etaAcc4, Color.ORANGE);
-		etaVt2.registerLines("acc4", etaLTAcc4, Color.ORANGE);
+//		etaVt2.registerLines("accLT", etaLTAcc, Color.BLACK);
+//		etaVt2.registerLines("acc2LT", etaLTAcc2, Color.BLUE);
+//		etaVt2.registerLines("acc3LT", etaLTAcc3, Color.RED);
+//		etaVt2.registerLines("acc4LT", etaLTAcc4, Color.ORANGE);
 		//fPlot.registerLines("f(k)", new PointSet(1,1,f_k), Color.BLACK);
 		//fPlot.registerLines("g(k)", new PointSet(1,1,g_k), Color.BLUE);
 		//fPlot.registerLines("phi0_k", new PointSet(1,1,fft.calculate1DFT(phi0)),Color.RED);
@@ -187,30 +190,42 @@ public class testLinearApp extends Simulation{
 	public void run() {
 		initialize();
 		int ky = 2;
-		for (int i = 0; i < Lp*Lp; i++){
+		for (int i = 0; i < Lp*Lp; i++)
 			etaLT[i] = ising.phi[i] - phi0[i%Lp];
-		}
 		double [] temp = new double [Lp*Lp];
 		temp = fft.calculate2DFT(etaLT);
 		for (int i = ky*Lp; i < Lp*(ky+1); i++)
 			etaLT_k_slice[i-ky*Lp] = temp[i]; 
-		findGF(ky);
-		diagonalize();
+		boolean modifiedDynamics = false;
+		if(modifiedDynamics){
+			findModMatrix(ky);
+			//diagonalize();
+		}else{
+			findMatrix();
+		}
         while (true) {
-    		//rhs = simulateLinearWithModDynamics(etaLT);
-    		//rhs = simulateLinear(phi0, etaLT);
-        	//simulateLinearMod_kSpace();
-       		rhs = simulateLinearMod_kSpace(ky);
-        	ising.simulate();
-        	for (int i = 0; i < Lp; i++)    		
-        		etaLT_k_slice[i] += rhs[i];
-        	for (int i = 0; i < Lp*Lp; i++){
-    			//etaLT[i] += rhs[i];
-    			//etaLT_k[i] += rhs[i];
-    			eta[i] = ising.phi[i] - phi0[i%Lp];
-    		}
+        	if(modifiedDynamics){
+        		//rhs = simulateLinearWithModDynamics(etaLT);
+        		//simulateLinearMod_kSpace();
+        		rhs = simulateLinearMod_kSpace(ky);
+        		ising.simulate();
+        		for (int i = 0; i < Lp; i++)    		
+        			etaLT_k_slice[i] += rhs[i];
+        		for (int i = 0; i < Lp*Lp; i++)
+        			eta[i] = ising.phi[i] - phi0[i%Lp];
+        	}else{
+        		//rhs2D = simulateLinear(etaLT);
+        		ising.simulateUnstable();
+        		for (int i = 0; i < Lp*Lp; i++)
+        			eta[i] = ising.phi[i] - phi0[i%Lp];
+        	}
     		Job.animate();
 		}	
+	}
+	
+	private void findMatrix() {
+		// TODO Auto-generated method stub
+		
 	}
 	
 	void diagonalize(){
@@ -221,7 +236,6 @@ public class testLinearApp extends Simulation{
 		eigenvalue = Eig.getRealEigenvalues();
 		for (int i = 0; i < Lp; i ++)
 			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
-		//double maxEigenvalue = DoubleArray.max(eigenvalue);
 		Matrix V = Eig.getV();
 		Matrix D = Eig.getD();
 		double[] finalDvector = D.transpose().getArray()[Lp - 1];
@@ -230,7 +244,6 @@ public class testLinearApp extends Simulation{
 			System.out.println(i + " " + finalEigenvector[i]);
 		}
 		System.out.println("eigenvector ? " + finalDvector[Lp - 1]);
-	//	return maxEigenvalue;
 	}
 	
 	void findPhi0andPhi0_bar(){
@@ -244,7 +257,7 @@ public class testLinearApp extends Simulation{
 		});
 	}
 		
-	void findGF(int ky){
+	void findModMatrix(int ky){
 		for (int i = 0; i < Lp; i++){
 			double alpha_x = 1.0-Math.pow(phi0[i],2);
 			g[i] = -alpha_x*alpha_x;
@@ -396,6 +409,7 @@ public class testLinearApp extends Simulation{
 		coeff = new FindCoefficients(Lp);
 		fft = new FourierTransformer(Lp);
 		rhs = new double[Lp];
+		rhs2D = new double[Lp*Lp];
 		eta = new double[Lp*Lp];
 		etaLT = new double[Lp*Lp];
 		//etaLT_k = new double[Lp*Lp];
