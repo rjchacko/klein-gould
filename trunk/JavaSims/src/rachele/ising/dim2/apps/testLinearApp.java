@@ -131,12 +131,7 @@ public class testLinearApp extends Simulation{
 		etaAcc3.accum(ising.time(), Math.pow(etaSF[2*Lp+2],2));
 		etaAcc4.accum(ising.time(), Math.pow(etaSF[2*Lp+3],2));
 
-		double [] etaLTSF = new double[Lp*Lp];
-		etaLTSF = fft.calculate2DFT(etaLT);
-		etaLTAcc.accum(ising.time(),Math.pow(etaLTSF[2*Lp],2));		
-		etaLTAcc2.accum(ising.time(), Math.pow(etaLTSF[2*Lp+1],2));
-		etaLTAcc3.accum(ising.time(),Math.pow(etaLTSF[2*Lp+2],2));
-		etaLTAcc4.accum(ising.time(), Math.pow(etaLTSF[2*Lp+3],2));
+
 
 		etaVt1.registerLines("acc", etaAcc, Color.BLACK);
 		etaVt1.registerLines("acc2", etaAcc2, Color.BLUE);
@@ -197,12 +192,13 @@ public class testLinearApp extends Simulation{
 		temp = fft.calculate2DFT(etaLT);
 		for (int i = ky*Lp; i < Lp*(ky+1); i++)
 			etaLT_k_slice[i-ky*Lp] = temp[i]; 
-		boolean modifiedDynamics = true;
+		boolean modifiedDynamics = false;
+		boolean realSpace = false;
 		if(modifiedDynamics){
 			findModMatrix(ky);
 			//diagonalize();
 		}else{
-			findMatrix();
+			findMatrix(ky);
 		}
         while (true) {
         	if(modifiedDynamics){
@@ -221,20 +217,73 @@ public class testLinearApp extends Simulation{
 //        		etaLTAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
 //        		etaLTAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2));
         	}else{
-        		rhs2D = simulateLinear(etaLT);
-        		ising.simulateUnstable();
-        		for (int i = 0; i < Lp*Lp; i++){
-        			eta[i] = ising.phi[i] - phi0[i%Lp];
-        			etaLT[i] += rhs2D[i];
+        		if(realSpace){
+        			rhs2D = simulateLinear(etaLT);
+        			ising.simulateUnstable();
+        			for (int i = 0; i < Lp*Lp; i++){
+        				eta[i] = ising.phi[i] - phi0[i%Lp];
+        				etaLT[i] += rhs2D[i];
+        			}
+        			double [] etaLTSF = new double[Lp*Lp];
+        			etaLTSF = fft.calculate2DFT(etaLT);
+        			etaLTAcc.accum(ising.time(),Math.pow(etaLTSF[2*Lp],2));		
+        			etaLTAcc2.accum(ising.time(), Math.pow(etaLTSF[2*Lp+1],2));
+        			etaLTAcc3.accum(ising.time(),Math.pow(etaLTSF[2*Lp+2],2));
+        			etaLTAcc4.accum(ising.time(), Math.pow(etaLTSF[2*Lp+3],2));
+        		}else{
+        			ising.simulateUnstable();
+        			for (int i = 0; i < Lp*Lp; i++){
+        				eta[i] = ising.phi[i] - phi0[i%Lp];
+        			}
+        			
+        			rhs = simulateLinearK(ky, etaLT_k_slice);
+        			for (int i = 0; i < Lp; i++)
+        				etaLT_k_slice[i] = rhs[i];
+       				etaLTAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
+           			etaLTAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
+           			etaLTAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
+           			etaLTAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2));        				
+        			
         		}
         	}
     		Job.animate();
 		}	
 	}
 	
-	private void findMatrix() {
-		// TODO Auto-generated method stub
-		
+	private void findMatrix(int ky) {
+		//double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
+		double [] f_x = new double [Lp];
+		for(int i = 0; i < Lp; i++)
+			f_x[i] = 1.0 / (1.0 - Math.pow(phi0[i],2));
+		f_k = fft.calculate1DFT(f_x);
+		for(int kx = 0; kx < Lp; kx++){
+			for(int kxx = 0; kxx < Lp; kxx++)
+				M[kx][kxx] = -ising.T*f_k[(kx - kxx + Lp)%Lp];
+		}
+//		for(int kx = -Lp/2; kx < Lp/2; kx++){
+//			double kxValue = 2.0*Math.PI*ising.R*kx/ising.L;
+//			M[(kx+Lp)/Lp][(kx+Lp)/Lp] -= ising.findVkSquare(kxValue, kyValue);
+//		}
+	}
+
+	double [] simulateLinearK(int ky, double [] etaK){
+		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
+		double [] linearTheoryGrowth = new double[Lp*Lp];
+		double kxValue;
+		for (int i = 0; i < Lp; i++){
+			
+			if(i >= Lp/2)
+				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
+			else
+				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
+				
+			linearTheoryGrowth[i] = ising.dt*(-ising.findVkSquare(kxValue, kyValue)*eta[i]);
+			double sum = 0.0;
+			for (int j = 0; j < Lp; j++)	
+				sum += ising.dt*(M[i][j]*etaK[j]);
+			linearTheoryGrowth [i] += sum/Lp;
+		}
+		return linearTheoryGrowth;
 	}
 	
 	void diagonalize(){
@@ -324,54 +373,8 @@ public class testLinearApp extends Simulation{
 			linearTheoryGrowth[i] = ising.dt*(+eta_bar[i]-ising.T*etaLinear[i]/(1.0-Math.pow(phi0[i%Lp],2)));
 		return linearTheoryGrowth;
 	}
-	
-	
 
-	public void findRightSideNoAssumptions(double [] eta_x, double [] config){
-		double [] eta_k = new double [Lp*Lp];
-		eta_k = fft.calculate2DFT(eta_x);
-		coeff.findCoefficientsFromConfig(config);
-		for(int i = 0; i < Lp*Lp; i++){
-			int currentKx = i%Lp;
-			int currentKy = i/Lp;
-			double kRxValue = kRChunk*currentKx;
-			double kRyValue = kRChunk*currentKy;
-			double V_k = ising.findVkSquare(kRxValue, kRyValue);
-			double sum = -V_k*eta_k[i];
-			for (int j = 0; j < Lp*Lp; j ++){
-				int shiftedKx = j%Lp;
-				int shiftedKy = j/Lp;
-				double coefficient = coeff.aa[shiftedKx][shiftedKy];
-				int etaXindex = (currentKx+shiftedKx)%Lp;
-				int etaYindex = (currentKy+shiftedKy)%Lp;
-				int	etaIndex = etaYindex*Lp + etaXindex;
-				sum -= ising.T*coefficient*eta_k[etaIndex];
-			}
-			rhs[i] = sum;
-		}
-	}
 
-	public void findRightSide(double [] eta_x, double [] slice){
-		double [] eta_k = new double [Lp*Lp];
-		eta_k = fft.calculate2DFT(eta_x);
-		//coeff.findCoefficientsFromSlice(slice);
-		coeff.findCoefficientsFromFile();
-		for(int i = 0; i < Lp*Lp; i++){
-			//coeff.findCoefficientsFromSlice(slice);
-			//coeff.findCoefficientsFromFile();
-			int kx = i%Lp;
-			int ky = i/Lp;
-			double kRxValue = kRChunk*kx;
-			double kRyValue = kRChunk*ky;
-			double V_k = ising.findVkSquare(kRxValue, kRyValue);
-			double sum = -V_k*eta_k[i];
-			for (int j = 0; j + kx < Lp; j++)
-				sum -= ising.T*coeff.a[j]*eta_k[ i + j ];
-			for (int j = Lp - kx; j < Lp; j++)
-				sum -= ising.T*coeff.a[j]*eta_k[ i + j - Lp ];
-			rhs[i] = sum;
-		}
-	}
 	public void readInputParams(String FileName){
 		try {
 			File inputFile = new File(FileName);
