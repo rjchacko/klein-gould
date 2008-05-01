@@ -12,7 +12,7 @@ public class FourierTransformer {
 	public double [] scratch2D;
 	public double [] scratch2D2;
 	public double [] dst1D;
-	public double [] dst2D;
+	//public double [] dst2D;
 	public int L;
 	
 	
@@ -24,7 +24,7 @@ public class FourierTransformer {
 		scratch2D = new double[2*L*L];
 		scratch2D2 = new double[2*L*L];
 		dst1D = new double[L];
-		dst2D = new double[L*L];
+		//dst2D = new double[L*L];
 	}
 
 	public double [] calculate1DFT(double [] src){
@@ -40,21 +40,23 @@ public class FourierTransformer {
 	}
 	
 	public double [] calculate2DFT(double [] src){
+		double [] dst = new double [L*L];
 		for (int i = 0; i < L*L; i ++){
 			scratch2D[2*i] = src[i];
 			scratch2D[2*i+1] = 0;
 		}
 		fft2D.transform(scratch2D);
 		for (int i = 0; i < L*L; i ++)
-			dst2D[i] = scratch2D[2*i];
-		return dst2D;
+			dst[i] = scratch2D[2*i];
+		return dst;
 	}
 	
 	public double [] calculate2DSF(double [] src, boolean centered, boolean zeroCenter){
-		dst2D = find2DSF(src);
-		if (zeroCenter) dst2D[0] = 0;
-		if (centered) center(dst2D);
-		return dst2D;
+		double [] dst = new double [L*L];
+		dst = find2DSF(src);
+		if (zeroCenter) dst[0] = 0;
+		if (centered) center(dst);
+		return dst;
 	}
 	
 	public void center(double [] src){
@@ -90,7 +92,7 @@ public class FourierTransformer {
 	
 	
 	public double [] convolve2D(double [] src1, double [] src2){
-		
+		double [] dst = new double [L*L];
 		for (int i = 0; i < L*L; i++) {
 			scratch2D[2*i] = src1[i];
 			scratch2D[2*i+1] = 0;
@@ -107,8 +109,8 @@ public class FourierTransformer {
 		
 		fft2D.backtransform(scratch2D);
 		for (int i = 0; i < L * L; i++)		
-			dst2D[i] = scratch2D[2*i]/(L*L);
-		return dst2D;
+			dst[i] = scratch2D[2*i]/(L*L);
+		return dst;
 	}
 	
 	private double [] find2DSF(double [] src){
