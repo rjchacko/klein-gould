@@ -34,6 +34,18 @@ public class FourierTransformer {
 		}
 		fft1D.transform(scratch1D);
 		for (int i = 0; i < L; i ++)
+			dst[i] = scratch1D[2*i];
+		return dst;
+	}
+
+	public double [] calculate1DBackFT(double [] src){
+		double [] dst = new double[L];
+		for (int i = 0; i < L; i ++){
+			scratch1D[2*i] = src[i];
+			scratch1D[2*i+1] = 0;
+		}
+		fft1D.transform(scratch1D);
+		for (int i = 0; i < L; i ++)
 			dst[i] = scratch1D[2*i]/L;
 		return dst;
 	}
@@ -90,23 +102,24 @@ public class FourierTransformer {
 		return dst;
 	}
 
+	public double [] backConvolve1D(double [] src1, double [] src2){
+		double [] dst = new double [L];
+		src1 = calculate1DBackFT(src1);
+		src2 = calculate1DBackFT(src2);
+		for (int i = 0; i < L; i++)
+			dst[i] = src1[i]*src2[i];
+		dst = calculate1DFT(dst);
+		return dst;		
+	}
+	
 	public double [] convolve1D(double [] src1, double [] src2){
 		double [] dst = new double [L];
-		for (int i = 0; i < L; i++){
-			scratch1D[2*i] = src1[i];
-			scratch1D[2*i + 1] = 0;
-			scratch1D2[2*i] = src2[i];
-			scratch1D2[2*i + 1] = 0;
-
-		}
-		fft1D.transform(scratch1D);
-		for (int i = 0; i < 2*L; i++) 
-			scratch1D[i] *=  scratch1D2[i];
-			
-		fft1D.backtransform(scratch1D);
+		src1 = calculate1DFT(src1);
+		src2 = calculate1DFT(src2);
 		for (int i = 0; i < L; i++)
-			dst[i] = scratch1D[2*i]/(L);
-		return dst;
+			dst[i] = src1[i]*src2[i];
+		dst = calculate1DBackFT(dst);
+		return dst;	
 	}
 	
 	public double [] convolve2D(double [] src1, double [] src2){
@@ -117,8 +130,8 @@ public class FourierTransformer {
 			scratch2D2[2*i] = src2[i];
 			scratch2D2[2*i+1] = 0;
 		}		
-		fft2D.transform(scratch2D);
-		fft2D.transform(scratch2D2);
+		fft2D.backtransform(scratch2D);
+		fft2D.backtransform(scratch2D2);
 		scratch2D = fft2D.toWraparoundOrder(scratch2D);
 		scratch2D2 = fft2D.toWraparoundOrder(scratch2D2);
 		
