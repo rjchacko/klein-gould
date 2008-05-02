@@ -253,7 +253,7 @@ public class testLinearApp extends Simulation{
 				
 			linearTheoryGrowth[i] = ising.dt*(-ising.findVkSquare(kxValue, kyValue)*etaLT_k_slice[i]);
 			for (int j = 0; j < Lp; j++)
-				linearTheoryGrowth [i] -= ising.dt*(ising.T*f_k[(j)%Lp]*etaLT_k_slice[(j-i+Lp)%Lp]);
+				linearTheoryGrowth [i] -= ising.dt*(ising.T*f_k[(j)%Lp]*etaLT_k_slice[(j-i+Lp)%Lp]/(double)(Lp*Lp));
 		}
 			etaLTAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
    			etaLTAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
