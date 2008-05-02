@@ -3,16 +3,16 @@ import scikit.numerics.fft.managed.ComplexDouble2DFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
 import scikit.numerics.fn.Function1D;
+import scikit.numerics.fn.Function2D;
 
 public class FourierTransformer {
 
 	ComplexDoubleFFT fft1D;
 	ComplexDouble2DFFT fft2D;
 	public double [] scratch1D;
+	public double [] scratch1D2;
 	public double [] scratch2D;
 	public double [] scratch2D2;
-	public double [] dst1D;
-	//public double [] dst2D;
 	public int L;
 	
 	
@@ -21,10 +21,9 @@ public class FourierTransformer {
 		fft1D = new ComplexDoubleFFT_Mixed(L);
 		fft2D = new ComplexDouble2DFFT(L,L);
 		scratch1D = new double[2*L];
+		scratch1D2 = new double[2*L];
 		scratch2D = new double[2*L*L];
 		scratch2D2 = new double[2*L*L];
-		dst1D = new double[L];
-		//dst2D = new double[L*L];
 	}
 
 	public double [] calculate1DFT(double [] src){
@@ -35,7 +34,7 @@ public class FourierTransformer {
 		}
 		fft1D.transform(scratch1D);
 		for (int i = 0; i < L; i ++)
-			dst[i] = scratch1D[2*i];
+			dst[i] = scratch1D[2*i]/L;
 		return dst;
 	}
 	
@@ -74,6 +73,7 @@ public class FourierTransformer {
 	}
 	
 	public double [] convolve1DwithFunction(double [] src, Function1D fn){
+		double [] dst = new double [L];
 		for (int i = 0; i < L; i++){
 			scratch1D[2*i] = src[i];
 			scratch1D[2*i + 1] = 0;
@@ -86,10 +86,28 @@ public class FourierTransformer {
 		}
 		fft1D.backtransform(scratch1D);
 		for (int i = 0; i < L; i++)
-			dst1D[i] = scratch1D[2*i]/(L);
-		return dst1D;
+			dst[i] = scratch1D[2*i]/(L);
+		return dst;
 	}
-	
+
+	public double [] convolve1D(double [] src1, double [] src2){
+		double [] dst = new double [L];
+		for (int i = 0; i < L; i++){
+			scratch1D[2*i] = src1[i];
+			scratch1D[2*i + 1] = 0;
+			scratch1D2[2*i] = src2[i];
+			scratch1D2[2*i + 1] = 0;
+
+		}
+		fft1D.transform(scratch1D);
+		for (int i = 0; i < 2*L; i++) 
+			scratch1D[i] *=  scratch1D2[i];
+			
+		fft1D.backtransform(scratch1D);
+		for (int i = 0; i < L; i++)
+			dst[i] = scratch1D[2*i]/(L);
+		return dst;
+	}
 	
 	public double [] convolve2D(double [] src1, double [] src2){
 		double [] dst = new double [L*L];
@@ -109,6 +127,26 @@ public class FourierTransformer {
 		
 		fft2D.backtransform(scratch2D);
 		for (int i = 0; i < L * L; i++)		
+			dst[i] = scratch2D[2*i]/(L*L);
+		return dst;
+	}
+
+	public double [] convolve2DwithFunction(double [] src, Function2D fn){
+		double [] dst = new double [L*L];
+		for (int i = 0; i < L*L; i++){
+			scratch2D[2*i] = src[i];
+			scratch2D[2*i + 1] = 0;
+		}
+		fft2D.transform(scratch2D);
+		for (int y = -L/2; y < L/2; y++) {
+			for (int x = -L/2; x < L/2; x++) {
+				int i = (x+L)%L + L*((y+L)%L);
+				scratch2D[2*i] *=  fn.eval((double)x, (double)y);
+				scratch2D[2*i+1] *=  fn.eval((double)x, (double)y);
+			}
+		}
+		fft2D.backtransform(scratch2D);
+		for (int i = 0; i < L*L; i++)
 			dst[i] = scratch2D[2*i]/(L*L);
 		return dst;
 	}
