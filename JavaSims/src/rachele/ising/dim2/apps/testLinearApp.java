@@ -109,11 +109,12 @@ public class testLinearApp extends Simulation{
 		etaVt2.registerLines("acc3LT", etaLTAcc3, Color.RED);
 		etaVt2.registerLines("acc4LT", etaLTAcc4, Color.ORANGE);
 				
-		etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
+		//etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
 		fkPlot.registerLines("f(k) check", new PointSet(1,1,f_k), Color.BLUE);
 		fkPlot.registerLines("f(x) check", new PointSet(1,1,f_x), Color.YELLOW);
-		
-		
+		double [] tester = new double [Lp];
+		tester = fft.calculate1DBackFT(f_k);
+		fkPlot.registerLines("f(x) check 2", new PointSet(1,1,tester), Color.BLACK);
 		double [] etaSF = new double[Lp*Lp];
 		etaSF = fft.calculate2DFT(eta);
 		double [] etaSF_slice = new double [Lp];
@@ -158,7 +159,7 @@ public class testLinearApp extends Simulation{
 		for (int i = 0; i < Lp*Lp; i++)
 			eta[i] = ising.phi[i] - phi0[i%Lp];
 		boolean modifiedDynamics = false;
-		boolean realSpace = true;
+		boolean realSpace = false;
 		if(modifiedDynamics){
 			findModMatrix();
 			//diagonalize();
@@ -177,41 +178,37 @@ public class testLinearApp extends Simulation{
         			etaLT[i] += rhs2D[i];
         		}
         	}else{
+        		ising.simulateUnstable();
+    			for (int i = 0; i < Lp*Lp; i++)
+    				eta[i] = ising.phi[i] - phi0[i%Lp];
+    			double [] etaSF = new double[Lp*Lp];
+    			etaSF = fft.calculate2DFT(eta);
+    			etaAcc.accum(ising.time(), Math.pow(etaSF[ky*Lp],2));
+    			etaAcc2.accum(ising.time(),Math.pow(etaSF[ky*Lp+1],2));
+    			etaAcc3.accum(ising.time(), Math.pow(etaSF[ky*Lp+2],2));
+    			etaAcc4.accum(ising.time(), Math.pow(etaSF[ky*Lp+3],2)); 
+      		
         		if(realSpace){
-        			rhs2D = simulateLinear(etaLT);
-        			ising.simulateUnstable();
-        			for (int i = 0; i < Lp*Lp; i++){
-        				eta[i] = ising.phi[i] - phi0[i%Lp];
+        			rhs2D = simulateLinear(etaLT);	
+        			for (int i = 0; i < Lp*Lp; i++)
         				etaLT[i] += rhs2D[i];
-        			}
         			double [] etaLTSF = new double[Lp*Lp];
         			etaLTSF = fft.calculate2DFT(etaLT);
+        			for (int i = ky*Lp; i < Lp*(ky+1); i++)
+        				etaLT_k_slice[i-ky*Lp] = etaLTSF[i]*etaLTSF[i]; 
         			etaLTAcc.accum(ising.time(),Math.pow(etaLTSF[ky*Lp],2));		
         			etaLTAcc2.accum(ising.time(), Math.pow(etaLTSF[ky*Lp+1],2));
         			etaLTAcc3.accum(ising.time(),Math.pow(etaLTSF[ky*Lp+2],2));
         			etaLTAcc4.accum(ising.time(), Math.pow(etaLTSF[ky*Lp+3],2));
-        			double [] etaSF = new double[Lp*Lp];
-        			etaSF = fft.calculate2DFT(eta);
-        			etaAcc.accum(ising.time(), Math.pow(etaSF[ky*Lp],2));
-        			etaAcc2.accum(ising.time(),Math.pow(etaSF[ky*Lp+1],2));
-        			etaAcc3.accum(ising.time(), Math.pow(etaSF[ky*Lp+2],2));
-        			etaAcc4.accum(ising.time(), Math.pow(etaSF[ky*Lp+3],2));
-        		
+        			etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
         		}else{
-        			ising.simulateUnstable();
-        			for (int i = 0; i < Lp*Lp; i++)
-        				eta[i] = ising.phi[i] - phi0[i%Lp];
-        			double [] etaSF = new double[Lp*Lp];
-        			etaSF = fft.calculate2DFT(eta);
-        			etaAcc.accum(ising.time(), Math.pow(etaSF[ky*Lp],2));
-        			etaAcc2.accum(ising.time(),Math.pow(etaSF[ky*Lp+1],2));
-        			etaAcc3.accum(ising.time(), Math.pow(etaSF[ky*Lp+2],2));
-        			etaAcc4.accum(ising.time(), Math.pow(etaSF[ky*Lp+3],2)); 
         			boolean dim1 = true;
         			if(dim1){
-        				rhs = simulateLinearK(etaLT_k_slice);
+        				//rhs = simulateLinearKbar();
+        				rhs = simulateLinearK();
         				for (int i = 0; i < Lp; i++)
         					etaLT_k_slice[i] += rhs[i];
+        				etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
         			}else{
         				rhs2D = simulateLinearK2D(etaLT_k);
         					
@@ -239,12 +236,13 @@ public class testLinearApp extends Simulation{
 //		}
 	}
 
-	double [] simulateLinearK(double [] etaK){
+	
+	double [] simulateLinearK(){
 		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
 		double [] linearTheoryGrowth = new double[Lp*Lp];
 		double kxValue;
 		double [] f_bar = new double [Lp];
-		f_bar = fft.convolve1D(f_k, etaK);
+		//f_bar = fft.backConvolve1D(f_k, etaLT_k_slice);
 		convolve.registerLines("convolvution", new PointSet(1,1, f_bar), Color.green);
 		for (int i = 0; i < Lp; i++){
 			
@@ -253,7 +251,32 @@ public class testLinearApp extends Simulation{
 			else
 				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
 				
-			linearTheoryGrowth[i] = ising.dt*(-ising.findVkSquare(kxValue, kyValue)*etaK[i]);
+			linearTheoryGrowth[i] = ising.dt*(-ising.findVkSquare(kxValue, kyValue)*etaLT_k_slice[i]);
+			for (int j = 0; j < Lp; j++)
+				linearTheoryGrowth [i] -= ising.dt*(ising.T*f_k[(j)%Lp]*etaLT_k_slice[(j-i+Lp)%Lp]);
+		}
+			etaLTAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
+   			etaLTAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
+   			etaLTAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
+   			etaLTAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2)); 
+		return linearTheoryGrowth;
+	}
+
+	double [] simulateLinearKbar(){
+		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
+		double [] linearTheoryGrowth = new double[Lp*Lp];
+		double kxValue;
+		double [] f_bar = new double [Lp];
+		f_bar = fft.backConvolve1D(f_k, etaLT_k_slice);
+		convolve.registerLines("convolvution", new PointSet(1,1, f_bar), Color.green);
+		for (int i = 0; i < Lp; i++){
+			
+			if(i >= Lp/2)
+				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
+			else
+				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
+				
+			linearTheoryGrowth[i] = ising.dt*(-ising.findVkSquare(kxValue, kyValue)*etaLT_k_slice[i]);
 			linearTheoryGrowth [i] -= ising.dt*(ising.T*f_bar[i]);
 		}
 			etaLTAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
