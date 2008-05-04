@@ -159,7 +159,7 @@ public class testLinearApp extends Simulation{
 		for (int i = 0; i < Lp*Lp; i++)
 			eta[i] = ising.phi[i] - phi0[i%Lp];
 		boolean modifiedDynamics = false;
-		boolean realSpace = false;
+		boolean realSpace = true;
 		if(modifiedDynamics){
 			findModMatrix();
 			//diagonalize();
@@ -204,8 +204,8 @@ public class testLinearApp extends Simulation{
         		}else{
         			boolean dim1 = true;
         			if(dim1){
-        				//rhs = simulateLinearKbar();
-        				rhs = simulateLinearK();
+        				rhs = simulateLinearKbar();
+        				//rhs = simulateLinearK();
         				for (int i = 0; i < Lp; i++)
         					etaLT_k_slice[i] += rhs[i];
         				etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
@@ -394,7 +394,8 @@ public class testLinearApp extends Simulation{
 		double [] phi0_2D = new double[Lp*Lp];
 		for(int i = 0; i < Lp*Lp; i++)
 			phi0_2D[i] = phi0[i%Lp];
-		eta_bar = fft.convolve2DwithFunction(phi0_2D, new Function2D(){
+//		ising.convolveWithRange(eta, eta_bar, ising.R);
+		eta_bar = fft.convolve2DwithFunction(etaLinear, new Function2D(){
 			public double eval(double k1, double k2) {
 				double kRx = 2*Math.PI*ising.R*k1/ising.L;
 				double kRy = 2*Math.PI*ising.R*k2/ising.L;
@@ -403,7 +404,7 @@ public class testLinearApp extends Simulation{
 		});
 
 		for (int i = 0; i < Lp*Lp; i++)
-			linearTheoryGrowth[i] = ising.dt*(+eta_bar[i]-ising.T*etaLinear[i]*f_x[i%Lp]);
+			linearTheoryGrowth[i] = ising.dt*(-eta_bar[i]-ising.T*etaLinear[i]*f_x[i%Lp]);
 		return linearTheoryGrowth;
 	}
 
