@@ -240,7 +240,7 @@ public class IsingField2DApp extends Simulation {
 		//binWidth = ising.KRcircle / floor(IsingField2D.KR_SP/binWidth);
         sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
 		sf.setBounds(0.1, 14);
-		int recordSteps = 1;
+		int recordSteps = 0;
 		maxi=sf.clumpsOrStripes(ising.phi);
 		
         while (true) {
@@ -268,7 +268,8 @@ public class IsingField2DApp extends Simulation {
 				brLandscapeFiller = opt.getBracketLandscape();
 			}else{
 				cgInitialized = false;
-				ising.simulate();
+				//ising.simulate();
+				ising.simulateUnstable();
 			}
 			sf.getAccumulatorV().clear();
 			sf.getAccumulatorH().clear();
@@ -292,7 +293,7 @@ public class IsingField2DApp extends Simulation {
 				recordSFvTime();
 				//record3Ddata();
 				recordSteps += 1;
-				//writeDataToFile();
+				writeDataToFile();
 			}
 			Job.animate();
 			sfChange.clear();
