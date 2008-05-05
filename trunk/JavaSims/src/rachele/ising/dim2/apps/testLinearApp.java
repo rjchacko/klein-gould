@@ -34,6 +34,7 @@ public class testLinearApp extends Simulation{
     public double [][] M, VV;
     public int ky;
     public double kRChunk; //=2piR/L
+    public boolean clearFile;
 
     public Accumulator etaAcc;
     public Accumulator etaAcc2;
@@ -64,7 +65,7 @@ public class testLinearApp extends Simulation{
     Grid phi0Grid = new Grid("phi_0");
     Grid phi0SliceGrid = new Grid("phi_0 slice");
     Grid evGrid = new Grid("eigenvectors");
-    Plot evPlot = new Plot("eigenvalues");
+    Plot ePlot = new Plot("eigenvalues");
     Plot etaVsTimeSim = new Plot("eta v t");
     Plot etaVsTimeLinearK = new Plot("eta v t LT k space");
     Plot etaVsTimeLinear = new Plot("eta v t LT");
@@ -81,8 +82,7 @@ public class testLinearApp extends Simulation{
 	}
 	public void load(Control c) {
 		c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
-		//c.frameTogether("checks", fkPlot, etakPlot, etakSimPlot, convolve);
-		c.frameTogether("eigens",evGrid,evPlot);
+		c.frameTogether("eigens",evGrid,ePlot);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -161,7 +161,7 @@ public class testLinearApp extends Simulation{
 			}
 		}
 		evGrid.registerData(Lp,Lp,eigenVect2D);
-		evPlot.registerLines("eigenvalues", new PointSet(1,1,eigenvalue), Color.BLACK);
+		ePlot.registerLines("eigenvalues", new PointSet(1,1,eigenvalue), Color.BLACK);
 		
 		if(flags.contains("Clear")){
 			etaAcc.clear();
@@ -201,19 +201,21 @@ public class testLinearApp extends Simulation{
 	}
  
 	public void run() {
+		
+		clearFile = true;
 		initialize();
 		ky = params.iget("ky");
+		
 		for (int i = 0; i < Lp*Lp; i++)
 			etaLT[i] = ising.phi[i] - phi0[i%Lp];
 		double [] etaLT_k = new double [Lp*Lp];
 		etaLT_k = fft.calculate2DFT(etaLT);
 		for (int i = ky*Lp; i < Lp*(ky+1); i++)
 			etaLT_k_slice[i-ky*Lp] = etaLT_k[i]; 
-
 		for (int i = 0; i < Lp*Lp; i++)
 			eta[i] = ising.phi[i] - phi0[i%Lp];
+		
 		boolean modifiedDynamics = false;
-//		boolean realSpace = false;
 		if(modifiedDynamics){
 			findModMatrix();
 			diagonalize();
@@ -221,16 +223,11 @@ public class testLinearApp extends Simulation{
 			findMatrix();
 			diagonalize();
 		}
-//		int trialInt = 10;
-//		for (int i = 0; i < Lp; i++)
-//			etaLT_k_slice[i] = VV[trialInt][i];
-//		System.out.println("ev " + trialInt + " = " + eigenvalue[trialInt]);
 		Job.animate();
+
 		while (true) {
-        	if(modifiedDynamics){
+			if(modifiedDynamics){
         		rhs2D = simulateLinearWithModDynamics(etaLT);
-        		//simulateLinearMod_kSpace();
-        		//rhs = simulateLinearMod_kSpace(ky);
         		ising.simulate();
         		for (int i = 0; i < Lp*Lp; i++){
         			eta[i] = ising.phi[i] - phi0[i%Lp];
@@ -246,28 +243,26 @@ public class testLinearApp extends Simulation{
     			etaAcc2.accum(ising.time(),Math.pow(etaSF[ky*Lp+1],2));
     			etaAcc3.accum(ising.time(), Math.pow(etaSF[ky*Lp+2],2));
     			etaAcc4.accum(ising.time(), Math.pow(etaSF[ky*Lp+3],2)); 
-      		
-//        		if(realSpace){
+    			boolean realSpace = false;
+        		if(realSpace){
         			rhs2D = simulateLinear(etaLT);	
         			for (int i = 0; i < Lp*Lp; i++)
         				etaLT[i] += rhs2D[i];
         			double [] etaLTSF = new double[Lp*Lp];
         			etaLTSF = fft.calculate2DFT(etaLT);
-//        			for (int i = ky*Lp; i < Lp*(ky+1); i++)
-//        				etaLT_k_slice[i-ky*Lp] = etaLTSF[i]; 
         			etaLTAcc.accum(ising.time(),Math.pow(etaLTSF[ky*Lp],2));		
         			etaLTAcc2.accum(ising.time(), Math.pow(etaLTSF[ky*Lp+1],2));
         			etaLTAcc3.accum(ising.time(),Math.pow(etaLTSF[ky*Lp+2],2));
         			etaLTAcc4.accum(ising.time(), Math.pow(etaLTSF[ky*Lp+3],2));
-        			//etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
-//        		}else{
+        		}else{
         			//rhs = simulateLinearKbar();
-        				rhs = simulateLinearK();
-        				for (int i = 0; i < Lp; i++)
-        					etaLT_k_slice[i] += rhs[i];
-        				etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
-        				etaLinearCombo();
-        		//}
+        			rhs = simulateLinearK();
+        			for (int i = 0; i < Lp; i++)
+        				etaLT_k_slice[i] += rhs[i];
+        			etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
+        			recordSfDataToFile();
+        			etaLinearCombo();
+        		}
         	}
     		Job.animate();
 		}	
@@ -280,7 +275,7 @@ public class testLinearApp extends Simulation{
 			for(int j = 0; j < Lp; j++){
 				sum += c[j]*VV[j][i]*Math.exp(ising.time()*eigenvalue[j]);
 			}
-			etaLC[i] = sum;
+			etaLC[i] = sum/(double)(Lp);
 		}
 		etaLCAcc.accum(ising.time(),Math.pow(etaLC[0],2));		
 		etaLCAcc2.accum(ising.time(), Math.pow(etaLC[1],2));
@@ -293,7 +288,6 @@ public class testLinearApp extends Simulation{
 		double kxValue;
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j <= i; j++){
-				//M[i][j]=-ising.T*f_k[(i-j+Lp)%Lp]/Lp;
 				M[i][j]=M[j][i]=-ising.T*f_k[(i-j+Lp)%Lp]/Lp;
 			}
 		}
@@ -313,13 +307,12 @@ public class testLinearApp extends Simulation{
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j < Lp; j++){
 				linearTheoryGrowth [i] += ising.dt*M[i][j]*etaLT_k_slice[j];
-				//linearTheoryGrowth [i] += ising.dt*M[i][j]*VV[0][j];
 			}
 		}
-			etaLTkAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
-   			etaLTkAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
-   			etaLTkAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
-   			etaLTkAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2)); 
+		etaLTkAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
+   		etaLTkAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
+   		etaLTkAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
+   		etaLTkAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2)); 
 		return linearTheoryGrowth;
 	}
 
@@ -340,10 +333,10 @@ public class testLinearApp extends Simulation{
 			linearTheoryGrowth[i] = ising.dt*(-ising.findVkSquare(kxValue, kyValue)*etaLT_k_slice[i]);
 			linearTheoryGrowth [i] -= ising.dt*(ising.T*f_bar[i]);
 		}
-			etaLTkAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
-   			etaLTkAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
-   			etaLTkAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
-   			etaLTkAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2)); 
+		etaLTkAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
+   		etaLTkAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
+   		etaLTkAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
+   		etaLTkAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2)); 
 		return linearTheoryGrowth;
 	}
 
@@ -360,10 +353,8 @@ public class testLinearApp extends Simulation{
 		singularValue = Svd.getSingularValues();
 		
 			
-//		for (int i = 0; i < Lp; i ++){
-//			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
-//			System.out.println("singular value " + i + " = " + singularValue[i]);
-//		}
+		for (int i = 0; i < Lp; i ++)
+			if(eigenvalue[i] > 0.0) System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
 		System.out.println("eigenvalue max ="  +  DoubleArray.max(eigenvalue));
 		System.out.println("eigenvalue min ="  + DoubleArray.min(eigenvalue));
 		System.out.println("Svalue max ="  +  DoubleArray.max(singularValue));
@@ -389,8 +380,8 @@ public class testLinearApp extends Simulation{
 		for (int i = 0; i < Lp; i ++){
 			c[i] = MathTools.dot(normedEta, VV[i]);
 			normCheck += c[i]*c[i];
-			//System.out.println("norm check = " + i + " = " + c[i]);
 		}
+		System.out.println("norm check = " + normCheck);
 		
 		double sum = 0;
 		int testInt=1;
@@ -400,16 +391,6 @@ public class testLinearApp extends Simulation{
 	    double lambda = sum/VV[testInt][testInt];
 	    System.out.println("ev = " + eigenvalue[testInt] + " lambda = " + lambda);
 	    
-		//System.out.println("norm check = " + normCheck);
-		
-		//		Matrix V = Eig.getV();
-//		Matrix D = Eig.getD();
-//		double[] finalDvector = D.transpose().getArray()[Lp - 1];
-//		double[] finalEigenvector = V.transpose().getArray()[Lp - 1];
-//		for (int i = 0; i < Lp; i ++){
-//			System.out.println(i + " " + finalEigenvector[i]);
-//		}
-//		System.out.println("eigenvector ? " + finalDvector[Lp - 1]);
 	}
 	
 	void findPhi0andPhi0_bar(){
@@ -497,6 +478,39 @@ public class testLinearApp extends Simulation{
 	}
 
 
+	public void recordSlice(double t, double [] data){
+		String dataFile = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf";
+		if (clearFile) FileUtil.deleteFile(dataFile); clearFile = false;
+		for (int i = 0; i < Lp; i++)
+			FileUtil.printlnToFile(dataFile, t, i, data[i]);
+		System.out.println("data written for time = " + t);
+	}
+	
+	public void recordSfDataToFile(){
+		String file0 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf0";
+		String file1 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf1";
+		String file2 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf2";
+		String file3 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf3";
+		String file4 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf4";
+		String file5 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf5";
+		if (clearFile){
+			FileUtil.deleteFile(file0);
+			FileUtil.deleteFile(file1);
+			FileUtil.deleteFile(file2);
+			FileUtil.deleteFile(file3);
+			FileUtil.deleteFile(file4);
+			FileUtil.deleteFile(file5);
+			clearFile = false;
+		}
+		FileUtil.printlnToFile(file0, ising.time(), etaLT_k_slice[0]*etaLT_k_slice[0]);
+		FileUtil.printlnToFile(file1, ising.time(), etaLT_k_slice[1]*etaLT_k_slice[1]);
+		FileUtil.printlnToFile(file2, ising.time(), etaLT_k_slice[2]*etaLT_k_slice[2]);
+		FileUtil.printlnToFile(file3, ising.time(), etaLT_k_slice[3]*etaLT_k_slice[3]);
+		FileUtil.printlnToFile(file4, ising.time(), etaLT_k_slice[4]*etaLT_k_slice[4]);
+		FileUtil.printlnToFile(file5, ising.time(), etaLT_k_slice[5]*etaLT_k_slice[5]);
+		//System.out.println("data written for time = " + ising.time());
+	}	
+	
 	public void readInputParams(String FileName){
 		try {
 			File inputFile = new File(FileName);
