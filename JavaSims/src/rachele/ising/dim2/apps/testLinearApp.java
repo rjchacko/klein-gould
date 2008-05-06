@@ -82,7 +82,7 @@ public class testLinearApp extends Simulation{
 	}
 	public void load(Control c) {
 		c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
-		c.frameTogether("eigens",evGrid,ePlot);
+		//c.frameTogether("eigens",evGrid,ePlot);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -220,8 +220,11 @@ public class testLinearApp extends Simulation{
 			findModMatrix();
 			diagonalize();
 		}else{
-			findMatrix();
-			diagonalize();
+			//for (ky = 0; ky < Lp; ky++){
+					System.out.println("ky = " + ky);
+				findMatrix();
+				diagonalize();
+			//}
 		}
 		Job.animate();
 
@@ -237,12 +240,12 @@ public class testLinearApp extends Simulation{
         		ising.simulateUnstable();
     			for (int i = 0; i < Lp*Lp; i++)
     				eta[i] = ising.phi[i] - phi0[i%Lp];
-    			double [] etaSF = new double[Lp*Lp];
-    			etaSF = fft.calculate2DFT(eta);
-    			etaAcc.accum(ising.time(), Math.pow(etaSF[ky*Lp],2));
-    			etaAcc2.accum(ising.time(),Math.pow(etaSF[ky*Lp+1],2));
-    			etaAcc3.accum(ising.time(), Math.pow(etaSF[ky*Lp+2],2));
-    			etaAcc4.accum(ising.time(), Math.pow(etaSF[ky*Lp+3],2)); 
+ //   			double [] etaSF = new double[Lp*Lp];
+ //   			etaSF = fft.calculate2DFT(eta);
+//    			etaAcc.accum(ising.time(), Math.pow(etaSF[ky*Lp],2));
+//    			etaAcc2.accum(ising.time(),Math.pow(etaSF[ky*Lp+1],2));
+//    			etaAcc3.accum(ising.time(), Math.pow(etaSF[ky*Lp+2],2));
+//    			etaAcc4.accum(ising.time(), Math.pow(etaSF[ky*Lp+3],2)); 
     			boolean realSpace = false;
         		if(realSpace){
         			rhs2D = simulateLinear(etaLT);	
@@ -261,7 +264,11 @@ public class testLinearApp extends Simulation{
         				etaLT_k_slice[i] += rhs[i];
         			etakPlot.registerLines("eta(k) check", new PointSet(1,1,etaLT_k_slice), Color.BLACK);
         			recordSfDataToFile();
-        			etaLinearCombo();
+        			//etaLinearCombo();
+//        			etaLTkAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
+//        	   		etaLTkAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
+//        	   		etaLTkAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
+//        	   		etaLTkAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2));
         		}
         	}
     		Job.animate();
@@ -309,10 +316,7 @@ public class testLinearApp extends Simulation{
 				linearTheoryGrowth [i] += ising.dt*M[i][j]*etaLT_k_slice[j];
 			}
 		}
-		etaLTkAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
-   		etaLTkAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
-   		etaLTkAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
-   		etaLTkAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2)); 
+ 
 		return linearTheoryGrowth;
 	}
 
@@ -348,17 +352,11 @@ public class testLinearApp extends Simulation{
 		eigenvalue = new double [Lp];
 		eigenvalue = Eig.getRealEigenvalues();
 		
-		SingularValueDecomposition Svd = matrix.svd();
-		double [] singularValue = new double [Lp];
-		singularValue = Svd.getSingularValues();
-		
-			
-		for (int i = 0; i < Lp; i ++)
-			if(eigenvalue[i] > 0.0) System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
-		System.out.println("eigenvalue max ="  +  DoubleArray.max(eigenvalue));
-		System.out.println("eigenvalue min ="  + DoubleArray.min(eigenvalue));
-		System.out.println("Svalue max ="  +  DoubleArray.max(singularValue));
-		System.out.println("Svalue min ="  + DoubleArray.min(singularValue));
+
+//		for (int i = 0; i < Lp; i ++)
+//			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
+		if(DoubleArray.max(eigenvalue)>0.0)System.out.println("eigenvalue max ="  +  DoubleArray.max(eigenvalue));
+//		System.out.println("eigenvalue min ="  + DoubleArray.min(eigenvalue));
 		Matrix V = Eig.getV();
 		VV = V.transpose().getArray();
 		VV = MathTools.normalizeRows(VV);
@@ -381,15 +379,15 @@ public class testLinearApp extends Simulation{
 			c[i] = MathTools.dot(normedEta, VV[i]);
 			normCheck += c[i]*c[i];
 		}
-		System.out.println("norm check = " + normCheck);
+//		System.out.println("norm check = " + normCheck);
 		
 		double sum = 0;
 		int testInt=1;
 	    for(int i = 0; i < Lp; i++){
 	    		sum += M[testInt][i]*VV[testInt][i];
 	    } 
-	    double lambda = sum/VV[testInt][testInt];
-	    System.out.println("ev = " + eigenvalue[testInt] + " lambda = " + lambda);
+//	    double lambda = sum/VV[testInt][testInt];
+//	    System.out.println("ev = " + eigenvalue[testInt] + " lambda = " + lambda);
 	    
 	}
 	
