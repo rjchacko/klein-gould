@@ -10,6 +10,7 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 
 public class CDM extends Simulation{
+	Random r= new Random();
 	Histogram magnetization=new Histogram(10);
 	Accumulator N=new Accumulator(1);
 	Accumulator mt=new Accumulator(1);
@@ -22,6 +23,7 @@ public class CDM extends Simulation{
 	double deltaE[];
 	double h;
 	double T;
+	int M;
 	int dimension;
 	int total;
 	int mcs=0;
@@ -29,18 +31,16 @@ public class CDM extends Simulation{
 		new Control(new CDM(), "Classical Droplet Model");
 	}
 	public void load(Control c){
-		params.add("h",-0.1);
-		params.add("T",10.0);
-		params.add("L",10000);
+		params.add("h",0.1);
+		params.add("T",1.0);
+		params.add("L",100);
 		params.add("dimension",2);
-		params.add("max L");
 		c.frameTogether("Classical Droplet Model", delE, moft, mag, numDown);
 		numDown.setAutoScale(false);
 	}
 	
 	@Override
 	public void animate() {
-		params.set("max L", Math.pow(Math.abs(h), -dimension));
 		numDown.registerPoints("Number of Down Spins", N, Color.RED);	
 		mag.registerBars("magnetization", magnetization, Color.RED);
 		moft.registerPoints("m(t)", mt, Color.RED);
@@ -59,79 +59,66 @@ public class CDM extends Simulation{
 		mt.clear();
 		mcs=0;
 	}
-
-	@Override
-	public void run() {
-		Random r= new Random();
+	
+	private void initialize() {
 		h=params.fget("h");
 		T=params.fget("T");
 		dimension=params.iget("dimension");
 		total=(int) Math.pow(params.iget("L"), dimension);
+		M=total;	
+		if(h<0){
+			double maxL= criticalLength();
+			Nl=new int[(int)maxL];
+			deltaE=new double[(int)maxL];
+		}
+		else{
+			Nl=new int[total];
+			deltaE=new double[total];
+		}
 		
-//		double maxL= criticalLength();
-		double maxL= Math.pow(Math.abs(h), -dimension)*2;
-		
-		
-		Nl=new int[(int)maxL];
-		
-		deltaE=new double[(int)maxL];
 		for(int i=0;i<deltaE.length;i++){
 			deltaE[i]=deltaE(i);
 			delta.accum(i, deltaE[i]);
 		}
-		Job.animate();
+	}
+	
+	@Override
+	public void run() {
 		
-		int mag=total;
-		mag = equilibrate(r, mag);
+		initialize();
+		Job.animate();	
+		
 		while(true){
-			mag = oneMCS(r, mag);			
-			magnetization.accum(mag);
+			oneMCS();		
+			magnetization.accum(M);
 			Job.animate();
 			N.clear();
 		}
 	}
-	
-	private int equilibrate(Random r, int mag) {
-		int dN;
-		for(int j=0;j<100000;j++){
-			for(int i=0;i<Nl.length;i++){
-				int index=r.nextInt(Nl.length);
-				if(r.nextDouble()<0.5)dN=1; else dN=-1;			
-				int dM=-2*index*dN;
-				double dE=dN*deltaE[index];
-				int newN=Nl[index]+dN;
-				int newM=mag+dM;
-				if((dE<0 ||(r.nextDouble()<Math.exp(-dE/T))) && newN>0 && newM>total*0.9){
-					Nl[index]+=dN;
-					mag=newM;
-				}
-			}
-		}
-		return mag;
-	}
-	
-	private int oneMCS(Random r, int mag) {
+
+	private void oneMCS() {
 		int dN;
 		for(int i=0;i<Nl.length;i++){
-			int index=r.nextInt(Nl.length);
+			int l=r.nextInt(Nl.length);
 			if(r.nextDouble()<0.5)dN=1; else dN=-1;			
-			int dM=-2*index*dN;
-			double dE=dN*deltaE[index];
-			int newN=Nl[index]+dN;
-			int newM=mag+dM;
-			if((dE<0 ||(r.nextDouble()<Math.exp(-dE/T))) && newN>0 && newM>total*0.9){
-				Nl[index]+=dN;
-				mag=newM;
+			int dM=-2*l*dN;
+			double dE=dN*deltaE[l];
+			int newM=M+dM;
+			if(Nl[l]+dN>=0 && newM<total && newM>-total){				
+				if((dE<0 ||(r.nextDouble()<Math.exp(-dE/T)))){
+					Nl[l]+=dN;
+					M=newM;
+				}
 			}
-			N.accum(index, Nl[index]);
-			mt.accum(mcs,mag/(double)total);
+			N.accum(l, Nl[l]);
+			mt.accum(mcs,M/(double)total);
 			mcs++;
 		}
-		return mag;
+		return;
 	}
 	
 	double criticalLength(){
-		int d=dimension;
+		double d=dimension;
 		return Math.pow((d-1)/(2*d*Math.abs(h)),d);		
 	}
 	
