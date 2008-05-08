@@ -40,6 +40,20 @@ public class CDM extends Simulation{
 	}
 	
 	@Override
+	public void run() {
+		
+		initialize();
+		Job.animate();	
+		
+		while(true){
+			oneMCS();		
+			
+			Job.animate();
+			N.clear();
+		}
+	}
+	
+	@Override
 	public void animate() {
 		numDown.registerPoints("Number of Down Spins", N, Color.RED);	
 		mag.registerBars("magnetization", magnetization, Color.RED);
@@ -81,20 +95,6 @@ public class CDM extends Simulation{
 			delta.accum(i, deltaE[i]);
 		}
 	}
-	
-	@Override
-	public void run() {
-		
-		initialize();
-		Job.animate();	
-		
-		while(true){
-			oneMCS();		
-			magnetization.accum(M);
-			Job.animate();
-			N.clear();
-		}
-	}
 
 	private void oneMCS() {
 		int dN;
@@ -112,6 +112,7 @@ public class CDM extends Simulation{
 			}
 			N.accum(l, Nl[l]);
 			mt.accum(mcs,M/(double)total);
+			magnetization.accum(M);
 			mcs++;
 		}
 		return;
