@@ -11,7 +11,7 @@ import scikit.jobs.Simulation;
 
 public class CDM extends Simulation{
 	Random r= new Random();
-	Histogram magnetization=new Histogram(10);
+	Histogram magnetization=new Histogram(0.001);
 	Accumulator N=new Accumulator(1);
 	Accumulator mt=new Accumulator(1);
 	Accumulator delta=new Accumulator(1);
@@ -23,9 +23,9 @@ public class CDM extends Simulation{
 	double deltaE[];
 	double h;
 	double T;
-	int M;
 	int dimension;
-	int total;
+	double totalL;
+	double volume;
 	int mcs=0;
 	public static void main(String[] args) {
 		new Control(new CDM(), "Classical Droplet Model");
@@ -78,16 +78,17 @@ public class CDM extends Simulation{
 		h=params.fget("h");
 		T=params.fget("T");
 		dimension=params.iget("dimension");
-		total=(int) Math.pow(params.iget("L"), dimension);
-		M=total;	
+		volume=(int) Math.pow(params.iget("L"), dimension);
+		totalL=0;
+		
 		if(h<0){
 			double maxL= criticalLength();
 			Nl=new int[(int)maxL];
 			deltaE=new double[(int)maxL];
 		}
 		else{
-			Nl=new int[total];
-			deltaE=new double[total];
+			Nl=new int[(int)volume];
+			deltaE=new double[(int)volume];
 		}
 		
 		for(int i=0;i<deltaE.length;i++){
@@ -101,18 +102,21 @@ public class CDM extends Simulation{
 		for(int i=0;i<Nl.length;i++){
 			int l=r.nextInt(Nl.length);
 			if(r.nextDouble()<0.5)dN=1; else dN=-1;			
-			int dM=-2*l*dN;
+			
 			double dE=dN*deltaE[l];
-			int newM=M+dM;
-			if(Nl[l]+dN>=0 && newM<total && newM>-total){				
+			
+			if(Nl[l]+dN>=0 && totalL+dN*l<volume){				
 				if((dE<0 ||(r.nextDouble()<Math.exp(-dE/T)))){
 					Nl[l]+=dN;
-					M=newM;
+					totalL+=dN*l;
 				}
 			}
 			N.accum(l, Nl[l]);
-			mt.accum(mcs,M/(double)total);
-			magnetization.accum(M);
+			
+			double m=1-2*totalL/volume;
+			
+			mt.accum(mcs,m);
+			magnetization.accum(m);
 			mcs++;
 		}
 		return;
