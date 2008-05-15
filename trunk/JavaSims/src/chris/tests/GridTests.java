@@ -13,7 +13,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.ClustersV2;
+import chris.ofc.ClustersV4;
 import chris.ofc.NfailDamage2D;
 import chris.util.LatticeNeighbors;
 
@@ -23,8 +23,11 @@ public class GridTests extends Simulation{
 	Grid grid1 = new Grid ("Grid 1");
 	Grid grid2 = new Grid ("Grid 2");
 	Grid grid3 = new Grid ("Grid 3");
-
+	Grid grid4 = new Grid ("Grid 4");
+	Grid grid5 = new Grid ("Grid 5");
+	
 	NfailDamage2D model;
+	ClustersV4 dummy; 
 
 	ColorPalette palette1;
 	ColorPalette palette2;
@@ -37,7 +40,7 @@ public class GridTests extends Simulation{
 	int x0,y0,i0;
 	int[] foo;
 	double[] display;
-	int[] parent, foo2;
+	int[] parent, foo2, foo3, foo4;
 	
 	public static void main(String[] args) {
 		new Control(new GridTests(), "OFC Model");
@@ -53,7 +56,7 @@ public class GridTests extends Simulation{
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/"));
 		params.add("Random Seed",0);
 		params.add("Animation", new ChoiceValue("On","Off"));
-		params.add("Lattice Size",500);
+		params.add("Lattice Size",6);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
@@ -82,15 +85,17 @@ public class GridTests extends Simulation{
 		params.add("x0", 250);
 		params.add("y0", 250);
 		
-		c.frameTogether("Test",grid1,grid2,grid3);
+		c.frameTogether("Test",grid1,grid2,grid3,grid4,grid5);
 	}
 	
 	public void animate() {
 		
 		if (params.sget("Animation").equals("On")){
-			grid1.registerData(model.L,model.L,foo);
-			grid2.registerData(model.L,model.L,display);
-			grid3.registerData(model.L,model.L,foo2);
+			grid5.registerData(model.L,model.L,foo);
+			grid2.registerData(model.L,model.L,foo2);
+			grid3.registerData(model.L,model.L,foo3);
+			grid4.registerData(model.L,model.L,foo4);
+			grid1.registerData(model.L,model.L,display);
 		}
 		params.set("Number of Resets",displaycounter);
 
@@ -101,6 +106,8 @@ public class GridTests extends Simulation{
 		grid1.clear();
 		grid2.clear();
 		grid3.clear();
+		grid4.clear();
+		grid5.clear();
 
 	}
 
@@ -290,7 +297,7 @@ public class GridTests extends Simulation{
 	    palette1.setColor(0,Color.WHITE);
 	    palette1.setColor(1,Color.BLACK);
 	    smooth   = new ColorGradient();
-	    grid1.setColors(palette1);
+	    grid5.setColors(palette1);
 
 	    Color[] Carray = new Color[10];
 	    
@@ -308,19 +315,24 @@ public class GridTests extends Simulation{
 	    palette2.setColor(0,Color.WHITE);
 	    for (int i = 1 ; i <= model.N ; i++){
 	    	palette2.setColor(i,Carray[i%10]);
+	    	palette2.setColor(-i,(Carray[9-i%10]));
 	    }
+	    grid1.setColors(palette2);
 	    grid2.setColors(palette2);
 	    grid3.setColors(palette2);
+	    grid4.setColors(palette2);	    
 		
 		while(true){
 			
 			
-			///////// YOU ARE TESTING ClusterV2 !!!!!!!!!!!!
+			///////// YOU ARE TESTING ClusterV4 !!!!!!!!!!!!
 			
 			
-			ClustersV2 dummy = new ClustersV2(model.L, "Periodic");
+			dummy = new ClustersV4(model.L, "Periodic");
 			
 			foo2 = new int[model.N];
+			foo3 = new int[model.N];
+			foo4 = new int[model.N];
 			
 			for (int jj = 0 ; jj < model.N ; jj++){
 				foo[jj] = 0;
@@ -332,12 +344,12 @@ public class GridTests extends Simulation{
 				order[s] = s;
 			}
 			for(int s = 0;s<model.N-1;s++) {
-				int r = s+(int) (Math.random()*(model.N-s));
+				int r = s+(int) (model.rand.nextDouble()*(model.N-s));
 				int temp = order[s];
 				order[s] = order[r];
 				order[r] = temp;
 			}
-			
+//			
 //			int mnst = 25;
 //			
 //			order[0] = mnst+1;
@@ -355,38 +367,46 @@ public class GridTests extends Simulation{
 //			order[9] = mnst-model.L;
 //			order[10] = mnst;
 //			order[11] = mnst-model.L-1;
-			
-			
+			int count = 0;
+			display = new double[model.N];
 			for (int ii = 0 ; ii < model.N ; ii++){
 				
-				if (model.rand.nextDouble() > 0.5){
-					dummy.addSite(order[ii]);
-					foo[order[ii]] = 1;
-				}
-				
-				
-//				display = new double[model.N];
-//				for(int s = 0;s<model.N;s++) {
-//					display[s] = dummy.getClusterSize(s);
-//					 foo2[s]    = dummy.getClusterNumber(s);
+//				if (model.rand.nextDouble() < model.alpha){
+//					dummy.addSite(order[ii]);
+//					foo[order[ii]] = 1;
 //				}
-//			    
-//			    displaycounter++;
-//				Job.animate();
+				
+				
+				
+				boolean percolate = dummy.addSite(order[ii]);
+				foo[order[ii]] = 1;
+				for(int s = 0;s<model.N;s++) {
+					display[s] = dummy.getClusterSize(s);
+					foo2[s]    = dummy.getClusterNumber(s);
+					foo3[s]	   = dummy.getDist(s);
+					foo4[s]	   = dummy.getDist(s+model.N);
+				}
+				count = ii;
+				if(percolate){
+					System.out.println("System has percolated!");
+					break;
+				}
 				
 			}
 			
-			display = new double[model.N];
-			for(int s = 0;s<model.N;s++) {
-				display[s] = dummy.getClusterSize(s);
-				 foo2[s]    = dummy.getClusterNumber(s);
-			}
-		    
-		    displaycounter++;
+			foo2[order[count]] = 4;
 			Job.animate();
-				
-
-			clear();	
+			
+//			for(int s = 0;s<model.N;s++) {
+//				display[s] = dummy.getClusterSize(s);
+//				foo2[s]    = dummy.getClusterNumber(s);
+//			}
+//		    
+//		    displaycounter++;
+//			Job.animate();
+//				
+//
+//			clear();	
 			    
 		}
 			  
