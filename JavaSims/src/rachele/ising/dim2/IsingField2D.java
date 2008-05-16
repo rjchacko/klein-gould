@@ -308,7 +308,7 @@ public class IsingField2D extends AbstractIsing2D{
 				dF_dPhi = -phi_bar[i]+T*(phi[i]+pow(phi[i],3)) - H;	
 				Lambda[i] = 1;
 			}else{
-				dF_dPhi = -phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H;
+				dF_dPhi = -phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H;//
 				//dF_dPhi = -phi_bar[i]+T*(-log(1.0-phi[i])+log(1.0+phi[i]))/2.0 - H;
 				if(theory == "HalfStep"){
 					Lambda[i] = 1;
