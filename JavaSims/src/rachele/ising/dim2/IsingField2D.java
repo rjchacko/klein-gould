@@ -52,7 +52,7 @@ public class IsingField2D extends AbstractIsing2D{
 			
 	//boolean noiselessDynamics = false;
 	double noiseParameter, stripeStrength;
-	boolean circleInteraction = false;
+	public boolean circleInteraction = false;
 	boolean magConservation = false;
 	int slowPower = 0;
 	String theory;
