@@ -102,6 +102,24 @@ public class FourierTransformer {
 		return dst;
 	}
 
+	public double [] backConvolve1DwithFunction(double [] src, Function1D fn){
+		double [] dst = new double [L];
+		for (int i = 0; i < L; i++){
+			scratch1D[2*i] = src[i];
+			scratch1D[2*i + 1] = 0;
+		}
+		fft1D.backtransform(scratch1D);
+		for (int x = -L/2; x < L/2; x++) {
+			int i = (x+L)%L;
+			scratch1D[2*i] *=  fn.eval((double)x);
+			scratch1D[2*i+1] *=  fn.eval((double)x);
+		}
+		fft1D.transform(scratch1D);
+		for (int i = 0; i < L; i++)
+			dst[i] = scratch1D[2*i]/(L);
+		return dst;
+	}
+	
 	public double [] backConvolve1D(double [] src1, double [] src2){
 		double [] dst = new double [L];
 		src1 = calculate1DBackFT(src1);
