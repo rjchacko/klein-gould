@@ -539,13 +539,7 @@ public class testLinearApp extends Simulation{
 	}
 
 
-	public void recordSlice(double t, double [] data){
-		String dataFile = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf";
-		if (clearFile) FileUtil.deleteFile(dataFile); clearFile = false;
-		for (int i = 0; i < Lp; i++)
-			FileUtil.printlnToFile(dataFile, t, i, data[i]);
-		System.out.println("data written for time = " + t);
-	}
+
 	
 	public void recordSfDataToFile(double [] data){
 		String file0 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf0";
