@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.awt.Color;
-import rachele.ising.dim2.FindCoefficients;
 import rachele.util.FourierTransformer;
 import rachele.util.MathTools;
 import rachele.ising.dim2.IsingField2D;
@@ -24,14 +23,28 @@ import scikit.util.DoubleArray;
 import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
 
-
+/**
+* Compares the ising simulations for square interaction to the linear theory
+* following a quench in external field.
+* 
+* The linear theory is:
+* \eta(x,y) = -\int dx' V(x-x',y-y') \eta(x',y')
+* 				-T \eta(x,y)/(1-phi_0(x))
+* In Fourier space, it becomes a matrix equation.  
+* For a given value of ky, we have:
+* \etaVec[i] = M[i,j]\etaVec[j]
+* where \etaVec is a vector of length Lp; each dimension
+* represents an allowed value of kx.
+*/
 public class testLinearApp extends Simulation{
     IsingField2D ising;
-    FindCoefficients coeff;
     FourierTransformer fft;
-    double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice, phi0_bar, phi0; //right hand side
-    double [] g_k, f_x, f_k, F, G, c, eigenvalue, etaLC;
-    double [][] M, VV;
+    double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice; //right hand side
+    double [] g_k, c, eigenvalue, etaLC;
+    double [] phi0, phi0_bar; // Background stripe configuration and this configuration convoluted with potential.
+    double [] f_x, f_k; // f(x) = 1/(1-phi_0^2)
+    double [] F, G; //Matrices for modified dynamics
+    double [][] M, VV; //Main matrix and eigenvalue matrix
     int ky;
     double kRChunk; //=2piR/L
     boolean clearFile;
@@ -273,6 +286,12 @@ public class testLinearApp extends Simulation{
 		}	
 	}
 	
+	/**
+	* Evaluates the linear theory prediction of 
+	* configuration in Fourier space using a linear
+	* combination of eigenvectors weighted by proper
+	* coefficients and exp growth factors.
+	*/
 	public void etaLinearCombo(){
 		for(int i = 0; i < Lp; i++){
 			double sum = 0;
@@ -283,6 +302,10 @@ public class testLinearApp extends Simulation{
 		}
 	}
 	
+	/**
+	* Evaluates the matrix, M, of the linear theory for the unstable 
+	* (unmodified) Ising dynamics.
+	*/
 	private void findMatrix() {
 		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
 		double kxValue;
@@ -303,8 +326,11 @@ public class testLinearApp extends Simulation{
 		}
 	}
 
+	/**
+	* Evaluates the matrix, M, of the linear theory for the stable 
+	* (modified) Ising dynamics.  Not working at present.
+	*/
 	void findModMatrix(){
-
 //		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
 //		double kxValue;
 //		for (int i = 0; i < Lp; i++){
@@ -415,7 +441,14 @@ public class testLinearApp extends Simulation{
 		return linearTheoryGrowth;
 	}
 
-	
+	/**
+	* Diagonalizes the matrix M.
+	* Also some code that can be used to check for
+	* orthonormality of eigenvectors. (Eigenvectors should
+	* be orthonormal for Hermitian matrices.  Matrix for unmodified
+	* dynamics is Hermitian, but matrix for modified dynamcis
+	* is not.
+	*/
 	void diagonalize(){
 		Matrix matrix = new Matrix(M);
 		EigenvalueDecomposition Eig;
@@ -503,7 +536,7 @@ public class testLinearApp extends Simulation{
 		double [] eta_bar = new double[Lp*Lp];
 		ising.convolveWithRange(etaLinear, eta_bar, ising.R);
 		for (int i = 0; i < Lp*Lp; i++)
-			linearTheoryGrowth[i] = +ising.dt*(eta_bar[i]*G[i%Lp]+ etaLinear[i]*F[i%Lp]);//;
+			linearTheoryGrowth[i] = +ising.dt*(eta_bar[i]*G[i%Lp]+ etaLinear[i]*F[i%Lp]);
 		return linearTheoryGrowth;
 	}
 	
@@ -612,7 +645,6 @@ public class testLinearApp extends Simulation{
 		etaLCAcc4 = new Accumulator(ising.dt);
 		
 		this.Lp = ising.Lp;
-		coeff = new FindCoefficients(Lp);
 		fft = new FourierTransformer(Lp);
 		rhs = new double[Lp];
 		rhs2D = new double[Lp*Lp];
