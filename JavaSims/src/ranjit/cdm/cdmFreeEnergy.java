@@ -15,14 +15,16 @@ public class cdmFreeEnergy extends Simulation {
 	Plot Fprime=new Plot("f'(h)");
 	Accumulator clength=new Accumulator(0.00001);
 	Plot clPlot=new Plot("Critical length");
+	Accumulator g=new Accumulator(0.00001);
+	Plot G=new Plot("g(l)");
 	
 	public void load(Control c){
 		params.add("T",1.0);
 		params.add("hmin", -0.1);
 		params.add("hmax", 0.1);
-		params.add("lmax", 1000);
+		params.add("volume", 1000);
 		params.add("dimension",2);
-		c.frame(F,Fprime,clPlot);
+		c.frame(F,Fprime,clPlot,G);
 	}
 	
 	@Override
@@ -30,12 +32,19 @@ public class cdmFreeEnergy extends Simulation {
 		F.registerPoints("Free Energy", f, Color.RED);
 		Fprime.registerPoints("dF/dH", fprime, Color.RED);
 		clPlot.registerPoints("", clength, Color.RED);
+		G.registerPoints("g(l)", g, Color.RED);
 	}
 
 	@Override
 	public void clear() {
 		f.clear();
 		F.clear();
+		fprime.clear();
+		Fprime.clear();
+		clength.clear();
+		clPlot.clear();
+		g.clear();
+		G.clear();		
 	}
 
 	@Override
@@ -43,18 +52,19 @@ public class cdmFreeEnergy extends Simulation {
 		double T=params.fget("T");
 		double hmin=params.fget("hmin");
 		double hmax=params.fget("hmax");
-		int LMAX=params.iget("lmax");
+		int volume=params.iget("volume");
 		double d=params.fget("dimension");
+		
 		for(double h=hmin;h<hmax;h+=0.0001){
 			double ff=0;
-			int lmax=0;
-			if(h<0)lmax=(int)criticalLength(h);
-			else lmax=LMAX;
-			if(lmax>LMAX) lmax=LMAX;
-			for(int l=1;l<lmax;l++){
+			double lc=criticalLength(h);
+			if(h>0 || lc>volume)lc=volume;
+			clength.accum(h, lc);
+			
+			for(double l=1;l<lc;l+=0.001){
 				ff+=Math.exp((-1/T)*(h*l+Math.pow(l,1-1/d)));
 			}
-			clength.accum(h, lmax);
+			
 			f.accum(h, ff);
 		}
 		
@@ -63,7 +73,8 @@ public class cdmFreeEnergy extends Simulation {
 		for(int i=0;i<fe.length/2-1;i++){
 			feprime[2*i]=fe[2*i];
 			feprime[2*i+1]=fe[2*i+3]-fe[2*i+1];
-			fprime.accum(feprime[2*i],feprime[2*i+1]);
+			fprime.accum(feprime[2*i],-feprime[2*i+1]);
+			g.accum(-T*feprime[2*i+1], fe[2*i+1]);
 		}
 
 		Job.animate();
