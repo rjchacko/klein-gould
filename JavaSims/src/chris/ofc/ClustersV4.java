@@ -79,8 +79,8 @@ public class ClustersV4 {
   public boolean addSite(int site){
 	  
 	  
-	  	//GET RID OF ME!!!!!		System.out.println();
-	    SystemPercolate = false;
+//	  	//GET RID OF ME!!!!!		System.out.println();
+//	    SystemPercolate = false;
 	  
 	  	int[] nbs = new int[4];
 	  
@@ -122,7 +122,7 @@ public class ClustersV4 {
 	  if (NBScn[order[0]] == BIG){	// all neighbor sites are EMPTY
 		  // give the site a new cluster number and set it as a pcn
 		  cnARRAY[site] = ClCt;
-		  pcn[cnARRAY[site]] = ClCt;
+		  pcn[cnARRAY[site]] = ClCt++;
 		  // now set this site as the reference site to measure distance from
 		  // and set its x and y distance to 0
 		  cDist[site] = 0;
@@ -608,11 +608,11 @@ private void resetPCNandDIST(int ns, int[] os){
 		  for (int rr = qq+1 ; rr < Length ; rr++){
 			  if( ( (compCheck[qq][0] - compCheck[rr][0]) != 0 )  || ( (compCheck[qq][1] - compCheck[rr][1]) != 0 ) ){
 				  PercolationCluster = pcn[cnARRAY[comp[qq]]];
-				  System.out.println("x_1 <CR> x_2 <CR> y_1 <CR> y_2");
-				  System.out.println(compCheck[qq][0]);
-				  System.out.println(compCheck[rr][0]);
-				  System.out.println(compCheck[qq][1]);
-				  System.out.println(compCheck[rr][1]);
+//				  System.out.println("x_1 <CR> x_2 <CR> y_1 <CR> y_2");
+//				  System.out.println(compCheck[qq][0]);
+//				  System.out.println(compCheck[rr][0]);
+//				  System.out.println(compCheck[qq][1]);
+//				  System.out.println(compCheck[rr][1]);
 			  }
 		  }
 		  

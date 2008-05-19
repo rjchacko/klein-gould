@@ -1,4 +1,4 @@
-package chris.ofc.apps;
+package chris.ofc.apps.old;
 
 import java.awt.Color;
 import java.util.Random;
