@@ -24,8 +24,12 @@ import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
 
 /**
-* Compares the ising simulations for square interaction to the linear theory
+* Compares the Ising simulations for square interaction to the linear theory
 * following a quench in external field.
+* 
+* This works for the square shaped interaction shape.  
+* Use TestLinearOptApp.java with flexible length scales 
+* for circle shape interaction.
 * 
 * The linear theory is:
 * \eta(x,y) = -\int dx' V(x-x',y-y') \eta(x',y')

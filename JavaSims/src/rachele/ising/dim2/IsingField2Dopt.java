@@ -7,9 +7,7 @@ import static java.lang.Math.sin;
 import static java.lang.Math.cos;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.hypot;
-import static scikit.numerics.Math2.j0;
 import static scikit.numerics.Math2.j1;
-import static scikit.numerics.Math2.jn;
 import static scikit.numerics.Math2.sqr;
 import kip.util.Random;
 import scikit.jobs.params.Parameters;
@@ -18,9 +16,8 @@ import scikit.numerics.fft.managed.ComplexDouble2DFFT;
 import scikit.numerics.fn.Function2D;
 import scikit.util.DoubleArray;
 
-public class IsingField2Dopt {
-	public double L, Rx, Ry, T, dx, J, H, dT;
-	public int Lp, N;
+public class IsingField2Dopt extends AbstractIsing2Dopt{
+	public int N;
 	public double DENSITY, freeEnergy;
 	public double dt, t;
 	public double[] phi, phiVector;
@@ -35,7 +32,7 @@ public class IsingField2Dopt {
 	public static final double T_SP = 0.132279487396100031736846;	
 	public double lambda;
 	
-	boolean circleInteraction = false;
+	public boolean circleInteraction = false;
 	boolean magConservation = false;
 	public boolean recordTvsFE = false;
 	public boolean recordHvsFE = false;
@@ -110,6 +107,14 @@ public class IsingField2Dopt {
 		else if(params.sget("Dynamics?") == "Langevin No M Conservation")magConservation = false;
 	}
 
+	public void simulateUnstable(){
+		for (int i = 0; i < Lp*Lp; i++) 
+			delPhi[i] = - dt* (-J*phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i]) - H);
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += delPhi[i];
+		
+	}
+	
 	public void simulate() {
 		freeEnergy = 0;  //free energy is calculated for previous time step
 		potAccum = 0;
@@ -123,15 +128,14 @@ public class IsingField2Dopt {
 		
 		double meanLambda = 0;
 		for (int i = 0; i < Lp*Lp; i++) {
-			double dF_dPhi = 0;
-			dF_dPhi = -J*phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i]) - H;
+			double dF_dPhi = -J*phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i]) - H;
 			if(theory == "Slow Near Edge"){			
 				Lambda[i] = sqr(1 - phi[i]*phi[i]);	
 			}else{
 				Lambda[i] = 1;				
 			}
 
-				delPhi[i] = - dt*Lambda[i]*dF_dPhi + sqrt(Lambda[i]*(dt*2*T)/dx)*noise();
+			delPhi[i] = - dt*Lambda[i]*dF_dPhi + sqrt(Lambda[i]*(dt*2*T)/dx)*noise();
 				phiVector[i] = delPhi[i];
 				meanLambda += Lambda[i];
 				double entropy = -((1.0 + phi[i])*log(1.0 + phi[i]) +(1.0 - phi[i])*log(1.0 - phi[i]))/2.0;	
@@ -276,8 +280,5 @@ public class IsingField2Dopt {
 		return (k1 == 0) ? 0 : potk2*(cos(k1*R1)/R1 - sin(k1*R1)/(k1*R1*R1));
 	}
 	
-	private double dpotential_dkR(double kR) {
-		double kR2 = kR*kR;
-		return (kR == 0) ? 0 : j0(kR)/kR - 2*j1(kR)/kR2  - jn(2,kR)/kR;
-	}
+
 }
