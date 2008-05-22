@@ -3,12 +3,13 @@ package rachele.ising.dim1.apps;
 
 import static java.lang.Math.floor;
 import static scikit.util.Utilities.format;
-import static scikit.util.Utilities.frameTogether;
+//import static scikit.util.Utilities.frameTogether;
 import scikit.dataset.PointSet;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DoubleValue;
 import scikit.graphics.dim2.Plot;
 import rachele.ising.dim1.FieldIsing1D;
 import rachele.ising.dim1.StructureFactor1D;
@@ -19,7 +20,7 @@ import java.io.*;
 
 public class IsingField1DApp extends Simulation{
 
-	Plot fieldPlot = new Plot("Coarse Grained Field");
+	Plot fieldPlot = new Plot("Coarse Grained Field", "x", "phi(x)");
     Plot SFPlot = new Plot("Structure factor");
     Plot freeEngDenPlot = new Plot("Free Energy Density");
     Plot freeEngPlot = new Plot("Free Energy");
@@ -31,9 +32,11 @@ public class IsingField1DApp extends Simulation{
 		new Control(new IsingField1DApp(), "Ising Field 1D");
 	}
 	
-	public IsingField1DApp(){
-		frameTogether("Displays", fieldPlot, freeEngPlot, freeEngDenPlot, SFPlot);
-////	Default parameters for nucleation
+	public void load(Control c) {
+		//c.frameTogether("Displays", fieldPlot, freeEngPlot, freeEngDenPlot, SFPlot);
+		c.frame(fieldPlot);
+		
+		////	Default parameters for nucleation
 //		//params.addm("Model", new ChoiceValue("A", "B"));
 //		params.addm("Noise", new ChoiceValue("On", "Off"));
 //		params.addm("T", 0.85);
@@ -57,7 +60,8 @@ public class IsingField1DApp extends Simulation{
 //  Default params for clump model
 		//params.addm("Model", new ChoiceValue("A", "B"));
 		params.addm("Noise", new ChoiceValue("On", "Off"));
-		params.addm("T", 0.04);
+		params.addm("T", new DoubleValue(0.04, 0, 0.2).withSlider());
+		//params.addm("T", 0.04);
 		params.addm("J", +1.0);
 		params.addm("H", 0.8);
 		params.addm("R", 2000000);
@@ -80,6 +84,8 @@ public class IsingField1DApp extends Simulation{
 		params.set("Time", format(ising.t));
 		//params.set("F", format(ising.freeEnergyDensity));
 		ising.readParams(params);
+		//fieldPlot.setAutoScale(true);
+		//fieldPlot.set
 		
 		SFPlot.registerLines("Structure factor", sf.getAccumulator(), Color.BLACK);
 		fieldPlot.registerLines("Field", new PointSet(0, ising.dx, ising.phi), Color.BLACK);

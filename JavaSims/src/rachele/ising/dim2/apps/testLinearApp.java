@@ -55,7 +55,7 @@ public class testLinearApp extends Simulation{
     
     //RUN OPTIONS
     boolean accEtaValues = true;
-    boolean modifiedDynamics = true;
+    boolean modifiedDynamics = false;
     boolean writeToFile = false;
     
     public Accumulator etaAcc;
@@ -514,8 +514,6 @@ public class testLinearApp extends Simulation{
 		f_k = fft.calculate1DFT(f_x);
 	}
 		
-
-	
 	double [] simulateLinearMod_kSpace(int ky){
 		double [] change = new double [Lp*Lp];
 
