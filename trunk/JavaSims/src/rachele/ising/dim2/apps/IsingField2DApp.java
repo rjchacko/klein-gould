@@ -81,7 +81,6 @@ public class IsingField2DApp extends Simulation {
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
 		params.addm("T", 0.04);
 		params.addm("H", 0.80);
-		//params.addm("H Stripe", 0.8);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.0001);
 		params.addm("dt", 1.0);
@@ -268,8 +267,8 @@ public class IsingField2DApp extends Simulation {
 				brLandscapeFiller = opt.getBracketLandscape();
 			}else{
 				cgInitialized = false;
-				//ising.simulate();
-				ising.simulateUnstable();
+				ising.simulate();
+				//ising.simulateUnstable();
 			}
 			sf.getAccumulatorV().clear();
 			sf.getAccumulatorH().clear();

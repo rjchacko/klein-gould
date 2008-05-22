@@ -190,8 +190,8 @@ public class IsingField2D extends AbstractIsing2D{
 	public void randomizeField(double m) {
 		for (int i = 0; i < Lp*Lp; i++)
 			
-			phi[i] = 0.00001*random.nextGaussian()/(dx);
-			//phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
+			//phi[i] = 0.00001*random.nextGaussian()/(dx);
+			phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
 			//whether or not you start the system at the specified density doesn't matter too much because
 			//the mag conservation algorithm will quickly take it to the correct density
 	}
