@@ -4,7 +4,6 @@ package ranjit.ofc;
 import java.awt.Color;
 import java.io.IOException;
 
-import scikit.dataset.Accumulator;
 import scikit.dataset.Histogram;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
