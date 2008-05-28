@@ -30,8 +30,8 @@ public class IsingField2DApp extends Simulation {
     Grid delPhiGrid = new Grid("DelPhi");
 	Plot hSlice = new Plot("Horizontal Slice");
 	Plot vSlice = new Plot("Vertical Slice");    
-	Plot slicePlot1 = new Plot("Input Slice FT");
-	Plot slicePlot2 = new Plot("Input function");
+	Plot slicePlot1 = new Plot("ky=0 Slice");
+	Plot slicePlot2 = new Plot("ky=k0 Slice");
 	Plot sfHor = new Plot("H SF");
 	Plot sfVert = new Plot("V SF");
 	Plot structurePeakV = new Plot("Ver Structure Factor");
@@ -88,7 +88,7 @@ public class IsingField2DApp extends Simulation {
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
 		params.add("L/R", 3.0);
-		params.add("R/dx", 21.40);
+		params.add("R/dx", 43.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.add("Time");
@@ -148,6 +148,8 @@ public class IsingField2DApp extends Simulation {
 		landscape.registerLines("FE landscape", landscapeFiller, Color.BLACK);
 		brLandscape.registerLines("FE landscape", brLandscapeFiller, Color.BLUE);
 		delPhiGrid.registerData(ising.Lp, ising.Lp, ising.phiVector);
+		
+		
 		slicePlot1.registerLines("Slice", sf.get_sfSlice(), Color.RED);
 		slicePlot2.registerLines("Slice", getInput(), Color.YELLOW);
 
@@ -167,6 +169,9 @@ public class IsingField2DApp extends Simulation {
 				Geom2D.line(ising.verticalSlice, 0, ising.verticalSlice, 1, Color.BLACK)));
 		
 		hSlice.registerLines("Slice", ising.getHslice(), Color.GREEN);
+		String fileName = "../../../research/javaData/configs1d/config";
+		double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
+		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(), Color.BLUE);
 		freeEnergyPlot.registerLines("Free Energy", ising.getFreeEnergyAcc(), Color.MAGENTA);
 		
@@ -295,6 +300,9 @@ public class IsingField2DApp extends Simulation {
 				writeDataToFile();
 			}
 			Job.animate();
+//			int half = ising.Lp*ising.Lp/2 + ising.Lp/2;
+//			double ratio = sf.sFactor[half + 2]/sf.sFactor[half + 4];
+//			System.out.println("ratio = " + ratio);
 			sfChange.clear();
 		}
  	}

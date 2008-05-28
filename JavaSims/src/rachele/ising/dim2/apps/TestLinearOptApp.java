@@ -24,7 +24,7 @@ import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
 
 /**
-* Compares the ising simulations for square interaction to the linear theory
+* Compares the ising simulations to the linear theory
 * following a quench in external field.
 * 
 * This works for the circle shaped interaction shape.  
@@ -32,8 +32,8 @@ import scikit.dataset.PointSet;
 * for square shape interaction.
 * 
 * The linear theory is still:
-* \eta(x,y) = -\int dx' V(x-x',y-y') \eta(x',y')
-* 				-T \eta(x,y)/(1-phi_0(x))
+* \eta_dot(x,y) = -\int dx' V(x-x',y-y') \eta(x',y')
+* 				-T \eta(x,y)/(1-phi_0(x)^2)
 * Unlike with the square interaction shape,
 * the circle interaction does not break down neatly into slices 
 * in Fourier space.
@@ -59,7 +59,7 @@ public class TestLinearOptApp extends Simulation{
     //RUN OPTIONS
     boolean accEtaValues = false;
     boolean modifiedDynamics = false;
-    boolean writeToFile = false;
+    boolean writeToFile = true;
     
     public Accumulator etaAcc;
     public Accumulator etaAcc2;
@@ -113,16 +113,16 @@ public class TestLinearOptApp extends Simulation{
 		params.addm("Noise", new DoubleValue(0, 0, 1.0).withSlider());
 		params.addm("T", 0.02);
 		params.addm("H", 0.8);
-		params.addm("Rx", 415.0);
-		params.addm("Ry", 360.0);
-		params.add("L", 1000.0);
-		params.add("dx", 10.0);
+		params.addm("Rx", 2490000.0);
+		params.addm("Ry", 2160000.0);
+		params.add("L", 6000000.0);
+		params.add("dx", 30000.0);
 		params.addm("ky", 2);
 		params.addm("J", -1.0);
 		params.add("Random seed", 0);
 		params.add("Magnetization", 0.0);
 		params.addm("range change", 0.01);
-		params.add("dt", 0.01);
+		params.add("dt");
 		params.add("Time");
 	}
 
@@ -192,14 +192,14 @@ public class TestLinearOptApp extends Simulation{
 	}
 
 	public void clear() {
-//		etaAcc.clear();
-//		etaLTAcc.clear();
-//		etaAcc2.clear();
-//		etaLTAcc2.clear();
-//		etaAcc3.clear();
-//		etaLTAcc3.clear();
-//		etaAcc4.clear();
-//		etaLTAcc4.clear();
+		etaAcc.clear();
+		etaLTAcc.clear();
+		etaAcc2.clear();
+		etaLTAcc2.clear();
+		etaAcc3.clear();
+		etaLTAcc3.clear();
+		etaAcc4.clear();
+		etaLTAcc4.clear();
 	}
  
 	public void run() {
@@ -207,7 +207,7 @@ public class TestLinearOptApp extends Simulation{
 		initialize();
 		ky = params.iget("ky");
 		double [] etaK = new double[Lp*Lp];
-		double recordStep = 1;	
+		double recordStep = .0001;	
 		
 		for (int i = 0; i < Lp*Lp; i++)
 			etaLT[i] = ising.phi[i] - phi0[i%Lp];
@@ -235,7 +235,9 @@ public class TestLinearOptApp extends Simulation{
         			//rhs = simulateLinearKwithModDynamics();
         		}
         	}else{
+        		//System.out.println(ising.dt);
         		ising.simulateUnstable();
+        		params.set("dt", ising.dt);
        			if(accEtaValues){	
        				rhs2D = simulateLinear(etaLT);	
        				//rhs = simulateLinearKbar();
@@ -279,9 +281,9 @@ public class TestLinearOptApp extends Simulation{
    		
     		Job.animate();
     		if(writeToFile){
-    			if(ising.time() >= recordStep){
+    			if(ising.t >= recordStep){
     				recordSfDataToFile(etaK);
-    				recordStep += 1;
+    				recordStep += .0001;
     			}
     		}
 		}	
@@ -547,7 +549,7 @@ public class TestLinearOptApp extends Simulation{
 		FileUtil.printlnToFile(file3, ising.time(), data[ky*Lp+3]*data[ky*Lp+3]);
 		FileUtil.printlnToFile(file4, ising.time(), data[ky*Lp+4]*data[ky*Lp+4]);
 		FileUtil.printlnToFile(file5, ising.time(), data[ky*Lp+5]*data[ky*Lp+5]);
-		//System.out.println("data written for time = " + ising.time());
+		System.out.println("data written for time = " + ising.time());
 	}	
 	
 	public void readInputParams(String FileName){
@@ -583,9 +585,13 @@ public class TestLinearOptApp extends Simulation{
 	}
 	
 	void initialize(){
-//		if(params.sget("Init Conditions") == "Read From File")
-//			readInputParams("../../../research/javaData/configs/inputParams");
+
 		ising = new IsingField2Dopt(params);
+//		Does a random config by default:
+//		Have to read in from file separately
+		if(params.sget("Init Conditions") == "Read From File")
+			ising.readConfigFromFile();
+//		readInputParams("../../../research/javaData/configs/inputParams");
 		
 		etaAcc = new Accumulator(ising.dt);
 		etaAcc2 = new Accumulator(ising.dt);
