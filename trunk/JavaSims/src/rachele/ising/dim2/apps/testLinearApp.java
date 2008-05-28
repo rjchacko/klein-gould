@@ -54,7 +54,7 @@ public class testLinearApp extends Simulation{
     boolean clearFile;
     
     //RUN OPTIONS
-    boolean accEtaValues = true;
+    boolean accEtaValues = false;
     boolean modifiedDynamics = false;
     boolean writeToFile = false;
     
@@ -100,7 +100,7 @@ public class testLinearApp extends Simulation{
 	}
 	public void load(Control c) {
 		if(accEtaValues) c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
-		//c.frame(phiGrid);
+		c.frame(phiGrid);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
