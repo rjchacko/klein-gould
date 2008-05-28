@@ -54,10 +54,11 @@ public class TestLinearOptApp extends Simulation{
     int ky;
     double kRChunk; //=2piR/L
     boolean clearFile;
+ 
     
     //RUN OPTIONS
-    boolean accEtaValues = true;
-    boolean modifiedDynamics = true;
+    boolean accEtaValues = false;
+    boolean modifiedDynamics = false;
     boolean writeToFile = false;
     
     public Accumulator etaAcc;
@@ -98,16 +99,17 @@ public class TestLinearOptApp extends Simulation{
 
     
 	public static void main(String[] args) {
-		new Control(new testLinearApp(), "Ising Linear Test");
+		new Control(new TestLinearOptApp(), "Ising Linear Test");
 	}
 	public void load(Control c) {
+
 		if(accEtaValues) c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
-		//c.frame(phiGrid);
+		c.frame(phiGrid);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue( "Circle","Square" ));
 		params.addm("Theory", new ChoiceValue("Exact", "Slow Near Edge", "Dynamic dt"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
-		params.add("Init Conditions", new ChoiceValue("Random Gaussian", "Read From File"));
+		params.add("Init Conditions", new ChoiceValue("Read From File", "Random Gaussian" ));
 		params.addm("Noise", new DoubleValue(0, 0, 1.0).withSlider());
 		params.addm("T", 0.02);
 		params.addm("H", 0.8);
@@ -115,17 +117,19 @@ public class TestLinearOptApp extends Simulation{
 		params.addm("Ry", 360.0);
 		params.add("L", 1000.0);
 		params.add("dx", 10.0);
+		params.addm("ky", 2);
+		params.addm("J", -1.0);
 		params.add("Random seed", 0);
 		params.add("Magnetization", 0.0);
 		params.addm("range change", 0.01);
-		params.add("dt", 1.0);
+		params.add("dt", 0.01);
 		params.add("Time");
 	}
 
 	public void animate() {
 		params.set("Time", ising.time());
-		params.set("Mean Phi", ising.mean(ising.phi));
-		params.set("Lp", ising.Lp);
+//		params.set("Mean Phi", ising.mean(ising.phi));
+//		params.set("Lp", ising.Lp);
 		phiGrid.registerData(Lp, Lp, ising.phi);
 		etaVsTimeSim.setAutoScale(true);
 		etaVsTimeLinear.setAutoScale(true);
@@ -188,14 +192,14 @@ public class TestLinearOptApp extends Simulation{
 	}
 
 	public void clear() {
-		etaAcc.clear();
-		etaLTAcc.clear();
-		etaAcc2.clear();
-		etaLTAcc2.clear();
-		etaAcc3.clear();
-		etaLTAcc3.clear();
-		etaAcc4.clear();
-		etaLTAcc4.clear();
+//		etaAcc.clear();
+//		etaLTAcc.clear();
+//		etaAcc2.clear();
+//		etaLTAcc2.clear();
+//		etaAcc3.clear();
+//		etaLTAcc3.clear();
+//		etaAcc4.clear();
+//		etaLTAcc4.clear();
 	}
  
 	public void run() {
@@ -366,8 +370,7 @@ public class TestLinearOptApp extends Simulation{
 	    
 		
 	}
-	
-	
+		
 	double [] simulateLinearK(){
 		double [] linearTheoryGrowth = new double[Lp*Lp];
 				
@@ -473,8 +476,6 @@ public class TestLinearOptApp extends Simulation{
 		f_k = fft.calculate1DFT(f_x);
 	}
 		
-
-	
 	double [] simulateLinearMod_kSpace(int ky){
 		double [] change = new double [Lp*Lp];
 
@@ -582,8 +583,8 @@ public class TestLinearOptApp extends Simulation{
 	}
 	
 	void initialize(){
-		if(params.sget("Init Conditions") == "Read From File")
-			readInputParams("../../../research/javaData/configs/inputParams");
+//		if(params.sget("Init Conditions") == "Read From File")
+//			readInputParams("../../../research/javaData/configs/inputParams");
 		ising = new IsingField2Dopt(params);
 		
 		etaAcc = new Accumulator(ising.dt);
