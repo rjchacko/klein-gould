@@ -9,6 +9,13 @@ import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.hypot;
 import static scikit.numerics.Math2.j1;
 import static scikit.numerics.Math2.sqr;
+
+import java.io.DataInputStream;
+import java.io.EOFException;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+
 import kip.util.Random;
 import scikit.jobs.params.Parameters;
 import scikit.numerics.fft.FFT2D;
@@ -51,7 +58,7 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 		T = params.fget("T");
 		H = params.fget("H");
 		dx = params.fget("dx");
-		dt = 1.0;
+		//dt = params.fget("dt");
 		rangeParameter = params.fget("range change");
 		noiseParameter = params.fget("Noise");
 		DENSITY = params.fget("Magnetization");
@@ -63,10 +70,35 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 		dx = L / Lp;
 		params.set("dx", dx);
 		N = Lp*Lp;
+		System.out.println("Lp = " + Lp);
 		t = 0;
 		allocate();
 		//initializeFieldWithHexSeed();
 		randomizeField(DENSITY);
+	}
+	
+	public void readConfigFromFile(){
+		try{
+			File myFile = new File("../../../research/javaData/configs/inputConfig");
+			DataInputStream dis = new DataInputStream(new FileInputStream(myFile));
+			int spaceIndex;
+			double phiValue;
+			try{
+				while(true){
+					spaceIndex =dis.readInt();
+					dis.readChar();       // throws out the tab
+					phiValue = dis.readDouble();
+					dis.readChar();
+					phi[spaceIndex] = phiValue;
+				}
+			} catch (EOFException e) {
+			}
+
+		} catch (FileNotFoundException e) {
+			System.err.println("FileStreamsTest: " + e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}
 	}
 	
 	public void initializeFieldWithHexSeed() {
@@ -96,8 +128,13 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 	}
 	
 	public void readParams(Parameters params) {
-		H = params.fget("H");
+		Rx = params.fget("Rx");
+		Ry = params.fget("Ry");
+		L = params.fget("L");
 		T = params.fget("T");
+		H = params.fget("H");
+		dx = params.fget("dx");
+		//dt = params.fget("dt");
 		rangeParameter = params.fget("range change");
 		noiseParameter = params.fget("Noise");
 		if(params.sget("Interaction") == "Circle") circleInteraction = true;
@@ -108,11 +145,59 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 	}
 
 	public void simulateUnstable(){
+		//System.out.println("start unstable");
+		//always start with a dt = 1;
+		dt = 1;
+		
 		for (int i = 0; i < Lp*Lp; i++) 
 			delPhi[i] = - dt* (-J*phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i]) - H);
-		for (int i = 0; i < Lp*Lp; i++) 
-			phi[i] += delPhi[i];
 		
+		// for each violator, find the min dt required for half step:
+		double [] testPhi = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++){
+			testPhi[i] = phi[i]+ delPhi[i];
+			if(testPhi[i] > 1.0){
+				//System.out.println("high exception");
+				double dtTest = ((1-phi[i])/2.0)/testPhi[i];
+				if(dtTest < dt) dt = dtTest;
+			}else if(testPhi[i] < -1.0){
+				//System.out.println("low exception");
+				double dtTest = ((-1-phi[i])/2.0)/testPhi[i];
+				if(dtTest < dt) dt = dtTest;
+			}
+		}
+		
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += dt*delPhi[i];			
+		t += dt;			
+		//maybe everything is OK
+//		if(maxTestPhi < 1.0 & minTestPhi >-1.0){
+//			System.out.println("Everything is OK");
+//			for (int i = 0; i < Lp*Lp; i++) 
+//				phi[i] = testPhi[i];			
+//			t += dt;			
+//		}else{
+//			//find the culprit
+//			if (abs(maxTestPhi)> abs(minTestPhi)){
+//				System.out.println("high exception");
+//				double halfStepValue = (1-phi[maxInt])/2.0;
+//				dt = halfStepValue/maxTestPhi;
+//				double newvalue =  phi[maxInt]+delPhi[maxInt]*dt;
+//				System.out.println("phiMax " + maxInt + " = " + newvalue + " max Phi = " + phi[maxInt]);
+//				for (int i = 0; i < Lp*Lp; i++) {
+//					double phii = phi[i]+ dt*delPhi[i];		
+//					//if(abs(phii) > 1.0) System.out.println("phi " + i + " = " + phi[i]);
+//				}
+//			}else{ 
+//				System.out.println("low exception");
+//				double halfStepValue = (1-abs(phi[minInt]))/2.0;
+//				dt = halfStepValue/abs(maxTestPhi);
+//				for (int i = 0; i < Lp*Lp; i++) 
+//					phi[i] += dt*delPhi[i];					
+//			}
+			
+			//System.out.println("dt = " + dt);
+
 	}
 	
 	public void simulate() {
@@ -144,7 +229,7 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 				entAccum -= T*entropy;
 				freeEnergy += potential - T*entropy - H*phi[i];
 			}
-		meanLambda /= Lp*Lp;
+		meanLambda /= Lp*Lp;		t += dt;
 		double mu = (mean(delPhi)-(DENSITY-mean(phi)))/meanLambda;
 		mu /= dt;
 		if (magConservation == false) mu = 0;

@@ -50,10 +50,10 @@ public class IsingField2DoptApp extends Simulation{
 		params.addm("Noise", new DoubleValue(0, 0, 1.0).withSlider());
 		params.addm("T", 0.02);
 		params.addm("H", 0.8);
-		params.addm("Rx", 415.0);
-		params.addm("Ry", 360.0);
-		params.add("L", 1000.0);
-		params.add("dx", 10.0);
+		params.addm("Rx", 2490000.0);
+		params.addm("Ry", 2160000.0);
+		params.add("L", 6000000.0);
+		params.add("dx", 60000.0);
 		params.add("Random seed", 0);
 		params.add("Magnetization", 0.0);
 		params.addm("range change", 0.01);

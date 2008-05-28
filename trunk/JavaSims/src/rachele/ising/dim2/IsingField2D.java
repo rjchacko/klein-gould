@@ -423,7 +423,7 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int x = 0; x < Lp; x++) {
 			slice[x] = phi[Lp*y + x];
 		}
-		return new PointSet(0, dx, slice);
+		return new PointSet(0, 1.0, slice);
 	}
 
 	public PointSet getVslice(){
@@ -432,7 +432,7 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int y = 0; y < Lp; y++) {
 			slice[y] = phi[Lp*y + x];
 		}
-		return new PointSet(0, dx, slice);
+		return new PointSet(0, 1.0, slice);
 	}
 
 	public PointSet get_delHslice(){
