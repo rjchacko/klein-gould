@@ -63,8 +63,8 @@
 #define gT22_re (+g22_re)
 #define gT22_im (-g22_im)
 
-#define latticeIndex (*(int *)(&G4.z))
-#define latticeIndexT (*(int *)(&G4.w))
+#define latticeIndex0 (*(int *)(&G4.z))
+#define latticeIndex1 (*(int *)(&G4.w))
 
 #define STRIDE 1
 #define o00_re s[STRIDE*0]
@@ -114,19 +114,20 @@ o30_re = o30_im = 0;
 o31_re = o31_im = 0;
 o32_re = o32_im = 0;
 
-if(0){
+if(1)
+{
     // Projector 0
     // 1 0 0 i 
     // 0 1 i 0 
     // 0 -i 1 0 
     // -i 0 0 1 
     // read spinor from device memory
-    float4 I0 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I1 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I2 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I3 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I4 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I5 = tex1Dfetch(spinor, sp_idx += L);
+    float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
+    float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
+    float4 I2 = tex1Dfetch(spinorTex, sp_idx + 2*L);
+    float4 I3 = tex1Dfetch(spinorTex, sp_idx + 3*L);
+    float4 I4 = tex1Dfetch(spinorTex, sp_idx + 4*L);
+    float4 I5 = tex1Dfetch(spinorTex, sp_idx + 5*L);
     
     // project spinor into half spinors
     float a0_re = +i00_re-i30_im;
@@ -144,11 +145,11 @@ if(0){
     float b2_im = +i12_im+i22_re;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G1 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G2 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G3 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G4 = tex1Dfetch(gauge, ga_idx += L);
+    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -198,23 +199,24 @@ if(0){
         o32_im += -A_re;
     }
     
-    sp_idx = zero + latticeIndexT;
-    ga_idx = zero + latticeIndexT + (1/2)*L*(20/4);
+    sp_idx = zero + latticeIndex0;
+    ga_idx = zero + latticeIndex0 + (1/2)*L*(20/4);
 }
 
-if(0){
+if(1)
+{
     // Projector 1
     // 1 0 0 -i 
     // 0 1 -i 0 
     // 0 i 1 0 
     // i 0 0 1 
     // read spinor from device memory
-    float4 I0 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I1 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I2 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I3 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I4 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I5 = tex1Dfetch(spinor, sp_idx += L);
+    float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
+    float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
+    float4 I2 = tex1Dfetch(spinorTex, sp_idx + 2*L);
+    float4 I3 = tex1Dfetch(spinorTex, sp_idx + 3*L);
+    float4 I4 = tex1Dfetch(spinorTex, sp_idx + 4*L);
+    float4 I5 = tex1Dfetch(spinorTex, sp_idx + 5*L);
     
     // project spinor into half spinors
     float a0_re = +i00_re+i30_im;
@@ -232,11 +234,11 @@ if(0){
     float b2_im = +i12_im-i22_re;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G1 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G2 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G3 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G4 = tex1Dfetch(gauge, ga_idx += L);
+    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -286,23 +288,24 @@ if(0){
         o32_im += +A_re;
     }
     
-    sp_idx = zero + latticeIndex;
-    ga_idx = zero + latticeIndex + (2/2)*L*(20/4);
+    sp_idx = zero + latticeIndex1;
+    ga_idx = zero + latticeIndex1 + (2/2)*L*(20/4);
 }
 
-if(0){
+if(1)
+{
     // Projector 2
     // 1 0 0 -1 
     // 0 1 1 0 
     // 0 1 1 0 
     // -1 0 0 1 
     // read spinor from device memory
-    float4 I0 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I1 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I2 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I3 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I4 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I5 = tex1Dfetch(spinor, sp_idx += L);
+    float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
+    float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
+    float4 I2 = tex1Dfetch(spinorTex, sp_idx + 2*L);
+    float4 I3 = tex1Dfetch(spinorTex, sp_idx + 3*L);
+    float4 I4 = tex1Dfetch(spinorTex, sp_idx + 4*L);
+    float4 I5 = tex1Dfetch(spinorTex, sp_idx + 5*L);
     
     // project spinor into half spinors
     float a0_re = +i00_re-i30_re;
@@ -320,11 +323,11 @@ if(0){
     float b2_im = +i12_im+i22_im;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G1 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G2 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G3 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G4 = tex1Dfetch(gauge, ga_idx += L);
+    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -374,23 +377,24 @@ if(0){
         o32_im += -A_im;
     }
     
-    sp_idx = zero + latticeIndexT;
-    ga_idx = zero + latticeIndexT + (3/2)*L*(20/4);
+    sp_idx = zero + latticeIndex0;
+    ga_idx = zero + latticeIndex0 + (3/2)*L*(20/4);
 }
 
-if(0){
+if(1)
+{
     // Projector 3
     // 1 0 0 1 
     // 0 1 -1 0 
     // 0 -1 1 0 
     // 1 0 0 1 
     // read spinor from device memory
-    float4 I0 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I1 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I2 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I3 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I4 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I5 = tex1Dfetch(spinor, sp_idx += L);
+    float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
+    float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
+    float4 I2 = tex1Dfetch(spinorTex, sp_idx + 2*L);
+    float4 I3 = tex1Dfetch(spinorTex, sp_idx + 3*L);
+    float4 I4 = tex1Dfetch(spinorTex, sp_idx + 4*L);
+    float4 I5 = tex1Dfetch(spinorTex, sp_idx + 5*L);
     
     // project spinor into half spinors
     float a0_re = +i00_re+i30_re;
@@ -408,11 +412,11 @@ if(0){
     float b2_im = +i12_im-i22_im;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G1 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G2 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G3 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G4 = tex1Dfetch(gauge, ga_idx += L);
+    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -462,23 +466,24 @@ if(0){
         o32_im += +A_im;
     }
     
-    sp_idx = zero + latticeIndex;
-    ga_idx = zero + latticeIndex + (4/2)*L*(20/4);
+    sp_idx = zero + latticeIndex1;
+    ga_idx = zero + latticeIndex1 + (4/2)*L*(20/4);
 }
 
-if(0){
+if(1)
+{
     // Projector 4
     // 1 0 i 0 
     // 0 1 0 -i 
     // -i 0 1 0 
     // 0 i 0 1 
     // read spinor from device memory
-    float4 I0 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I1 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I2 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I3 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I4 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I5 = tex1Dfetch(spinor, sp_idx += L);
+    float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
+    float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
+    float4 I2 = tex1Dfetch(spinorTex, sp_idx + 2*L);
+    float4 I3 = tex1Dfetch(spinorTex, sp_idx + 3*L);
+    float4 I4 = tex1Dfetch(spinorTex, sp_idx + 4*L);
+    float4 I5 = tex1Dfetch(spinorTex, sp_idx + 5*L);
     
     // project spinor into half spinors
     float a0_re = +i00_re-i20_im;
@@ -496,11 +501,11 @@ if(0){
     float b2_im = +i12_im-i32_re;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G1 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G2 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G3 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G4 = tex1Dfetch(gauge, ga_idx += L);
+    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -550,23 +555,24 @@ if(0){
         o32_im += +B_re;
     }
     
-    sp_idx = zero + latticeIndexT;
-    ga_idx = zero + latticeIndexT + (5/2)*L*(20/4);
+    sp_idx = zero + latticeIndex0;
+    ga_idx = zero + latticeIndex0 + (5/2)*L*(20/4);
 }
 
-if(0){
+if(1)
+{
     // Projector 5
     // 1 0 -i 0 
     // 0 1 0 i 
     // i 0 1 0 
     // 0 -i 0 1 
     // read spinor from device memory
-    float4 I0 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I1 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I2 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I3 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I4 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I5 = tex1Dfetch(spinor, sp_idx += L);
+    float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
+    float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
+    float4 I2 = tex1Dfetch(spinorTex, sp_idx + 2*L);
+    float4 I3 = tex1Dfetch(spinorTex, sp_idx + 3*L);
+    float4 I4 = tex1Dfetch(spinorTex, sp_idx + 4*L);
+    float4 I5 = tex1Dfetch(spinorTex, sp_idx + 5*L);
     
     // project spinor into half spinors
     float a0_re = +i00_re+i20_im;
@@ -584,11 +590,11 @@ if(0){
     float b2_im = +i12_im+i32_re;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G1 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G2 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G3 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G4 = tex1Dfetch(gauge, ga_idx += L);
+    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -638,8 +644,8 @@ if(0){
         o32_im += -B_re;
     }
     
-    sp_idx = zero + latticeIndex;
-    ga_idx = zero + latticeIndex + (6/2)*L*(20/4);
+    sp_idx = zero + latticeIndex1;
+    ga_idx = zero + latticeIndex1 + (6/2)*L*(20/4);
 }
 
 if(1)
@@ -650,12 +656,12 @@ if(1)
     // 1 0 1 0 
     // 0 1 0 1 
     // read spinor from device memory
-    float4 I0 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I1 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I2 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I3 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I4 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I5 = tex1Dfetch(spinor, sp_idx += L);
+    float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
+    float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
+    float4 I2 = tex1Dfetch(spinorTex, sp_idx + 2*L);
+    float4 I3 = tex1Dfetch(spinorTex, sp_idx + 3*L);
+    float4 I4 = tex1Dfetch(spinorTex, sp_idx + 4*L);
+    float4 I5 = tex1Dfetch(spinorTex, sp_idx + 5*L);
     
     // project spinor into half spinors
     float a0_re = +i00_re+i20_re;
@@ -673,11 +679,11 @@ if(1)
     float b2_im = +i12_im+i32_im;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G1 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G2 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G3 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G4 = tex1Dfetch(gauge, ga_idx += L);
+    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -727,23 +733,24 @@ if(1)
         o32_im += +B_im;
     }
     
-    sp_idx = zero + latticeIndexT;
-    ga_idx = zero + latticeIndexT + (7/2)*L*(20/4);
+    sp_idx = zero + latticeIndex0;
+    ga_idx = zero + latticeIndex0 + (7/2)*L*(20/4);
 }
 
-if(0){
+if(1)
+{
     // Projector 7
     // 1 0 -1 0 
     // 0 1 0 -1 
     // -1 0 1 0 
     // 0 -1 0 1 
     // read spinor from device memory
-    float4 I0 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I1 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I2 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I3 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I4 = tex1Dfetch(spinor, sp_idx += L);
-    float4 I5 = tex1Dfetch(spinor, sp_idx += L);
+    float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
+    float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
+    float4 I2 = tex1Dfetch(spinorTex, sp_idx + 2*L);
+    float4 I3 = tex1Dfetch(spinorTex, sp_idx + 3*L);
+    float4 I4 = tex1Dfetch(spinorTex, sp_idx + 4*L);
+    float4 I5 = tex1Dfetch(spinorTex, sp_idx + 5*L);
     
     // project spinor into half spinors
     float a0_re = +i00_re-i20_re;
@@ -761,11 +768,11 @@ if(0){
     float b2_im = +i12_im-i32_im;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G1 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G2 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G3 = tex1Dfetch(gauge, ga_idx += L);
-    float4 G4 = tex1Dfetch(gauge, ga_idx += L);
+    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -815,8 +822,8 @@ if(0){
         o32_im += -B_im;
     }
     
-    sp_idx = zero + latticeIndex;
-    ga_idx = zero + latticeIndex + (8/2)*L*(20/4);
+    sp_idx = zero + latticeIndex1;
+    ga_idx = zero + latticeIndex1 + (8/2)*L*(20/4);
 }
 
 
