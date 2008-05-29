@@ -277,17 +277,37 @@ public class IsingField2D extends AbstractIsing2D{
 			dest[i] = fftScratch[2*i] / (Lp*Lp);
 		}		
 	}
-	
 
-	
-
-	
 	public void simulateUnstable(){
 		convolveWithRange(phi, phi_bar, R);		
+		double dt0 = dt;
 		for (int i = 0; i < Lp*Lp; i++){
-			delPhi[i] = -dt*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H);
-			phi[i] += delPhi[i];
+			delPhi[i] = -dt0*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H);
 		}
+		
+//			phi[i] += delPhi[i];
+//		}
+
+		double [] testPhi = new double [Lp*Lp];
+		int ct = 0;
+		for (int i = 0; i < Lp*Lp; i++){
+			testPhi[i] = phi[i]+ delPhi[i];
+			if(testPhi[i] > 1.0){
+				ct += 1;
+				//System.out.println("high exception");
+				double dtTest = dt0*((1-phi[i])/2.0)/testPhi[i];
+				if(dtTest < dt) dt = dtTest;
+			}else if(testPhi[i] < -1.0){
+				ct += 1;
+				//System.out.println("low exception");
+				double dtTest = dt0*((-1-phi[i])/2.0)/testPhi[i];
+				if(dtTest < dt) dt = dtTest;
+			}
+		}
+		if (ct != 0) System.out.println("ct = " + ct);
+		
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += dt*delPhi[i]/dt0;			
 		t += dt;
 	}
 	
@@ -372,8 +392,6 @@ public class IsingField2D extends AbstractIsing2D{
 	public void accumEitherFreeEnergy(){
 		accEitherFreeEnergy.accum(T, freeEnergy);
 	}
-	
-
 	
 	public double phiVariance() {
 		double var = 0;

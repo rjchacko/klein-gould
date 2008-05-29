@@ -56,7 +56,7 @@ public class testLinearApp extends Simulation{
     //RUN OPTIONS
     boolean accEtaValues = false;
     boolean modifiedDynamics = false;
-    boolean writeToFile = false;
+    boolean writeToFile = true;
     
     public Accumulator etaAcc;
     public Accumulator etaAcc2;
@@ -114,7 +114,7 @@ public class testLinearApp extends Simulation{
 		params.addm("H", 0.80);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.0001);
-		params.addm("dt", 0.01);
+		//params.addm("dt", 0.01);
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
@@ -123,6 +123,8 @@ public class testLinearApp extends Simulation{
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
+		params.addm("dt", 0.01);
+		params.add("dt new");
 		params.add("Time");
 		params.add("Mean Phi");
 		params.add("Lp");
@@ -238,7 +240,9 @@ public class testLinearApp extends Simulation{
         			//rhs = simulateLinearKwithModDynamics();
         		}
         	}else{
+        		ising.readParams(params);
         		ising.simulateUnstable();
+        		params.set("dt new", ising.dt);
        			if(accEtaValues){	
        				rhs2D = simulateLinear(etaLT);	
        				//rhs = simulateLinearKbar();

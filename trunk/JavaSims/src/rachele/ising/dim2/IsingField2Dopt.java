@@ -7,7 +7,7 @@ import static java.lang.Math.sin;
 import static java.lang.Math.cos;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.hypot;
-import static scikit.numerics.Math2.j1;
+//import static scikit.numerics.Math2.j1;
 import static scikit.numerics.Math2.sqr;
 
 import java.io.DataInputStream;
@@ -17,6 +17,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 
 import kip.util.Random;
+import scikit.dataset.PointSet;
 import scikit.jobs.params.Parameters;
 import scikit.numerics.fft.FFT2D;
 import scikit.numerics.fft.managed.ComplexDouble2DFFT;
@@ -39,7 +40,7 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 	public static final double T_SP = 0.132279487396100031736846;	
 	public double lambda;
 	
-	public boolean circleInteraction = false;
+	//public boolean circleInteraction = false;
 	boolean magConservation = false;
 	public boolean recordTvsFE = false;
 	public boolean recordHvsFE = false;
@@ -58,7 +59,7 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 		T = params.fget("T");
 		H = params.fget("H");
 		dx = params.fget("dx");
-		//dt = params.fget("dt");
+		dt = params.fget("dt");
 		rangeParameter = params.fget("range change");
 		noiseParameter = params.fget("Noise");
 		DENSITY = params.fget("Magnetization");
@@ -134,7 +135,8 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 		T = params.fget("T");
 		H = params.fget("H");
 		dx = params.fget("dx");
-		//dt = params.fget("dt");
+		dt = params.fget("dt");
+		//System.out.println("input " + dt);
 		rangeParameter = params.fget("range change");
 		noiseParameter = params.fget("Noise");
 		if(params.sget("Interaction") == "Circle") circleInteraction = true;
@@ -147,29 +149,38 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 	public void simulateUnstable(){
 		//System.out.println("start unstable");
 		//always start with a dt = 1;
-		double dt0 = dt = 0.00001;
+		double dt0 = dt;
+		fft2.convolve(phi, phi_bar, new Function2D(){
+			public double eval(double k1, double k2) {
+				return potential(k1, k2);
+			}
+		});
 		
 		for (int i = 0; i < Lp*Lp; i++) 
 			delPhi[i] = - dt0* (-J*phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i]) - H);
 		
 		// for each violator, find the min dt required for half step:
 		double [] testPhi = new double [Lp*Lp];
+		int ct = 0;
 		for (int i = 0; i < Lp*Lp; i++){
 			testPhi[i] = phi[i]+ delPhi[i];
 			if(testPhi[i] > 1.0){
+				ct += 1;
 				//System.out.println("high exception");
 				double dtTest = dt0*((1-phi[i])/2.0)/testPhi[i];
 				if(dtTest < dt) dt = dtTest;
 			}else if(testPhi[i] < -1.0){
+				ct += 1;
 				//System.out.println("low exception");
 				double dtTest = dt0*((-1-phi[i])/2.0)/testPhi[i];
 				if(dtTest < dt) dt = dtTest;
 			}
 		}
-		
+		if (ct != 0) System.out.println("ct = " + ct);
 		for (int i = 0; i < Lp*Lp; i++) 
-			phi[i] += dt*delPhi[i];			
-		t += dt;			
+			phi[i] += dt*delPhi[i]/dt0;			
+		t += dt;	
+		//System.out.println("ising.dt = " + dt);
 
 
 	}
@@ -203,7 +214,7 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 				entAccum -= T*entropy;
 				freeEnergy += potential - T*entropy - H*phi[i];
 			}
-		meanLambda /= Lp*Lp;		t += dt;
+		meanLambda /= Lp*Lp;
 		double mu = (mean(delPhi)-(DENSITY-mean(phi)))/meanLambda;
 		mu /= dt;
 		if (magConservation == false) mu = 0;
@@ -225,9 +236,10 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 			del_phiSquared += phi[i]*phi[i];
 		}
 
-		dt = mean(Lambda);
-		double slope = (freeEnergy - lastFreeEnergy)/dt;
-		if (abs(slope) < slopeTolerance) recordHvsFE = true;//recordTvsFE = true;
+		//dt = .01;//mean(Lambda);
+//		double slope = (freeEnergy - lastFreeEnergy)/dt;
+//		if (abs(slope) < slopeTolerance) recordHvsFE = true;//recordTvsFE = true;
+		//System.out.println("dt = " + dt);
 		t += dt;	
 		lastFreeEnergy = freeEnergy;
 		
@@ -320,24 +332,27 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 		fft2.setLengths(L, L);
 	}
 	
-	private double potential(double kx, double ky){
-		double V;
-		double kRx = kx *Rx;
-		double kRy = ky *Ry;
-		if (circleInteraction == true){
-			double kR = hypot(kRx, kRy);
-			V = (kR == 0 ? 1 : 2*j1(kR)/kR);
-		}else{
-			V = (kRx == 0 ? 1 : sin(kRx)/kRx);
-			V *= (kRy == 0 ? 1 : sin(kRy)/kRy);
-		}
-		return V;
-	}
-	
 	private double dsquarePotential_dR1(double k1, double k2, double R1, double R2){
 		double potk2 = (k2 == 0) ? 1 : sin(k2*R2)/(k2*R2);
 		return (k1 == 0) ? 0 : potk2*(cos(k1*R1)/R1 - sin(k1*R1)/(k1*R1*R1));
 	}
 	
+	public PointSet getHslice(double horizontalSlice){
+		int y = (int) (horizontalSlice * Lp);
+		double slice[] = new double[Lp];
+		for (int x = 0; x < Lp; x++) {
+			slice[x] = phi[Lp*y + x];
+		}
+		return new PointSet(0, 1.0, slice);
+	}
+
+	public PointSet getVslice(double verticalSlice){
+		int x = (int) (verticalSlice * Lp);
+		double slice[] = new double[Lp];
+		for (int y = 0; y < Lp; y++) {
+			slice[y] = phi[Lp*y + x];
+		}
+		return new PointSet(0, 1.0, slice);
+	}
 
 }
