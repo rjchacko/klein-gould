@@ -1,5 +1,7 @@
 package rachele.ising.dim2.apps;
 
+import static scikit.util.Utilities.asList;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,6 +11,7 @@ import rachele.util.FourierTransformer;
 import rachele.util.MathTools;
 import rachele.ising.dim2.IsingField2Dopt;
 import rachele.util.FileUtil;
+import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -89,6 +92,8 @@ public class TestLinearOptApp extends Simulation{
     Plot etakPlot = new Plot("eta(k)");
     Grid phi0Grid = new Grid("phi_0");
     Grid phi0SliceGrid = new Grid("phi_0 slice");
+	Plot hSlice = new Plot("Horizontal Slice");
+	Plot vSlice = new Plot("Vertical Slice"); 
     Plot etaVsTimeSim = new Plot("eta v t");
     Plot etaVsTimeLinearK = new Plot("eta v t LT k space");
     Plot etaVsTimeLinear = new Plot("eta v t LT");
@@ -105,14 +110,17 @@ public class TestLinearOptApp extends Simulation{
 
 		if(accEtaValues) c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
 		c.frame(phiGrid);
+		c.frameTogether("Slices", vSlice, hSlice);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue( "Circle","Square" ));
 		params.addm("Theory", new ChoiceValue("Exact", "Slow Near Edge", "Dynamic dt"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
 		params.add("Init Conditions", new ChoiceValue("Read From File", "Random Gaussian" ));
 		params.addm("Noise", new DoubleValue(0, 0, 1.0).withSlider());
-		params.addm("T", 0.02);
-		params.addm("H", 0.8);
+		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
+		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
+		params.addm("T", 0.06);
+		params.addm("H", 0.5);
 		params.addm("Rx", 2490000.0);
 		params.addm("Ry", 2160000.0);
 		params.add("L", 6000000.0);
@@ -122,11 +130,14 @@ public class TestLinearOptApp extends Simulation{
 		params.add("Random seed", 0);
 		params.add("Magnetization", 0.0);
 		params.addm("range change", 0.01);
-		params.add("dt");
+		params.addm("dt", 0.00001);
+		params.add("dt new");
 		params.add("Time");
 	}
 
 	public void animate() {
+		hSlice.setAutoScale(true);
+		vSlice.setAutoScale(true);
 		params.set("Time", ising.time());
 //		params.set("Mean Phi", ising.mean(ising.phi));
 //		params.set("Lp", ising.Lp);
@@ -135,6 +146,21 @@ public class TestLinearOptApp extends Simulation{
 		etaVsTimeLinear.setAutoScale(true);
 		etaVsTimeLinearK.setAutoScale(true);
 		etaVsTimeLC.setAutoScale(true);
+		
+		
+		double horizontalSlice = params.fget("Horizontal Slice");
+		double verticalSlice = params.fget("Vertical Slice");
+		
+		
+		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
+		String fileName = "../../../research/javaData/configs1d/config";
+		double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
+		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
+		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
+		
+		phiGrid.setDrawables(asList(
+				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
+				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
 		
 		if(accEtaValues){
 			etaVsTimeSim.registerLines("acc", etaAcc, Color.BLACK);
@@ -236,8 +262,10 @@ public class TestLinearOptApp extends Simulation{
         		}
         	}else{
         		//System.out.println(ising.dt);
+        		ising.readParams(params);
         		ising.simulateUnstable();
-        		params.set("dt", ising.dt);
+        		//System.out.println(ising.dt + " dt");
+        		params.set("dt new", ising.dt);
        			if(accEtaValues){	
        				rhs2D = simulateLinear(etaLT);	
        				//rhs = simulateLinearKbar();

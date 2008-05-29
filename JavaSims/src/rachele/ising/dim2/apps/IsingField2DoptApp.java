@@ -2,6 +2,7 @@ package rachele.ising.dim2.apps;
 
 
 import static java.lang.Math.floor;
+import static scikit.util.Utilities.asList;
 //import static scikit.util.Utilities.*;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -14,11 +15,13 @@ import java.io.IOException;
 import rachele.ising.dim2.IsingField2Dopt;
 import rachele.util.FileUtil;
 import rachele.ising.dim2.StructureFactorOpt;
+import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.dataset.Accumulator;
+import scikit.dataset.PointSet;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
 import scikit.graphics.dim2.Plot;
@@ -28,11 +31,13 @@ public class IsingField2DoptApp extends Simulation{
     Grid grid = new Grid("Phi(x)");
     Grid delPhiGrid = new Grid("delPhi(x)");
     Grid sfGrid = new Grid("S(k)");
+	Plot hSlice = new Plot("Horizontal Slice");
+	Plot vSlice = new Plot("Vertical Slice"); 
     Plot fePlot = new Plot("Free Energy");
 	StructureFactorOpt sf;
 	IsingField2Dopt ising;
 	boolean initFile = false;
-	boolean showFE = true;
+	boolean showFE = false;
 	Accumulator freeEnergy;
     
     public static void main(String[] args) {
@@ -41,23 +46,27 @@ public class IsingField2DoptApp extends Simulation{
 	
 	public void load(Control c){
 		c.frameTogether("Grids", grid, sfGrid, delPhiGrid);
+		c.frameTogether("Slices", vSlice, hSlice);
 		if (showFE) c.frame(fePlot);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue( "Circle","Square" ));
 		params.addm("Theory", new ChoiceValue("Exact", "Slow Near Edge", "Dynamic dt"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
-		params.add("Init Conditions", new ChoiceValue("Random Gaussian", "Read From File"));
+		params.add("Init Conditions", new ChoiceValue("Read From File", "Random Gaussian"));
 		params.addm("Noise", new DoubleValue(0, 0, 1.0).withSlider());
-		params.addm("T", 0.02);
-		params.addm("H", 0.8);
+		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
+		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
+		params.addm("T", 0.06);
+		params.addm("H", 0.5);
 		params.addm("Rx", 2490000.0);
 		params.addm("Ry", 2160000.0);
 		params.add("L", 6000000.0);
-		params.add("dx", 60000.0);
+		params.add("dx", 30000.0);
 		params.add("Random seed", 0);
 		params.add("Magnetization", 0.0);
 		params.addm("range change", 0.01);
-		params.add("dt", 1.0);
+		params.addm("dt", 1.0);
+		params.add("dt new");
 		params.add("Time");
 		params.add("Free Energy");
 		params.add("Pot");
@@ -68,9 +77,12 @@ public class IsingField2DoptApp extends Simulation{
 		flags.add("Write Config");
 
 	}
-	
+//	System.out.println("dt = " + dt);
 	public void animate() {
-		ising.readParams(params);
+		hSlice.setAutoScale(true);
+		vSlice.setAutoScale(true);
+		
+		//ising.readParams(params);
 		if (params.sget("Zoom").equals("Yes"))grid.setAutoScale();
 		else grid.setScale(-1, 1);
 		fePlot.setAutoScale(true);
@@ -78,6 +90,21 @@ public class IsingField2DoptApp extends Simulation{
 			freeEnergy.accum(ising.t, ising.freeEnergy);
 			fePlot.registerLines("FE", freeEnergy, Color.RED);
 		}
+		
+		double horizontalSlice = params.fget("Horizontal Slice");
+		double verticalSlice = params.fget("Vertical Slice");
+		
+		
+		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
+		String fileName = "../../../research/javaData/configs1d/config";
+		double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
+		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
+		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
+		
+		grid.setDrawables(asList(
+				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
+				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
+		
 		sfGrid.registerData(ising.Lp, ising.Lp, sf.sFactor);
 		grid.registerData(ising.Lp, ising.Lp, ising.phi);
 		delPhiGrid.registerData(ising.Lp, ising.Lp, ising.phiVector);
@@ -86,7 +113,7 @@ public class IsingField2DoptApp extends Simulation{
 		params.set("Free Energy", ising.freeEnergy);
 		params.set("Pot", ising.potAccum);
 		params.set("Ent", ising.entAccum);
-		params.set("dt", ising.dt);
+		//params.set("dt", ising.dt);
 		if(flags.contains("Clear")) freeEnergy.clear();
 		if(flags.contains("Record FE")) recordTvsFE();
 		if(ising.recordTvsFE){
@@ -110,7 +137,7 @@ public class IsingField2DoptApp extends Simulation{
 	public void run() {
 		boolean recordSFtoFile = true;
 		ising = new IsingField2Dopt(params);
-		if(params.sget("Init Conditions") == "Read From File") readInitialConfiguration();
+		if(params.sget("Init Conditions") == "Read From File") readInitialConfiguration();//ising.readConfigFromFile();
 		double binWidth = 0.1;
 		binWidth = IsingField2Dopt.KR_SP / floor(IsingField2Dopt.KR_SP/binWidth);
         sf = new StructureFactorOpt(ising.Lp, ising.L);
@@ -127,7 +154,10 @@ public class IsingField2DoptApp extends Simulation{
         	ising.readParams(params);
         	if (flags.contains("Write Config"))	writeConfiguration();
         	params.set("Time", ising.time());
-			ising.simulate();
+			ising.simulateUnstable();
+			//System.out.println(ising.t);
+    		params.set("dt new", ising.dt);
+    		Job.animate();
 			//ising.adjustRanges();
 			if (ising.t > steps){
 				sf.takeFT(ising.phi);

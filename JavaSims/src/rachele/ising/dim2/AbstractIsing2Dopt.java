@@ -1,5 +1,7 @@
 package rachele.ising.dim2;
 
+import static java.lang.Math.sin;
+import static scikit.numerics.Math2.hypot;
 import static scikit.numerics.Math2.j0;
 import static scikit.numerics.Math2.j1;
 import static scikit.numerics.Math2.jn;
@@ -9,6 +11,7 @@ import scikit.jobs.params.Parameters;
 abstract public class AbstractIsing2Dopt {
 	public double L, Rx, Ry, T, dx, H, J;
 	public int Lp;
+	public boolean circleInteraction;
 	Random random = new Random();
 	
 	public static final double DENSITY = 1;
@@ -31,6 +34,20 @@ abstract public class AbstractIsing2Dopt {
 	public double dpotential_dkR(double kR) {
 		double kR2 = kR*kR;
 		return (kR == 0) ? 0 : j0(kR)/kR - 2*j1(kR)/kR2  - jn(2,kR)/kR;
+	}
+	
+	public double potential(double kx, double ky){
+		double V;
+		double kRx = kx *Rx;
+		double kRy = ky *Ry;
+		if (circleInteraction == true){
+			double kR = hypot(kRx, kRy);
+			V = (kR == 0 ? 1 : 2*j1(kR)/kR);
+		}else{
+			V = (kRx == 0 ? 1 : sin(kRx)/kRx);
+			V *= (kRy == 0 ? 1 : sin(kRy)/kRy);
+		}
+		return V;
 	}
 	
 	abstract public void readParams(Parameters params);
