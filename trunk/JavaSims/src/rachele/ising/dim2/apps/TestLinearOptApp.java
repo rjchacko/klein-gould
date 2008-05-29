@@ -283,7 +283,7 @@ public class TestLinearOptApp extends Simulation{
     		if(writeToFile){
     			if(ising.t >= recordStep){
     				recordSfDataToFile(etaK);
-    				recordStep += .0001;
+    				recordStep += .01;
     			}
     		}
 		}	

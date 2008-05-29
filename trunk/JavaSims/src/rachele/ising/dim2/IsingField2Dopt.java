@@ -147,10 +147,10 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 	public void simulateUnstable(){
 		//System.out.println("start unstable");
 		//always start with a dt = 1;
-		dt = 1;
+		double dt0 = dt = 0.00001;
 		
 		for (int i = 0; i < Lp*Lp; i++) 
-			delPhi[i] = - dt* (-J*phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i]) - H);
+			delPhi[i] = - dt0* (-J*phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i]) - H);
 		
 		// for each violator, find the min dt required for half step:
 		double [] testPhi = new double [Lp*Lp];
@@ -158,11 +158,11 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 			testPhi[i] = phi[i]+ delPhi[i];
 			if(testPhi[i] > 1.0){
 				//System.out.println("high exception");
-				double dtTest = ((1-phi[i])/2.0)/testPhi[i];
+				double dtTest = dt0*((1-phi[i])/2.0)/testPhi[i];
 				if(dtTest < dt) dt = dtTest;
 			}else if(testPhi[i] < -1.0){
 				//System.out.println("low exception");
-				double dtTest = ((-1-phi[i])/2.0)/testPhi[i];
+				double dtTest = dt0*((-1-phi[i])/2.0)/testPhi[i];
 				if(dtTest < dt) dt = dtTest;
 			}
 		}
@@ -170,33 +170,7 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 		for (int i = 0; i < Lp*Lp; i++) 
 			phi[i] += dt*delPhi[i];			
 		t += dt;			
-		//maybe everything is OK
-//		if(maxTestPhi < 1.0 & minTestPhi >-1.0){
-//			System.out.println("Everything is OK");
-//			for (int i = 0; i < Lp*Lp; i++) 
-//				phi[i] = testPhi[i];			
-//			t += dt;			
-//		}else{
-//			//find the culprit
-//			if (abs(maxTestPhi)> abs(minTestPhi)){
-//				System.out.println("high exception");
-//				double halfStepValue = (1-phi[maxInt])/2.0;
-//				dt = halfStepValue/maxTestPhi;
-//				double newvalue =  phi[maxInt]+delPhi[maxInt]*dt;
-//				System.out.println("phiMax " + maxInt + " = " + newvalue + " max Phi = " + phi[maxInt]);
-//				for (int i = 0; i < Lp*Lp; i++) {
-//					double phii = phi[i]+ dt*delPhi[i];		
-//					//if(abs(phii) > 1.0) System.out.println("phi " + i + " = " + phi[i]);
-//				}
-//			}else{ 
-//				System.out.println("low exception");
-//				double halfStepValue = (1-abs(phi[minInt]))/2.0;
-//				dt = halfStepValue/abs(maxTestPhi);
-//				for (int i = 0; i < Lp*Lp; i++) 
-//					phi[i] += dt*delPhi[i];					
-//			}
-			
-			//System.out.println("dt = " + dt);
+
 
 	}
 	
