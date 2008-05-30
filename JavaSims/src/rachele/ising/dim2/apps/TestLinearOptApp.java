@@ -133,11 +133,10 @@ public class TestLinearOptApp extends Simulation{
 		params.addm("dt", 0.00001);
 		params.add("dt new");
 		params.add("Time");
+		flags.add("Write 1D Config");
 	}
 
 	public void animate() {
-		hSlice.setAutoScale(true);
-		vSlice.setAutoScale(true);
 		params.set("Time", ising.time());
 //		params.set("Mean Phi", ising.mean(ising.phi));
 //		params.set("Lp", ising.Lp);
@@ -146,11 +145,11 @@ public class TestLinearOptApp extends Simulation{
 		etaVsTimeLinear.setAutoScale(true);
 		etaVsTimeLinearK.setAutoScale(true);
 		etaVsTimeLC.setAutoScale(true);
-		
+		hSlice.setAutoScale(true);
+		vSlice.setAutoScale(true);		
 		
 		double horizontalSlice = params.fget("Horizontal Slice");
 		double verticalSlice = params.fget("Vertical Slice");
-		
 		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		String fileName = "../../../research/javaData/configs1d/config";
@@ -254,6 +253,10 @@ public class TestLinearOptApp extends Simulation{
 		Job.animate();
 
 		while (true) {
+			if (flags.contains("Write 1D Config")){
+				write1Dconfig();
+				flags.clear();
+			}
 			if(modifiedDynamics){
         		ising.simulate();
         		if(accEtaValues){
@@ -263,7 +266,7 @@ public class TestLinearOptApp extends Simulation{
         	}else{
         		//System.out.println(ising.dt);
         		ising.readParams(params);
-        		ising.simulateUnstable();
+        		ising.simulate();
         		//System.out.println(ising.dt + " dt");
         		params.set("dt new", ising.dt);
        			if(accEtaValues){	
@@ -338,7 +341,7 @@ public class TestLinearOptApp extends Simulation{
 	* (unmodified) Ising dynamics.
 	*/
 	private void findMatrix() {
-		double kyValue = 2.0*Math.PI*ising.Rx*ky/ising.L;
+		double kyValue = 2.0*Math.PI*ising.Ry*ky/ising.L;
 		double kxValue;
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j <= i; j++){
@@ -349,7 +352,7 @@ public class TestLinearOptApp extends Simulation{
 			if(i >= Lp/2)
 				kxValue = 2.0*Math.PI*ising.Rx*(i-Lp)/ising.L;
 			else
-				kxValue = 2.0*Math.PI*ising.Ry*i/ising.L;
+				kxValue = 2.0*Math.PI*ising.Rx*i/ising.L;
 			if(ising.circleInteraction)
 				M[i][i]-=ising.findVkCircle(Math.sqrt(kxValue*kxValue + kyValue*kyValue));
 			else
@@ -665,5 +668,11 @@ public class TestLinearOptApp extends Simulation{
 		findPhi0andPhi0_bar();
 	}	
 
+	private void write1Dconfig(){
+		String configFileName = "../../../research/javaData/configs1d/config";
+		FileUtil.deleteFile(configFileName);
+		FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
+	}
+	
 }
 

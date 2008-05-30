@@ -159,20 +159,22 @@ public class IsingField2DApp extends Simulation {
 		}
 		dS_dtPlot.registerLines("sf change slice", sfChange, Color.BLACK);
 
+		double horizontalSlice = params.fget("Horizontal Slice");
+		double verticalSlice = params.fget("Vertical Slice");
 		
 		grid.setDrawables(asList(
-				Geom2D.line(0, ising.horizontalSlice, 1, ising.horizontalSlice, Color.GREEN),
-				Geom2D.line(ising.verticalSlice, 0, ising.verticalSlice, 1, Color.BLUE)));
+				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
+				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
 
 		delPhiGrid.setDrawables(asList(
-				Geom2D.line(0, ising.horizontalSlice, 1, ising.horizontalSlice, Color.RED),
-				Geom2D.line(ising.verticalSlice, 0, ising.verticalSlice, 1, Color.BLACK)));
+				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.RED),
+				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLACK)));
 		
-		hSlice.registerLines("Slice", ising.getHslice(), Color.GREEN);
+		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		String fileName = "../../../research/javaData/configs1d/config";
 		double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
-		vSlice.registerLines("Slice", ising.getVslice(), Color.BLUE);
+		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
 		freeEnergyPlot.registerLines("Free Energy", ising.getFreeEnergyAcc(), Color.MAGENTA);
 		
 		if(ising.circleInt() == true){

@@ -24,8 +24,6 @@ public class IsingField2D extends AbstractIsing2D{
 	public double freeEnergy;
 	public int aveCount;
 	public double [] phi_bar, delPhi, Lambda, A;
-	public double horizontalSlice;
-	public double verticalSlice;
 	ComplexDouble2DFFT fft;	// Object to perform transforms
 	double[] fftScratch;
 	
@@ -78,8 +76,6 @@ public class IsingField2D extends AbstractIsing2D{
 		accEitherFreeEnergy = new Accumulator(0.0001);
 		accFreeEnergy = new Accumulator(dt);
 		
-		horizontalSlice = params.fget("Horizontal Slice");
-		verticalSlice = params.fget("Vertical Slice");
 		if(params.sget("Interaction") == "Circle")
 			circleInteraction = true;
 		noiseParameter = params.fget("Noise");
@@ -227,8 +223,6 @@ public class IsingField2D extends AbstractIsing2D{
 		else if(params.sget("Dynamics?") == "Langevin No M Conservation")
 			magConservation = false;
 		theory = params.sget("Approx");
-		horizontalSlice = params.fget("Horizontal Slice");
-		verticalSlice = params.fget("Vertical Slice");
 	}
 	
 	public void initializeFieldWithSeed() {
@@ -435,7 +429,7 @@ public class IsingField2D extends AbstractIsing2D{
 		return circleInteraction;
 	}
 	
-	public PointSet getHslice(){
+	public PointSet getHslice(double horizontalSlice){
 		int y = (int) (horizontalSlice * Lp);
 		double slice[] = new double[Lp];
 		for (int x = 0; x < Lp; x++) {
@@ -444,7 +438,7 @@ public class IsingField2D extends AbstractIsing2D{
 		return new PointSet(0, 1.0, slice);
 	}
 
-	public PointSet getVslice(){
+	public PointSet getVslice(double verticalSlice){
 		int x = (int) (verticalSlice * Lp);
 		double slice[] = new double[Lp];
 		for (int y = 0; y < Lp; y++) {
@@ -453,7 +447,7 @@ public class IsingField2D extends AbstractIsing2D{
 		return new PointSet(0, 1.0, slice);
 	}
 
-	public PointSet get_delHslice(){
+	public PointSet get_delHslice(double horizontalSlice){
 		int y = (int) (horizontalSlice * Lp);
 		double slice[] = new double[Lp];
 		for (int x = 0; x < Lp; x++) {
@@ -462,7 +456,7 @@ public class IsingField2D extends AbstractIsing2D{
 		return new PointSet(0, dx, slice);
 	}	
 
-	public PointSet get_delVslice(){
+	public PointSet get_delVslice(double verticalSlice){
 		int x = (int) (verticalSlice * Lp);
 		double slice[] = new double[Lp];
 		for (int y = 0; y < Lp; y++) {

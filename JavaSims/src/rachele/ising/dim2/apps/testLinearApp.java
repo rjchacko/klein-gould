@@ -1,5 +1,7 @@
 package rachele.ising.dim2.apps;
 
+import static scikit.util.Utilities.asList;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -9,6 +11,7 @@ import rachele.util.FourierTransformer;
 import rachele.util.MathTools;
 import rachele.ising.dim2.IsingField2D;
 import rachele.util.FileUtil;
+import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -93,14 +96,19 @@ public class testLinearApp extends Simulation{
     Plot fkPlot = new Plot ("f(k)");
     Plot etakSimPlot = new Plot("eta k sim");
     Plot convolve = new Plot("convolve");
+    
+	Plot hSlice = new Plot("Horizontal Slice");
+	Plot vSlice = new Plot("Vertical Slice"); 
 
     
 	public static void main(String[] args) {
 		new Control(new testLinearApp(), "Ising Linear Test");
 	}
+	
 	public void load(Control c) {
 		if(accEtaValues) c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
 		c.frame(phiGrid);
+		c.frameTogether("Slices", vSlice, hSlice);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -129,6 +137,7 @@ public class testLinearApp extends Simulation{
 		params.add("Mean Phi");
 		params.add("Lp");
 		flags.add("Clear");
+		flags.add("Write 1D Config");
 	}
 
 	public void animate() {
@@ -140,6 +149,8 @@ public class testLinearApp extends Simulation{
 		etaVsTimeLinear.setAutoScale(true);
 		etaVsTimeLinearK.setAutoScale(true);
 		etaVsTimeLC.setAutoScale(true);
+		hSlice.setAutoScale(true);
+		vSlice.setAutoScale(true);
 		
 		if(accEtaValues){
 			etaVsTimeSim.registerLines("acc", etaAcc, Color.BLACK);
@@ -163,6 +174,19 @@ public class testLinearApp extends Simulation{
 			etaVsTimeLC.registerLines("acc4LC", etaLCAcc4, Color.ORANGE);
 		}
 
+		double horizontalSlice = params.fget("Horizontal Slice");
+		double verticalSlice = params.fget("Vertical Slice");
+		
+		phiGrid.setDrawables(asList(
+				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
+				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
+		
+		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
+		String fileName = "../../../research/javaData/configs1d/config";
+		double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
+		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
+		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
+		
 		double [] eigenVect2D = new double [Lp*Lp];
 		for (int i = 0; i < Lp; i++){
 			for (int  j = 0; j < Lp; j++){
@@ -208,6 +232,10 @@ public class testLinearApp extends Simulation{
 	}
  
 	public void run() {
+		if (flags.contains("Write 1D Config")){
+			write1Dconfig();
+			flags.clear();
+		}
 		clearFile = true;
 		initialize();
 		ky = params.iget("ky");
@@ -411,7 +439,6 @@ public class testLinearApp extends Simulation{
 	    
 		
 	}
-	
 	
 	double [] simulateLinearK(){
 		double [] linearTheoryGrowth = new double[Lp*Lp];
@@ -673,4 +700,9 @@ public class testLinearApp extends Simulation{
 		findPhi0andPhi0_bar();
 	}	
 
+	private void write1Dconfig(){
+		String configFileName = "../../../research/javaData/configs1d/config";
+		FileUtil.deleteFile(configFileName);
+		FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
+	}
 }
