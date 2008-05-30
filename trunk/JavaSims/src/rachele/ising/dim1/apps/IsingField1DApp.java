@@ -153,7 +153,6 @@ public class IsingField1DApp extends Simulation{
 			
 		}
 	}
-
 	
 	public void writeInputParams(String FileName){
 		try {
@@ -181,7 +180,6 @@ public class IsingField1DApp extends Simulation{
 			ex.printStackTrace();
 		}
 	}
-
 
 	public void writeConfigToFileWithTime(String FileName){
 		try {
