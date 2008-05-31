@@ -87,12 +87,17 @@ void runTest( int argc, char** argv)  {
     CUDA_SAFE_CALL(cudaMemcpy(packedSpinorOut, d_spinorOut, L*SPINOR_BYTES, cudaMemcpyDeviceToHost));
     unpackSpinorField(spinorOut, packedSpinorOut);
     computeGold(spinorRef, gaugeIn, spinorIn);
-    CUTBoolean res = cutComparefe(spinorOut, spinorRef, L*SPINOR_BYTES, 1e-6);
-    printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
+    CUTBoolean res = cutComparefe(spinorOut, spinorRef, L*SPINOR_SIZE, 1e-4);
     
     printSpinorField(spinorRef);
     printf("\n");
     printSpinorField(spinorOut);
+
+    printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
+    
+    
+    testSpinorField(spinorOut);
+    
     
     // cleanup memory
     free(gaugeIn);
