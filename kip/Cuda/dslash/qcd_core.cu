@@ -827,10 +827,35 @@ if(1)
 }
 
 
-g_out[0*L+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
-g_out[1*L+sid] = make_float4(o02_re, o02_im, o10_re, o10_im);
-g_out[2*L+sid] = make_float4(o11_re, o11_im, o12_re, o12_im);
-g_out[3*L+sid] = make_float4(o20_re, o20_im, o21_re, o21_im);
-g_out[4*L+sid] = make_float4(o22_re, o22_im, o30_re, o30_im);
-g_out[5*L+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
+//g_out[0*L+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
+//g_out[1*L+sid] = make_float4(o02_re, o02_im, o10_re, o10_im);
+//g_out[2*L+sid] = make_float4(o11_re, o11_im, o12_re, o12_im);
+//g_out[3*L+sid] = make_float4(o20_re, o20_im, o21_re, o21_im);
+//g_out[4*L+sid] = make_float4(o22_re, o22_im, o30_re, o30_im);
+//g_out[5*L+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
+
+((float*)g_out)[0*L+sid] = o00_re;
+((float*)g_out)[1*L+sid] = o00_im;
+((float*)g_out)[2*L+sid] = o01_re;
+((float*)g_out)[3*L+sid] = o01_im;
+((float*)g_out)[4*L+sid] = o02_re;
+((float*)g_out)[5*L+sid] = o02_im;
+((float*)g_out)[6*L+sid] = o10_re;
+((float*)g_out)[7*L+sid] = o10_im;
+((float*)g_out)[8*L+sid] = o11_re;
+((float*)g_out)[9*L+sid] = o11_im;
+((float*)g_out)[10*L+sid] = o12_re;
+((float*)g_out)[11*L+sid] = o12_im;
+((float*)g_out)[12*L+sid] = o20_re;
+((float*)g_out)[13*L+sid] = o20_im;
+((float*)g_out)[14*L+sid] = o21_re;
+((float*)g_out)[15*L+sid] = o21_im;
+((float*)g_out)[16*L+sid] = o22_re;
+((float*)g_out)[17*L+sid] = o22_im;
+((float*)g_out)[18*L+sid] = o30_re;
+((float*)g_out)[19*L+sid] = o30_im;
+((float*)g_out)[20*L+sid] = o31_re;
+((float*)g_out)[21*L+sid] = o31_im;
+((float*)g_out)[22*L+sid] = o32_re;
+((float*)g_out)[23*L+sid] = o32_im;
 

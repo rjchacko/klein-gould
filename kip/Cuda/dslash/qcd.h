@@ -2,7 +2,7 @@
 #define L0 16 // "time" dimension
 #define L1 16 // "x" dimension
 #define L2 16 // "y" dimension
-#define L3 16 // "z" dimension
+#define L3 8 // "z" dimension
 #define L (L0*L1*L2*L3) // total number of lattice points
 
 #define BLOCK_DIM (64) // threads per block

@@ -92,12 +92,10 @@ void runTest( int argc, char** argv)  {
     printSpinorField(spinorRef);
     printf("\n");
     printSpinorField(spinorOut);
-
+    
     printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
     
-    
-    testSpinorField(spinorOut);
-    
+    // testSpinorField(spinorOut);
     
     // cleanup memory
     free(gaugeIn);
