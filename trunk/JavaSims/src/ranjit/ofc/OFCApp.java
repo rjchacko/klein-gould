@@ -45,7 +45,7 @@ public class OFCApp extends Simulation{
 		
 		ColorGradient smooth = new ColorGradient();
 		for (int i=0 ; i<OFCModel.sites.length ; i++){
-			smooth.getColor(OFCModel.sites[i].stress,-2,OFCModel.maxStress);
+			smooth.getColor(OFCModel.sites[i].stress,OFCModel.minStress,OFCModel.maxStress);
 		}
 		
 		grid1.setColors(smooth);

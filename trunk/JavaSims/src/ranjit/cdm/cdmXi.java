@@ -17,11 +17,13 @@ public class cdmXi extends Simulation {
 	Accumulator mt=new Accumulator(1);
 	Accumulator delta=new Accumulator(1);
 	Accumulator xi=new Accumulator(0.00001);
+	Accumulator lbar=new Accumulator(0.00001);
 	
 	Plot numDown=new Plot("Number of spins in stable state");
 	Plot mag=new Plot("magnetization");
 	Plot moft=new Plot("m(t)");
 	Plot XI=new Plot("Xi(h)");
+	Plot lbarplot=new Plot("l(h)");
 	
 	int Nl[];
 	double deltaE[];
@@ -44,7 +46,7 @@ public class cdmXi extends Simulation {
 		params.add("dimension",2);
 		params.add("MCS per measurement", 1000);
 		params.add("h");
-		c.frame(moft, mag,XI);
+		c.frame(moft, mag,XI,lbarplot);
 		numDown.setAutoScale(false);
 	}
 	
@@ -54,7 +56,7 @@ public class cdmXi extends Simulation {
 		initialize();
 		Job.animate();	
 		
-		for(h=0;h>-0.05;h-=0.001){
+		for(h=0;h>-0.06;h-=0.001){
 			params.set("h", h);
 			clear();
 			initialize();
@@ -65,7 +67,13 @@ public class cdmXi extends Simulation {
 			}
 			double susceptibility=l2accum/runLength-(laccum/runLength)*(laccum/runLength);
 			xi.accum(h,susceptibility);
-			
+			double lnum=0,ldenom=0;
+			for(int i=0;i<Nl.length;i++){
+				lnum+=i*Nl[i];
+				ldenom+=Nl[i];
+			}
+			double x=lnum/ldenom;
+			lbar.accum(h, x);
 		}
 	}
 	
@@ -75,6 +83,7 @@ public class cdmXi extends Simulation {
 		mag.registerBars("magnetization", magnetization, Color.RED);
 		moft.registerPoints("m(t)", mt, Color.RED);
 		XI.registerPoints("Xi(h)",xi, Color.RED);
+		lbarplot.registerPoints("l(h)", lbar, Color.RED);
 	}
 
 	@Override
@@ -86,6 +95,7 @@ public class cdmXi extends Simulation {
 		moft.clear();
 		N.clear();
 		mt.clear();
+		
 		mcs=0;
 	}
 	
