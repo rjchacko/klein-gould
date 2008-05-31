@@ -1,5 +1,5 @@
 
-#define L0 8 // "time" dimension
+#define L0 16 // "time" dimension
 #define L1 16 // "x" dimension
 #define L2 16 // "y" dimension
 #define L3 16 // "z" dimension
@@ -24,6 +24,7 @@ extern "C" void packGaugeField(float4 *res, float *gauge);
 extern "C" void packSpinorField(float4 *res, float *spinor);
 extern "C" void unpackSpinorField(float *res, float4 *spinorPacked);
 extern "C" void printSpinorField(float *spinor);
+extern "C" void testSpinorField(float *spinor);
 
 extern "C" void computeGold(float* res, float* gauge, float *spinor);
 

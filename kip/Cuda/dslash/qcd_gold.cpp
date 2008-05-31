@@ -5,6 +5,7 @@ typedef struct {
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <math.h>
 #include "qcd.h"
 
 
@@ -90,10 +91,10 @@ void unpackSpinorField(float *res, float4 *spinorPacked) {
     for (int i = 0; i < L; i++) {
         for (int j = 0; j < 6; j++) {
             float4 f4 = spinorPacked[j*L + i];
-            res[i*24 + 4*j + 0] = f4.x;
-            res[i*24 + 4*j + 1] = f4.y;
-            res[i*24 + 4*j + 2] = f4.z;
-            res[i*24 + 4*j + 3] = f4.w;
+            res[i*(6*4) + j*(4) + 0] = f4.x;
+            res[i*(6*4) + j*(4) + 1] = f4.y;
+            res[i*(6*4) + j*(4) + 2] = f4.z;
+            res[i*(6*4) + j*(4) + 3] = f4.w;
         }
     }
 }
@@ -137,24 +138,157 @@ void dot(float* res, float* a, float* b) {
     }
 }
 
+void su3_transpose(float *res, float *mat) {
+    for (int m = 0; m < 3; m++) {
+        for (int n = 0; n < 3; n++) {
+            res[m*(3*2) + n*(2) + 0] = + mat[n*(3*2) + m*(2) + 0];
+            res[m*(3*2) + n*(2) + 1] = - mat[n*(3*2) + m*(2) + 1];
+        }
+    }
+}
+
 void su3_mul(float *res, float *mat, float *vec) {
     for (int n = 0; n < 3; n++) {
         dot(&res[n*(2)], &mat[n*(3*2)], vec);
     }
 }
 
-void multiplyGaugeBySpinor(float *res, int dir, float *gauge, float *spinor) {
+void su3_Tmul(float *res, float *mat, float *vec) {
+    float matT[3*3*2];
+    su3_transpose(matT, mat);
+    su3_mul(res, matT, vec);
+}
+
+void zero(float* a, int cnt) {
+    for (int i = 0; i < cnt; i++)
+        a[i] = 0;
+}
+
+void copy(float *dst, float *src, int cnt) {
+    for (int i = 0; i < cnt; i++)
+        dst[i] = src[i];
+}
+
+void sum(float *dst, float *a, float *b, int cnt) {
+    for (int i = 0; i < cnt; i++)
+        dst[i] = a[i] + b[i];
+}
+
+    
+const float projector[8][4][4][2] =
+{
+    {
+      {{1,0}, {0,0}, {0,0}, {0,1}},
+      {{0,0}, {1,0}, {0,1}, {0,0}},
+      {{0,0}, {0,-1}, {1,0}, {0,0}},
+      {{0,-1}, {0,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,0}, {0,-1}},
+      {{0,0}, {1,0}, {0,-1}, {0,0}},
+      {{0,0}, {0,1}, {1,0}, {0,0}},
+      {{0,1}, {0,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,0}, {-1,0}},
+      {{0,0}, {1,0}, {1,0}, {0,0}},
+      {{0,0}, {1,0}, {1,0}, {0,0}},
+      {{-1,0}, {0,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,0}, {1,0}},
+      {{0,0}, {1,0}, {-1,0}, {0,0}},
+      {{0,0}, {-1,0}, {1,0}, {0,0}},
+      {{1,0}, {0,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,1}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {0,-1}},
+      {{0,-1}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {0,1}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,-1}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {0,1}},
+      {{0,1}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {0,-1}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {1,0}},
+      {{1,0}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {-1,0}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {-1,0}},
+      {{-1,0}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {-1,0}, {0,0}, {1,0}}
+    }
+};
+
+
+void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
+    zero(res, 4*3*2);
+    
     for (int s = 0; s < 4; s++) {
-        su3_mul(&res[s*(3*2)], gauge, &spinor[s*(3*2)]);
+        for (int t = 0; t < 4; t++) {
+            float projRe = projector[dir][s][t][0];
+            float projIm = projector[dir][s][t][1];
+            
+            for (int m = 0; m < 3; m++) {
+                float spinorRe = spinorIn[t*(3*2) + m*(2) + 0];
+                float spinorIm = spinorIn[t*(3*2) + m*(2) + 1];
+                res[s*(3*2) + m*(2) + 0] += projRe*spinorRe - projIm*spinorIm;
+                res[s*(3*2) + m*(2) + 1] += projRe*spinorIm + projIm*spinorRe;
+            }
+        }
     }
 }
 
 void computeGold(float* res, float* gauge, float *spinor) {
-    for (int i = 0; i < L; i++) {
-        multiplyGaugeBySpinor(&res[i*(4*3*2)], 0, &gauge[i*(4*3*3*2)], &spinor[i*(4*3*2)]);
+    zero(res, L*4*3*2);
+    
+    for (int idxOut = 0; idxOut < L; idxOut++) {
+        int idxIn = idxOut;
+        for (int dir = 0; dir < 1; dir++) {
+            float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
+            float *gaugeMatrix = &gauge[idxIn*(4*3*3*2) + (dir/2)*(3*3*2)];
+            multiplySpinorByDiracProjector(projectedSpinor, dir, &spinor[idxIn*(4*3*2)]);
+            
+            for (int s = 0; s < 4; s++) {
+                if (dir % 2 == 0)
+                    su3_mul(&gaugedSpinor[s*(3*2)], gaugeMatrix, &projectedSpinor[s*(3*2)]);
+                else
+                    su3_Tmul(&gaugedSpinor[s*(3*2)], gaugeMatrix, &projectedSpinor[s*(3*2)]);
+            }
+            
+            sum(&res[idxIn*(4*3*2)], &res[idxIn*(4*3*2)], gaugedSpinor, 4*3*2);
+            idxIn = nextIndex(idxIn, dir);
+        }
     }
 }
 
+
+float dist(float x, float y) {
+    return fabs(x - y);
+}
+
+void testSpinorField(float *spinor) {
+    for (int i = 0; i < L; i++) {
+        for (int j = 0; j < 12; j++) {
+            if (dist(spinor[i*(4*3*2) + j], 3) > 1e-6) {
+                printf("doh1 %d %f %f\n", i, spinor[i*(4*3*2) + j], 3.0);
+            }
+        }
+        for (int j = 12; j < 24; j++) {
+            float target = (j%2 == 0) ? 3 : -3;
+            if (dist(spinor[i*(4*3*2) + j], target) > 1e-6) {
+                printf("doh2 %d %f %f\n", i, spinor[i*(4*3*2) + j], target);
+            }
+        }
+    }
+}
 
 void printVector(float *v) {
     printf("{(%f %f) (%f %f) (%f %f)}\n", v[0], v[1], v[2], v[3], v[4], v[5]);
@@ -163,7 +297,7 @@ void printVector(float *v) {
 
 void printSpinorField(float *spinor) {
     for (int s = 0; s < 4; s++) {
-        printVector(&spinor[s*(3*2)]);
+        printVector(&spinor[0*(4*3*2) + s*(3*2)]);
     }
     printf("...\n");
     for (int s = 0; s < 4; s++) {
