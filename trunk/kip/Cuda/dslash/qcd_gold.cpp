@@ -50,70 +50,13 @@ int nextIndex(int i, int dir) {
     }
 }
 
-void packGaugeField(float4 *res, float *gauge) {
-    for (int i = 0; i < L; i++) {
-        for (int dir = 0; dir < 4; dir++) {
-            for (int j = 0; j < 5; j++) {
-                float a1, a2, a3, a4;
-                a1 = gauge[i*4*18 + dir*18 + 4*j + 0];
-                a2 = gauge[i*4*18 + dir*18 + 4*j + 1];
-                if (j < 4) {
-                    a3 = gauge[i*4*18 + dir*18 + 4*j + 2];
-                    a4 = gauge[i*4*18 + dir*18 + 4*j + 3];
-                }
-                else {
-                    int i3 = nextIndex(i, 2*dir+0);
-                    int i4 = nextIndex(i, 2*dir+1);
-                    a3 = *(float *)&i3;
-                    a4 = *(float *)&i4;
-                }
-                float4 f4 = {a1, a2, a3, a4};
-                res[(dir*5+j)*L + i] = f4;
-            }
-        }
-    }
-}
-
-void packSpinorField(float4 *res, float *spinor) {
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < 6; j++) {
-            float a1 = spinor[i*24 + 4*j + 0];
-            float a2 = spinor[i*24 + 4*j + 1];
-            float a3 = spinor[i*24 + 4*j + 2];
-            float a4 = spinor[i*24 + 4*j + 3];
-            float4 f4 = {a1, a2, a3, a4};
-            res[j*L + i] = f4;
-        }
-    }
-}
-
-void unpackSpinorField(float *res, float4 *spinorPacked) {
-    for (int i = 0; i < L; i++) {
-        if (0) {
-            for (int j = 0; j < 6; j++) {
-                float4 f4 = spinorPacked[j*L + i];
-                res[i*(6*4) + j*(4) + 0] = f4.x;
-                res[i*(6*4) + j*(4) + 1] = f4.y;
-                res[i*(6*4) + j*(4) + 2] = f4.z;
-                res[i*(6*4) + j*(4) + 3] = f4.w;
-            }
-        }
-        else {
-            for (int j = 0; j < 24; j++) {
-                res[i*24 + j] = ((float *)spinorPacked)[j*L + i];
-            }
-        }
-    }
-}
-
-
 void constructGaugeField(float *res) {
     for(int i = 0; i < L; i++) {
         for (int dir = 0; dir < 4; dir++) {
             for (int m = 0; m < 3; m++) {
                 for (int n = 0; n < 3; n++) {
-                    res[i*(4*3*3*2) + dir*(3*3*2) + m*(3*2) + n*(2) + 0] = 1;
-                    res[i*(4*3*3*2) + dir*(3*3*2) + m*(3*2) + n*(2) + 1] = 0;
+                    res[i*(4*3*3*2) + dir*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
+                    res[i*(4*3*3*2) + dir*(3*3*2) + m*(3*2) + n*(2) + 1] = rand() / (float)RAND_MAX;
                 }
             }
         }
@@ -125,8 +68,8 @@ void constructSpinorField(float *res) {
     for(int i = 0; i < L; i++) {
         for (int s = 0; s < 4; s++) {
             for (int m = 0; m < 3; m++) {
-                res[i*(4*3*2) + s*(3*2) + m*(2) + 0] = m;
-                res[i*(4*3*2) + s*(3*2) + m*(2) + 1] = 0;
+                res[i*(4*3*2) + s*(3*2) + m*(2) + 0] = rand() / (float)RAND_MAX;
+                res[i*(4*3*2) + s*(3*2) + m*(2) + 1] = rand() / (float)RAND_MAX;
             }
         }
     }
@@ -169,11 +112,6 @@ void su3_Tmul(float *res, float *mat, float *vec) {
 void zero(float* a, int cnt) {
     for (int i = 0; i < cnt; i++)
         a[i] = 0;
-}
-
-void copy(float *dst, float *src, int cnt) {
-    for (int i = 0; i < cnt; i++)
-        dst[i] = src[i];
 }
 
 void sum(float *dst, float *a, float *b, int cnt) {
@@ -253,12 +191,31 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
     }
 }
 
+// ---------------------------------------------------------------------------------------
+// computeGold()
+//
+// calculates the forward "d-slash" operation, given gauge field 'gauge' and
+// spinor field 'spinor'. this function is intended to be a reference implementation for
+// the much faster CUDA kernel.
+//
+// indices, varying slowest to fastest, are,
+//   spinor field:  (z, y, x, t, spinor idx, color idx, complex idx)
+//   gauge field:   (z, y, x, t, color row, color column, complex idx)
+//
+// constants (such as lattice lengths) are given in the file 'qcd.h'
+// 
+// the field arguments to this function must be bipartioned: i.e., the gauge/spinor field
+// only contains black/red lattice indices, or vice versa.
+//
+// by convention, the first projector to be applied (P^{1+} = 1+\gamma_1) operates on 
+// elements of the gauge/spinor fields at equal lattice indices.
+//
 void computeGold(float* res, float* gauge, float *spinor) {
     zero(res, L*4*3*2);
     
     for (int idxOut = 0; idxOut < L; idxOut++) {
         int idxIn = idxOut;
-        for (int dir = 0; dir < 1; dir++) {
+        for (int dir = 0; dir < 8; dir++) {
             float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
             float *gaugeMatrix = &gauge[idxIn*(4*3*3*2) + (dir/2)*(3*3*2)];
             multiplySpinorByDiracProjector(projectedSpinor, dir, &spinor[idxIn*(4*3*2)]);
@@ -270,32 +227,17 @@ void computeGold(float* res, float* gauge, float *spinor) {
                     su3_Tmul(&gaugedSpinor[s*(3*2)], gaugeMatrix, &projectedSpinor[s*(3*2)]);
             }
             
-            sum(&res[idxIn*(4*3*2)], &res[idxIn*(4*3*2)], gaugedSpinor, 4*3*2);
+            sum(&res[idxOut*(4*3*2)], &res[idxOut*(4*3*2)], gaugedSpinor, 4*3*2);
             idxIn = nextIndex(idxIn, dir);
         }
     }
 }
 
 
-float dist(float x, float y) {
-    return fabs(x - y);
-}
 
-void testSpinorField(float *spinor) {
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < 12; j++) {
-            if (dist(spinor[i*(4*3*2) + j], 3) > 1e-6) {
-                printf("doh1 %d %f %f\n", i, spinor[i*(4*3*2) + j], 3.0);
-            }
-        }
-        for (int j = 12; j < 24; j++) {
-            float target = (j%2 == 0) ? 3 : -3;
-            if (dist(spinor[i*(4*3*2) + j], target) > 1e-6) {
-                printf("doh2 %d %f %f\n", i, spinor[i*(4*3*2) + j], target);
-            }
-        }
-    }
-}
+// ---------------------------------------------------------------------------------------
+// helper functions
+//
 
 void printVector(float *v) {
     printf("{(%f %f) (%f %f) (%f %f)}\n", v[0], v[1], v[2], v[3], v[4], v[5]);
@@ -312,3 +254,61 @@ void printSpinorField(float *spinor) {
     }
     printf("\n");    
 }
+
+
+void packGaugeField(float4 *res, float *gauge) {
+    for (int i = 0; i < L; i++) {
+        for (int dir = 0; dir < 4; dir++) {
+            for (int j = 0; j < 5; j++) {
+                float a1, a2, a3, a4;
+                a1 = gauge[i*4*18 + dir*18 + j*4 + 0];
+                a2 = gauge[i*4*18 + dir*18 + j*4 + 1];
+                if (j < 4) {
+                    a3 = gauge[i*4*18 + dir*18 + j*4 + 2];
+                    a4 = gauge[i*4*18 + dir*18 + j*4 + 3];
+                }
+                else {
+                    int i3 = nextIndex(i, dir*2+0);
+                    int i4 = nextIndex(i, dir*2+1);
+                    a3 = *(float *)&i3;
+                    a4 = *(float *)&i4;
+                }
+                float4 f4 = {a1, a2, a3, a4};
+                res[(dir*5+j)*L + i] = f4;
+            }
+        }
+    }
+}
+
+void packSpinorField(float4 *res, float *spinor) {
+    for (int i = 0; i < L; i++) {
+        for (int j = 0; j < 6; j++) {
+            float a1 = spinor[i*(6*4) + j*(4) + 0];
+            float a2 = spinor[i*(6*4) + j*(4) + 1];
+            float a3 = spinor[i*(6*4) + j*(4) + 2];
+            float a4 = spinor[i*(6*4) + j*(4) + 3];
+            float4 f4 = {a1, a2, a3, a4};
+            res[j*L + i] = f4;
+        }
+    }
+}
+
+void unpackSpinorField(float *res, float4 *spinorPacked) {
+    for (int i = 0; i < L; i++) {
+        if (0) {
+            for (int j = 0; j < 6; j++) {
+                float4 f4 = spinorPacked[j*L + i];
+                res[i*(6*4) + j*(4) + 0] = f4.x;
+                res[i*(6*4) + j*(4) + 1] = f4.y;
+                res[i*(6*4) + j*(4) + 2] = f4.z;
+                res[i*(6*4) + j*(4) + 3] = f4.w;
+            }
+        }
+        else {
+            for (int j = 0; j < 24; j++) {
+                res[i*24 + j] = ((float *)spinorPacked)[j*L + i];
+            }
+        }
+    }
+}
+
