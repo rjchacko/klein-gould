@@ -81,23 +81,21 @@ void runTest( int argc, char** argv)  {
     float secs = millisecs / 1000.;
     printf("Elapsed time %fms\n", millisecs);
     printf("GFLOPS = %f\n", 1e-9*1320*L/secs);
-    printf("GiB = %f\n", 2*(8*7+4)*3*4*L/(secs*(1<<30)));
+    printf("GiB = %f\n", L*(8*7+4)*3*2*sizeof(float)/(secs*(1<<30)));
     
     // compare to host computation
     CUDA_SAFE_CALL(cudaMemcpy(packedSpinorOut, d_spinorOut, L*SPINOR_BYTES, cudaMemcpyDeviceToHost));
     unpackSpinorField(spinorOut, packedSpinorOut);
     computeGold(spinorRef, gaugeIn, spinorIn);
-    CUTBoolean res = cutComparefe(spinorOut, spinorRef, L*SPINOR_SIZE, 1e-4);
     
     printSpinorField(spinorRef);
     printf("\n");
     printSpinorField(spinorOut);
     
+    CUTBoolean res = cutComparefe(spinorOut, spinorRef, L*SPINOR_SIZE, 1e-4);
     printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
     
-    // testSpinorField(spinorOut);
-    
-    // cleanup memory
+    // release memory
     free(gaugeIn);
     free(spinorIn);
     free(spinorOut);
