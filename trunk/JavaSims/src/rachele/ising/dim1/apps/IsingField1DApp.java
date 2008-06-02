@@ -167,10 +167,7 @@ public class IsingField1DApp extends Simulation{
 		}
 	}
 	
-	/**
-	 * Find a value for the FT for each allowed kR: 
-	 * kR = 2 PI i R / L
-	 */
+
 	public double [] findCircleIntFunction(double ampFactor){
 		double [] circleFT = new double [ising.Lp];
 		int N = 3;
