@@ -1,7 +1,7 @@
 package rachele.ising.dim1;
 
 import kip.util.Random;
-import rachele.util.FourierTransformer;
+//import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
 import scikit.jobs.params.Parameters;
 import scikit.numerics.fft.managed.ComplexDoubleFFT;
@@ -12,6 +12,7 @@ import static java.lang.Math.rint;
 import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.atanh;
+import static scikit.numerics.Math2.j1;
 import static scikit.numerics.Math2.sqr;
 import static scikit.util.DoubleArray.*;
 
@@ -27,7 +28,7 @@ public class FieldIsing1D{
 	double [] phi_bar, del_phi;
 	boolean noise;
 	
-	public double L, R, T, J, dx, H;
+	public double L, R, T, J, dx, H, ampFactor;
 	Random random = new Random();
 	
 	public static final double KR_SP = 4.4934102;
@@ -39,7 +40,7 @@ public class FieldIsing1D{
 	Accumulator freeEngAcc;
 	
 	public FieldIsing1D(Parameters params) {
-		random.setSeed(0);
+		random.setSeed(params.iget("Random Seed"));
 		
 		R = params.fget("R");
 		L = R*params.fget("L/R");
@@ -166,13 +167,15 @@ public class FieldIsing1D{
 	 * (can't do the integral) so I have to do it 
 	 * numerically.
 	 */
-	public void simulateCircle(double [] circleIntFT){
+	public void simulateCircle(double ampFactor){
 		//convolveCircleInteraction(phi, circleIntFT, phi_bar, R);
-		FourierTransformer FT = new FourierTransformer(Lp);
-		phi_bar = FT.convolve1D(phi, circleIntFT);
+		//FourierTransformer FT = new FourierTransformer(Lp);
+		//phi_bar = FT.convolve1D(phi, circleIntFT);
+		//System.out.println("sim circle");
+		convolveCircleInteraction(phi, phi_bar, R);
 		for (int i = 0; i < Lp; i++) {
 			double Lambda = sqr(1 - phi[i]*phi[i]);	
-			del_phi[i] = - dt*Lambda*(phi_bar[i]-H + T*atanh(phi[i]));
+			del_phi[i] = - dt*Lambda*(ampFactor*phi_bar[i]-H + T*atanh(phi[i]));
 			if(noise)
 				del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
 		}
@@ -182,7 +185,7 @@ public class FieldIsing1D{
 		t += dt;
 	}
 	
-	void convolveCircleInteraction(double[] src,double [] circleIntFT, double[] dest, double R) {
+	void convolveCircleInteraction(double[] src, double[] dest, double R) {
 		// write real and imaginary components into scratch
 		for (int i = 0; i < Lp; i++) {
 			fftScratch[2*i+0] = src[i];
@@ -196,7 +199,7 @@ public class FieldIsing1D{
 		for (int x = -Lp/2; x < Lp/2; x++) {
 			double kR = (2*PI*x/L) * R;
 			int i = (x + Lp) % Lp;
-			double V = (kR == 0 ? 1 : sin(kR)/kR);
+			double V = (kR == 0 ? PI/2 : PI*j1(kR)/kR);
 			fftScratch[2*i+0] *= J*V;
 			fftScratch[2*i+1] *= J*V;
 		}
