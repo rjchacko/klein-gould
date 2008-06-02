@@ -485,12 +485,17 @@ public class NfailDamage2D extends SimpleDamage2D{
 		showernumber=0;
 		Nshowers=0;
 		
-		String PLACEHOLDER = "foobar";
+		String PLACEHOLDER = shape;
 		
 		time++;
 		tkip+=dtkip;
 		
-		DaboutFS = FSdensity(imax);
+		if(!(shape.equals("All Sites"))){
+			DaboutFS = FSdensity(imax);
+		}
+		else{
+			DaboutFS = -1;
+		}
 		
 		// Distribute stress from initial failure
 		
@@ -565,33 +570,68 @@ public class NfailDamage2D extends SimpleDamage2D{
 		//				multiple cos\theta # ~ \pi R
 		
 		
-		// if string means to distribute stress evenly . . . 
-		
-		for (int i = 0; i<search; i++){
+		if(HowToDumpStress.equals("All Sites")){
 			
-			int[] nbs = neighbors.get(dead[i]);
-			Nalive=0;
-			for (int j = 0; j<nbs.length; j++){
-				Nalive+=alive[nbs[j]+N];
-			}			
-			if(Nalive>0){									
-				if(alive[dead[i]]>0){
-					release=(stress[dead[i]]-Sr[dead[i]])/Nalive;
-				}
-				else{
-					release=stress[dead[i]]/Nalive;
-				}
-				for (int j = 0; j<nbs.length; j++){
-					
-					if (Nbool){
-						stress[nbs[j]]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[nbs[j]+N];
+			for (int i = 0 ; i < search ; i++){
+				Nalive = 0;
+				for (int j = 0; j<N; j++){
+					Nalive+=alive[j+N];
+				}	
+				if (Nalive > 0){
+					if(alive[dead[i]]>0){
+						release=(stress[dead[i]]-Sr[dead[i]])/Nalive;
 					}
 					else{
-						stress[nbs[j]]+=(1-alpha)*release*alive[nbs[j]+N];
+						release=stress[dead[i]]/Nalive;
 					}
-					
+					for (int j = 0 ; j < dead[i] ; j++){
+						if (Nbool){
+							stress[j]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[j+N];
+						}
+						else{
+							stress[j]+=(1-alpha)*release*alive[j+N];
+						}
+					}
+					for (int j = dead[i]+1 ; j < N ; j++){
+						if (Nbool){
+							stress[j]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[j+N];
+						}
+						else{
+							stress[j]+=(1-alpha)*release*alive[j+N];
+						}
+					}
+				}
+			
+			}
+		}
+		else{
+			for (int i = 0; i<search; i++){
+
+				int[] nbs = neighbors.get(dead[i]);
+				Nalive=0;
+				for (int j = 0; j<nbs.length; j++){
+					Nalive+=alive[nbs[j]+N];
+				}			
+				if(Nalive>0){									
+					if(alive[dead[i]]>0){
+						release=(stress[dead[i]]-Sr[dead[i]])/Nalive;
+					}
+					else{
+						release=stress[dead[i]]/Nalive;
+					}
+					for (int j = 0; j<nbs.length; j++){
+
+						if (Nbool){
+							stress[nbs[j]]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[nbs[j]+N];
+						}
+						else{
+							stress[nbs[j]]+=(1-alpha)*release*alive[nbs[j]+N];
+						}
+
+					}
 				}
 			}
+		
 		}
 		
 		return;
@@ -815,6 +855,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 	
 	public double radiusGyration(int index){
 		
+		if(shape.equals("All Sites")) return -1;
+		
 		long x0,y0,x,y,dx,dy;
 		long mass=0;
 		double rg=0;
@@ -998,7 +1040,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		return;
 	}
 	
-	public void PrintParams(String fout, Parameters prms){
+	public static void PrintParams(String fout, Parameters prms){
 		
 		PrintUtil.printlnToFile(fout,prms.toString());
 		

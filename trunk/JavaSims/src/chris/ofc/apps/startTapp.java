@@ -111,7 +111,7 @@ public class startTapp extends Simulation {
 			model.ShowGrid=false;
 		}
 		
-		model.PrintParams(model.outdir+File.separator+"Params.txt", params);	
+		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		
 		model.Initialize("Flat");
 		

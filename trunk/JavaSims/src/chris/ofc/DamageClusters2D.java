@@ -63,11 +63,11 @@ public class DamageClusters2D extends NfailDamage2D{
 		dead[0]=imax;
 		search = 1;
 		DistStress(PLACEHOLDER);
-		if(Percolate){
-			Job.animate();
-			System.out.println("System has percolated!");
-			return;
-		}
+//		if(Percolate){
+//			Job.animate();
+//			System.out.println("System has percolated!");
+//			return;
+//		}
 		
 		// reset plate
 		resetPlate();
@@ -81,11 +81,11 @@ public class DamageClusters2D extends NfailDamage2D{
 			showernumber++;
 			// redistribute stress of failure(s)
 			DistStress(PLACEHOLDER);
-			if(Percolate){
-				Job.animate();
-				System.out.println("System has percolated!");
-				return;
-			}
+//			if(Percolate){
+//				Job.animate();
+//				System.out.println("System has percolated!");
+//				return;
+//			}
 			
 			// reset plates
 			resetPlate();
@@ -108,7 +108,7 @@ public class DamageClusters2D extends NfailDamage2D{
 		
 		// check if most stressed site has already failed
 		if(alive[imax] == 0){
-			System.out.println("All Sites Failed!");
+			//System.out.println("All Sites Failed!");
 			crack=true;
 			return;
 		}
@@ -159,7 +159,7 @@ public class DamageClusters2D extends NfailDamage2D{
 					// seems like this is where I add the site to cluster
 					release=stress[dead[i]]/Nalive;
 					if(Cdata) Percolate = cluster.addSite(dead[i]);
-					if(Percolate) return;
+					//if(Percolate) return;
 				}
 				for (int j = 0; j<nbs.length; j++){
 					
@@ -180,7 +180,8 @@ public class DamageClusters2D extends NfailDamage2D{
 	public void WriteDataHeader(){
 	
 		PrintUtil.printlnToFile(outfile1,"Time","t_kip","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
-		PrintUtil.printlnToFile(outfile2,"Time","Nlives=0","Nlives=1","Nlives=2",". . .","Nlives=Nmax");
+		PrintUtil.printlnToFile(outfile2,"Time","t_kip","Nlives=0","Nlives=1","Nlives=2",". . .","Nlives=Nmax");
+		PrintUtil.printlnToFile(outfileC,"Time","t_kip","Size of Largest Cluster");
 		
 		return;
 	}
@@ -193,7 +194,10 @@ public class DamageClusters2D extends NfailDamage2D{
 				PrintUtil.printlnToFile(fout,"Time","t_kip","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
 				break;
 			case 2:
-				PrintUtil.printlnToFile(fout,"Time","Nlives=0","Nlives=1","Nlives=2",". . .","Nlives=Nmax");
+				PrintUtil.printlnToFile(fout,"Time","t_kip","Nlives=0","Nlives=1","Nlives=2",". . .","Nlives=Nmax");
+				break;
+			case 3:
+				PrintUtil.printlnToFile(fout,"Time","t_kip","Size of Largest Cluster");
 				break;
 			default:
 				System.err.println("File Not Found!");
@@ -215,7 +219,8 @@ public class DamageClusters2D extends NfailDamage2D{
 		}
 		
 		PrintUtil.printlnToFile(outfile1,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
-		PrintUtil.printTimeAndVectorToFile(outfile2, time, NlivesLeft);
+		PrintUtil.print2TimeAndVectorToFile(outfile2, time, tkip, NlivesLeft);
+		if (Cdata) PrintUtil.printlnToFile(outfileC,time,tkip,(double)(cluster.getLargestCluster()));
 		
 		return;
 	}

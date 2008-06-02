@@ -32,7 +32,7 @@ public class NFailApp extends Simulation {
 	
 	public void load(Control c) {
 		
-		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
+		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Random Seed",0);
 		params.add("Animation", new ChoiceValue("On","Off"));
 		//params.addm("Auto Scale", new ChoiceValue("Yes", "No"));
@@ -47,7 +47,7 @@ public class NFailApp extends Simulation {
 		params.add("Residual Stress (\u03C3_r)",2.0);
 		params.add("\u03C3_r Noise", new ChoiceValue("Off","On"));
 		params.add("\u03C3_r width",Math.sqrt(Math.sqrt(2)));
-		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond"));
+		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
 		params.add("Interaction Radius (R)",(int)(50));
 		params.add("Minimum Interaction Radius (r)",0);
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.2,0,1));
@@ -110,7 +110,7 @@ public class NFailApp extends Simulation {
 		}
 		
 		//PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
-		model.PrintParams(model.outdir+File.separator+"Params.txt", params);	
+		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		
 		model.Initialize("Flat");
 		

@@ -75,7 +75,7 @@ public class NFailSeedLoopApp extends Simulation {
 	public void run() {
 
 		//PrintUtil.printlnToFile(params.sget("Data Directory")+File.separator+"Params.txt",params.toString());
-		model.PrintParams(params.sget("Data Directory")+File.separator+"Params.txt", params);	
+		NfailDamage2D.PrintParams(params.sget("Data Directory")+File.separator+"Params.txt", params);	
 
 		for (cyclevar=0; cyclevar < params.iget("Number of Sims") ; cyclevar++){
 		
