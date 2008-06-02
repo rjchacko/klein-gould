@@ -94,7 +94,7 @@ public class Ising2D extends Simulation {
 				mcs++;
 				double data[]=mag.copyData();
 				for(int i=0;i<data.length;i+=2){
-					freeEnergy.accum(data[i], -Math.log(data[i+1]));
+					freeEnergy.accum(data[i], -T*Math.log(data[i+1]));
 				}
 			}
 		}
