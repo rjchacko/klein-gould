@@ -9,43 +9,43 @@ typedef struct {
 #include "qcd.h"
 
 
-int index(int z, int y, int x, int t) {
+int index(int t, int z, int y, int x) {
+    t = (t + L4) % L4;
     z = (z + L3) % L3;
     y = (y + L2) % L2;
     x = (x + L1) % L1;
-    t = (t + L0) % L0;
-    return z*L2*L1*L0 + y*L1*L0 + x*L0 + t;
-}
-
-int coord_0(int idx) {
-    return idx % L0;
+    return t*(L3*L2*L1) + z*(L2*L1) + y*(L1) + x;
 }
 
 int coord_1(int idx) {
-    return (idx/L0) % L1;
+    return idx % L1;
 }
 
 int coord_2(int idx) {
-    return (idx/(L0*L1)) % L2;
+    return (idx/L1) % L2;
 }
 
 int coord_3(int idx) {
-    return idx/(L0*L1*L2);
+    return (idx/(L2*L1)) % L3;
+}
+
+int coord_4(int idx) {
+    return idx/(L3*L2*L1);
 }
 
 int nextIndex(int i, int dir) {
-    int t = coord_0(i);
-    int x = coord_1(i);
-    int y = coord_2(i);
+    int t = coord_4(i);
     int z = coord_3(i);
+    int y = coord_2(i);
+    int x = coord_1(i);
     switch (dir) {
-        case 0: return index(z, y, x, t+1);
-        case 1: return index(z, y, x+1, t-1);
-        case 2: return index(z, y, x-2, t);
-        case 3: return index(z, y+1, x+1, t);
-        case 4: return index(z, y-2, x, t);
-        case 5: return index(z+1, y+1, x, t);
-        case 6: return index(z-2, y, x, t);
+        case 0: return index(t, z, y, x+1);
+        case 1: return index(t, z, y+1, x-1);
+        case 2: return index(t, z, y-2, x);
+        case 3: return index(t, z+1, y+1, x);
+        case 4: return index(t, z-2, y, x);
+        case 5: return index(t+1, z+1, y, x);
+        case 6: return index(t-2, z, y, x);
         default: return -1;
     }
 }
