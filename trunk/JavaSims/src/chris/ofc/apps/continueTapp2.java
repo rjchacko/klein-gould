@@ -142,7 +142,7 @@ public class continueTapp2 extends Simulation {
 			
 			model.Avalanche();
 
-			model.TakeData(model.outfile1);
+			model.TakeData(model.outfile1,model.outfile2);
 			
 		}
 		

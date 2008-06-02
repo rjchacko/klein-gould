@@ -1,6 +1,7 @@
 package chris.ofc.apps;
 
 
+import java.awt.Color;
 import java.io.File;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -35,7 +36,6 @@ public class NFailApp extends Simulation {
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Random Seed",0);
 		params.add("Animation", new ChoiceValue("On","Off"));
-		//params.addm("Auto Scale", new ChoiceValue("Yes", "No"));
 		params.add("Lattice Size",1<<9);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
@@ -66,7 +66,7 @@ public class NFailApp extends Simulation {
 		params.set("Number of Resets",model.time);
 		params.set("Number of Showers",model.showernumber);
 		
-		if (model.showering && model.ShowGrid){
+		if (model.ShowGrid){
 		
 			int[] foo = new int[model.N];
 	
@@ -80,7 +80,7 @@ public class NFailApp extends Simulation {
 			grid1.registerData(model.L,model.L,model.stress);
 			grid2.registerData(model.L, model.L, foo);
 				
-			if (params.sget("Record").equals("On") && model.ShowGrid){
+			if (params.sget("Record").equals("On")){
 				model.TakePicture(grid1);
 				model.TakePicture(grid2);
 				
@@ -98,6 +98,8 @@ public class NFailApp extends Simulation {
 
 	public void run() {
 		
+		// Initialize Model
+		
 		model = new NfailDamage2D(params);
 		
 		String anmt = params.sget("Animation");
@@ -108,10 +110,7 @@ public class NFailApp extends Simulation {
 		else{
 			model.ShowGrid=false;
 		}
-		
-		//PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
-		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
-		
+				
 		model.Initialize("Flat");
 		
 		ScMax=model.GetMax(model.Sc);		
@@ -120,17 +119,21 @@ public class NFailApp extends Simulation {
 		
 		palette1 = new ColorPalette();
 		smooth   = new ColorGradient();
-		grid2.setColors(palette1);
 		
 		int max = model.GetMax(model.alive);
 
-		for (int i = 0 ; i <= max ; i++){
-			palette1.setColor(i,smooth.getColor(i, 0, max));
+		Color[] Carray = new Color[]{Color.RED,Color.YELLOW,Color.GREEN,Color.BLUE,Color.GRAY};
+		
+		palette1.setColor(0,Color.WHITE);
+		for (int i = 1 ; i <= max ; i++){
+			palette1.setColor(i,Carray[i%5]);
 		}
 		
+		grid2.setColors(palette1);
+		
+		
 		// Set up file
-			
-		//PrintUtil.printlnToFile(model.outfile,"Time","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
+		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		model.WriteDataHeader();
 		
 		
