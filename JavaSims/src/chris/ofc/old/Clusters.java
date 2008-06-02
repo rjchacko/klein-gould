@@ -5,7 +5,7 @@
  * <http://www.opensourcephysics.org/>
  */
 
-package chris.ofc;
+package chris.ofc.old;
 
 
 /**
@@ -18,7 +18,7 @@ package chris.ofc;
  *  @author Christopher A. Serino
  *  
  */
-public class ClustersV2 {
+public class Clusters {
   private static final int EMPTY = Integer.MIN_VALUE; 
   private static final int BIG = Integer.MAX_VALUE;
   public int L;                                      
@@ -26,7 +26,7 @@ public class ClustersV2 {
   public int numSitesOccupied;                     
   public int[] numClusters; 
   
-  private int[] cnARRAY, pcn; 
+  private int[] cn, pcn; 
   private int ClCt;
 
   private int[] parent;
@@ -34,14 +34,14 @@ public class ClustersV2 {
   private boolean PERIODIC; 
   
 
-  public ClustersV2(int L, String BC) {
+  public Clusters(int L, String BC) {
     this.L = L;
     N = L*L;
     numClusters = new int[N+1];
     parent = new int[N];
 
     ClCt = 1;
-    cnARRAY  = new int[N];	// takes a site
+    cn  = new int[N];	// takes a site
     pcn = new int[N];	// takes a cn
     
     if (BC.equals("Periodic")){
@@ -62,8 +62,8 @@ public class ClustersV2 {
     for(int s = 0;s<N;s++) {
       numClusters[s] = 0;
       parent[s] = EMPTY;
-      cnARRAY[s] = BIG;
-      pcn[s] = cnARRAY[s];
+      cn[s] = BIG;
+      pcn[s] = cn[s];
     }
   }
 
@@ -95,7 +95,7 @@ public class ClustersV2 {
 	  int[] NBScn = new int[4];
 	  
 	  for (int i = 0 ; i < 4 ; i++){
-		  NBScn[i] = cnARRAY[nbs[i]];
+		  NBScn[i] = cn[nbs[i]];
 	  }
 	  
 	  // sort the nbs cn
@@ -104,27 +104,28 @@ public class ClustersV2 {
 	  
 	  if (NBScn[order[0]] == BIG){	// all neighbor sites are EMPTY
 		  // give the site a new cluster number and set it as a pcn
-		  cnARRAY[site] = ClCt++;
-		  pcn[cnARRAY[site]] = cnARRAY[site];
+		  cn[site] = ClCt++;
+		  pcn[cn[site]] = cn[site];
 		  
 	  }
 	  else if (NBScn[order[1]] == BIG){	// only one neighbor belongs to a cluster
 		  // give the site the cluster number of its neighbor
-		  cnARRAY[site] = pcn[NBScn[order[0]]];
+		  cn[site] = pcn[NBScn[order[0]]];
 		  // the pcn for this cn has already been determined
 	  }
 	  else {	// more than one neighbor belongs to a cluster
-		  
+
 		  // determine which of the cn has the smallest pcn
 		  int Sorg = nbs[order[0]];
 		  for (int jj = 0 ; jj < 4 ; jj++){
-			  if (pcn[cnMETHOD(nbs[jj])] < pcn[cnARRAY[Sorg]]) Sorg = nbs[jj];
+			  if (cn[nbs[jj]] != BIG){
+				  if (pcn[cn[nbs[jj]]] < pcn[cn[Sorg]]) Sorg = nbs[jj];
+			  }
 		  }
-		  
 		  // so Sorg belongs to the cluster with the smallest pcn
 		  // set up the new failed site
-		  int SorgPCN = pcn[cnARRAY[Sorg]];
-		  cnARRAY[site] = SorgPCN;
+		  int SorgPCN = pcn[cn[Sorg]];
+		  cn[site] = SorgPCN;
 		  
 		  // Initialize array to fix cn and pcn
 		  
@@ -134,9 +135,9 @@ public class ClustersV2 {
 		  // loop over the neighbors and fix their pcn
 		  
 		  for (int jj = 0 ; jj < 4 ; jj++){
-			  if ( (nbs[jj] != Sorg) && (cnARRAY[nbs[jj]] != BIG) ){
-				  temp[tempindex++] = pcn[cnARRAY[nbs[jj]]];	// record the old pcn so it can be updated in the next step
-				  pcn[cnARRAY[nbs[jj]]] = SorgPCN;
+			  if ( (nbs[jj] != Sorg) && (cn[nbs[jj]] != BIG) ){
+				  temp[tempindex++] = pcn[cn[nbs[jj]]];	// record the old pcn as it is no longer a pcn
+				  pcn[cn[nbs[jj]]] = SorgPCN;
 			  }
 		  }
 		  
@@ -145,29 +146,29 @@ public class ClustersV2 {
 		  
 		  if(tempindex == 1){
 			  for(int kk = 0 ; kk < N ; kk++){
-				  if(pcn[cnMETHOD(kk)] == temp[0]) pcn[cnARRAY[kk]] = SorgPCN;	// fix the pcn
+				  if(cn[kk] != BIG){
+					  if(pcn[cn[kk]] == temp[0]) pcn[cn[kk]] = SorgPCN;	// fix the pcn
+				  }
 			  }
 		  }
 		  else if(tempindex == 2){
 			  for(int kk = 0 ; kk < N ; kk++){
-				  if((pcn[cnMETHOD(kk)] == temp[0]) || (pcn[cnMETHOD(kk)] == temp[1]) ) pcn[cnARRAY[kk]] = SorgPCN;	// fix the pcn
+				  if(cn[kk] != BIG){
+					  if((pcn[cn[kk]] == temp[0]) || (pcn[cn[kk]] == temp[1]) ) pcn[cn[kk]] = SorgPCN;	// fix the pcn
+				  }
 			  }
 		  }
 		  else { //tempindex ==3
 			  for(int kk = 0 ; kk < N ; kk++){
-				  if((pcn[cnMETHOD(kk)] == temp[0]) || (pcn[cnMETHOD(kk)] == temp[1]) || (pcn[cnMETHOD(kk)] == temp[2])) pcn[cnARRAY[kk]] = SorgPCN;	// fix the pcn
+				  if(cn[kk] != BIG){
+					  if((pcn[cn[kk]] == temp[0]) || (pcn[cn[kk]] == temp[1]) || (pcn[cn[kk]] == temp[2])) pcn[cn[kk]] = SorgPCN;	// fix the pcn
+				  }
 			  }
-		  }
+		  }		  
 	  }
 	  
 	  return;
   }
-  
-  
-  private int cnMETHOD(int st){
-	  return (cnARRAY[st] == BIG) ? N-1 : cnARRAY[st];
-  }
-  
   
   public int[] sortVector(int[] input, String idORval){
 
@@ -217,7 +218,7 @@ public class ClustersV2 {
   }
 
   public int getClusterNumber(int s){
-	return(cnARRAY[s] == BIG) ? 0 : pcn[cnARRAY[s]];
+	return(cn[s] == BIG) ? 0 : pcn[cn[s]];
   }
   
   

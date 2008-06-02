@@ -485,8 +485,6 @@ public class NfailDamage2D extends SimpleDamage2D{
 		showernumber=0;
 		Nshowers=0;
 		
-		String PLACEHOLDER = shape;
-		
 		time++;
 		tkip+=dtkip;
 		
@@ -501,7 +499,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		
 		dead[0]=imax;
 		search = 1;
-		DistStress(PLACEHOLDER);
+		DistStress(shape);
 		
 		// reset plate
 		resetPlate();
@@ -513,7 +511,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 			
 			showernumber++;
 			// redistribute stress of failure(s)
-			DistStress(PLACEHOLDER);
+			DistStress(shape);
 			
 			// reset plates
 			resetPlate();
@@ -560,15 +558,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		return;
 	}
 
-	public void DistStress(String HowToDumpStress){
-
-		// HowToDumpStress = evenly
-		// angular bias (and then which angular bias)
-		//				elipse
-		//				uniform + random angle ~ cos\theta
-		//				all at one cos\theta
-		//				multiple cos\theta # ~ \pi R
-		
+	public void DistStress(String HowToDumpStress){		
 		
 		if(HowToDumpStress.equals("All Sites")){
 			
@@ -584,27 +574,28 @@ public class NfailDamage2D extends SimpleDamage2D{
 					else{
 						release=stress[dead[i]]/Nalive;
 					}
-					for (int j = 0 ; j < dead[i] ; j++){
-						if (Nbool){
+					
+					if(Nbool){
+						for (int j = 0 ; j < dead[i] ; j++){
 							stress[j]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[j+N];
 						}
-						else{
-							stress[j]+=(1-alpha)*release*alive[j+N];
+						for (int j = dead[i]+1 ; j < N ; j++){
+							stress[j]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[j+N];
 						}
 					}
-					for (int j = dead[i]+1 ; j < N ; j++){
-						if (Nbool){
-							stress[j]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[j+N];
+					else{
+						for (int j = 0 ; j < dead[i] ; j++){
+							stress[j]+=(1-alpha)*release*alive[j+N];
 						}
-						else{
+						for (int j = dead[i]+1 ; j < N ; j++){
 							stress[j]+=(1-alpha)*release*alive[j+N];
 						}
 					}
 				}
-			
 			}
 		}
-		else{
+		else{	// distribute the stress to a subset of the sites on the lattice
+			
 			for (int i = 0; i<search; i++){
 
 				int[] nbs = neighbors.get(dead[i]);
@@ -619,19 +610,20 @@ public class NfailDamage2D extends SimpleDamage2D{
 					else{
 						release=stress[dead[i]]/Nalive;
 					}
-					for (int j = 0; j<nbs.length; j++){
-
-						if (Nbool){
+					
+					
+					if(Nbool){
+						for (int j = 0; j<nbs.length; j++){
 							stress[nbs[j]]+=(1-alphawidth*rand.nextGaussian()-alpha)*release*alive[nbs[j]+N];
 						}
-						else{
+					}
+					else{
+						for (int j = 0; j<nbs.length; j++){
 							stress[nbs[j]]+=(1-alpha)*release*alive[nbs[j]+N];
 						}
-
 					}
 				}
 			}
-		
 		}
 		
 		return;
@@ -950,17 +942,9 @@ public class NfailDamage2D extends SimpleDamage2D{
 	
 	public double GetAve(double set[]){
 
-		double ret=0;
-		
-		if(set.length > 0){
-			
-			for (int i = 0 ; i < set.length ; i++){
-				ret+=set[i];
-			}
-			
-		} ret=ret/set.length;
-		
-		return ret;
+		int temp = set.length;
+	
+		return GetAve(set,temp);
 	}
 	
 	public double GetAve(double set[], int Lset){
@@ -982,8 +966,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 	
 	public void WriteDataHeader(){
 	
-		PrintUtil.printlnToFile(outfile1,"Time","t_kip","N_avlnchs","N_dead","Rgyr","Omega","<FS_stress>","rho_FS");
-		PrintUtil.printlnToFile(outfile2,"Time","Nlives=0","Nlives=1","Nlives=2",". . .","Nlives=Nmax");
+		WriteDataHeader(outfile1,1);
+		WriteDataHeader(outfile2,2);
 		
 		return;
 	}
@@ -1006,26 +990,16 @@ public class NfailDamage2D extends SimpleDamage2D{
 	}
 	
 	public void TakeData(){
-		 double rgyr;
 		
-		int[] LS = LiveSites(); 
-		int LSlength = LS.length;
-		if(LSlength>0){
-			rgyr=radiusGyration(LS[rand.nextInt(LSlength)]);
-		}
-		else{
-			rgyr=0;
-		}
-		
-		PrintUtil.printlnToFile(outfile1,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
-		PrintUtil.printTimeAndVectorToFile(outfile2, time, NlivesLeft);
+		TakeData(outfile1,outfile2);
 		
 		return;
 	}
 	
-	public void TakeData(String fout){
-		 double rgyr;
+	public void TakeData(String fout1, String fout2){
 		
+		double rgyr;
+
 		int[] LS = LiveSites(); 
 		int LSlength = LS.length;
 		if(LSlength>0){
@@ -1034,9 +1008,11 @@ public class NfailDamage2D extends SimpleDamage2D{
 		else{
 			rgyr=0;
 		}
-		
-		PrintUtil.printlnToFile(fout,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
-				
+
+		PrintUtil.printlnToFile(fout1,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
+		PrintUtil.printTimeAndVectorToFile(fout2, time, NlivesLeft);
+
+
 		return;
 	}
 	
@@ -1069,7 +1045,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		PrintUtil.printArrayToFile(outdir + File.separator + "Critical_Stress.txt", Sc, L, L);
 		PrintUtil.printArrayToFile(outdir + File.separator + "Stress_so_Far.txt", SsoFar, L, L);
 		WriteDataHeader(outdir + File.separator + "Data_LL.txt",1);
-		TakeData(outdir + File.separator + "Data_LL.txt");
+		TakeData(outdir + File.separator + "Data_LL_1.txt",outdir + File.separator + "Data_LL_2.txt");
 		
 		return;
 	}

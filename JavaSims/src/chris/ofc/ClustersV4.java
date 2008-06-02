@@ -38,29 +38,37 @@ public class ClustersV4 {
   
 
   public ClustersV4(int L, String BC) {
-    this.L = L;
-    N = L*L;
-    numClusters = new int[N+1];
-    parent = new int[N];
 
-    ClCt = 1;
-    cnARRAY  = new int[N];	// takes a site
-    pcn = new int[N];	// takes a cn
+	  PseudoConstructor(L,BC);
     
-    if (BC.equals("Periodic")){
-    	PERIODIC = true;
-    }
-    else{
-    	PERIODIC = false;
-    }
-    
-    cDist = new int[2*N]; // takes a site ( CDist[site] = x ; CDist[site+N] = y )
-    
-    PercolationCluster = EMPTY;
-    SystemPercolate = false;
-    
-    newLattice();
-    
+  }
+  
+  private void PseudoConstructor(int L, String BC){
+	  
+	    this.L = L;
+	    N = L*L;
+	    numClusters = new int[N+1];
+	    parent = new int[N];
+
+	    ClCt = 1;
+	    cnARRAY  = new int[N];	// takes a site
+	    pcn = new int[N];	// takes a cn
+	    
+	    if (BC.equals("Periodic")){
+	    	PERIODIC = true;
+	    }
+	    else{
+	    	PERIODIC = false;
+	    }
+	    
+	    cDist = new int[2*N]; // takes a site ( CDist[site] = x ; CDist[site+N] = y )
+	    
+	    PercolationCluster = EMPTY;
+	    SystemPercolate = false;
+	    
+	    newLattice();
+	  
+	  return;
   }
 
   public void newLattice() {
@@ -78,10 +86,6 @@ public class ClustersV4 {
 
   public boolean addSite(int site){
 	  
-	  
-//	  	//GET RID OF ME!!!!!		System.out.println();
-//	    SystemPercolate = false;
-	  
 	  	int[] nbs = new int[4];
 	  
 	    numClusters[1]++;
@@ -95,9 +99,6 @@ public class ClustersV4 {
 	      }
 	    }
 	    
-	    //setClusterNumber(site,nbs);
-	    
-	    //boolean tempRET = false;
 	    boolean tempRET = setCNandDIST(site,nbs);
 	    
 	    return tempRET;
@@ -608,11 +609,6 @@ private void resetPCNandDIST(int ns, int[] os){
 		  for (int rr = qq+1 ; rr < Length ; rr++){
 			  if( ( (compCheck[qq][0] - compCheck[rr][0]) != 0 )  || ( (compCheck[qq][1] - compCheck[rr][1]) != 0 ) ){
 				  PercolationCluster = pcn[cnARRAY[comp[qq]]];
-//				  System.out.println("x_1 <CR> x_2 <CR> y_1 <CR> y_2");
-//				  System.out.println(compCheck[qq][0]);
-//				  System.out.println(compCheck[rr][0]);
-//				  System.out.println(compCheck[qq][1]);
-//				  System.out.println(compCheck[rr][1]);
 			  }
 		  }
 		  

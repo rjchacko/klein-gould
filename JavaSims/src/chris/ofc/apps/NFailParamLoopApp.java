@@ -79,7 +79,6 @@ public class NFailParamLoopApp extends Simulation {
 		
 		cyclevar=0;
 		
-		//PrintUtil.printlnToFile(params.sget("Data Directory")+File.separator+"Params.txt",params.toString());
 		NfailDamage2D.PrintParams(params.sget("Data Directory")+File.separator+"Params.txt", params);	
 
 		
