@@ -77,7 +77,7 @@ public class IsingField2DoptApp extends Simulation{
 		flags.add("Write Config");
 
 	}
-//	System.out.println("dt = " + dt);
+
 	public void animate() {
 		hSlice.setAutoScale(true);
 		vSlice.setAutoScale(true);
@@ -213,7 +213,6 @@ public class IsingField2DoptApp extends Simulation{
 		System.out.println("Wrote to file: H = " + ising.H + " FE = " + ising.freeEnergy);
 	}
 	
-
 	public void initFile(String file, boolean SvH){
 		FileUtil.deleteFile(file);
 		if(SvH){
@@ -227,6 +226,7 @@ public class IsingField2DoptApp extends Simulation{
 		}
 		FileUtil.printlnToFile(file, " # Density = ", ising.DENSITY);		
 	}
+	
 	public void writeConfiguration(){
 		String configFileName = "../../../research/javaData/configs/inputConfigOpt";
 		String inputFileName = "../../../research/javaData/configs/inputParamsOpt";
@@ -274,6 +274,7 @@ public class IsingField2DoptApp extends Simulation{
 			ex.printStackTrace();
 		}
 	}
+
 	public void readInitialConfiguration(){
 		try{
 			File myFile = new File("../../../research/javaData/configs/inputConfigOpt");

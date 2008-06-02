@@ -316,7 +316,7 @@ public class testLinearApp extends Simulation{
     		if(writeToFile){
     			if(ising.time() >= recordStep){
     				recordSfDataToFile(etaK);
-    				recordStep += 1;
+    				recordStep += .1;
     			}
     		}
 		}	

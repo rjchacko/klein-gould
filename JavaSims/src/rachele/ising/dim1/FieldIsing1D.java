@@ -1,6 +1,7 @@
 package rachele.ising.dim1;
 
 import kip.util.Random;
+import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
 import scikit.jobs.params.Parameters;
 import scikit.numerics.fft.managed.ComplexDoubleFFT;
@@ -14,8 +15,9 @@ import static scikit.numerics.Math2.atanh;
 import static scikit.numerics.Math2.sqr;
 import static scikit.util.DoubleArray.*;
 
-//import java.util.*;
-
+/**
+* This is for only Model A right now 
+*/
 public class FieldIsing1D{
 	public int Lp;
 	public double dt = 1;
@@ -28,7 +30,6 @@ public class FieldIsing1D{
 	public double L, R, T, J, dx, H;
 	Random random = new Random();
 	
-	//public static final double DENSITY = -0;
 	public static final double KR_SP = 4.4934102;
 	
 	ComplexDoubleFFT fft;
@@ -52,10 +53,6 @@ public class FieldIsing1D{
 		double RoverDx = R/dx;
 		params.set("R/dx", RoverDx);
 		params.set("Lp", Lp);
-//		if (params.sget("Model").equals("A"))
-//			modelA = true;
-//		else
-//			modelA = false;
 		t = 0;
 
 		phi = new double[Lp];
@@ -81,10 +78,6 @@ public class FieldIsing1D{
 		Lp = Integer.highestOneBit((int)rint((L/dx)));
 		dx = L / Lp;
 		params.set("R/dx", R/dx);
-//		if (params.sget("Model").equals("A"))
-//			modelA = true;
-//		else
-//			modelA = false;
 		params.set("DENSITY", mean(phi));
 		if (params.sget("Noise").equals("On"))
 			noise = true;
@@ -149,31 +142,71 @@ public class FieldIsing1D{
 	
 	public void simulate() {
 		convolveWithRange(phi, phi_bar, R);
-
-//		if (modelA){
-			for (int i = 0; i < Lp; i++) {
-				//del_phi[i] = - dt*( phi_bar[i]-H-T*log(1.0-phi[i])/2.0+T*log(1.0+phi[i])/2.0) + sqrt(dt*2*T/dx)*random.nextGaussian();
-				double Lambda = sqr(1 - phi[i]*phi[i]);	
-				del_phi[i] = - dt*Lambda*(phi_bar[i]-H + T*atanh(phi[i]));
-				if(noise)
-					del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
-			}
-			//double mu = mean(del_phi)-(DENSITY-mean(phi));
-			for (int i = 0; i < Lp; i++) {
-				phi[i] += del_phi[i];	
-			}		
-//		}else{
-//			for (int i = 0; i < Lp; i++) {
-//				del_phi[i] = - dt*( phi_bar[i]-H-T*log(1.0-phi[i])+T*log(1.0+phi[i]));
-//				if(noise)
-//					del_phi[i] += sqrt(dt*2*T/dx)*random.nextGaussian();
-//			}
-//			double mu = mean(del_phi)-(DENSITY-mean(phi));
-//			for (int i = 0; i < Lp; i++) {
-//				phi[i] += del_phi[i] - mu;	
-//			}			
-//		}
+		for (int i = 0; i < Lp; i++) {
+			double Lambda = sqr(1 - phi[i]*phi[i]);	
+			del_phi[i] = - dt*Lambda*(phi_bar[i]-H + T*atanh(phi[i]));
+			if(noise)
+				del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
+		}
+		for (int i = 0; i < Lp; i++)
+			phi[i] += del_phi[i];	
 		measureFreeEng();
 		t += dt;
 	}
+	
+	/**
+	 * This method exists to find a stripe
+	 * solution for the 2D circle interaction,
+	 * which is not the same as the 1D solution
+	 * with a step function potential.  To account for the 
+	 * the "lost square corners" we have an effective
+	 * potential that decreases at the edges of the 
+	 * interaction range:  the interaction strength goes
+	 * like sqrt(R*R-r*r).  I can't find a FT for this
+	 * (can't do the integral) so I have to do it 
+	 * numerically.
+	 */
+	public void simulateCircle(double [] circleIntFT){
+		//convolveCircleInteraction(phi, circleIntFT, phi_bar, R);
+		FourierTransformer FT = new FourierTransformer(Lp);
+		phi_bar = FT.convolve1D(phi, circleIntFT);
+		for (int i = 0; i < Lp; i++) {
+			double Lambda = sqr(1 - phi[i]*phi[i]);	
+			del_phi[i] = - dt*Lambda*(phi_bar[i]-H + T*atanh(phi[i]));
+			if(noise)
+				del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
+		}
+		for (int i = 0; i < Lp; i++)
+			phi[i] += del_phi[i];	
+		measureFreeEng();
+		t += dt;
+	}
+	
+	void convolveCircleInteraction(double[] src,double [] circleIntFT, double[] dest, double R) {
+		// write real and imaginary components into scratch
+		for (int i = 0; i < Lp; i++) {
+			fftScratch[2*i+0] = src[i];
+			fftScratch[2*i+1] = 0;
+		}
+		
+		// multiply real and imaginary components by the fourier transform
+		// of the potential, V(k), a real quantity.  this corresponds to
+		// a convolution in "x" space.
+		fft.transform(fftScratch);
+		for (int x = -Lp/2; x < Lp/2; x++) {
+			double kR = (2*PI*x/L) * R;
+			int i = (x + Lp) % Lp;
+			double V = (kR == 0 ? 1 : sin(kR)/kR);
+			fftScratch[2*i+0] *= J*V;
+			fftScratch[2*i+1] *= J*V;
+		}
+		fft.backtransform(fftScratch);
+		
+		// after reverse fourier transformation, return the real result.  the
+		// imaginary component will be zero.
+		for (int i = 0; i < Lp; i++) {
+			dest[i] = fftScratch[2*i+0] / Lp;
+		}
+	}
+	
 }

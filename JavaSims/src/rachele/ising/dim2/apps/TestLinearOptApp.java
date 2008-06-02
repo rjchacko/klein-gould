@@ -25,6 +25,7 @@ import scikit.numerics.fn.Function2D;
 import scikit.util.DoubleArray;
 import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
+import kip.util.Random;
 
 /**
 * Compares the ising simulations to the linear theory
@@ -57,7 +58,7 @@ public class TestLinearOptApp extends Simulation{
     int ky;
     double kRChunk; //=2piR/L
     boolean clearFile;
- 
+	Random random = new Random();
     
     //RUN OPTIONS
     boolean accEtaValues = false;
@@ -115,7 +116,7 @@ public class TestLinearOptApp extends Simulation{
 		params.addm("Interaction", new ChoiceValue( "Circle","Square" ));
 		params.addm("Theory", new ChoiceValue("Exact", "Slow Near Edge", "Dynamic dt"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
-		params.add("Init Conditions", new ChoiceValue("Read From File", "Random Gaussian" ));
+		params.add("Init Conditions", new ChoiceValue("Read in 1D solution","Read From File", "Random Gaussian" ));
 		params.addm("Noise", new DoubleValue(0, 0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
@@ -666,6 +667,12 @@ public class TestLinearOptApp extends Simulation{
 		eigenvalue = new double[Lp];
 		VV = new double [Lp][Lp];
 		findPhi0andPhi0_bar();
+
+		if(params.sget("Init Conditions") == "Read in 1D solution"){
+			System.out.println("Read in 1D solution");
+			for(int i = 0; i < Lp*Lp; i++)
+				ising.phi[i]=phi0[i%Lp] + (random.nextGaussian())/1000000;
+		}
 	}	
 
 	private void write1Dconfig(){
