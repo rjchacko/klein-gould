@@ -251,10 +251,11 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
  	}
 	
 	public double mean(double[] a) {
+		int size = a.length;
 		double sum = 0;
-		for (int i = 0; i < Lp*Lp; i++)
+		for (int i = 0; i < size; i++)
 				sum += a[i];
-		return sum/(Lp*Lp); 
+		return sum/(size); 
 	}
 		
 	double meanSquared(double[] a) {
@@ -353,6 +354,13 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 			slice[y] = phi[Lp*y + x];
 		}
 		return new PointSet(0, 1.0, slice);
+	}
+	
+	public double [] getPhiSlice(){
+		double [] phiSlice = new double [Lp];
+		for (int i = 0; i < Lp; i ++)
+			phiSlice[i] = phi[i];
+		return phiSlice;
 	}
 
 }

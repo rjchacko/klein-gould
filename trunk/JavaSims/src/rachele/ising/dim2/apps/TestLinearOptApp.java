@@ -131,16 +131,16 @@ public class TestLinearOptApp extends Simulation{
 		params.add("Random seed", 0);
 		params.add("Magnetization", 0.0);
 		params.addm("range change", 0.01);
-		params.addm("dt", 0.00001);
+		params.addm("dt", 0.001);
 		params.add("dt new");
 		params.add("Time");
+		params.add("Mean Phi");
 		flags.add("Write 1D Config");
 	}
 
 	public void animate() {
 		params.set("Time", ising.time());
-//		params.set("Mean Phi", ising.mean(ising.phi));
-//		params.set("Lp", ising.Lp);
+		params.set("Mean Phi", ising.mean(ising.phi));
 		phiGrid.registerData(Lp, Lp, ising.phi);
 		etaVsTimeSim.setAutoScale(true);
 		etaVsTimeLinear.setAutoScale(true);
@@ -153,8 +153,6 @@ public class TestLinearOptApp extends Simulation{
 		double verticalSlice = params.fget("Vertical Slice");
 		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
-		String fileName = "../../../research/javaData/configs1d/config";
-		double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
 		
@@ -495,8 +493,23 @@ public class TestLinearOptApp extends Simulation{
 	}
 	
 	void findPhi0andPhi0_bar(){
-		String fileName = "../../../research/javaData/configs1d/config";
-		phi0 = FileUtil.readConfigFromFile(fileName, Lp);
+		String fileName = "../../../research/javaData/configs1d/configOpt";
+		//need to make phi0 symmetric
+		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, Lp);
+		double minPhi0Value = 1.0;
+		int minPhi0Location = -1;
+		for (int i = 0; i < Lp; i++){
+			if (tempPhi0[i] < minPhi0Value){
+				minPhi0Location = i;
+				minPhi0Value = tempPhi0[i];
+				System.out.println(tempPhi0[i] + " " + i);
+			}
+		}	
+		System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
+		for (int i = 0; i < Lp; i++){
+			phi0[i] = tempPhi0[(minPhi0Location+i)%Lp];
+			System.out.println("phi0 " + i + " = " + phi0[i]);
+		}
 		phi0_bar = fft.backConvolve1DwithFunction(phi0, new Function1D(){
 			public double eval(double k1) {
 				double kRx = 2*Math.PI*ising.Rx*k1/ising.L;
@@ -676,7 +689,7 @@ public class TestLinearOptApp extends Simulation{
 	}	
 
 	private void write1Dconfig(){
-		String configFileName = "../../../research/javaData/configs1d/config";
+		String configFileName = "../../../research/javaData/configs1d/configOpt";
 		FileUtil.deleteFile(configFileName);
 		FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
 	}

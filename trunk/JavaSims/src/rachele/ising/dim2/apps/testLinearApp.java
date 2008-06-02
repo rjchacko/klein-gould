@@ -96,7 +96,6 @@ public class testLinearApp extends Simulation{
     Plot fkPlot = new Plot ("f(k)");
     Plot etakSimPlot = new Plot("eta k sim");
     Plot convolve = new Plot("convolve");
-    
 	Plot hSlice = new Plot("Horizontal Slice");
 	Plot vSlice = new Plot("Vertical Slice"); 
 
@@ -182,8 +181,8 @@ public class testLinearApp extends Simulation{
 				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
 		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
-		String fileName = "../../../research/javaData/configs1d/config";
-		double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
+		//String fileName = "../../../research/javaData/configs1d/config";
+		//double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
 		
@@ -531,7 +530,22 @@ public class testLinearApp extends Simulation{
 	
 	void findPhi0andPhi0_bar(){
 		String fileName = "../../../research/javaData/configs1d/config";
-		phi0 = FileUtil.readConfigFromFile(fileName, Lp);
+		//need to make phi0 symmetric
+		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, Lp);
+		double minPhi0Value = 1.0;
+		int minPhi0Location = -1;
+		for (int i = 0; i < Lp; i++){
+			if (tempPhi0[i] < minPhi0Value){
+				minPhi0Location = i;
+				minPhi0Value = tempPhi0[i];
+				System.out.println(tempPhi0[i] + " " + i);
+			}
+		}	
+		System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
+		for (int i = 0; i < Lp; i++){
+			phi0[i] = tempPhi0[(minPhi0Location+i)%Lp];
+			System.out.println("phi0 " + i + " = " + phi0[i]);
+		}
 		phi0_bar = fft.backConvolve1DwithFunction(phi0, new Function1D(){
 			public double eval(double k1) {
 				double kRx = 2*Math.PI*ising.R*k1/ising.L;
@@ -698,6 +712,7 @@ public class testLinearApp extends Simulation{
 		eigenvalue = new double[Lp];
 		VV = new double [Lp][Lp];
 		findPhi0andPhi0_bar();
+		if(params.sget("Init Conditions")=="Read 1D Soln") ising.set1DConfig(phi0);
 	}	
 
 	private void write1Dconfig(){

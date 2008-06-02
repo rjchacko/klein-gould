@@ -159,6 +159,10 @@ public class IsingField2D extends AbstractIsing2D{
 		}
 	}
 	
+	public void set1DConfig(double [] phi0){
+		for(int i = 0; i < Lp*Lp; i++)
+			phi[i]=phi0[i%Lp] + (random.nextGaussian())/1000000;
+	}
 	public void readInitialConfiguration(){
 		try{
 			File myFile = new File("../../../research/javaData/configs/inputConfig");
