@@ -10,6 +10,7 @@ public class Ising2D extends Simulation {
 	SpinBlocks2D spins;
 	int L,R;
 	double T,h,J;
+	double E;
 	Random r=new Random();
 	int windowMin, windowMax;
 	
@@ -41,11 +42,26 @@ public class Ising2D extends Simulation {
 	public void run() {
 		int spinsInRange=(2*R+1)*(2*R+1) - 1;
 		J = 4.0 / spinsInRange;
+		initializeWindow();
 		while(true){
 			int x=r.nextInt(L*L);
 			double dE=isingDE(x)+umbrellaDE(x);
 			if(dE<=0 || Math.exp(-dE/T)<r.nextDouble()) spins.flip(x%L, x/L);
 		}
+	}
+	
+	public void initializeWindow(){
+		int x, y, j=0;
+		double dE;
+		do{
+			x=j%L;
+			y=j/L;
+			spins.flip(x,y);
+			if(R>1) dE = 2*(h + J*(spins.sumInRange(x,y)-1));
+			else dE = 2*(h + J*(spins.get((x-1+L)%L,y)+spins.get((x+1+L)%L,y)+spins.get(x,(y-1+L)%L)+spins.get(x,(y+1+L)%L)));
+			E+=dE;
+			j++;
+		}while(!(spins.netSum>windowMin && spins.netSum<windowMax));
 	}
 
 	public double isingDE(int x){
