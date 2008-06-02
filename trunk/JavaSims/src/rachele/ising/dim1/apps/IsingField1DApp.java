@@ -1,6 +1,7 @@
 package rachele.ising.dim1.apps;
 
 
+import static java.lang.Math.PI;
 import static java.lang.Math.floor;
 import static scikit.util.Utilities.format;
 //import static scikit.util.Utilities.frameTogether;
@@ -24,6 +25,7 @@ public class IsingField1DApp extends Simulation{
     Plot SFPlot = new Plot("Structure factor");
     Plot freeEngDenPlot = new Plot("Free Energy Density");
     Plot freeEngPlot = new Plot("Free Energy");
+    Plot checkFT = new Plot("check FT");
     FieldIsing1D ising;
     StructureFactor1D sf;
     public int timeCount;
@@ -35,6 +37,7 @@ public class IsingField1DApp extends Simulation{
 	public void load(Control c) {
 		//c.frameTogether("Displays", fieldPlot, freeEngPlot, freeEngDenPlot, SFPlot);
 		c.frame(fieldPlot);
+		c.frame(checkFT);
 		
 		////	Default parameters for nucleation
 //		//params.addm("Model", new ChoiceValue("A", "B"));
@@ -60,6 +63,7 @@ public class IsingField1DApp extends Simulation{
 //  Default params for clump model
 		//params.addm("Model", new ChoiceValue("A", "B"));
 		params.addm("Noise", new ChoiceValue("On", "Off"));
+		params.addm("Interaction", new ChoiceValue("Step Function", "Effective Circle"));
 		params.addm("T", new DoubleValue(0.04, 0, 0.2).withSlider());
 		//params.addm("T", 0.04);
 		params.addm("J", +1.0);
@@ -71,6 +75,7 @@ public class IsingField1DApp extends Simulation{
 		params.add("Density", -.4);
 		params.add("Time Allocation");
 		params.add("max Write Time", 30.0);
+		params.add("Ry/Rx for Circle", 0.86747);
 		params.add("Time");
 		params.add("DENSITY");
 		params.add("Lp");
@@ -87,6 +92,7 @@ public class IsingField1DApp extends Simulation{
 		//fieldPlot.setAutoScale(true);
 		//fieldPlot.set
 		
+		checkFT.registerLines("checking", new PointSet(0,1,findCircleIntFunction(params.fget("Ry/Rx for Circle"))), Color.BLUE);
 		SFPlot.registerLines("Structure factor", sf.getAccumulator(), Color.BLACK);
 		fieldPlot.registerLines("Field", new PointSet(0, ising.dx, ising.phi), Color.BLACK);
 		freeEngDenPlot.registerLines("F.E. density", ising.getFreeEngAcc(), Color.BLACK);
@@ -108,7 +114,11 @@ public class IsingField1DApp extends Simulation{
 	
 	public void run(){
 		ising = new FieldIsing1D(params);
-		
+		boolean circleInt = false;
+		if(params.sget("Interaction")=="Effective Circle")
+			circleInt = true;
+		double [] circleIntFT = new double [ising.Lp];
+		if (circleInt) circleIntFT = findCircleIntFunction(params.fget("Ry/Rx for Circle"));
 		//String pathFileName = "racheleDataFiles/inputPath";
 		//String inputFileName = "racheleDataFiles/inputParams";
 		String inputFileName = "../../../research/javaData/configs1d/inputConfig";
@@ -133,7 +143,10 @@ public class IsingField1DApp extends Simulation{
 				FileUtil.deleteFile(inputFileName);
 				writeInputParams(inputFileName);
 				while (timeCount <= maxWriteCount){
-					ising.simulate();			
+					if(circleInt)
+						ising.simulateCircle(circleIntFT);
+					else
+						ising.simulate();			
 					writeConfigToFileWithTime(configFileName);				
 					Job.animate();					
 					params.set("Time Count", timeCount);
@@ -152,6 +165,34 @@ public class IsingField1DApp extends Simulation{
 			//fieldPlot.setDataSet(0, new PointSet(0, ising.dx, ising.phi));
 			
 		}
+	}
+	
+	/**
+	 * Find a value for the FT for each allowed kR: 
+	 * kR = 2 PI i R / L
+	 */
+	public double [] findCircleIntFunction(double ampFactor){
+		double [] circleFT = new double [ising.Lp];
+		int N = 3;
+		double minx = -1.0; double maxx = 1.0;
+		double range = maxx - minx;
+		double delta = range/(double)N;
+		for (int i = 0; i < ising.Lp; i++){
+			double kRvalue = (2*PI*i/ising.L) * ising.R;
+			double coskR = Math.cos(kRvalue);
+			// have to intergrate: int _-1 ^1 cos(kR*x)*sqrt(1-x*x)
+			double sum = 0;
+			for(int j = 0; j < N; j++){
+				double xValue = (double)j*delta-1.0;
+				double factor = Math.sqrt(1-xValue*xValue);
+				sum += coskR*factor;
+				//System.out.println(i + " " +coskR+ " " + factor + " " + sum);
+			}
+			sum*= delta;
+			circleFT[i] = sum*ampFactor;
+//			System.out.println(i + " " +circleFT[i]+ " " + );
+		}
+		return circleFT;
 	}
 	
 	public void writeInputParams(String FileName){
