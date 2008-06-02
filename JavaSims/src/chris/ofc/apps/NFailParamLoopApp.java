@@ -80,7 +80,7 @@ public class NFailParamLoopApp extends Simulation {
 		cyclevar=0;
 		
 		//PrintUtil.printlnToFile(params.sget("Data Directory")+File.separator+"Params.txt",params.toString());
-		model.PrintParams(params.sget("Data Directory")+File.separator+"Params.txt", params);	
+		NfailDamage2D.PrintParams(params.sget("Data Directory")+File.separator+"Params.txt", params);	
 
 		
 		switch (LVtype.valueOf(params.sget("Looping Parameter (LP)"))){
@@ -113,6 +113,7 @@ public class NFailParamLoopApp extends Simulation {
 				}
 				
 				Job.animate();
+				cyclevar++;
 			}
 			
 			break;
@@ -143,6 +144,7 @@ public class NFailParamLoopApp extends Simulation {
 				}
 				
 				Job.animate();
+				cyclevar++;
 			}
 			
 			break;
@@ -174,6 +176,7 @@ public class NFailParamLoopApp extends Simulation {
 				}
 				
 				Job.animate();
+				cyclevar++;
 			}
 			
 			break;
@@ -205,6 +208,7 @@ public class NFailParamLoopApp extends Simulation {
 				}
 				
 				Job.animate();
+				cyclevar++;
 			}
 			
 			break;
@@ -236,6 +240,7 @@ public class NFailParamLoopApp extends Simulation {
 				}
 				
 				Job.animate();
+				cyclevar++;
 			}
 			
 			break;
@@ -267,6 +272,7 @@ public class NFailParamLoopApp extends Simulation {
 				}
 				
 				Job.animate();
+				cyclevar++;
 			}
 			
 			break;

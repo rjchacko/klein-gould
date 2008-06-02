@@ -13,6 +13,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.ofc.DamageClusters2D;
+import chris.ofc.NfailDamage2D;
 
 public class DamageClusterTest extends Simulation {
 
@@ -118,7 +119,7 @@ public class DamageClusterTest extends Simulation {
 		}
 		
 		//PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
-		model.PrintParams(model.outdir+File.separator+"Params.txt", params);	
+		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		
 		model.Initialize("Flat");
 		

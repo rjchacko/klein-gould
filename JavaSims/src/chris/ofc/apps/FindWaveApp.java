@@ -110,7 +110,7 @@ public class FindWaveApp extends Simulation {
 		}
 		
 		//PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
-		model.PrintParams(model.outdir+File.separator+"Params.txt", params);	
+		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		
 		model.Initialize("Flat");
 		

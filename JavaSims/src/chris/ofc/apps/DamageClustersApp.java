@@ -13,6 +13,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.ofc.DamageClusters2D;
+import chris.ofc.NfailDamage2D;
 
 public class DamageClustersApp extends Simulation {
 
@@ -21,7 +22,7 @@ public class DamageClustersApp extends Simulation {
 	Grid grid3 = new Grid ("Clusters");
 
 	DamageClusters2D model;
-	double ScMax, rgyr;
+	double ScMax, rgyr, tOLD;
 	
 	ColorPalette palette1, palette2;
 	ColorGradient smooth;
@@ -40,7 +41,7 @@ public class DamageClustersApp extends Simulation {
 		params.add("Animation", new ChoiceValue("On","Off"));
 		params.add("Take Cluster Data", new ChoiceValue("On","Off"));
 		//params.addm("Auto Scale", new ChoiceValue("Yes", "No"));
-		params.add("Lattice Size",1<<5);
+		params.add("Lattice Size",1<<9);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
@@ -95,10 +96,11 @@ public class DamageClustersApp extends Simulation {
 			grid2.registerData(model.L, model.L, foo);
 			if (model.Cdata) grid3.registerData(model.L, model.L, foo2);
 				
-			if (params.sget("Record").equals("On") && model.ShowGrid){
+			if ((model.time > tOLD) && params.sget("Record").equals("On") && model.ShowGrid){
 				model.TakePicture(grid1);
 				model.TakePicture(grid2);
 				if (model.Cdata) model.TakePicture(grid3);
+				tOLD = model.time;
 			}
 		
 		}
@@ -114,6 +116,8 @@ public class DamageClustersApp extends Simulation {
 
 	public void run() {
 		
+		tOLD = 0;
+		
 		model = new DamageClusters2D(params);
 		
 		String anmt = params.sget("Animation");
@@ -126,7 +130,7 @@ public class DamageClustersApp extends Simulation {
 		}
 		
 		//PrintUtil.printlnToFile(model.outdir+File.separator+"Params.txt",params.toString());
-		model.PrintParams(model.outdir+File.separator+"Params.txt", params);	
+		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		
 		model.Initialize("Flat");
 		
@@ -180,6 +184,9 @@ public class DamageClustersApp extends Simulation {
 			model.TakeData();
 			
 		}
+		
+		if(model.crack) System.out.println("All Sites have Failed!");
+		if(model.Percolate) System.out.println("The System has Percolated!");
 		
 	}
 

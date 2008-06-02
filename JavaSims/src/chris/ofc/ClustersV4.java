@@ -714,6 +714,24 @@ private void resetPCNandDIST(int ns, int[] os){
     return(parent[s]==EMPTY) ? 0 : -parent[findRoot(s)];
   }
 
+  public int getLargestCluster() {
+	  int max = 1;
+	  for (int j = 1 ; j < N+1 ; j++){
+		  if(numClusters[j]>0) max = j;
+	  }
+	  
+	  return max;
+  }
+  
+  public int getLargestCluster(int old) {
+	  int max = old;
+	  for (int j = old ; j < N+1 ; j++){
+		  if(numClusters[j]>0) max = j;
+	  }
+	  
+	  return max;
+  }
+  
   public int getClusterNumber(int s){
 	return(cnARRAY[s] == BIG) ? 0 : pcn[cnARRAY[s]];
   }
