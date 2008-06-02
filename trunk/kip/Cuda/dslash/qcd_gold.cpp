@@ -50,13 +50,13 @@ int nextIndex(int i, int dir) {
     }
 }
 
-void constructGaugeField(float *res) {
-    for(int i = 0; i < L; i++) {
-        for (int dir = 0; dir < 4; dir++) {
+void constructGaugeField(float **res) {
+    for (int dir = 0; dir < 4; dir++) {
+        for(int i = 0; i < L; i++) {
             for (int m = 0; m < 3; m++) {
                 for (int n = 0; n < 3; n++) {
-                    res[i*(4*3*3*2) + dir*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
-                    res[i*(4*3*3*2) + dir*(3*3*2) + m*(3*2) + n*(2) + 1] = rand() / (float)RAND_MAX;
+                    res[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
+                    res[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = rand() / (float)RAND_MAX;
                 }
             }
         }
@@ -200,24 +200,21 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
 //
 // indices, varying slowest to fastest, are,
 //   spinor field:  (z, y, x, t, spinor idx, color idx, complex idx)
-//   gauge field:   (z, y, x, t, color row, color column, complex idx)
+//   gauge field:   (dir) (z, y, x, t, color row, color column, complex idx)
 //
 // constants (such as lattice lengths) are given in the file 'qcd.h'
 // 
 // the field arguments to this function must be bipartioned: i.e., the gauge/spinor field
 // only contains black/red lattice indices, or vice versa.
 //
-// by convention, the first projector to be applied (P^{1+} = 1+\gamma_1) operates on 
-// elements of the gauge/spinor fields at equal lattice indices.
-//
-void computeGold(float* res, float* gauge, float *spinor) {
+void computeGold(float *res, float **gauge, float *spinor) {
     zero(res, L*4*3*2);
     
     for (int idxOut = 0; idxOut < L; idxOut++) {
         int idxIn = idxOut;
         for (int dir = 0; dir < 8; dir++) {
             float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
-            float *gaugeMatrix = &gauge[idxIn*(4*3*3*2) + (dir/2)*(3*3*2)];
+            float *gaugeMatrix = &gauge[dir/2][idxIn*(3*3*2)];
             multiplySpinorByDiracProjector(projectedSpinor, dir, &spinor[idxIn*(4*3*2)]);
             
             for (int s = 0; s < 4; s++) {
@@ -256,16 +253,16 @@ void printSpinorField(float *spinor) {
 }
 
 
-void packGaugeField(float4 *res, float *gauge) {
-    for (int i = 0; i < L; i++) {
-        for (int dir = 0; dir < 4; dir++) {
+void packGaugeField(float4 *res, float **gauge) {
+    for (int dir = 0; dir < 4; dir++) {
+        for (int i = 0; i < L; i++) {
             for (int j = 0; j < 5; j++) {
                 float a1, a2, a3, a4;
-                a1 = gauge[i*4*18 + dir*18 + j*4 + 0];
-                a2 = gauge[i*4*18 + dir*18 + j*4 + 1];
+                a1 = gauge[dir][i*18 + j*4 + 0];
+                a2 = gauge[dir][i*18 + j*4 + 1];
                 if (j < 4) {
-                    a3 = gauge[i*4*18 + dir*18 + j*4 + 2];
-                    a4 = gauge[i*4*18 + dir*18 + j*4 + 3];
+                    a3 = gauge[dir][i*18 + j*4 + 2];
+                    a4 = gauge[dir][i*18 + j*4 + 3];
                 }
                 else {
                     int i3 = nextIndex(i, dir*2+0);

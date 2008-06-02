@@ -34,7 +34,9 @@ void runTest( int argc, char** argv)  {
     printf("Shared kb: %fkB\n", shared_bytes/1024.);
     
     // construct input fields
-    float* gaugeIn = (float *)malloc(L*GAUGE_BYTES);
+    float *gaugeIn[4];
+    for (int dir = 0; dir < 4; dir++)
+        gaugeIn[dir] = (float *)malloc(L*3*3*2*sizeof(float));
     float* spinorIn = (float *)malloc(L*SPINOR_BYTES);
     float* spinorOut = (float*)malloc(L*SPINOR_BYTES);
     float* spinorRef = (float*)malloc(L*SPINOR_BYTES);
@@ -96,7 +98,8 @@ void runTest( int argc, char** argv)  {
     printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
     
     // release memory
-    free(gaugeIn);
+    for (int dir = 0; dir < 4; dir++)
+        free(gaugeIn[dir]);
     free(spinorIn);
     free(spinorOut);
     free(spinorRef);
