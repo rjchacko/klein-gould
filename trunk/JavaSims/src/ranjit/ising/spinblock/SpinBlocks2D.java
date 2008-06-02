@@ -5,7 +5,7 @@ public class SpinBlocks2D {
 	SpinBlockIndexer indexer;
 	int[] xIndices, yIndices;
 	int[/*yscale*/][/*xscale*/][] blocks;
-	int netSum;	
+	public int netSum;	
 	public int N, L, R;
 	
 	public SpinBlocks2D(int L, int R) {

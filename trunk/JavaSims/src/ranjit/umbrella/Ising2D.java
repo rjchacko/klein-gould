@@ -9,8 +9,9 @@ import scikit.jobs.Simulation;
 public class Ising2D extends Simulation {
 	SpinBlocks2D spins;
 	int L,R;
-	double T;
+	double T,h,J;
 	Random r=new Random();
+	int windowMin, windowMax;
 	
 	public Ising2D() {
 		spins = new SpinBlocks2D(L, R);
@@ -18,8 +19,11 @@ public class Ising2D extends Simulation {
 
 	public void load(Control c){		
 		params.add("T",1.0);
+		params.add("h",-0.7);
 		params.add("L",32);
 		params.add("R",8);
+		params.add("window min",992);
+		params.add("window max",1024);
 	}
 	@Override
 	public void animate() {
@@ -35,22 +39,26 @@ public class Ising2D extends Simulation {
 
 	@Override
 	public void run() {
+		int spinsInRange=(2*R+1)*(2*R+1) - 1;
+		J = 4.0 / spinsInRange;
 		while(true){
-			//select spin to flip
-//			int x=r.nextInt(L*L);
-			//calculate energy cost of spin flip
-//			double dE=isingDE(x)+umbrellaDE(x);
-			//choose random number
+			int x=r.nextInt(L*L);
+			double dE=isingDE(x)+umbrellaDE(x);
+			if(dE<=0 || Math.exp(-dE/T)<r.nextDouble()) spins.flip(x%L, x/L);
 		}
 	}
 
 	public double isingDE(int x){
 		double dE=0;	
+		int spin=spins.get(x%L, x/L);
+		dE=2*spin*(h + J*(spins.sumInRange(x%L,x/L)-spin));
 		return dE;
 	}
 	
 	public double umbrellaDE(int x){
 		double dE=0;
+		int dM=-2*spins.get(x%L, x/L);
+		if(spins.netSum+dM<windowMin || spins.netSum+dM>windowMax) dE=Double.POSITIVE_INFINITY;
 		return dE;		
 	}
 	/**
