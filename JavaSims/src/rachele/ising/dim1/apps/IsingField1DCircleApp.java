@@ -32,16 +32,16 @@ public class IsingField1DCircleApp extends Simulation{
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.06, 0, 0.2).withSlider());
 		params.addm("J", +1.0);
-		params.addm("H", 0.5);
-		params.addm("Target Mean Phi", 0.43);
+		params.addm("H", 0.81);
+		params.addm("Target Mean Phi", 0.435);
 		params.addm("R", 2490000.0);
 		params.add("L/R", 2.409638554);
-		params.add("R/dx", 83.0);
+		params.add("R/dx", 80.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Density", -.4);
 		params.add("Time Allocation");
 		params.add("max Write Time", 30.0);
-		params.addm("Ry/Rx for Circle", 0.86747);
+		params.addm("Ry/Rx for Circle", 1.0);
 		params.add("Time");
 		params.add("DENSITY");
 		params.add("Lp");
@@ -82,7 +82,7 @@ public class IsingField1DCircleApp extends Simulation{
 			ampFactor = params.fget("Ry/Rx for Circle"); 
 			ising.simulateCircle(ampFactor);
 			double newH = 0;
-			double deltaH = 0.0001;
+			double deltaH = 0.00001;
 			if (mean(ising.phi) < params.fget("Target Mean Phi"))
 				newH = ising.H + deltaH;
 			else
