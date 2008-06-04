@@ -46,13 +46,15 @@ int linkIndex(int i, int dir) {
     return -1;
 }
 
-void constructGaugeField(float **res) {
+void constructGaugeField(float **resEven, float **resOdd) {
     for (int dir = 0; dir < 4; dir++) {
         for(int i = 0; i < L; i++) {
             for (int m = 0; m < 3; m++) {
                 for (int n = 0; n < 3; n++) {
-                    res[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
-                    res[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = rand() / (float)RAND_MAX;
+                    resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
+                    resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = rand() / (float)RAND_MAX;
+                    resOdd[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
+                    resOdd[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = rand() / (float)RAND_MAX;                    
                 }
             }
         }
@@ -203,14 +205,14 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
 // the field arguments to this function must be bipartioned: i.e., the gauge/spinor field
 // only contains black/red lattice indices, or vice versa.
 //
-void computeGold(float *res, float **gauge, float *spinor) {
+void computeGold(float *res, float **gaugeEven, float **gaugeOdd, float *spinor) {
     zero(res, L*4*3*2);
     
     for (int idxOut = 0; idxOut < L; idxOut++) {
         for (int dir = 0; dir < 8; dir++) {
 	    int idxIn = linkIndex(idxOut, dir);
             float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
-            float *gaugeMatrix = &gauge[dir/2][idxIn*(3*3*2)];
+            float *gaugeMatrix = &gaugeEven[dir/2][idxIn*(3*3*2)];
             multiplySpinorByDiracProjector(projectedSpinor, dir, &spinor[idxIn*(4*3*2)]);
             
             for (int s = 0; s < 4; s++) {
