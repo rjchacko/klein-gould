@@ -19,8 +19,4 @@
 extern "C" void constructGaugeField(float **res);
 extern "C" void constructSpinorField(float *res);
 extern "C" void computeGold(float *res, float **gauge, float *spinor);
-
 extern "C" void printSpinorField(float *spinor);
-extern "C" void packGaugeField(float4 *res, float **gauge);
-extern "C" void packSpinorField(float4 *res, float *spinor);
-extern "C" void unpackSpinorField(float *res, float4 *spinorPacked);
