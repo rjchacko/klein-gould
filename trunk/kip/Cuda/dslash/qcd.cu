@@ -55,6 +55,7 @@ void runTest( int argc, char** argv)  {
     CUDA_SAFE_CALL(cudaMalloc((void**) &d_spinorOut, L*SPINOR_BYTES));
     
     // copy inputs from host to device
+    printf("Randomizing fields\n");
     constructGaugeField(gaugeIn);
     constructSpinorField(spinorIn);
     packGaugeField(packedGaugeIn, gaugeIn);
@@ -71,6 +72,7 @@ void runTest( int argc, char** argv)  {
     const int LOOPS = 100;
     dim3 gridDim(GRID_DIM, 1, 1);
     dim3 blockDim(BLOCK_DIM, 1, 1);
+    printf("Beginning kernel execution\n");
     cutStartTimer(timer);
     for (int i = 0; i < LOOPS; i++) {
         testKernel <<<gridDim, blockDim, shared_bytes>>> ((float4 *)d_spinorOut);
@@ -79,21 +81,23 @@ void runTest( int argc, char** argv)  {
     }
     cutStopTimer(timer);
     
+    // print timing information
     float millisecs = cutGetTimerValue(timer)/LOOPS;
     float secs = millisecs / 1000.;
     printf("Elapsed time %fms\n", millisecs);
     printf("GFLOPS = %f\n", 1e-9*1320*L/secs);
-    printf("GiB = %f\n", L*(8*7+4)*3*2*sizeof(float)/(secs*(1<<30)));
+    printf("GiB = %f\n\n", L*(8*7+4)*3*2*sizeof(float)/(secs*(1<<30)));
     
-    // compare to host computation
+    // retrieve output spinor from device
     CUDA_SAFE_CALL(cudaMemcpy(packedSpinorOut, d_spinorOut, L*SPINOR_BYTES, cudaMemcpyDeviceToHost));
     unpackSpinorField(spinorOut, packedSpinorOut);
+    
+    // compare to dslash reference implementation
     computeGold(spinorRef, gaugeIn, spinorIn);
-    
+    printf("Reference:\n");
     printSpinorField(spinorRef);
-    printf("\n");
+    printf("\nCUDA:\n");
     printSpinorField(spinorOut);
-    
     CUTBoolean res = cutComparefe(spinorOut, spinorRef, L*SPINOR_SIZE, 1e-4);
     printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
     

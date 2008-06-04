@@ -63,9 +63,6 @@
 #define gT22_re (+g22_re)
 #define gT22_im (-g22_im)
 
-#define latticeIndex0 (*(int *)(&G4.z))
-#define latticeIndex1 (*(int *)(&G4.w))
-
 #define STRIDE 1
 #define o00_re s[STRIDE*0]
 #define o00_im s[STRIDE*1]
@@ -92,14 +89,15 @@ float o31_im;
 float o32_re;
 float o32_im;
 
-const int zero = BLOCK_DIM - blockDim.x;
 const int sid = BLOCK_DIM*blockIdx.x + threadIdx.x;
 
 extern __shared__ float s_data[];
 volatile float *s = s_data+19*threadIdx.x;
 
-int sp_idx = zero + sid;
-int ga_idx = zero + sid + (0/2)*L*(20/4);
+int x1 = sid % L1;
+int x2 = (sid/L1) % L2;
+int x3 = (sid/(L2*L1)) % L3;
+int x4 = sid/(L3*L2*L1);
 
 o00_re = o00_im = 0;
 o01_re = o01_im = 0;
@@ -121,6 +119,10 @@ if(1)
     // 0 1 i 0 
     // 0 -i 1 0 
     // -i 0 0 1 
+    
+    int sp_idx = sid;//IDX(x4, x3, x2, x1);
+    int ga_idx = sp_idx + (0/2)*L*(20/4);
+    
     // read spinor from device memory
     float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
     float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
@@ -199,8 +201,6 @@ if(1)
         o32_im += -A_re;
     }
     
-    sp_idx = zero + latticeIndex0;
-    ga_idx = zero + latticeIndex0 + (1/2)*L*(20/4);
 }
 
 if(1)
@@ -210,6 +210,12 @@ if(1)
     // 0 1 -i 0 
     // 0 i 1 0 
     // i 0 0 1 
+    
+//    int x1p = (x1==L1-1) ? 0 : x1+1;
+//    int sp_idx = IDX(x4, x3, x2, x1p);
+    int sp_idx = (x1==L1-1) ? sid-(L1-1) : sid+1;
+    int ga_idx = sp_idx + (1/2)*L*(20/4);
+    
     // read spinor from device memory
     float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
     float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
@@ -288,8 +294,6 @@ if(1)
         o32_im += +A_re;
     }
     
-    sp_idx = zero + latticeIndex1;
-    ga_idx = zero + latticeIndex1 + (2/2)*L*(20/4);
 }
 
 if(1)
@@ -299,6 +303,12 @@ if(1)
     // 0 1 1 0 
     // 0 1 1 0 
     // -1 0 0 1 
+    
+//    int x2p = (x2==0) ? L2-1 : x2-1;
+//    int sp_idx = IDX(x4, x3, x2p, x1);
+    int sp_idx = (x2==0) ? (sid+(L2-1)*L1) : (sid-L1);
+    int ga_idx = sp_idx + (2/2)*L*(20/4);
+    
     // read spinor from device memory
     float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
     float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
@@ -377,8 +387,6 @@ if(1)
         o32_im += -A_im;
     }
     
-    sp_idx = zero + latticeIndex0;
-    ga_idx = zero + latticeIndex0 + (3/2)*L*(20/4);
 }
 
 if(1)
@@ -388,6 +396,12 @@ if(1)
     // 0 1 -1 0 
     // 0 -1 1 0 
     // 1 0 0 1 
+    
+//    int x2p = (x2==L2-1) ? 0 : x2+1;
+//    int sp_idx = IDX(x4, x3, x2p, x1);
+    int sp_idx = (x2==L2-1) ? (sid-(L2-1)*L1) : (sid+L1);
+    int ga_idx = sp_idx + (3/2)*L*(20/4);
+    
     // read spinor from device memory
     float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
     float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
@@ -466,8 +480,6 @@ if(1)
         o32_im += +A_im;
     }
     
-    sp_idx = zero + latticeIndex1;
-    ga_idx = zero + latticeIndex1 + (4/2)*L*(20/4);
 }
 
 if(1)
@@ -477,6 +489,12 @@ if(1)
     // 0 1 0 -i 
     // -i 0 1 0 
     // 0 i 0 1 
+    
+//    int x3p = (x3==0) ? L3-1 : x3-1;
+//    int sp_idx = IDX(x4, x3p, x2, x1);
+    int sp_idx = (x3==0) ? (sid+(L3-1)*L2*L1) : (sid-L2*L1);
+    int ga_idx = sp_idx + (4/2)*L*(20/4);
+    
     // read spinor from device memory
     float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
     float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
@@ -555,8 +573,6 @@ if(1)
         o32_im += +B_re;
     }
     
-    sp_idx = zero + latticeIndex0;
-    ga_idx = zero + latticeIndex0 + (5/2)*L*(20/4);
 }
 
 if(1)
@@ -566,6 +582,12 @@ if(1)
     // 0 1 0 i 
     // i 0 1 0 
     // 0 -i 0 1 
+    
+//    int x3p = (x3==L3-1) ? 0 : x3+1;
+//    int sp_idx = IDX(x4, x3p, x2, x1);
+    int sp_idx = (x3==L3-1) ? (sid-(L3-1)*L2*L1) : (sid+L2*L1);
+    int ga_idx = sp_idx + (5/2)*L*(20/4);
+    
     // read spinor from device memory
     float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
     float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
@@ -644,8 +666,6 @@ if(1)
         o32_im += -B_re;
     }
     
-    sp_idx = zero + latticeIndex1;
-    ga_idx = zero + latticeIndex1 + (6/2)*L*(20/4);
 }
 
 if(1)
@@ -655,6 +675,12 @@ if(1)
     // 0 1 0 1 
     // 1 0 1 0 
     // 0 1 0 1 
+    
+//    int x4p = (x4==0) ? L4-1 : x4-1;
+//    int sp_idx = IDX(x4p, x3, x2, x1);
+    int sp_idx = (x4==0) ? (sid+(L4-1)*L3*L2*L1) : (sid-L3*L2*L1);
+    int ga_idx = sp_idx + (6/2)*L*(20/4);
+    
     // read spinor from device memory
     float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
     float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
@@ -733,8 +759,6 @@ if(1)
         o32_im += +B_im;
     }
     
-    sp_idx = zero + latticeIndex0;
-    ga_idx = zero + latticeIndex0 + (7/2)*L*(20/4);
 }
 
 if(1)
@@ -744,6 +768,12 @@ if(1)
     // 0 1 0 -1 
     // -1 0 1 0 
     // 0 -1 0 1 
+    
+//    int x4p = (x4==L4-1) ? 0 : x4+1;
+//    int sp_idx = IDX(x4p, x3, x2, x1);
+    int sp_idx = (x4==L4-1) ? (sid-(L4-1)*L3*L2*L1) : (sid+L3*L2*L1);
+    int ga_idx = sp_idx + (7/2)*L*(20/4);
+    
     // read spinor from device memory
     float4 I0 = tex1Dfetch(spinorTex, sp_idx + 0*L);
     float4 I1 = tex1Dfetch(spinorTex, sp_idx + 1*L);
@@ -822,8 +852,6 @@ if(1)
         o32_im += -B_im;
     }
     
-    sp_idx = zero + latticeIndex1;
-    ga_idx = zero + latticeIndex1 + (8/2)*L*(20/4);
 }
 
 
@@ -858,4 +886,3 @@ if(1)
 ((float*)g_out)[21*L+sid] = o31_im;
 ((float*)g_out)[22*L+sid] = o32_re;
 ((float*)g_out)[23*L+sid] = o32_im;
-

@@ -33,21 +33,22 @@ int coord_4(int idx) {
     return idx/(L3*L2*L1);
 }
 
-int nextIndex(int i, int dir) {
+int linkIndex(int i, int dir) {
     int t = coord_4(i);
     int z = coord_3(i);
     int y = coord_2(i);
     int x = coord_1(i);
     switch (dir) {
-        case 0: return index(t, z, y, x+1);
-        case 1: return index(t, z, y+1, x-1);
-        case 2: return index(t, z, y-2, x);
-        case 3: return index(t, z+1, y+1, x);
-        case 4: return index(t, z-2, y, x);
-        case 5: return index(t+1, z+1, y, x);
-        case 6: return index(t-2, z, y, x);
-        default: return -1;
+        case 0: return index(t, z, y, x);
+        case 1: return index(t, z, y, x+1);
+        case 2: return index(t, z, y-1, x);
+        case 3: return index(t, z, y+1, x);
+        case 4: return index(t, z-1, y, x);
+        case 5: return index(t, z+1, y, x);
+        case 6: return index(t-1, z, y, x);
+        case 7: return index(t+1, z, y, x);
     }
+    return -1;
 }
 
 void constructGaugeField(float **res) {
@@ -211,8 +212,8 @@ void computeGold(float *res, float **gauge, float *spinor) {
     zero(res, L*4*3*2);
     
     for (int idxOut = 0; idxOut < L; idxOut++) {
-        int idxIn = idxOut;
         for (int dir = 0; dir < 8; dir++) {
+	    int idxIn = linkIndex(idxOut, dir);
             float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
             float *gaugeMatrix = &gauge[dir/2][idxIn*(3*3*2)];
             multiplySpinorByDiracProjector(projectedSpinor, dir, &spinor[idxIn*(4*3*2)]);
@@ -225,7 +226,6 @@ void computeGold(float *res, float **gauge, float *spinor) {
             }
             
             sum(&res[idxOut*(4*3*2)], &res[idxOut*(4*3*2)], gaugedSpinor, 4*3*2);
-            idxIn = nextIndex(idxIn, dir);
         }
     }
 }
@@ -257,18 +257,12 @@ void packGaugeField(float4 *res, float **gauge) {
     for (int dir = 0; dir < 4; dir++) {
         for (int i = 0; i < L; i++) {
             for (int j = 0; j < 5; j++) {
-                float a1, a2, a3, a4;
+                float a1, a2, a3=0, a4=0;
                 a1 = gauge[dir][i*18 + j*4 + 0];
                 a2 = gauge[dir][i*18 + j*4 + 1];
                 if (j < 4) {
                     a3 = gauge[dir][i*18 + j*4 + 2];
                     a4 = gauge[dir][i*18 + j*4 + 3];
-                }
-                else {
-                    int i3 = nextIndex(i, dir*2+0);
-                    int i4 = nextIndex(i, dir*2+1);
-                    a3 = *(float *)&i3;
-                    a4 = *(float *)&i4;
                 }
                 float4 f4 = {a1, a2, a3, a4};
                 res[(dir*5+j)*L + i] = f4;
