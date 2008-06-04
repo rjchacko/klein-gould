@@ -120,7 +120,7 @@ if(1)
     // 0 -i 1 0 
     // -i 0 0 1 
     
-    int sp_idx = sid;//IDX(x4, x3, x2, x1);
+    int sp_idx = sid;
     int ga_idx = sp_idx + (0/2)*L*(20/4);
     
     // read spinor from device memory
@@ -211,8 +211,6 @@ if(1)
     // 0 i 1 0 
     // i 0 0 1 
     
-//    int x1p = (x1==L1-1) ? 0 : x1+1;
-//    int sp_idx = IDX(x4, x3, x2, x1p);
     int sp_idx = (x1==L1-1) ? sid-(L1-1) : sid+1;
     int ga_idx = sp_idx + (1/2)*L*(20/4);
     
@@ -304,8 +302,6 @@ if(1)
     // 0 1 1 0 
     // -1 0 0 1 
     
-//    int x2p = (x2==0) ? L2-1 : x2-1;
-//    int sp_idx = IDX(x4, x3, x2p, x1);
     int sp_idx = (x2==0) ? (sid+(L2-1)*L1) : (sid-L1);
     int ga_idx = sp_idx + (2/2)*L*(20/4);
     
@@ -397,8 +393,6 @@ if(1)
     // 0 -1 1 0 
     // 1 0 0 1 
     
-//    int x2p = (x2==L2-1) ? 0 : x2+1;
-//    int sp_idx = IDX(x4, x3, x2p, x1);
     int sp_idx = (x2==L2-1) ? (sid-(L2-1)*L1) : (sid+L1);
     int ga_idx = sp_idx + (3/2)*L*(20/4);
     
@@ -490,8 +484,6 @@ if(1)
     // -i 0 1 0 
     // 0 i 0 1 
     
-//    int x3p = (x3==0) ? L3-1 : x3-1;
-//    int sp_idx = IDX(x4, x3p, x2, x1);
     int sp_idx = (x3==0) ? (sid+(L3-1)*L2*L1) : (sid-L2*L1);
     int ga_idx = sp_idx + (4/2)*L*(20/4);
     
@@ -583,8 +575,6 @@ if(1)
     // i 0 1 0 
     // 0 -i 0 1 
     
-//    int x3p = (x3==L3-1) ? 0 : x3+1;
-//    int sp_idx = IDX(x4, x3p, x2, x1);
     int sp_idx = (x3==L3-1) ? (sid-(L3-1)*L2*L1) : (sid+L2*L1);
     int ga_idx = sp_idx + (5/2)*L*(20/4);
     
@@ -676,8 +666,6 @@ if(1)
     // 1 0 1 0 
     // 0 1 0 1 
     
-//    int x4p = (x4==0) ? L4-1 : x4-1;
-//    int sp_idx = IDX(x4p, x3, x2, x1);
     int sp_idx = (x4==0) ? (sid+(L4-1)*L3*L2*L1) : (sid-L3*L2*L1);
     int ga_idx = sp_idx + (6/2)*L*(20/4);
     
@@ -769,8 +757,6 @@ if(1)
     // -1 0 1 0 
     // 0 -1 0 1 
     
-//    int x4p = (x4==L4-1) ? 0 : x4+1;
-//    int sp_idx = IDX(x4p, x3, x2, x1);
     int sp_idx = (x4==L4-1) ? (sid-(L4-1)*L3*L2*L1) : (sid+L3*L2*L1);
     int ga_idx = sp_idx + (7/2)*L*(20/4);
     
@@ -886,3 +872,4 @@ if(1)
 ((float*)g_out)[21*L+sid] = o31_im;
 ((float*)g_out)[22*L+sid] = o32_re;
 ((float*)g_out)[23*L+sid] = o32_im;
+

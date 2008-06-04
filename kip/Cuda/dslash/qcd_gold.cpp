@@ -1,8 +1,3 @@
-
-typedef struct {
-    float x, y, z, w;
-} float4;
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
@@ -251,55 +246,3 @@ void printSpinorField(float *spinor) {
     }
     printf("\n");    
 }
-
-
-void packGaugeField(float4 *res, float **gauge) {
-    for (int dir = 0; dir < 4; dir++) {
-        for (int i = 0; i < L; i++) {
-            for (int j = 0; j < 5; j++) {
-                float a1, a2, a3=0, a4=0;
-                a1 = gauge[dir][i*18 + j*4 + 0];
-                a2 = gauge[dir][i*18 + j*4 + 1];
-                if (j < 4) {
-                    a3 = gauge[dir][i*18 + j*4 + 2];
-                    a4 = gauge[dir][i*18 + j*4 + 3];
-                }
-                float4 f4 = {a1, a2, a3, a4};
-                res[(dir*5+j)*L + i] = f4;
-            }
-        }
-    }
-}
-
-void packSpinorField(float4 *res, float *spinor) {
-    for (int i = 0; i < L; i++) {
-        for (int j = 0; j < 6; j++) {
-            float a1 = spinor[i*(6*4) + j*(4) + 0];
-            float a2 = spinor[i*(6*4) + j*(4) + 1];
-            float a3 = spinor[i*(6*4) + j*(4) + 2];
-            float a4 = spinor[i*(6*4) + j*(4) + 3];
-            float4 f4 = {a1, a2, a3, a4};
-            res[j*L + i] = f4;
-        }
-    }
-}
-
-void unpackSpinorField(float *res, float4 *spinorPacked) {
-    for (int i = 0; i < L; i++) {
-        if (0) {
-            for (int j = 0; j < 6; j++) {
-                float4 f4 = spinorPacked[j*L + i];
-                res[i*(6*4) + j*(4) + 0] = f4.x;
-                res[i*(6*4) + j*(4) + 1] = f4.y;
-                res[i*(6*4) + j*(4) + 2] = f4.z;
-                res[i*(6*4) + j*(4) + 3] = f4.w;
-            }
-        }
-        else {
-            for (int j = 0; j < 24; j++) {
-                res[i*24 + j] = ((float *)spinorPacked)[j*L + i];
-            }
-        }
-    }
-}
-
