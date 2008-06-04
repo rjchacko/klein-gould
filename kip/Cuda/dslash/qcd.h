@@ -8,11 +8,11 @@
 #define BLOCK_DIM (64) // threads per block
 #define GRID_DIM (L/BLOCK_DIM) // there are L threads in total
 
-//---------- qcd_gold.cpp
+//---------- dslash_reference.cpp
 
 extern "C" void constructGaugeField(float **resEven, float **resOdd);
 extern "C" void constructSpinorField(float *res);
-extern "C" void computeGold(float *res, float **gaugeEven, float **gaugeOdd, float *spinor);
+extern "C" void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinor, int evenBit);
 extern "C" void printSpinorField(float *spinor);
 
 //---------- dslash_cuda.cu
@@ -26,4 +26,5 @@ extern "C" void retrieveSpinorFieldOdd(float *res);
 
 extern "C" void initializeCuda(int argc, char** argv);
 extern "C" void releaseCuda();
+
 extern "C" void dslashCuda(int evenBit);
