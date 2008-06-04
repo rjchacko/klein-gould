@@ -147,11 +147,11 @@ if(1)
     float b2_im = +i12_im+i22_re;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
-    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
-    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
-    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
-    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
+    float4 G0 = tex1Dfetch(gauge1Tex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gauge1Tex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gauge1Tex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gauge1Tex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gauge1Tex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -238,11 +238,11 @@ if(1)
     float b2_im = +i12_im-i22_re;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
-    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
-    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
-    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
-    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
+    float4 G0 = tex1Dfetch(gauge1Tex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gauge1Tex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gauge1Tex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gauge1Tex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gauge1Tex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -329,11 +329,11 @@ if(1)
     float b2_im = +i12_im+i22_im;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
-    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
-    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
-    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
-    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
+    float4 G0 = tex1Dfetch(gauge1Tex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gauge1Tex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gauge1Tex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gauge1Tex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gauge1Tex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -420,11 +420,11 @@ if(1)
     float b2_im = +i12_im-i22_im;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
-    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
-    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
-    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
-    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
+    float4 G0 = tex1Dfetch(gauge1Tex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gauge1Tex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gauge1Tex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gauge1Tex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gauge1Tex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -511,11 +511,11 @@ if(1)
     float b2_im = +i12_im-i32_re;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
-    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
-    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
-    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
-    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
+    float4 G0 = tex1Dfetch(gauge1Tex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gauge1Tex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gauge1Tex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gauge1Tex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gauge1Tex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -602,11 +602,11 @@ if(1)
     float b2_im = +i12_im+i32_re;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
-    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
-    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
-    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
-    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
+    float4 G0 = tex1Dfetch(gauge1Tex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gauge1Tex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gauge1Tex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gauge1Tex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gauge1Tex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -693,11 +693,11 @@ if(1)
     float b2_im = +i12_im+i32_im;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
-    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
-    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
-    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
-    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
+    float4 G0 = tex1Dfetch(gauge1Tex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gauge1Tex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gauge1Tex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gauge1Tex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gauge1Tex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
@@ -784,11 +784,11 @@ if(1)
     float b2_im = +i12_im-i32_im;
     
     // read gauge matrix from device memory
-    float4 G0 = tex1Dfetch(gaugeTex, ga_idx + 0*L);
-    float4 G1 = tex1Dfetch(gaugeTex, ga_idx + 1*L);
-    float4 G2 = tex1Dfetch(gaugeTex, ga_idx + 2*L);
-    float4 G3 = tex1Dfetch(gaugeTex, ga_idx + 3*L);
-    float4 G4 = tex1Dfetch(gaugeTex, ga_idx + 4*L);
+    float4 G0 = tex1Dfetch(gauge1Tex, ga_idx + 0*L);
+    float4 G1 = tex1Dfetch(gauge1Tex, ga_idx + 1*L);
+    float4 G2 = tex1Dfetch(gauge1Tex, ga_idx + 2*L);
+    float4 G3 = tex1Dfetch(gauge1Tex, ga_idx + 3*L);
+    float4 G4 = tex1Dfetch(gauge1Tex, ga_idx + 4*L);
     
     // multiply row 0 by half spinors
     {
