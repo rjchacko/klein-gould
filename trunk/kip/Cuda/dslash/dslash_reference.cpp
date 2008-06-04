@@ -190,7 +190,7 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
 }
 
 // ---------------------------------------------------------------------------------------
-// computeGold()
+// dslashReference()
 //
 // calculates the forward "d-slash" operation, given gauge field 'gauge' and
 // spinor field 'spinor'. this function is intended to be a reference implementation for
@@ -202,10 +202,7 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
 //
 // constants (such as lattice lengths) are given in the file 'qcd.h'
 // 
-// the field arguments to this function must be bipartioned: i.e., the gauge/spinor field
-// only contains black/red lattice indices, or vice versa.
-//
-void computeGold(float *res, float **gaugeEven, float **gaugeOdd, float *spinor) {
+void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinor, int evenBit) {
     zero(res, L*4*3*2);
     
     for (int idxOut = 0; idxOut < L; idxOut++) {

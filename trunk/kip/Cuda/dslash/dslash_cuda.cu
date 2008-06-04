@@ -190,7 +190,7 @@ int main(int argc, char **argv) {
 
     // compare to dslash reference implementation
     retrieveSpinorFieldOdd(spinorOdd);
-    computeGold(spinorRef, gaugeEven, gaugeOdd, spinorEven);
+    dslashReference(spinorRef, gaugeEven, gaugeOdd, spinorEven, 0);
     printf("Reference:\n");
     printSpinorField(spinorRef);
     printf("\nCUDA:\n");
