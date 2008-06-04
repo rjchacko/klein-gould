@@ -19,15 +19,14 @@ public class Ising2D extends Simulation {
 	Grid grid = new Grid ("Ising Lattice");
 	Histogram mag=new Histogram(1);
     Plot magPlot = new Plot("Magnetizations");
-    Accumulator freeEnergy=new Accumulator(1);
+    Accumulator freeEnergy[];
     Plot freeEnergyPlot=new Plot("Free Energy");
     
 	int L,R;
 	double T,h,J;
 	double E;
 	Random r=new Random();
-	int windowMin, windowMax;
-	int mcs;
+	int windowMin, windowMax, currentWindow;
 	
 	public Ising2D() {
 		
@@ -38,8 +37,13 @@ public class Ising2D extends Simulation {
 		params.add("h",-0.7);
 		params.add("L",32);
 		params.add("R",8);
-		params.add("window min",992);
-		params.add("window max",1024);
+		params.add("number of windows", 32);
+		params.add("MCS per window", 1000);
+//		params.add("window min",992);
+//		params.add("window max",1024);
+		params.add("mcs");
+		params.add("current window");
+		params.add("prefix","/Users/rjchacko/Desktop/data/");
 		c.frame(grid,magPlot,freeEnergyPlot);
 	}
 	
@@ -56,7 +60,8 @@ public class Ising2D extends Simulation {
 		grid.setColors(smooth);
 		grid.registerData(L,L,allSpins);
 		magPlot.registerPoints("Magnetizations", mag, Color.RED);
-		freeEnergyPlot.registerPoints("Free Energy",freeEnergy,Color.RED);
+		if(currentWindow%2==0)freeEnergyPlot.registerPoints("Free Energy"+currentWindow,freeEnergy[currentWindow],Color.RED);
+		else freeEnergyPlot.registerPoints("Free Energy"+currentWindow,freeEnergy[currentWindow],Color.BLUE);
 	}
 
 	
@@ -64,7 +69,6 @@ public class Ising2D extends Simulation {
 		grid.clear();
 		mag.clear();
 		magPlot.clear();
-		freeEnergy.clear();
 		freeEnergyPlot.clear();
 	}
 
@@ -74,35 +78,53 @@ public class Ising2D extends Simulation {
 		L=params.iget("L");
 		T=params.fget("T");
 		h=params.fget("h");
-		windowMin=params.iget("window min");
-		windowMax=params.iget("window max");
-		spins = new SpinBlocks2D(L, R);	
+		int numberOfWindows=params.iget("number of windows");
+		int mcsPerWindow=params.iget("MCS per window");
+		String prefix=params.sget("prefix");
+		int windowWidth=2*L*L/numberOfWindows;		
 		int spinsInRange=(2*R+1)*(2*R+1) - 1;
-		J = 4.0 / spinsInRange;
-		initializeWindow();
-		Job.animate();
-		int steps=0;
-		while(true){
-			int x=r.nextInt(L*L);
-			double dE=isingDE(x)+umbrellaDE(x);
-			if(dE<=0 || r.nextDouble()<Math.exp(-dE/T)) spins.flip(x%L, x/L);
-			mag.accum(spins.netSum);
-						
+		if(R>1)J = 4.0 / spinsInRange;
+		else J=1;
+		freeEnergy=new Accumulator[numberOfWindows];
+		for(int l=0;l<numberOfWindows;l++){
+			freeEnergy[l]=new Accumulator(1);
+		}
+		for(int j=0;j<numberOfWindows;j++){
+			mag.clear();
+			params.set("current window", j);
+			initializeWindow(windowWidth,j);
 			Job.animate();
-			steps++;
-			if(steps%(L*L)==0){
-				mcs++;
+			for(int mcs=0;mcs<mcsPerWindow;mcs++){
+				for(int k=0;k<L*L;k++){
+					int nextSpin=r.nextInt(L*L);
+					double dE=isingDE(nextSpin)+umbrellaDE(nextSpin);	
+					boolean decreaseEnergy=dE<=0;
+					boolean acceptThermal=r.nextDouble()<Math.exp(-dE/T);
+					int x=nextSpin%L;
+					int y=nextSpin/L;
+					if( decreaseEnergy || acceptThermal) spins.flip(x, y);
+					mag.accum(spins.netSum);		
+					Job.animate();
+				}
+				params.set("mcs", mcs);	
 				double data[]=mag.copyData();
 				for(int i=0;i<data.length;i+=2){
-					freeEnergy.accum(data[i], -T*Math.log(data[i+1]));
+					freeEnergy[currentWindow].accum(data[i], -T*Math.log(data[i+1]));
 				}
 			}
+			
+			freeEnergyPlot.saveDataset2(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
 		}
+		
 	}
 	
-	public void initializeWindow(){
+	public void initializeWindow(int windowWidth, int windowNumber){
 		int x, y, j=0;
 		double dE;
+		currentWindow=windowNumber;
+		windowMax=L*L-windowWidth*windowNumber;
+		windowMin=L*L-windowWidth*(windowNumber+1);
+		spins = new SpinBlocks2D(L, R);
 		do{
 			x=j%L;
 			y=j/L;
@@ -115,22 +137,36 @@ public class Ising2D extends Simulation {
 		
 		for(int cnt=0; cnt<1000; cnt++){
 			for(int i=0;i<L*L;i++){
-				dE=isingDE(x)+umbrellaDE(x);
-				if(dE<=0 || r.nextDouble()<Math.exp(-dE/T)) spins.flip(x%L, x/L);		
+				int nextSpin=r.nextInt(L);
+				dE=isingDE(nextSpin)+umbrellaDE(nextSpin);
+				boolean decreaseEnergy=dE<=0;
+				boolean acceptThermal=r.nextDouble()<Math.exp(-dE/T);
+				x=nextSpin%L;
+				y=nextSpin/L;
+				if( decreaseEnergy || acceptThermal) spins.flip(x, y);		
 			}
 		}
 	}
 
-	public double isingDE(int x){
+	public double isingDE(int location){
 		double dE=0;	
-		int spin=spins.get(x%L, x/L);
-		dE=2*spin*(h + J*(spins.sumInRange(x%L,x/L)-spin));
+		int x=location%L;
+		int y=location/L;
+		int spin=spins.get(x, y);
+		if(R>1){
+			dE=2*spin*(h + J*(spins.sumInRange(x,y)-spin));
+		}
+		else {
+			dE = 2*(h + J*(spins.get(x,y)+spins.get((x+1+L)%L,y)+spins.get(x,(y-1+L)%L)+spins.get(x,(y+1+L)%L)));
+		}
 		return dE;
 	}
 	
-	public double umbrellaDE(int x){
+	public double umbrellaDE(int location){
 		double dE=0;
-		int dM=-2*spins.get(x%L, x/L);
+		int x=location%L;
+		int y=location/L;
+		int dM=-2*spins.get(x, y);
 		if(spins.netSum+dM<windowMin || spins.netSum+dM>windowMax) dE=Double.POSITIVE_INFINITY;
 		return dE;		
 	}
