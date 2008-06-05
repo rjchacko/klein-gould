@@ -64,14 +64,44 @@ object CodeGen {
     }
     str.append("\n")
     
-    // str.append("const int zero = BLOCK_DIM - blockDim.x;\n")
-    str.append("const int sid = BLOCK_DIM*blockIdx.x + threadIdx.x;\n\n")
-
-    str.append("extern __shared__ float s_data[];\n")
-    str.append("volatile float *s = s_data+"+sharedFloats+"*threadIdx.x;\n\n")
-
     str.append(
 """
+// Performs the complex conjugated accumulation: a += b* c*
+#define ACC_CONJ_PROD(a, b, c) \
+    a##_re += b##_re * c##_re - b##_im * c##_im, \
+    a##_im -= b##_re * c##_im + b##_im * c##_re
+
+#if 1
+#define READ_GAUGE_MATRIX(gauge) \
+    float4 G0 = tex1Dfetch((gauge), ga_idx + 0*Nh); \
+    float4 G1 = tex1Dfetch((gauge), ga_idx + 1*Nh); \
+    float4 G2 = tex1Dfetch((gauge), ga_idx + 2*Nh); \
+    float4 G3 = tex1Dfetch((gauge), ga_idx + 3*Nh); \
+    float4 G4 = tex1Dfetch((gauge), ga_idx + 4*Nh);
+#else
+#define READ_GAUGE_MATRIX(gauge) \
+    float4 G0 = tex1Dfetch((gauge), ga_idx + 0*Nh); \
+    float4 G1 = tex1Dfetch((gauge), ga_idx + 1*Nh); \
+    float4 G2 = tex1Dfetch((gauge), ga_idx + 2*Nh); \
+    float4 G3 = make_float4(0,0,0,0); \
+    float4 G4 = make_float4(0,0,0,0); \
+    ACC_CONJ_PROD(g20, +g01, +g12); \
+    ACC_CONJ_PROD(g20, -g02, +g11); \
+    ACC_CONJ_PROD(g21, +g02, +g10); \
+    ACC_CONJ_PROD(g21, -g00, +g12); \
+    ACC_CONJ_PROD(g22, +g00, +g11); \
+    ACC_CONJ_PROD(g22, -g01, +g10);    
+#endif
+
+#define READ_SPINOR(spinor) \
+    float4 I0 = tex1Dfetch((spinor), sp_idx + 0*Nh); \
+    float4 I1 = tex1Dfetch((spinor), sp_idx + 1*Nh); \
+    float4 I2 = tex1Dfetch((spinor), sp_idx + 2*Nh); \
+    float4 I3 = tex1Dfetch((spinor), sp_idx + 3*Nh); \
+    float4 I4 = tex1Dfetch((spinor), sp_idx + 4*Nh); \
+    float4 I5 = tex1Dfetch((spinor), sp_idx + 5*Nh);
+
+int sid = BLOCK_DIM*blockIdx.x + threadIdx.x;
 int boundaryCrossings = sid/L1h + sid/(L2*L1h) + sid/(L3*L2*L1h);
 int X = 2*sid + (boundaryCrossings + oddBit) % 2;
 int x4 = X/(L3*L2*L1);
@@ -80,6 +110,9 @@ int x2 = (X/L1) % L2;
 int x1 = X % L1;
 
 """	)
+
+    str.append("extern __shared__ float s_data[];\n")
+    str.append("volatile float *s = s_data+"+sharedFloats+"*threadIdx.x;\n\n")
 
     for (s <- 0 until 4; c <- 0 until 3) {
       str.append(out_re(s,c) + " = " + out_im(s,c)+" = 0;\n")
@@ -127,10 +160,10 @@ int x1 = X % L1;
   
   
   val projectors = Array(
-      id+gamma1, id-gamma1,
-      id+gamma2, id-gamma2,
-      id+gamma3, id-gamma3,
-      id+gamma4, id-gamma4
+      id-gamma1, id+gamma1,
+      id-gamma2, id+gamma2,
+      id-gamma3, id+gamma3,
+      id-gamma4, id+gamma4
   )
   
   def gen(dir: Int):String = {
@@ -169,10 +202,7 @@ int x1 = X % L1;
     }
     
     str.append("// read spinor from device memory\n")
-    for (i <- 0 until 2*3*4/4) {
-      str.append("float4 I"+i+" = tex1Dfetch(spinorTex, sp_idx + "+i+"*Nh);\n")
-    }
-    str.append("\n")
+    str.append("READ_SPINOR(spinorTex);\n\n")
     
     str.append("// project spinor into half spinors\n")
     for (h <- 0 until 2) {
@@ -198,11 +228,8 @@ int x1 = X % L1;
     }
     
     str.append("// read gauge matrix from device memory\n")
-    for (i <- 0 until 2*3*3/4+1) {
-     str.append("float4 G"+i+" = tex1Dfetch(gauge"+(dir%2)+"Tex, ga_idx + "+i+"*Nh);\n")
-    }
-    str.append("\n")
-
+    str.append("READ_GAUGE_MATRIX(gauge"+(dir%2)+"Tex);\n\n")
+    
     for (m <- 0 until 3) {
       str.append("// multiply row "+m+" by half spinors\n")
       val mstr = new StringBuilder
@@ -244,6 +271,7 @@ int x1 = X % L1;
   
   def main(args: Array[String]) {
     Console.println(prolog() + gen(0) + gen(1) + gen(2) + gen(3) + gen(4) + gen(5) + gen(6) + gen(7) + epilog())
+    //printProjectorsAsCString()
   }
   
   
