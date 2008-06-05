@@ -4,6 +4,22 @@
 #include "qcd.h"
 
 
+// given a "half index" i into either an even or odd half lattice (corresponding
+// to oddBit = {0, 1}), returns the corresponding full lattice index.
+int fullLatticeIndex(int i, int oddBit) {
+    int boundaryCrossings = i/L1h + i/(L2*L1h) + i/(L3*L2*L1h);
+    return 2*i + (boundaryCrossings + oddBit) % 2;
+}
+
+// returns 0 or 1 if the full lattice index X is even or odd
+int getOddBit(int X) {
+    int x4 = X/(L3*L2*L1);
+    int x3 = (X/(L2*L1)) % L3;
+    int x2 = (X/L1) % L2;
+    int x1 = X % L1;
+    return (x4+x3+x2+x1) % 2;
+}
+
 // i represents a "half index" into an even or odd "half lattice".
 // when oddBit={0,1} the half lattice is {even,odd}.
 // 
@@ -14,8 +30,7 @@
 // displacements of magnitude one always interchange odd and even lattices.
 //
 int neighborIndex(int i, int oddBit, int dx4, int dx3, int dx2, int dx1) {
-    int boundaryCrossings = i/L1h + i/(L2*L1h) + i/(L3*L2*L1h);
-    int X = 2*i + (boundaryCrossings + oddBit) % 2;
+    int X = fullLatticeIndex(i, oddBit);
     int x4 = X/(L3*L2*L1);
     int x3 = (X/(L2*L1)) % L3;
     int x2 = (X/L1) % L2;
@@ -71,6 +86,21 @@ float *spinorNeighbor(int i, int dir, int oddBit, float *spinorField) {
 }
 
 
+void constructUnitGaugeField(float **resEven, float **resOdd) {
+    for (int dir = 0; dir < 4; dir++) {
+        for(int i = 0; i < L; i++) {
+            for (int m = 0; m < 3; m++) {
+                for (int n = 0; n < 3; n++) {
+                    resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = (m==n) ? 1 : 0;
+	                resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = 0.0;
+                    resOdd[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = (m==n) ? 1 : 0;
+	                resOdd[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = 0.0;
+                }
+            }
+        }
+    }
+}
+
 void constructGaugeField(float **resEven, float **resOdd) {
     for (int dir = 0; dir < 4; dir++) {
         for(int i = 0; i < L; i++) {
@@ -86,6 +116,24 @@ void constructGaugeField(float **resEven, float **resOdd) {
     }
 }
 
+void constructPointSpinorField(float *resEven, float *resOdd, int i0, int s0, int c0) {
+    for(int i = 0; i < L; i++) {
+        for (int s = 0; s < 4; s++) {
+            for (int m = 0; m < 3; m++) {
+                resEven[i*(4*3*2) + s*(3*2) + m*(2) + 0] = 0;
+                resEven[i*(4*3*2) + s*(3*2) + m*(2) + 1] = 0;
+                resOdd[i*(4*3*2) + s*(3*2) + m*(2) + 0] = 0;
+                resOdd[i*(4*3*2) + s*(3*2) + m*(2) + 1] = 0;
+                if (s == s0 && m == c0) {
+                    if (fullLatticeIndex(i, 0) == i0)
+                        resEven[i*(4*3*2) + s*(3*2) + m*(2) + 0] = 1;
+                    if (fullLatticeIndex(i, 1) == i0)
+                        resOdd[i*(4*3*2) + s*(3*2) + m*(2) + 0] = 1;
+                }
+            }
+        }
+    }
+}
 
 void constructSpinorField(float *res) {
     for(int i = 0; i < L; i++) {
@@ -263,14 +311,23 @@ void printVector(float *v) {
     printf("{(%f %f) (%f %f) (%f %f)}\n", v[0], v[1], v[2], v[3], v[4], v[5]);
 }
 
+void printSpinor(float *spinor) {
+    for (int s = 0; s < 4; s++) {
+        printVector(&spinor[s*(3*2)]);
+    }
+}
 
-void printSpinorField(float *spinor) {
-    for (int s = 0; s < 4; s++) {
-        printVector(&spinor[0*(4*3*2) + s*(3*2)]);
-    }
+// X indexes the full lattice
+void printSpinorElement(float *spinorEven, float *spinorOdd, int X) {
+    if (getOddBit(X) == 0)
+        printSpinor(&spinorEven[(X/2)*(4*3*2)]);
+    else
+        printSpinor(&spinorOdd[(X/2)*(4*3*2)]);
+}
+
+void printSpinorHalfField(float *spinor) {
+    printSpinor(&spinor[0*(4*3*2)]);
     printf("...\n");
-    for (int s = 0; s < 4; s++) {
-        printVector(&spinor[(L-1)*(4*3*2) + s*(3*2)]);
-    }
+    printSpinor(&spinor[(L-1)*(4*3*2)]);
     printf("\n");    
 }

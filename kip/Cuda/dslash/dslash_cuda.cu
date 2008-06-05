@@ -3,6 +3,8 @@
 #include <cutil.h>
 #include "qcd.h"
 
+#define BLOCK_DIM (64) // threads per block
+#define GRID_DIM (L/BLOCK_DIM) // there are L threads in total
 
 #define SPINOR_SIZE (24) // spinors have 4*3*2 floats
 #define PACKED_GAUGE_SIZE (4*20) // gauge matrices rounded up to fit float4 elements
@@ -200,9 +202,9 @@ int main(int argc, char **argv) {
     retrieveSpinorFieldOdd(spinorOdd);
     dslashReference(spinorRef, gaugeEven, gaugeOdd, spinorEven, ODD_BIT);
     printf("Reference:\n");
-    printSpinorField(spinorRef);
+    printSpinorHalfField(spinorRef);
     printf("\nCUDA:\n");
-    printSpinorField(spinorOdd);
+    printSpinorHalfField(spinorOdd);
     CUTBoolean res = cutComparefe(spinorOdd, spinorRef, L*SPINOR_SIZE, 1e-4);
     printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
     
