@@ -88,7 +88,7 @@ float *spinorNeighbor(int i, int dir, int oddBit, float *spinorField) {
 
 void constructUnitGaugeField(float **resEven, float **resOdd) {
     for (int dir = 0; dir < 4; dir++) {
-        for(int i = 0; i < L; i++) {
+        for(int i = 0; i < Nh; i++) {
             for (int m = 0; m < 3; m++) {
                 for (int n = 0; n < 3; n++) {
                     resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = (m==n) ? 1 : 0;
@@ -103,7 +103,7 @@ void constructUnitGaugeField(float **resEven, float **resOdd) {
 
 void constructGaugeField(float **resEven, float **resOdd) {
     for (int dir = 0; dir < 4; dir++) {
-        for(int i = 0; i < L; i++) {
+        for(int i = 0; i < Nh; i++) {
             for (int m = 0; m < 3; m++) {
                 for (int n = 0; n < 3; n++) {
                     resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
@@ -117,7 +117,7 @@ void constructGaugeField(float **resEven, float **resOdd) {
 }
 
 void constructPointSpinorField(float *resEven, float *resOdd, int i0, int s0, int c0) {
-    for(int i = 0; i < L; i++) {
+    for(int i = 0; i < Nh; i++) {
         for (int s = 0; s < 4; s++) {
             for (int m = 0; m < 3; m++) {
                 resEven[i*(4*3*2) + s*(3*2) + m*(2) + 0] = 0;
@@ -136,7 +136,7 @@ void constructPointSpinorField(float *resEven, float *resOdd, int i0, int s0, in
 }
 
 void constructSpinorField(float *res) {
-    for(int i = 0; i < L; i++) {
+    for(int i = 0; i < Nh; i++) {
         for (int s = 0; s < 4; s++) {
             for (int m = 0; m < 3; m++) {
                 res[i*(4*3*2) + s*(3*2) + m*(2) + 0] = rand() / (float)RAND_MAX;
@@ -279,12 +279,12 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
 // if oddBit is zero/one then the even/odd spinor sites will be updated.
 //
 void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit) {
-    zero(res, L*4*3*2);
+    zero(res, Nh*4*3*2);
     
-    for (int idxOut = 0; idxOut < L; idxOut++) {
+    for (int i = 0; i < Nh; i++) {
         for (int dir = 0; dir < 8; dir++) {
-            float *gauge = gaugeLink(idxOut, dir, oddBit, gaugeEven, gaugeOdd);
-            float *spinor = spinorNeighbor(idxOut, dir, oddBit, spinorField);
+            float *gauge = gaugeLink(i, dir, oddBit, gaugeEven, gaugeOdd);
+            float *spinor = spinorNeighbor(i, dir, oddBit, spinorField);
             
             float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
             multiplySpinorByDiracProjector(projectedSpinor, dir, spinor);
@@ -296,7 +296,7 @@ void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spi
                     su3_Tmul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);
             }
             
-            sum(&res[idxOut*(4*3*2)], &res[idxOut*(4*3*2)], gaugedSpinor, 4*3*2);
+            sum(&res[i*(4*3*2)], &res[i*(4*3*2)], gaugedSpinor, 4*3*2);
         }
     }
 }
@@ -323,11 +323,4 @@ void printSpinorElement(float *spinorEven, float *spinorOdd, int X) {
         printSpinor(&spinorEven[(X/2)*(4*3*2)]);
     else
         printSpinor(&spinorOdd[(X/2)*(4*3*2)]);
-}
-
-void printSpinorHalfField(float *spinor) {
-    printSpinor(&spinor[0*(4*3*2)]);
-    printf("...\n");
-    printSpinor(&spinor[(L-1)*(4*3*2)]);
-    printf("\n");    
 }
