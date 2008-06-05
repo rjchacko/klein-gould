@@ -1,0 +1,276 @@
+package dslash
+
+import dslash.DiracSpinor._
+
+
+object CodeGen {
+  val sharedFloats = 19
+  
+  def block(code: String) = {
+    "{\n"+code.lines.map{"    "+_+"\n"}.reduceLeft[String](_+_)+"}\n"
+  }
+  
+  def sign(x:Double) = {
+    x match {case 1 => "+"; case -1 => "-"}
+  }
+
+  def nthFloat4(n:Int) = {
+    (n/4) + "." + Array("x","y","z","w")(n%4)
+  }
+
+  def in_re(s:Int, c:Int) = "i"+s+c+"_re"
+  def in_im(s:Int, c:Int) = "i"+s+c+"_im"
+  def g_re(d:Int, m:Int, n:Int) = (if (d%2==0) "g" else "gT")+m+n+"_re"
+  def g_im(d:Int, m:Int, n:Int) = (if (d%2==0) "g" else "gT")+m+n+"_im"
+  def out_re(s:Int, c:Int) = "o"+s+c+"_re"
+  def out_im(s:Int, c:Int) = "o"+s+c+"_im"
+  def h1_re(h:Int, c:Int) = Array("a","b")(h)+c+"_re"
+  def h1_im(h:Int, c:Int) = Array("a","b")(h)+c+"_im"
+  def h2_re(h:Int) = Array("A","B")(h)+"_re"
+  def h2_im(h:Int) = Array("A","B")(h)+"_im"
+  
+  
+  def prolog() = {
+    val str = new StringBuilder()
+    
+    str.append("#define SHARED_BYTES (BLOCK_DIM*"+sharedFloats+"*sizeof(float))\n\n")
+    
+    for (s <- 0 until 4; c <- 0 until 3; i = 3*s+c) {
+      str.append("#define "+in_re(s,c)+" I"+nthFloat4(2*i+0)+"\n")
+      str.append("#define "+in_im(s,c)+" I"+nthFloat4(2*i+1)+"\n")
+    }
+    str.append("\n")
+    for (m <- 0 until 3; n <- 0 until 3; i = 3*m+n) {
+      str.append("#define "+g_re(0,m,n)+" G"+nthFloat4(2*i+0)+"\n")
+      str.append("#define "+g_im(0,m,n)+" G"+nthFloat4(2*i+1)+"\n")
+    }
+    str.append("\n")
+    for (m <- 0 until 3; n <- 0 until 3; i = 3*m+n) {
+      str.append("#define "+g_re(1,m,n)+" (+"+g_re(0,n,m)+")\n")
+      str.append("#define "+g_im(1,m,n)+" (-"+g_im(0,n,m)+")\n")
+    }
+    str.append("\n")
+    
+    str.append("#define STRIDE 1\n")
+    for (s <- 0 until 4; c <- 0 until 3; i = 3*s+c) {
+      if (2*i < sharedFloats)
+        str.append("#define "+out_re(s,c)+" s[STRIDE*"+(2*i+0)+"]\n")
+      else
+        str.append("float "+out_re(s,c)+";\n")
+      if (2*i+1 < sharedFloats)
+        str.append("#define "+out_im(s,c)+" s[STRIDE*"+(2*i+1)+"]\n")
+      else
+        str.append("float "+out_im(s,c)+";\n")        
+    }
+    str.append("\n")
+    
+    // str.append("const int zero = BLOCK_DIM - blockDim.x;\n")
+    str.append("const int sid = BLOCK_DIM*blockIdx.x + threadIdx.x;\n\n")
+
+    str.append("extern __shared__ float s_data[];\n")
+    str.append("volatile float *s = s_data+"+sharedFloats+"*threadIdx.x;\n\n")
+
+    str.append(
+"""
+int boundaryCrossings = sid/L1h + sid/(L2*L1h) + sid/(L3*L2*L1h);
+int X = 2*sid + (boundaryCrossings + oddBit) % 2;
+int x4 = X/(L3*L2*L1);
+int x3 = (X/(L2*L1)) % L3;
+int x2 = (X/L1) % L2;
+int x1 = X % L1;
+
+"""	)
+
+    for (s <- 0 until 4; c <- 0 until 3) {
+      str.append(out_re(s,c) + " = " + out_im(s,c)+" = 0;\n")
+    }
+    str.append("\n")
+    
+    str.toString()
+  }
+  
+  def epilog() = {
+"""
+//g_out[0*Nh+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
+//g_out[1*Nh+sid] = make_float4(o02_re, o02_im, o10_re, o10_im);
+//g_out[2*Nh+sid] = make_float4(o11_re, o11_im, o12_re, o12_im);
+//g_out[3*Nh+sid] = make_float4(o20_re, o20_im, o21_re, o21_im);
+//g_out[4*Nh+sid] = make_float4(o22_re, o22_im, o30_re, o30_im);
+//g_out[5*Nh+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
+
+((float*)g_out)[0*Nh+sid] = o00_re;
+((float*)g_out)[1*Nh+sid] = o00_im;
+((float*)g_out)[2*Nh+sid] = o01_re;
+((float*)g_out)[3*Nh+sid] = o01_im;
+((float*)g_out)[4*Nh+sid] = o02_re;
+((float*)g_out)[5*Nh+sid] = o02_im;
+((float*)g_out)[6*Nh+sid] = o10_re;
+((float*)g_out)[7*Nh+sid] = o10_im;
+((float*)g_out)[8*Nh+sid] = o11_re;
+((float*)g_out)[9*Nh+sid] = o11_im;
+((float*)g_out)[10*Nh+sid] = o12_re;
+((float*)g_out)[11*Nh+sid] = o12_im;
+((float*)g_out)[12*Nh+sid] = o20_re;
+((float*)g_out)[13*Nh+sid] = o20_im;
+((float*)g_out)[14*Nh+sid] = o21_re;
+((float*)g_out)[15*Nh+sid] = o21_im;
+((float*)g_out)[16*Nh+sid] = o22_re;
+((float*)g_out)[17*Nh+sid] = o22_im;
+((float*)g_out)[18*Nh+sid] = o30_re;
+((float*)g_out)[19*Nh+sid] = o30_im;
+((float*)g_out)[20*Nh+sid] = o31_re;
+((float*)g_out)[21*Nh+sid] = o31_im;
+((float*)g_out)[22*Nh+sid] = o32_re;
+((float*)g_out)[23*Nh+sid] = o32_im;
+"""
+  }
+  
+  
+  val projectors = Array(
+      id+gamma1, id-gamma1,
+      id+gamma2, id-gamma2,
+      id+gamma3, id-gamma3,
+      id+gamma4, id-gamma4
+  )
+  
+  def gen(dir: Int):String = {
+    val proj = projectors(dir)
+    
+    // if row(i) = (j, c), then the i'th row of the projector can be represented
+    // as a multiple of the j'th row: i = c j
+    def row(i:Int) = {
+      require(i == 2 || i == 3)
+      (proj(i,0), proj(i,1)) match {
+      case (Complex(0,0), c) => (1, c)
+      case (c, Complex(0,0)) => (0, c)
+      }
+    }
+    
+    val str = new StringBuilder()
+    
+    str.append("// Projector "+dir+"\n")
+    proj.toString.lines.foreach{l => str.append("// "+l+"\n")}
+    str.append("\n")
+    
+    str.append ( (dir match {
+    case 0 => "int sp_idx = ((x1==L1-1) ? X-(L1-1) : X+1) / 2;\n"
+    case 1 => "int sp_idx = ((x1==0)    ? X+(L1-1) : X-1) / 2;\n"
+    case 2 => "int sp_idx = ((x2==L2-1) ? X-(L2-1)*L1 : X+L1) / 2;\n"
+    case 3 => "int sp_idx = ((x2==0)    ? X+(L2-1)*L1 : X-L1) / 2;\n"
+    case 4 => "int sp_idx = ((x3==L3-1) ? X-(L3-1)*L2*L1 : X+L2*L1) / 2;\n"
+    case 5 => "int sp_idx = ((x3==0)    ? X+(L3-1)*L2*L1 : X-L2*L1) / 2;\n"
+    case 6 => "int sp_idx = ((x4==L4-1) ? X-(L4-1)*L3*L2*L1 : X+L3*L2*L1) / 2;\n"
+    case 7 => "int sp_idx = ((x4==0)    ? X+(L4-1)*L3*L2*L1 : X-L3*L2*L1) / 2;\n"
+    }))
+    if (dir % 2 == 0)
+      str.append("int ga_idx = sid + ("+dir+"/2)*Nh*(20/4);\n\n")
+    else {
+      str.append("int ga_idx = sp_idx + ("+dir+"/2)*Nh*(20/4);\n\n") 
+    }
+    
+    str.append("// read spinor from device memory\n")
+    for (i <- 0 until 2*3*4/4) {
+      str.append("float4 I"+i+" = tex1Dfetch(spinorTex, sp_idx + "+i+"*Nh);\n")
+    }
+    str.append("\n")
+    
+    str.append("// project spinor into half spinors\n")
+    for (h <- 0 until 2) {
+      for (c <- 0 until 3) {
+        val strRe = new StringBuilder()
+        val strIm = new StringBuilder()
+        for (s <- 0 until 4) {
+          proj(h, s) match {
+          case Complex(0, 0) => ()
+          case Complex(re, 0) => {
+            strRe.append(sign(re)+in_re(s,c))
+            strIm.append(sign(re)+in_im(s,c))
+          }
+          case Complex(0, im) => 
+            strRe.append(sign(-im)+in_im(s,c))
+            strIm.append(sign(im)+in_re(s,c))
+          }
+        }
+        str.append("float "+h1_re(h,c)+ " = "+strRe+";\n")
+        str.append("float "+h1_im(h,c)+ " = "+strIm+";\n")
+      }
+      str.append("\n")
+    }
+    
+    str.append("// read gauge matrix from device memory\n")
+    for (i <- 0 until 2*3*3/4+1) {
+     str.append("float4 G"+i+" = tex1Dfetch(gauge"+(dir%2)+"Tex, ga_idx + "+i+"*Nh);\n")
+    }
+    str.append("\n")
+
+    for (m <- 0 until 3) {
+      str.append("// multiply row "+m+" by half spinors\n")
+      val mstr = new StringBuilder
+      
+      for (h <- 0 until 2) {
+        val re = new StringBuilder("float "+h2_re(h)+" =")
+        val im = new StringBuilder("float "+h2_im(h)+" =")
+        for (c <- 0 until 3) {
+          re.append(" + ("+g_re(dir,m,c)+" * "+h1_re(h,c)+" - "+g_im(dir,m,c)+" * "+h1_im(h,c)+")")
+          im.append(" + ("+g_re(dir,m,c)+" * "+h1_im(h,c)+" + "+g_im(dir,m,c)+" * "+h1_re(h,c)+")")
+        }
+        mstr.append(re.toString+";\n")
+        mstr.append(im.toString+";\n")
+      }
+      
+      mstr.append(out_re(0, m) + " += +" + h2_re(0) + ";\n")
+      mstr.append(out_im(0, m) + " += +" + h2_im(0) + ";\n")
+      mstr.append(out_re(1, m) + " += +" + h2_re(1) + ";\n")
+      mstr.append(out_im(1, m) + " += +" + h2_im(1) + ";\n")
+    
+      for (s <- 2 until 4) {
+        row(s) match {
+        case (h, Complex(re, 0)) => {
+          mstr.append(out_re(s, m) + " += " + sign(re)+h2_re(h)+";\n")
+          mstr.append(out_im(s, m) + " += " + sign(re)+h2_im(h)+";\n")
+        }
+        case (h, Complex(0, im)) => {
+          mstr.append(out_re(s, m) + " += " + sign(-im)+h2_im(h)+";\n")
+          mstr.append(out_im(s, m) + " += " + sign(+im)+h2_re(h)+";\n")
+        }
+        }
+      }
+      str.append(block(mstr.toString) + "\n")
+    }
+
+    (if (dir == 0) "if(1)\n" else "if(1)\n") + block(str.toString)+"\n"
+  }
+  
+  
+  def main(args: Array[String]) {
+    Console.println(prolog() + gen(0) + gen(1) + gen(2) + gen(3) + gen(4) + gen(5) + gen(6) + gen(7) + epilog())
+  }
+  
+  
+  def printProjectorsAsCString() = {
+    val str = new StringBuilder
+    str.append("{\n")
+    for (d <- 0 until 8) {
+      str.append("{\n")
+      for (i <- 0 until 4) {
+        str.append("  {")
+        for (j <- 0 until 4) {
+          val c = projectors(d)(i, j)
+          str.append("{" + c.re.toInt +"," + c.im.toInt +"}")
+          if (j < 3)
+            str.append(", ")
+        }
+        str.append("}")
+        if (i < 3)
+          str.append(",")
+        str.append("\n")
+      }
+      str.append("}")
+      if (d < 7)
+        str.append(",")
+      str.append("\n")
+    }
+    str.append("}\n")
+    Console.println(str.toString)
+  }
+}
