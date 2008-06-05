@@ -265,7 +265,7 @@ public class TestLinearOptApp extends Simulation{
         	}else{
         		//System.out.println(ising.dt);
         		ising.readParams(params);
-        		ising.simulate();
+        		ising.simulateUnstable();
         		//System.out.println(ising.dt + " dt");
         		params.set("dt new", ising.dt);
        			if(accEtaValues){	
@@ -494,6 +494,7 @@ public class TestLinearOptApp extends Simulation{
 	
 	void findPhi0andPhi0_bar(){
 		String fileName = "../../../research/javaData/configs1d/configOpt";
+//		String fileName = "../../../research/javaData/configs1d/config";
 		//need to make phi0 symmetric
 		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, Lp);
 		double minPhi0Value = 1.0;

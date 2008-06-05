@@ -64,6 +64,7 @@ public class IsingField2DApp extends Simulation {
 		//uncomment next line
 		c.frameTogether("Grids", grid, delPhiGrid, sfGrid, freeEnergyPlot);
 		c.frameTogether("Slices", vSlice, hSlice, slicePlot1, slicePlot2);
+		c.frame(hSlice);
 		//structurePeakH, freeEnergyPlot, sfPeakBoth, sfHor, sfVert);
 		//c.frameTogether("SF", sfHor, sfVert);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
