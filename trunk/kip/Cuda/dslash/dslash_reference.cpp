@@ -4,47 +4,72 @@
 #include "qcd.h"
 
 
-int index(int t, int z, int y, int x) {
-    t = (t + L4) % L4;
-    z = (z + L3) % L3;
-    y = (y + L2) % L2;
-    x = (x + L1) % L1;
-    return t*(L3*L2*L1) + z*(L2*L1) + y*(L1) + x;
+// i represents a "half index" into an even or odd "half lattice".
+// when oddBit={0,1} the half lattice is {even,odd}.
+// 
+// the displacements, such as dx, refer to the full lattice coordinates. 
+//
+// neighborIndex() takes a "half index", displaces it, and returns the
+// new "half index", which can be an index into either the even or odd lattices.
+// displacements of magnitude one always interchange odd and even lattices.
+//
+int neighborIndex(int i, int oddBit, int dx4, int dx3, int dx2, int dx1) {
+    int boundaryCrossings = i/L1h + i/(L2*L1h) + i/(L3*L2*L1h);
+    int X = 2*i + (boundaryCrossings + oddBit) % 2;
+    int x4 = X/(L3*L2*L1);
+    int x3 = (X/(L2*L1)) % L3;
+    int x2 = (X/L1) % L2;
+    int x1 = X % L1;
+
+    // assert (oddBit == (x+y+z+t)%2);
+    
+    x4 = (x4+dx4+L4) % L4;
+    x3 = (x3+dx3+L3) % L3;
+    x2 = (x2+dx2+L2) % L2;
+    x1 = (x1+dx1+L1) % L1;
+    
+    return (x4*(L3*L2*L1) + x3*(L2*L1) + x2*(L1) + x1) / 2;
 }
 
-int coord_1(int idx) {
-    return idx % L1;
-}
-
-int coord_2(int idx) {
-    return (idx/L1) % L2;
-}
-
-int coord_3(int idx) {
-    return (idx/(L2*L1)) % L3;
-}
-
-int coord_4(int idx) {
-    return idx/(L3*L2*L1);
-}
-
-int linkIndex(int i, int dir) {
-    int t = coord_4(i);
-    int z = coord_3(i);
-    int y = coord_2(i);
-    int x = coord_1(i);
-    switch (dir) {
-        case 0: return index(t, z, y, x);
-        case 1: return index(t, z, y, x+1);
-        case 2: return index(t, z, y-1, x);
-        case 3: return index(t, z, y+1, x);
-        case 4: return index(t, z-1, y, x);
-        case 5: return index(t, z+1, y, x);
-        case 6: return index(t-1, z, y, x);
-        case 7: return index(t+1, z, y, x);
+float *gaugeLink(int i, int dir, int oddBit, float **gaugeEven, float **gaugeOdd) {
+    float **gaugeField;
+    int j;
+    
+    if (dir % 2 == 0) {
+        j = i;
+        gaugeField = (oddBit ? gaugeOdd : gaugeEven);
     }
-    return -1;
+    else {
+        switch (dir) {
+            case 1: j = neighborIndex(i, oddBit, 0, 0, 0, -1); break;
+            case 3: j = neighborIndex(i, oddBit, 0, 0, -1, 0); break;
+            case 5: j = neighborIndex(i, oddBit, 0, -1, 0, 0); break;
+            case 7: j = neighborIndex(i, oddBit, -1, 0, 0, 0); break;
+            default: j = -1; break;
+        }
+        gaugeField = (oddBit ? gaugeEven : gaugeOdd);
+    }
+
+    return &gaugeField[dir/2][j*(3*3*2)];
 }
+
+float *spinorNeighbor(int i, int dir, int oddBit, float *spinorField) {
+    int j;
+    switch (dir) {
+        case 0: j = neighborIndex(i, oddBit, 0, 0, 0, +1); break;
+        case 1: j = neighborIndex(i, oddBit, 0, 0, 0, -1); break;
+        case 2: j = neighborIndex(i, oddBit, 0, 0, +1, 0); break;
+        case 3: j = neighborIndex(i, oddBit, 0, 0, -1, 0); break;
+        case 4: j = neighborIndex(i, oddBit, 0, +1, 0, 0); break;
+        case 5: j = neighborIndex(i, oddBit, 0, -1, 0, 0); break;
+        case 6: j = neighborIndex(i, oddBit, +1, 0, 0, 0); break;
+        case 7: j = neighborIndex(i, oddBit, -1, 0, 0, 0); break;
+        default: j = -1; break;
+    }
+    
+    return &spinorField[j*(4*3*2)];
+}
+
 
 void constructGaugeField(float **resEven, float **resOdd) {
     for (int dir = 0; dir < 4; dir++) {
@@ -189,6 +214,7 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
     }
 }
 
+
 // ---------------------------------------------------------------------------------------
 // dslashReference()
 //
@@ -202,21 +228,24 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
 //
 // constants (such as lattice lengths) are given in the file 'qcd.h'
 // 
-void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinor, int evenBit) {
+// if oddBit is zero/one then the even/odd spinor sites will be updated.
+//
+void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit) {
     zero(res, L*4*3*2);
     
     for (int idxOut = 0; idxOut < L; idxOut++) {
         for (int dir = 0; dir < 8; dir++) {
-	    int idxIn = linkIndex(idxOut, dir);
+            float *gauge = gaugeLink(idxOut, dir, oddBit, gaugeEven, gaugeOdd);
+            float *spinor = spinorNeighbor(idxOut, dir, oddBit, spinorField);
+            
             float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
-            float *gaugeMatrix = &gaugeEven[dir/2][idxIn*(3*3*2)];
-            multiplySpinorByDiracProjector(projectedSpinor, dir, &spinor[idxIn*(4*3*2)]);
+            multiplySpinorByDiracProjector(projectedSpinor, dir, spinor);
             
             for (int s = 0; s < 4; s++) {
                 if (dir % 2 == 0)
-                    su3_mul(&gaugedSpinor[s*(3*2)], gaugeMatrix, &projectedSpinor[s*(3*2)]);
+                    su3_mul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);
                 else
-                    su3_Tmul(&gaugedSpinor[s*(3*2)], gaugeMatrix, &projectedSpinor[s*(3*2)]);
+                    su3_Tmul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);
             }
             
             sum(&res[idxOut*(4*3*2)], &res[idxOut*(4*3*2)], gaugedSpinor, 4*3*2);

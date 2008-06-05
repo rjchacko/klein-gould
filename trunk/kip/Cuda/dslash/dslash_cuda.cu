@@ -16,13 +16,13 @@
 float4 *d_gaugeEven, *d_gaugeOdd;
 float4 *d_spinorEven, *d_spinorOdd;
 
+texture<float4, 1, cudaReadModeElementType> gauge0Tex;
 texture<float4, 1, cudaReadModeElementType> gauge1Tex;
-texture<float4, 1, cudaReadModeElementType> gauge2Tex;
 texture<float4, 1, cudaReadModeElementType> spinorTex;
 
 
 __global__ void
-testKernel(float4* g_out) {
+dslashKernel(float4* g_out, int oddBit) {
     #include "qcd_core.cu"
 }
 
@@ -137,15 +137,21 @@ void releaseCuda() {
     CUDA_SAFE_CALL(cudaFree(d_spinorOdd));
 }
 
-void dslashCuda(int evenBit) {
-    cudaBindTexture(0 /*offset*/, gauge1Tex, d_gaugeEven, L*PACKED_GAUGE_BYTES); 
-    cudaBindTexture(0 /*offset*/, gauge2Tex, d_gaugeOdd, L*PACKED_GAUGE_BYTES); 
+void dslashCuda(int oddBit) {
+    if (oddBit) {
+        cudaBindTexture(0 /*offset*/, gauge0Tex, d_gaugeOdd, L*PACKED_GAUGE_BYTES); 
+        cudaBindTexture(0 /*offset*/, gauge1Tex, d_gaugeEven, L*PACKED_GAUGE_BYTES); 
+    }
+    else {
+        cudaBindTexture(0 /*offset*/, gauge0Tex, d_gaugeEven, L*PACKED_GAUGE_BYTES); 
+        cudaBindTexture(0 /*offset*/, gauge1Tex, d_gaugeOdd, L*PACKED_GAUGE_BYTES); 
+    }
     cudaBindTexture(0 /*offset*/, spinorTex, d_spinorEven, L*SPINOR_BYTES); 
 
     dim3 gridDim(GRID_DIM, 1, 1);
     dim3 blockDim(BLOCK_DIM, 1, 1);
     
-    testKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)d_spinorOdd);
+    dslashKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)d_spinorOdd, oddBit);
     CUT_CHECK_ERROR("Kernel execution failed");
     cudaThreadSynchronize();
 }
@@ -172,12 +178,14 @@ int main(int argc, char **argv) {
     sendGaugeField(gaugeEven, gaugeOdd);
     sendSpinorFieldEven(spinorEven);
     
+    int ODD_BIT = 1;
+    
     // execute kernel
     printf("Beginning kernel execution\n");
     cutStartTimer(timer);
     const int LOOPS = 100;
     for (int i = 0; i < LOOPS; i++) {
-        dslashCuda(0);
+        dslashCuda(ODD_BIT);
     }
     cutStopTimer(timer);
 
@@ -190,7 +198,7 @@ int main(int argc, char **argv) {
 
     // compare to dslash reference implementation
     retrieveSpinorFieldOdd(spinorOdd);
-    dslashReference(spinorRef, gaugeEven, gaugeOdd, spinorEven, 0);
+    dslashReference(spinorRef, gaugeEven, gaugeOdd, spinorEven, ODD_BIT);
     printf("Reference:\n");
     printSpinorField(spinorRef);
     printf("\nCUDA:\n");
