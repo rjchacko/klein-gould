@@ -145,7 +145,7 @@ public class FieldIsing1D{
 		convolveWithRange(phi, phi_bar, R);
 		for (int i = 0; i < Lp; i++) {
 			double Lambda = sqr(1 - phi[i]*phi[i]);	
-			del_phi[i] = - dt*Lambda*(phi_bar[i]-H + T*atanh(phi[i]));
+			del_phi[i] = - dt*Lambda*(phi_bar[i]-H+ T*atanh(phi[i]));
 			if(noise)
 				del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
 		}

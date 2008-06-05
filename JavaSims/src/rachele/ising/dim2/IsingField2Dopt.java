@@ -180,7 +180,12 @@ public class IsingField2Dopt extends AbstractIsing2Dopt{
 		for (int i = 0; i < Lp*Lp; i++) 
 			phi[i] += dt*delPhi[i]/dt0;			
 		t += dt;	
-		//System.out.println("ising.dt = " + dt);
+		
+		double meanDelPhi = mean(delPhi);
+		double maxDelPhi = DoubleArray.max(delPhi);
+		double minDelPhi = DoubleArray.min(delPhi);
+		System.out.println("mean = " + meanDelPhi + " min = " + minDelPhi + " max = " + maxDelPhi);
+
 
 
 	}

@@ -13,6 +13,7 @@ import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
 import scikit.jobs.params.Parameters;
 import scikit.numerics.fft.managed.ComplexDouble2DFFT;
+import scikit.util.DoubleArray;
 
 public class IsingField2D extends AbstractIsing2D{
 	public double J, dT;
@@ -283,9 +284,6 @@ public class IsingField2D extends AbstractIsing2D{
 			delPhi[i] = -dt0*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H);
 		}
 		
-//			phi[i] += delPhi[i];
-//		}
-
 		double [] testPhi = new double [Lp*Lp];
 		int ct = 0;
 		for (int i = 0; i < Lp*Lp; i++){
@@ -307,6 +305,13 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int i = 0; i < Lp*Lp; i++) 
 			phi[i] += dt*delPhi[i]/dt0;			
 		t += dt;
+		
+		//find max, min and average delphis
+		
+		double meanDelPhi = mean(delPhi);
+		double maxDelPhi = DoubleArray.max(delPhi);
+		double minDelPhi = DoubleArray.min(delPhi);
+		System.out.println("mean = " + meanDelPhi + " min = " + minDelPhi + " max = " + maxDelPhi);
 	}
 	
 	public void simulate() {
@@ -326,7 +331,7 @@ public class IsingField2D extends AbstractIsing2D{
 				dF_dPhi = -phi_bar[i]+T*(phi[i]+pow(phi[i],3)) - H;	
 				Lambda[i] = 1;
 			}else{
-				dF_dPhi = -phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H;//
+				dF_dPhi = -phi_bar[i] - H;//+T* scikit.numerics.Math2.atanh(phi[i]);
 				//dF_dPhi = -phi_bar[i]+T*(-log(1.0-phi[i])+log(1.0+phi[i]))/2.0 - H;
 				if(theory == "HalfStep"){
 					Lambda[i] = 1;
