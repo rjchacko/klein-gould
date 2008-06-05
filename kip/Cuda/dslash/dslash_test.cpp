@@ -7,13 +7,13 @@ int main() {
     // construct input fields
     float *gaugeEven[4], *gaugeOdd[4];
     for (int dir = 0; dir < 4; dir++) {
-        gaugeEven[dir] = (float*)malloc(L*3*3*2*sizeof(float));
-        gaugeOdd[dir]  = (float*)malloc(L*3*3*2*sizeof(float));
+        gaugeEven[dir] = (float*)malloc(Nh*3*3*2*sizeof(float));
+        gaugeOdd[dir]  = (float*)malloc(Nh*3*3*2*sizeof(float));
     }
-    float *spinorEvenIn = (float*)malloc(L*4*3*2*sizeof(float));
-    float *spinorOddIn  = (float*)malloc(L*4*3*2*sizeof(float));
-    float *spinorEvenOut = (float*)malloc(L*4*3*2*sizeof(float));
-    float *spinorOddOut  = (float*)malloc(L*4*3*2*sizeof(float));
+    float *spinorEvenIn = (float*)malloc(Nh*4*3*2*sizeof(float));
+    float *spinorOddIn  = (float*)malloc(Nh*4*3*2*sizeof(float));
+    float *spinorEvenOut = (float*)malloc(Nh*4*3*2*sizeof(float));
+    float *spinorOddOut  = (float*)malloc(Nh*4*3*2*sizeof(float));
     
     constructUnitGaugeField(gaugeEven, gaugeOdd);
     

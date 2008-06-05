@@ -5,7 +5,7 @@
 #define L4 64 // "time" dimension
 
 #define L1h (L1/2) // half of the full "x" dimension, useful for even/odd lattice indexing
-#define L (L1h*L2*L3*L4) // poorly named; total number of even/odd lattice points
+#define Nh (L1h*L2*L3*L4) // total number of even/odd lattice points
 
 
 // ---------- dslash_reference.cpp ----------
@@ -17,8 +17,8 @@ extern "C" void constructSpinorField(float *res);
 
 extern "C" void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit);
 
+extern "C" void printSpinor(float *spinor);
 extern "C" void printSpinorElement(float *spinorEven, float *spinorOdd, int X);
-extern "C" void printSpinorHalfField(float *spinor);
 
 
 // ---------- dslash_cuda.cu ----------
