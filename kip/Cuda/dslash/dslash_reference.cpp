@@ -277,7 +277,9 @@ void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
 // 
 // if oddBit is zero/one then the even/odd spinor sites will be updated.
 //
-void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit) {
+// if daggerBit is zero/one then perform dslash without/with dagger operator
+//
+void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit, int daggerBit) {
     zero(res, Nh*4*3*2);
     
     for (int i = 0; i < Nh; i++) {
@@ -289,7 +291,7 @@ void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spi
             multiplySpinorByDiracProjector(projectedSpinor, dir, spinor);
             
             for (int s = 0; s < 4; s++) {
-                if (dir % 2 == 0)
+                if (dir % 2 == daggerBit)
                     su3_mul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);
                 else
                     su3_Tmul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);

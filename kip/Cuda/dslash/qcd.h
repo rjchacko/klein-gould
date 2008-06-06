@@ -15,7 +15,7 @@ extern "C" void constructGaugeField(float **resEven, float **resOdd);
 extern "C" void constructPointSpinorField(float *resEven, float *resOdd, int i0, int s0, int c0);
 extern "C" void constructSpinorField(float *res);
 
-extern "C" void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit);
+extern "C" void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit, int daggerBit);
 
 extern "C" void printSpinor(float *spinor);
 extern "C" void printSpinorElement(float *spinorEven, float *spinorOdd, int X);
