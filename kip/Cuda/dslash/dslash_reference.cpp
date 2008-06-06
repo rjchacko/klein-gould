@@ -4,6 +4,17 @@
 #include "qcd.h"
 
 
+void zero(float* a, int cnt) {
+    for (int i = 0; i < cnt; i++)
+        a[i] = 0;
+}
+
+void sum(float *dst, float *a, float *b, int cnt) {
+    for (int i = 0; i < cnt; i++)
+        dst[i] = a[i] + b[i];
+}
+
+
 // given a "half index" i into either an even or odd half lattice (corresponding
 // to oddBit = {0, 1}), returns the corresponding full lattice index.
 int fullLatticeIndex(int i, int oddBit) {
@@ -85,6 +96,191 @@ float *spinorNeighbor(int i, int dir, int oddBit, float *spinorField) {
     return &spinorField[j*(4*3*2)];
 }
 
+void dot(float* res, float* a, float* b) {
+    res[0] = res[1] = 0;
+    for (int m = 0; m < 3; m++) {
+        float a_re = a[2*m+0];
+        float a_im = a[2*m+1];
+        float b_re = b[2*m+0];
+        float b_im = b[2*m+1];
+        res[0] += a_re * b_re - a_im * b_im;
+        res[1] += a_re * b_im + a_im * b_re;
+    }
+}
+
+void su3_transpose(float *res, float *mat) {
+    for (int m = 0; m < 3; m++) {
+        for (int n = 0; n < 3; n++) {
+            res[m*(3*2) + n*(2) + 0] = + mat[n*(3*2) + m*(2) + 0];
+            res[m*(3*2) + n*(2) + 1] = - mat[n*(3*2) + m*(2) + 1];
+        }
+    }
+}
+
+void su3_mul(float *res, float *mat, float *vec) {
+    for (int n = 0; n < 3; n++) {
+        dot(&res[n*(2)], &mat[n*(3*2)], vec);
+    }
+}
+
+void su3_Tmul(float *res, float *mat, float *vec) {
+    float matT[3*3*2];
+    su3_transpose(matT, mat);
+    su3_mul(res, matT, vec);
+}
+
+const float projector[8][4][4][2] = {
+    {
+      {{1,0}, {0,0}, {0,0}, {0,-1}},
+      {{0,0}, {1,0}, {0,-1}, {0,0}},
+      {{0,0}, {0,1}, {1,0}, {0,0}},
+      {{0,1}, {0,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,0}, {0,1}},
+      {{0,0}, {1,0}, {0,1}, {0,0}},
+      {{0,0}, {0,-1}, {1,0}, {0,0}},
+      {{0,-1}, {0,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,0}, {1,0}},
+      {{0,0}, {1,0}, {-1,0}, {0,0}},
+      {{0,0}, {-1,0}, {1,0}, {0,0}},
+      {{1,0}, {0,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,0}, {-1,0}},
+      {{0,0}, {1,0}, {1,0}, {0,0}},
+      {{0,0}, {1,0}, {1,0}, {0,0}},
+      {{-1,0}, {0,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,-1}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {0,1}},
+      {{0,1}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {0,-1}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {0,1}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {0,-1}},
+      {{0,-1}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {0,1}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {-1,0}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {-1,0}},
+      {{-1,0}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {-1,0}, {0,0}, {1,0}}
+    },
+    {
+      {{1,0}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {1,0}},
+      {{1,0}, {0,0}, {1,0}, {0,0}},
+      {{0,0}, {1,0}, {0,0}, {1,0}}
+    }
+};
+
+
+void multiplySpinorByDiracProjector(float *res, float *spinorIn, int dir, int daggerBit) {
+    zero(res, 4*3*2);
+    
+    int projIdx = !daggerBit ? dir : (dir + (1 - 2*(dir%2)));
+    
+    for (int s = 0; s < 4; s++) {
+        for (int t = 0; t < 4; t++) {
+            float projRe = projector[projIdx][s][t][0];
+            float projIm = projector[projIdx][s][t][1];
+            
+            for (int m = 0; m < 3; m++) {
+                float spinorRe = spinorIn[t*(3*2) + m*(2) + 0];
+                float spinorIm = spinorIn[t*(3*2) + m*(2) + 1];
+                res[s*(3*2) + m*(2) + 0] += projRe*spinorRe - projIm*spinorIm;
+                res[s*(3*2) + m*(2) + 1] += projRe*spinorIm + projIm*spinorRe;
+            }
+        }
+    }
+}
+
+
+// ---------------------------------------------------------------------------------------
+// dslashReference()
+//
+// calculates the forward "d-slash" operation, given gauge field 'gauge' and
+// spinor field 'spinor'. this function is intended to be a reference implementation for
+// the much faster CUDA kernel.
+//
+// indices, varying slowest to fastest, are,
+//   spinor field:  (z, y, x, t, spinor idx, color idx, complex idx)
+//   gauge field:   (dir) (z, y, x, t, color row, color column, complex idx)
+//
+// constants (such as lattice lengths) are given in the file 'qcd.h'
+// 
+// if oddBit is zero/one then the even/odd spinor sites will be updated.
+//
+// if daggerBit is zero/one then perform dslash without/with dagger operator
+//
+void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit, int daggerBit) {
+    zero(res, Nh*4*3*2);
+    
+    for (int i = 0; i < Nh; i++) {
+        for (int dir = 0; dir < 8; dir++) {
+            float *gauge = gaugeLink(i, dir, oddBit, gaugeEven, gaugeOdd);
+            float *spinor = spinorNeighbor(i, dir, oddBit, spinorField);
+            
+            float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
+            multiplySpinorByDiracProjector(projectedSpinor, spinor, dir, daggerBit);
+            
+            for (int s = 0; s < 4; s++) {
+                if (dir % 2 == 0)
+                    su3_mul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);
+                else
+                    su3_Tmul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);
+            }
+            
+            sum(&res[i*(4*3*2)], &res[i*(4*3*2)], gaugedSpinor, 4*3*2);
+        }
+    }
+}
+
+
+
+// ---------------------------------------------------------------------------------------
+// helper functions
+//
+
+void printVector(float *v) {
+    printf("{(%f %f) (%f %f) (%f %f)}\n", v[0], v[1], v[2], v[3], v[4], v[5]);
+}
+
+void printSpinor(float *spinor) {
+    for (int s = 0; s < 4; s++) {
+        printVector(&spinor[s*(3*2)]);
+    }
+}
+
+// X indexes the full lattice
+void printSpinorElement(float *spinorEven, float *spinorOdd, int X) {
+    if (getOddBit(X) == 0)
+        printSpinor(&spinorEven[(X/2)*(4*3*2)]);
+    else
+        printSpinor(&spinorOdd[(X/2)*(4*3*2)]);
+}
+
+
+void accumulateConjugateProduct(float *a, float *b, float *c) {
+    a[0] += b[0]*c[0] - b[1]*c[1];
+    a[1] -= b[0]*c[1] + b[1]*c[0];
+}
+
+// given first two rows (u,v) of SU(3) matrix mat, reconstruct the third row
+// as the cross product of the conjugate vectors: w = u* x v*
+// 
+void su3_reconstruct(float *mat) {
+    float *u = &mat[0*(3*2)];
+    float *v = &mat[1*(3*2)];
+    float *w = &mat[2*(3*2)];
+}
+
 
 void constructUnitGaugeField(float **resEven, float **resOdd) {
     for (int dir = 0; dir < 4; dir++) {
@@ -146,182 +342,3 @@ void constructSpinorField(float *res) {
     }
 }
 
-
-void dot(float* res, float* a, float* b) {
-    res[0] = res[1] = 0;
-    for (int m = 0; m < 3; m++) {
-        float a_re = a[2*m+0];
-        float a_im = a[2*m+1];
-        float b_re = b[2*m+0];
-        float b_im = b[2*m+1];
-        res[0] += a_re * b_re - a_im * b_im;
-        res[1] += a_re * b_im + a_im * b_re;
-    }
-}
-
-void su3_transpose(float *res, float *mat) {
-    for (int m = 0; m < 3; m++) {
-        for (int n = 0; n < 3; n++) {
-            res[m*(3*2) + n*(2) + 0] = + mat[n*(3*2) + m*(2) + 0];
-            res[m*(3*2) + n*(2) + 1] = - mat[n*(3*2) + m*(2) + 1];
-        }
-    }
-}
-
-void su3_mul(float *res, float *mat, float *vec) {
-    for (int n = 0; n < 3; n++) {
-        dot(&res[n*(2)], &mat[n*(3*2)], vec);
-    }
-}
-
-void su3_Tmul(float *res, float *mat, float *vec) {
-    float matT[3*3*2];
-    su3_transpose(matT, mat);
-    su3_mul(res, matT, vec);
-}
-
-void zero(float* a, int cnt) {
-    for (int i = 0; i < cnt; i++)
-        a[i] = 0;
-}
-
-void sum(float *dst, float *a, float *b, int cnt) {
-    for (int i = 0; i < cnt; i++)
-        dst[i] = a[i] + b[i];
-}
-
-
-const float projector[8][4][4][2] = {
-    {
-      {{1,0}, {0,0}, {0,0}, {0,-1}},
-      {{0,0}, {1,0}, {0,-1}, {0,0}},
-      {{0,0}, {0,1}, {1,0}, {0,0}},
-      {{0,1}, {0,0}, {0,0}, {1,0}}
-    },
-    {
-      {{1,0}, {0,0}, {0,0}, {0,1}},
-      {{0,0}, {1,0}, {0,1}, {0,0}},
-      {{0,0}, {0,-1}, {1,0}, {0,0}},
-      {{0,-1}, {0,0}, {0,0}, {1,0}}
-    },
-    {
-      {{1,0}, {0,0}, {0,0}, {1,0}},
-      {{0,0}, {1,0}, {-1,0}, {0,0}},
-      {{0,0}, {-1,0}, {1,0}, {0,0}},
-      {{1,0}, {0,0}, {0,0}, {1,0}}
-    },
-    {
-      {{1,0}, {0,0}, {0,0}, {-1,0}},
-      {{0,0}, {1,0}, {1,0}, {0,0}},
-      {{0,0}, {1,0}, {1,0}, {0,0}},
-      {{-1,0}, {0,0}, {0,0}, {1,0}}
-    },
-    {
-      {{1,0}, {0,0}, {0,-1}, {0,0}},
-      {{0,0}, {1,0}, {0,0}, {0,1}},
-      {{0,1}, {0,0}, {1,0}, {0,0}},
-      {{0,0}, {0,-1}, {0,0}, {1,0}}
-    },
-    {
-      {{1,0}, {0,0}, {0,1}, {0,0}},
-      {{0,0}, {1,0}, {0,0}, {0,-1}},
-      {{0,-1}, {0,0}, {1,0}, {0,0}},
-      {{0,0}, {0,1}, {0,0}, {1,0}}
-    },
-    {
-      {{1,0}, {0,0}, {-1,0}, {0,0}},
-      {{0,0}, {1,0}, {0,0}, {-1,0}},
-      {{-1,0}, {0,0}, {1,0}, {0,0}},
-      {{0,0}, {-1,0}, {0,0}, {1,0}}
-    },
-    {
-      {{1,0}, {0,0}, {1,0}, {0,0}},
-      {{0,0}, {1,0}, {0,0}, {1,0}},
-      {{1,0}, {0,0}, {1,0}, {0,0}},
-      {{0,0}, {1,0}, {0,0}, {1,0}}
-    }
-};
-
-
-void multiplySpinorByDiracProjector(float *res, int dir, float *spinorIn) {
-    zero(res, 4*3*2);
-    
-    for (int s = 0; s < 4; s++) {
-        for (int t = 0; t < 4; t++) {
-            float projRe = projector[dir][s][t][0];
-            float projIm = projector[dir][s][t][1];
-            
-            for (int m = 0; m < 3; m++) {
-                float spinorRe = spinorIn[t*(3*2) + m*(2) + 0];
-                float spinorIm = spinorIn[t*(3*2) + m*(2) + 1];
-                res[s*(3*2) + m*(2) + 0] += projRe*spinorRe - projIm*spinorIm;
-                res[s*(3*2) + m*(2) + 1] += projRe*spinorIm + projIm*spinorRe;
-            }
-        }
-    }
-}
-
-
-// ---------------------------------------------------------------------------------------
-// dslashReference()
-//
-// calculates the forward "d-slash" operation, given gauge field 'gauge' and
-// spinor field 'spinor'. this function is intended to be a reference implementation for
-// the much faster CUDA kernel.
-//
-// indices, varying slowest to fastest, are,
-//   spinor field:  (z, y, x, t, spinor idx, color idx, complex idx)
-//   gauge field:   (dir) (z, y, x, t, color row, color column, complex idx)
-//
-// constants (such as lattice lengths) are given in the file 'qcd.h'
-// 
-// if oddBit is zero/one then the even/odd spinor sites will be updated.
-//
-// if daggerBit is zero/one then perform dslash without/with dagger operator
-//
-void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit, int daggerBit) {
-    zero(res, Nh*4*3*2);
-    
-    for (int i = 0; i < Nh; i++) {
-        for (int dir = 0; dir < 8; dir++) {
-            float *gauge = gaugeLink(i, dir, oddBit, gaugeEven, gaugeOdd);
-            float *spinor = spinorNeighbor(i, dir, oddBit, spinorField);
-            
-            float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
-            multiplySpinorByDiracProjector(projectedSpinor, dir, spinor);
-            
-            for (int s = 0; s < 4; s++) {
-                if (dir % 2 == daggerBit)
-                    su3_mul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);
-                else
-                    su3_Tmul(&gaugedSpinor[s*(3*2)], gauge, &projectedSpinor[s*(3*2)]);
-            }
-            
-            sum(&res[i*(4*3*2)], &res[i*(4*3*2)], gaugedSpinor, 4*3*2);
-        }
-    }
-}
-
-
-
-// ---------------------------------------------------------------------------------------
-// helper functions
-//
-
-void printVector(float *v) {
-    printf("{(%f %f) (%f %f) (%f %f)}\n", v[0], v[1], v[2], v[3], v[4], v[5]);
-}
-
-void printSpinor(float *spinor) {
-    for (int s = 0; s < 4; s++) {
-        printVector(&spinor[s*(3*2)]);
-    }
-}
-
-// X indexes the full lattice
-void printSpinorElement(float *spinorEven, float *spinorOdd, int X) {
-    if (getOddBit(X) == 0)
-        printSpinor(&spinorEven[(X/2)*(4*3*2)]);
-    else
-        printSpinor(&spinorOdd[(X/2)*(4*3*2)]);
-}

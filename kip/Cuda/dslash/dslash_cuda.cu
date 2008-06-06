@@ -25,14 +25,12 @@ texture<float4, 1, cudaReadModeElementType> spinorTex;
 
 __global__ void
 dslashKernel(float4* g_out, int oddBit) {
-    #include "qcd_core.cu"
+    #include "dslash_core.cu"
 }
 
 __global__ void
 dslashDaggerKernel(float4* g_out, int oddBit) {
-    #define DSLASH_DAGGER
-    #include "qcd_core.cu"
-    #undef DSLASH_DAGGER
+    #include "dslash_dagger_core.cu"
 }
 
 // ----------------------------------------------------------------------
@@ -201,7 +199,7 @@ int main(int argc, char **argv) {
     sendSpinorFieldEven(spinorEven);
     
     int ODD_BIT = 1;
-    int DAGGER_BIT = 1;
+    int DAGGER_BIT = 0;
     
     // execute kernel
     printf("Beginning kernel execution\n");

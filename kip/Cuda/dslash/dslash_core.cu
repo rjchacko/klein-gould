@@ -1,3 +1,5 @@
+// *** CUDA DSLASH ***
+
 #define SHARED_BYTES (BLOCK_DIM*19*sizeof(float))
 
 #define i00_re I0.x
@@ -125,16 +127,6 @@ float o32_im;
     float4 I4 = tex1Dfetch((spinor), sp_idx + 4*Nh); \
     float4 I5 = tex1Dfetch((spinor), sp_idx + 5*Nh);
 
-#ifndef DSLASH_DAGGER
-    #define g0(x) g##x
-    #define g1(x) gT##x
-#else
-    #undef g0
-    #undef g1
-    #define g0(x) gT##x
-    #define g1(x) g##x
-#endif
-
 int sid = BLOCK_DIM*blockIdx.x + threadIdx.x;
 int boundaryCrossings = sid/L1h + sid/(L2*L1h) + sid/(L3*L2*L1h);
 int X = 2*sid + (boundaryCrossings + oddBit) % 2;
@@ -161,7 +153,7 @@ o32_re = o32_im = 0;
 
 if(1)
 {
-    // Projector 0
+    // Projector P0-
     // 1 0 0 -i 
     // 0 1 -i 0 
     // 0 i 1 0 
@@ -193,10 +185,10 @@ if(1)
     
     // multiply row 0 by half spinors
     {
-        float A_re = + (g0(00_re) * a0_re - g0(00_im) * a0_im) + (g0(01_re) * a1_re - g0(01_im) * a1_im) + (g0(02_re) * a2_re - g0(02_im) * a2_im);
-        float A_im = + (g0(00_re) * a0_im + g0(00_im) * a0_re) + (g0(01_re) * a1_im + g0(01_im) * a1_re) + (g0(02_re) * a2_im + g0(02_im) * a2_re);
-        float B_re = + (g0(00_re) * b0_re - g0(00_im) * b0_im) + (g0(01_re) * b1_re - g0(01_im) * b1_im) + (g0(02_re) * b2_re - g0(02_im) * b2_im);
-        float B_im = + (g0(00_re) * b0_im + g0(00_im) * b0_re) + (g0(01_re) * b1_im + g0(01_im) * b1_re) + (g0(02_re) * b2_im + g0(02_im) * b2_re);
+        float A_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
+        float A_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
+        float B_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
+        float B_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
         o00_re += +A_re;
         o00_im += +A_im;
         o10_re += +B_re;
@@ -209,10 +201,10 @@ if(1)
     
     // multiply row 1 by half spinors
     {
-        float A_re = + (g0(10_re) * a0_re - g0(10_im) * a0_im) + (g0(11_re) * a1_re - g0(11_im) * a1_im) + (g0(12_re) * a2_re - g0(12_im) * a2_im);
-        float A_im = + (g0(10_re) * a0_im + g0(10_im) * a0_re) + (g0(11_re) * a1_im + g0(11_im) * a1_re) + (g0(12_re) * a2_im + g0(12_im) * a2_re);
-        float B_re = + (g0(10_re) * b0_re - g0(10_im) * b0_im) + (g0(11_re) * b1_re - g0(11_im) * b1_im) + (g0(12_re) * b2_re - g0(12_im) * b2_im);
-        float B_im = + (g0(10_re) * b0_im + g0(10_im) * b0_re) + (g0(11_re) * b1_im + g0(11_im) * b1_re) + (g0(12_re) * b2_im + g0(12_im) * b2_re);
+        float A_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
+        float A_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
+        float B_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
+        float B_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
         o01_re += +A_re;
         o01_im += +A_im;
         o11_re += +B_re;
@@ -225,10 +217,10 @@ if(1)
     
     // multiply row 2 by half spinors
     {
-        float A_re = + (g0(20_re) * a0_re - g0(20_im) * a0_im) + (g0(21_re) * a1_re - g0(21_im) * a1_im) + (g0(22_re) * a2_re - g0(22_im) * a2_im);
-        float A_im = + (g0(20_re) * a0_im + g0(20_im) * a0_re) + (g0(21_re) * a1_im + g0(21_im) * a1_re) + (g0(22_re) * a2_im + g0(22_im) * a2_re);
-        float B_re = + (g0(20_re) * b0_re - g0(20_im) * b0_im) + (g0(21_re) * b1_re - g0(21_im) * b1_im) + (g0(22_re) * b2_re - g0(22_im) * b2_im);
-        float B_im = + (g0(20_re) * b0_im + g0(20_im) * b0_re) + (g0(21_re) * b1_im + g0(21_im) * b1_re) + (g0(22_re) * b2_im + g0(22_im) * b2_re);
+        float A_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
+        float A_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
+        float B_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
+        float B_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
         o02_re += +A_re;
         o02_im += +A_im;
         o12_re += +B_re;
@@ -243,7 +235,7 @@ if(1)
 
 if(1)
 {
-    // Projector 1
+    // Projector P0+
     // 1 0 0 i 
     // 0 1 i 0 
     // 0 -i 1 0 
@@ -275,10 +267,10 @@ if(1)
     
     // multiply row 0 by half spinors
     {
-        float A_re = + (g1(00_re) * a0_re - g1(00_im) * a0_im) + (g1(01_re) * a1_re - g1(01_im) * a1_im) + (g1(02_re) * a2_re - g1(02_im) * a2_im);
-        float A_im = + (g1(00_re) * a0_im + g1(00_im) * a0_re) + (g1(01_re) * a1_im + g1(01_im) * a1_re) + (g1(02_re) * a2_im + g1(02_im) * a2_re);
-        float B_re = + (g1(00_re) * b0_re - g1(00_im) * b0_im) + (g1(01_re) * b1_re - g1(01_im) * b1_im) + (g1(02_re) * b2_re - g1(02_im) * b2_im);
-        float B_im = + (g1(00_re) * b0_im + g1(00_im) * b0_re) + (g1(01_re) * b1_im + g1(01_im) * b1_re) + (g1(02_re) * b2_im + g1(02_im) * b2_re);
+        float A_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
+        float A_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
+        float B_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
+        float B_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
         o00_re += +A_re;
         o00_im += +A_im;
         o10_re += +B_re;
@@ -291,10 +283,10 @@ if(1)
     
     // multiply row 1 by half spinors
     {
-        float A_re = + (g1(10_re) * a0_re - g1(10_im) * a0_im) + (g1(11_re) * a1_re - g1(11_im) * a1_im) + (g1(12_re) * a2_re - g1(12_im) * a2_im);
-        float A_im = + (g1(10_re) * a0_im + g1(10_im) * a0_re) + (g1(11_re) * a1_im + g1(11_im) * a1_re) + (g1(12_re) * a2_im + g1(12_im) * a2_re);
-        float B_re = + (g1(10_re) * b0_re - g1(10_im) * b0_im) + (g1(11_re) * b1_re - g1(11_im) * b1_im) + (g1(12_re) * b2_re - g1(12_im) * b2_im);
-        float B_im = + (g1(10_re) * b0_im + g1(10_im) * b0_re) + (g1(11_re) * b1_im + g1(11_im) * b1_re) + (g1(12_re) * b2_im + g1(12_im) * b2_re);
+        float A_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
+        float A_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
+        float B_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
+        float B_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
         o01_re += +A_re;
         o01_im += +A_im;
         o11_re += +B_re;
@@ -307,10 +299,10 @@ if(1)
     
     // multiply row 2 by half spinors
     {
-        float A_re = + (g1(20_re) * a0_re - g1(20_im) * a0_im) + (g1(21_re) * a1_re - g1(21_im) * a1_im) + (g1(22_re) * a2_re - g1(22_im) * a2_im);
-        float A_im = + (g1(20_re) * a0_im + g1(20_im) * a0_re) + (g1(21_re) * a1_im + g1(21_im) * a1_re) + (g1(22_re) * a2_im + g1(22_im) * a2_re);
-        float B_re = + (g1(20_re) * b0_re - g1(20_im) * b0_im) + (g1(21_re) * b1_re - g1(21_im) * b1_im) + (g1(22_re) * b2_re - g1(22_im) * b2_im);
-        float B_im = + (g1(20_re) * b0_im + g1(20_im) * b0_re) + (g1(21_re) * b1_im + g1(21_im) * b1_re) + (g1(22_re) * b2_im + g1(22_im) * b2_re);
+        float A_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
+        float A_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
+        float B_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
+        float B_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
         o02_re += +A_re;
         o02_im += +A_im;
         o12_re += +B_re;
@@ -325,7 +317,7 @@ if(1)
 
 if(1)
 {
-    // Projector 2
+    // Projector P1-
     // 1 0 0 1 
     // 0 1 -1 0 
     // 0 -1 1 0 
@@ -357,10 +349,10 @@ if(1)
     
     // multiply row 0 by half spinors
     {
-        float A_re = + (g0(00_re) * a0_re - g0(00_im) * a0_im) + (g0(01_re) * a1_re - g0(01_im) * a1_im) + (g0(02_re) * a2_re - g0(02_im) * a2_im);
-        float A_im = + (g0(00_re) * a0_im + g0(00_im) * a0_re) + (g0(01_re) * a1_im + g0(01_im) * a1_re) + (g0(02_re) * a2_im + g0(02_im) * a2_re);
-        float B_re = + (g0(00_re) * b0_re - g0(00_im) * b0_im) + (g0(01_re) * b1_re - g0(01_im) * b1_im) + (g0(02_re) * b2_re - g0(02_im) * b2_im);
-        float B_im = + (g0(00_re) * b0_im + g0(00_im) * b0_re) + (g0(01_re) * b1_im + g0(01_im) * b1_re) + (g0(02_re) * b2_im + g0(02_im) * b2_re);
+        float A_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
+        float A_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
+        float B_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
+        float B_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
         o00_re += +A_re;
         o00_im += +A_im;
         o10_re += +B_re;
@@ -373,10 +365,10 @@ if(1)
     
     // multiply row 1 by half spinors
     {
-        float A_re = + (g0(10_re) * a0_re - g0(10_im) * a0_im) + (g0(11_re) * a1_re - g0(11_im) * a1_im) + (g0(12_re) * a2_re - g0(12_im) * a2_im);
-        float A_im = + (g0(10_re) * a0_im + g0(10_im) * a0_re) + (g0(11_re) * a1_im + g0(11_im) * a1_re) + (g0(12_re) * a2_im + g0(12_im) * a2_re);
-        float B_re = + (g0(10_re) * b0_re - g0(10_im) * b0_im) + (g0(11_re) * b1_re - g0(11_im) * b1_im) + (g0(12_re) * b2_re - g0(12_im) * b2_im);
-        float B_im = + (g0(10_re) * b0_im + g0(10_im) * b0_re) + (g0(11_re) * b1_im + g0(11_im) * b1_re) + (g0(12_re) * b2_im + g0(12_im) * b2_re);
+        float A_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
+        float A_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
+        float B_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
+        float B_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
         o01_re += +A_re;
         o01_im += +A_im;
         o11_re += +B_re;
@@ -389,10 +381,10 @@ if(1)
     
     // multiply row 2 by half spinors
     {
-        float A_re = + (g0(20_re) * a0_re - g0(20_im) * a0_im) + (g0(21_re) * a1_re - g0(21_im) * a1_im) + (g0(22_re) * a2_re - g0(22_im) * a2_im);
-        float A_im = + (g0(20_re) * a0_im + g0(20_im) * a0_re) + (g0(21_re) * a1_im + g0(21_im) * a1_re) + (g0(22_re) * a2_im + g0(22_im) * a2_re);
-        float B_re = + (g0(20_re) * b0_re - g0(20_im) * b0_im) + (g0(21_re) * b1_re - g0(21_im) * b1_im) + (g0(22_re) * b2_re - g0(22_im) * b2_im);
-        float B_im = + (g0(20_re) * b0_im + g0(20_im) * b0_re) + (g0(21_re) * b1_im + g0(21_im) * b1_re) + (g0(22_re) * b2_im + g0(22_im) * b2_re);
+        float A_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
+        float A_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
+        float B_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
+        float B_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
         o02_re += +A_re;
         o02_im += +A_im;
         o12_re += +B_re;
@@ -407,7 +399,7 @@ if(1)
 
 if(1)
 {
-    // Projector 3
+    // Projector P1+
     // 1 0 0 -1 
     // 0 1 1 0 
     // 0 1 1 0 
@@ -439,10 +431,10 @@ if(1)
     
     // multiply row 0 by half spinors
     {
-        float A_re = + (g1(00_re) * a0_re - g1(00_im) * a0_im) + (g1(01_re) * a1_re - g1(01_im) * a1_im) + (g1(02_re) * a2_re - g1(02_im) * a2_im);
-        float A_im = + (g1(00_re) * a0_im + g1(00_im) * a0_re) + (g1(01_re) * a1_im + g1(01_im) * a1_re) + (g1(02_re) * a2_im + g1(02_im) * a2_re);
-        float B_re = + (g1(00_re) * b0_re - g1(00_im) * b0_im) + (g1(01_re) * b1_re - g1(01_im) * b1_im) + (g1(02_re) * b2_re - g1(02_im) * b2_im);
-        float B_im = + (g1(00_re) * b0_im + g1(00_im) * b0_re) + (g1(01_re) * b1_im + g1(01_im) * b1_re) + (g1(02_re) * b2_im + g1(02_im) * b2_re);
+        float A_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
+        float A_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
+        float B_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
+        float B_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
         o00_re += +A_re;
         o00_im += +A_im;
         o10_re += +B_re;
@@ -455,10 +447,10 @@ if(1)
     
     // multiply row 1 by half spinors
     {
-        float A_re = + (g1(10_re) * a0_re - g1(10_im) * a0_im) + (g1(11_re) * a1_re - g1(11_im) * a1_im) + (g1(12_re) * a2_re - g1(12_im) * a2_im);
-        float A_im = + (g1(10_re) * a0_im + g1(10_im) * a0_re) + (g1(11_re) * a1_im + g1(11_im) * a1_re) + (g1(12_re) * a2_im + g1(12_im) * a2_re);
-        float B_re = + (g1(10_re) * b0_re - g1(10_im) * b0_im) + (g1(11_re) * b1_re - g1(11_im) * b1_im) + (g1(12_re) * b2_re - g1(12_im) * b2_im);
-        float B_im = + (g1(10_re) * b0_im + g1(10_im) * b0_re) + (g1(11_re) * b1_im + g1(11_im) * b1_re) + (g1(12_re) * b2_im + g1(12_im) * b2_re);
+        float A_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
+        float A_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
+        float B_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
+        float B_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
         o01_re += +A_re;
         o01_im += +A_im;
         o11_re += +B_re;
@@ -471,10 +463,10 @@ if(1)
     
     // multiply row 2 by half spinors
     {
-        float A_re = + (g1(20_re) * a0_re - g1(20_im) * a0_im) + (g1(21_re) * a1_re - g1(21_im) * a1_im) + (g1(22_re) * a2_re - g1(22_im) * a2_im);
-        float A_im = + (g1(20_re) * a0_im + g1(20_im) * a0_re) + (g1(21_re) * a1_im + g1(21_im) * a1_re) + (g1(22_re) * a2_im + g1(22_im) * a2_re);
-        float B_re = + (g1(20_re) * b0_re - g1(20_im) * b0_im) + (g1(21_re) * b1_re - g1(21_im) * b1_im) + (g1(22_re) * b2_re - g1(22_im) * b2_im);
-        float B_im = + (g1(20_re) * b0_im + g1(20_im) * b0_re) + (g1(21_re) * b1_im + g1(21_im) * b1_re) + (g1(22_re) * b2_im + g1(22_im) * b2_re);
+        float A_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
+        float A_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
+        float B_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
+        float B_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
         o02_re += +A_re;
         o02_im += +A_im;
         o12_re += +B_re;
@@ -489,7 +481,7 @@ if(1)
 
 if(1)
 {
-    // Projector 4
+    // Projector P2-
     // 1 0 -i 0 
     // 0 1 0 i 
     // i 0 1 0 
@@ -521,10 +513,10 @@ if(1)
     
     // multiply row 0 by half spinors
     {
-        float A_re = + (g0(00_re) * a0_re - g0(00_im) * a0_im) + (g0(01_re) * a1_re - g0(01_im) * a1_im) + (g0(02_re) * a2_re - g0(02_im) * a2_im);
-        float A_im = + (g0(00_re) * a0_im + g0(00_im) * a0_re) + (g0(01_re) * a1_im + g0(01_im) * a1_re) + (g0(02_re) * a2_im + g0(02_im) * a2_re);
-        float B_re = + (g0(00_re) * b0_re - g0(00_im) * b0_im) + (g0(01_re) * b1_re - g0(01_im) * b1_im) + (g0(02_re) * b2_re - g0(02_im) * b2_im);
-        float B_im = + (g0(00_re) * b0_im + g0(00_im) * b0_re) + (g0(01_re) * b1_im + g0(01_im) * b1_re) + (g0(02_re) * b2_im + g0(02_im) * b2_re);
+        float A_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
+        float A_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
+        float B_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
+        float B_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
         o00_re += +A_re;
         o00_im += +A_im;
         o10_re += +B_re;
@@ -537,10 +529,10 @@ if(1)
     
     // multiply row 1 by half spinors
     {
-        float A_re = + (g0(10_re) * a0_re - g0(10_im) * a0_im) + (g0(11_re) * a1_re - g0(11_im) * a1_im) + (g0(12_re) * a2_re - g0(12_im) * a2_im);
-        float A_im = + (g0(10_re) * a0_im + g0(10_im) * a0_re) + (g0(11_re) * a1_im + g0(11_im) * a1_re) + (g0(12_re) * a2_im + g0(12_im) * a2_re);
-        float B_re = + (g0(10_re) * b0_re - g0(10_im) * b0_im) + (g0(11_re) * b1_re - g0(11_im) * b1_im) + (g0(12_re) * b2_re - g0(12_im) * b2_im);
-        float B_im = + (g0(10_re) * b0_im + g0(10_im) * b0_re) + (g0(11_re) * b1_im + g0(11_im) * b1_re) + (g0(12_re) * b2_im + g0(12_im) * b2_re);
+        float A_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
+        float A_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
+        float B_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
+        float B_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
         o01_re += +A_re;
         o01_im += +A_im;
         o11_re += +B_re;
@@ -553,10 +545,10 @@ if(1)
     
     // multiply row 2 by half spinors
     {
-        float A_re = + (g0(20_re) * a0_re - g0(20_im) * a0_im) + (g0(21_re) * a1_re - g0(21_im) * a1_im) + (g0(22_re) * a2_re - g0(22_im) * a2_im);
-        float A_im = + (g0(20_re) * a0_im + g0(20_im) * a0_re) + (g0(21_re) * a1_im + g0(21_im) * a1_re) + (g0(22_re) * a2_im + g0(22_im) * a2_re);
-        float B_re = + (g0(20_re) * b0_re - g0(20_im) * b0_im) + (g0(21_re) * b1_re - g0(21_im) * b1_im) + (g0(22_re) * b2_re - g0(22_im) * b2_im);
-        float B_im = + (g0(20_re) * b0_im + g0(20_im) * b0_re) + (g0(21_re) * b1_im + g0(21_im) * b1_re) + (g0(22_re) * b2_im + g0(22_im) * b2_re);
+        float A_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
+        float A_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
+        float B_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
+        float B_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
         o02_re += +A_re;
         o02_im += +A_im;
         o12_re += +B_re;
@@ -571,7 +563,7 @@ if(1)
 
 if(1)
 {
-    // Projector 5
+    // Projector P2+
     // 1 0 i 0 
     // 0 1 0 -i 
     // -i 0 1 0 
@@ -603,10 +595,10 @@ if(1)
     
     // multiply row 0 by half spinors
     {
-        float A_re = + (g1(00_re) * a0_re - g1(00_im) * a0_im) + (g1(01_re) * a1_re - g1(01_im) * a1_im) + (g1(02_re) * a2_re - g1(02_im) * a2_im);
-        float A_im = + (g1(00_re) * a0_im + g1(00_im) * a0_re) + (g1(01_re) * a1_im + g1(01_im) * a1_re) + (g1(02_re) * a2_im + g1(02_im) * a2_re);
-        float B_re = + (g1(00_re) * b0_re - g1(00_im) * b0_im) + (g1(01_re) * b1_re - g1(01_im) * b1_im) + (g1(02_re) * b2_re - g1(02_im) * b2_im);
-        float B_im = + (g1(00_re) * b0_im + g1(00_im) * b0_re) + (g1(01_re) * b1_im + g1(01_im) * b1_re) + (g1(02_re) * b2_im + g1(02_im) * b2_re);
+        float A_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
+        float A_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
+        float B_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
+        float B_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
         o00_re += +A_re;
         o00_im += +A_im;
         o10_re += +B_re;
@@ -619,10 +611,10 @@ if(1)
     
     // multiply row 1 by half spinors
     {
-        float A_re = + (g1(10_re) * a0_re - g1(10_im) * a0_im) + (g1(11_re) * a1_re - g1(11_im) * a1_im) + (g1(12_re) * a2_re - g1(12_im) * a2_im);
-        float A_im = + (g1(10_re) * a0_im + g1(10_im) * a0_re) + (g1(11_re) * a1_im + g1(11_im) * a1_re) + (g1(12_re) * a2_im + g1(12_im) * a2_re);
-        float B_re = + (g1(10_re) * b0_re - g1(10_im) * b0_im) + (g1(11_re) * b1_re - g1(11_im) * b1_im) + (g1(12_re) * b2_re - g1(12_im) * b2_im);
-        float B_im = + (g1(10_re) * b0_im + g1(10_im) * b0_re) + (g1(11_re) * b1_im + g1(11_im) * b1_re) + (g1(12_re) * b2_im + g1(12_im) * b2_re);
+        float A_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
+        float A_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
+        float B_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
+        float B_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
         o01_re += +A_re;
         o01_im += +A_im;
         o11_re += +B_re;
@@ -635,10 +627,10 @@ if(1)
     
     // multiply row 2 by half spinors
     {
-        float A_re = + (g1(20_re) * a0_re - g1(20_im) * a0_im) + (g1(21_re) * a1_re - g1(21_im) * a1_im) + (g1(22_re) * a2_re - g1(22_im) * a2_im);
-        float A_im = + (g1(20_re) * a0_im + g1(20_im) * a0_re) + (g1(21_re) * a1_im + g1(21_im) * a1_re) + (g1(22_re) * a2_im + g1(22_im) * a2_re);
-        float B_re = + (g1(20_re) * b0_re - g1(20_im) * b0_im) + (g1(21_re) * b1_re - g1(21_im) * b1_im) + (g1(22_re) * b2_re - g1(22_im) * b2_im);
-        float B_im = + (g1(20_re) * b0_im + g1(20_im) * b0_re) + (g1(21_re) * b1_im + g1(21_im) * b1_re) + (g1(22_re) * b2_im + g1(22_im) * b2_re);
+        float A_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
+        float A_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
+        float B_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
+        float B_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
         o02_re += +A_re;
         o02_im += +A_im;
         o12_re += +B_re;
@@ -653,7 +645,7 @@ if(1)
 
 if(1)
 {
-    // Projector 6
+    // Projector P3-
     // 1 0 -1 0 
     // 0 1 0 -1 
     // -1 0 1 0 
@@ -685,10 +677,10 @@ if(1)
     
     // multiply row 0 by half spinors
     {
-        float A_re = + (g0(00_re) * a0_re - g0(00_im) * a0_im) + (g0(01_re) * a1_re - g0(01_im) * a1_im) + (g0(02_re) * a2_re - g0(02_im) * a2_im);
-        float A_im = + (g0(00_re) * a0_im + g0(00_im) * a0_re) + (g0(01_re) * a1_im + g0(01_im) * a1_re) + (g0(02_re) * a2_im + g0(02_im) * a2_re);
-        float B_re = + (g0(00_re) * b0_re - g0(00_im) * b0_im) + (g0(01_re) * b1_re - g0(01_im) * b1_im) + (g0(02_re) * b2_re - g0(02_im) * b2_im);
-        float B_im = + (g0(00_re) * b0_im + g0(00_im) * b0_re) + (g0(01_re) * b1_im + g0(01_im) * b1_re) + (g0(02_re) * b2_im + g0(02_im) * b2_re);
+        float A_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
+        float A_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
+        float B_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
+        float B_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
         o00_re += +A_re;
         o00_im += +A_im;
         o10_re += +B_re;
@@ -701,10 +693,10 @@ if(1)
     
     // multiply row 1 by half spinors
     {
-        float A_re = + (g0(10_re) * a0_re - g0(10_im) * a0_im) + (g0(11_re) * a1_re - g0(11_im) * a1_im) + (g0(12_re) * a2_re - g0(12_im) * a2_im);
-        float A_im = + (g0(10_re) * a0_im + g0(10_im) * a0_re) + (g0(11_re) * a1_im + g0(11_im) * a1_re) + (g0(12_re) * a2_im + g0(12_im) * a2_re);
-        float B_re = + (g0(10_re) * b0_re - g0(10_im) * b0_im) + (g0(11_re) * b1_re - g0(11_im) * b1_im) + (g0(12_re) * b2_re - g0(12_im) * b2_im);
-        float B_im = + (g0(10_re) * b0_im + g0(10_im) * b0_re) + (g0(11_re) * b1_im + g0(11_im) * b1_re) + (g0(12_re) * b2_im + g0(12_im) * b2_re);
+        float A_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
+        float A_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
+        float B_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
+        float B_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
         o01_re += +A_re;
         o01_im += +A_im;
         o11_re += +B_re;
@@ -717,10 +709,10 @@ if(1)
     
     // multiply row 2 by half spinors
     {
-        float A_re = + (g0(20_re) * a0_re - g0(20_im) * a0_im) + (g0(21_re) * a1_re - g0(21_im) * a1_im) + (g0(22_re) * a2_re - g0(22_im) * a2_im);
-        float A_im = + (g0(20_re) * a0_im + g0(20_im) * a0_re) + (g0(21_re) * a1_im + g0(21_im) * a1_re) + (g0(22_re) * a2_im + g0(22_im) * a2_re);
-        float B_re = + (g0(20_re) * b0_re - g0(20_im) * b0_im) + (g0(21_re) * b1_re - g0(21_im) * b1_im) + (g0(22_re) * b2_re - g0(22_im) * b2_im);
-        float B_im = + (g0(20_re) * b0_im + g0(20_im) * b0_re) + (g0(21_re) * b1_im + g0(21_im) * b1_re) + (g0(22_re) * b2_im + g0(22_im) * b2_re);
+        float A_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
+        float A_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
+        float B_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
+        float B_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
         o02_re += +A_re;
         o02_im += +A_im;
         o12_re += +B_re;
@@ -735,7 +727,7 @@ if(1)
 
 if(1)
 {
-    // Projector 7
+    // Projector P3+
     // 1 0 1 0 
     // 0 1 0 1 
     // 1 0 1 0 
@@ -767,10 +759,10 @@ if(1)
     
     // multiply row 0 by half spinors
     {
-        float A_re = + (g1(00_re) * a0_re - g1(00_im) * a0_im) + (g1(01_re) * a1_re - g1(01_im) * a1_im) + (g1(02_re) * a2_re - g1(02_im) * a2_im);
-        float A_im = + (g1(00_re) * a0_im + g1(00_im) * a0_re) + (g1(01_re) * a1_im + g1(01_im) * a1_re) + (g1(02_re) * a2_im + g1(02_im) * a2_re);
-        float B_re = + (g1(00_re) * b0_re - g1(00_im) * b0_im) + (g1(01_re) * b1_re - g1(01_im) * b1_im) + (g1(02_re) * b2_re - g1(02_im) * b2_im);
-        float B_im = + (g1(00_re) * b0_im + g1(00_im) * b0_re) + (g1(01_re) * b1_im + g1(01_im) * b1_re) + (g1(02_re) * b2_im + g1(02_im) * b2_re);
+        float A_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
+        float A_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
+        float B_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
+        float B_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
         o00_re += +A_re;
         o00_im += +A_im;
         o10_re += +B_re;
@@ -783,10 +775,10 @@ if(1)
     
     // multiply row 1 by half spinors
     {
-        float A_re = + (g1(10_re) * a0_re - g1(10_im) * a0_im) + (g1(11_re) * a1_re - g1(11_im) * a1_im) + (g1(12_re) * a2_re - g1(12_im) * a2_im);
-        float A_im = + (g1(10_re) * a0_im + g1(10_im) * a0_re) + (g1(11_re) * a1_im + g1(11_im) * a1_re) + (g1(12_re) * a2_im + g1(12_im) * a2_re);
-        float B_re = + (g1(10_re) * b0_re - g1(10_im) * b0_im) + (g1(11_re) * b1_re - g1(11_im) * b1_im) + (g1(12_re) * b2_re - g1(12_im) * b2_im);
-        float B_im = + (g1(10_re) * b0_im + g1(10_im) * b0_re) + (g1(11_re) * b1_im + g1(11_im) * b1_re) + (g1(12_re) * b2_im + g1(12_im) * b2_re);
+        float A_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
+        float A_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
+        float B_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
+        float B_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
         o01_re += +A_re;
         o01_im += +A_im;
         o11_re += +B_re;
@@ -799,10 +791,10 @@ if(1)
     
     // multiply row 2 by half spinors
     {
-        float A_re = + (g1(20_re) * a0_re - g1(20_im) * a0_im) + (g1(21_re) * a1_re - g1(21_im) * a1_im) + (g1(22_re) * a2_re - g1(22_im) * a2_im);
-        float A_im = + (g1(20_re) * a0_im + g1(20_im) * a0_re) + (g1(21_re) * a1_im + g1(21_im) * a1_re) + (g1(22_re) * a2_im + g1(22_im) * a2_re);
-        float B_re = + (g1(20_re) * b0_re - g1(20_im) * b0_im) + (g1(21_re) * b1_re - g1(21_im) * b1_im) + (g1(22_re) * b2_re - g1(22_im) * b2_im);
-        float B_im = + (g1(20_re) * b0_im + g1(20_im) * b0_re) + (g1(21_re) * b1_im + g1(21_im) * b1_re) + (g1(22_re) * b2_im + g1(22_im) * b2_re);
+        float A_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
+        float A_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
+        float B_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
+        float B_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
         o02_re += +A_re;
         o02_im += +A_im;
         o12_re += +B_re;
