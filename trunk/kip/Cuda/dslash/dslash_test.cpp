@@ -3,17 +3,31 @@
 #include <stdio.h>
 #include "qcd.h"
 
+void floatTimesSpinor(float a, float *x, int len) {
+    for (int i=0; i<len; i++) x[i] *= a;
+}
+
+void axpy(float a, float *x, float *y, int len) {
+    for (int i=0; i<len; i++) y[i] += a*x[i];
+}
+
 int main() {
-    // construct input fields
-    float *gaugeEven[4], *gaugeOdd[4];
+    int gaugeSiteSize = 3*3*2;
+    int spinorSiteSize = 4*3*2;
+    
+    float *gauge[4], *gaugeEven[4], *gaugeOdd[4];
     for (int dir = 0; dir < 4; dir++) {
-        gaugeEven[dir] = (float*)malloc(Nh*3*3*2*sizeof(float));
-        gaugeOdd[dir]  = (float*)malloc(Nh*3*3*2*sizeof(float));
+        gauge[dir] = (float*)malloc(N*gaugeSiteSize*sizeof(float));
+        gaugeEven[dir] = gauge[dir];
+        gaugeOdd[dir]  = gauge[dir]+(N/2)*gaugeSiteSize;
     }
-    float *spinorEvenIn = (float*)malloc(Nh*4*3*2*sizeof(float));
-    float *spinorOddIn  = (float*)malloc(Nh*4*3*2*sizeof(float));
-    float *spinorEvenOut = (float*)malloc(Nh*4*3*2*sizeof(float));
-    float *spinorOddOut  = (float*)malloc(Nh*4*3*2*sizeof(float));
+    
+    float *spinorIn = (float*)malloc(N*spinorSiteSize*sizeof(float));
+    float *spinorEvenIn = spinorIn;
+    float *spinorOddIn  = spinorIn + (N/2)*spinorSiteSize;
+    float *spinorOut = (float*)malloc(N*spinorSiteSize*sizeof(float));
+    float *spinorEvenOut = spinorOut;
+    float *spinorOddOut  = spinorOut + (N/2)*spinorSiteSize;
     
     constructUnitGaugeField(gaugeEven, gaugeOdd);
     
@@ -22,27 +36,28 @@ int main() {
     int c0 = 0;
     constructPointSpinorField(spinorEvenIn, spinorOddIn, i0, s0, c0);
 
-    // full dslash operator; final bit indicates "dagger" modifier
-    dslashReference(spinorEvenOut, gaugeEven, gaugeOdd, spinorOddIn, 0, 1);
-    dslashReference(spinorOddOut, gaugeEven, gaugeOdd, spinorEvenIn, 1, 1);
+    // full dslash operator
+    int daggerBit = 0;
+    dslashReference(spinorEvenOut, gaugeEven, gaugeOdd, spinorOddIn, 0, daggerBit);
+    dslashReference(spinorOddOut, gaugeEven, gaugeOdd, spinorEvenIn, 1, daggerBit);
 
-    // lastly apply the mass term
-    float kappa = 0.125;
-    float kappa2 = kappa*kappa;
-    // apxy(spinorIn, -kappa, spinorOut);
+    // factor of -0.5
+    floatTimesSpinor(-0.5, spinorOut, N*spinorSiteSize);
     
-    printf("Spinor (t=0,z=0,y=0,x=1):\n");
-    printSpinorElement(spinorEvenOut, spinorOddOut, 1);
-    printf("Spinor (t=0,z=0,y=1,x=0):\n");
-    printSpinorElement(spinorEvenOut, spinorOddOut, L1);
+    // lastly apply the mass term
+    float mass = 0.01;
+    float d = 4.0+mass;
+    axpy(d, spinorIn, spinorOut, N*spinorSiteSize);
+    
+    for (int i = 0; i < N; i++) {
+        printSpinorElement(spinorEvenOut, spinorOddOut, i);
+        printf("\n");
+    }
     
     // release memory
     for (int dir = 0; dir < 4; dir++) {
-        free(gaugeEven[dir]);
-        free(gaugeOdd[dir]);
+        free(gauge[dir]);
     }
-    free(spinorEvenIn);
-    free(spinorOddIn);
-    free(spinorEvenOut);
-    free(spinorOddOut);
+    free(spinorIn);
+    free(spinorOut);
 }
