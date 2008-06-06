@@ -3,9 +3,10 @@
 #define L2 16 // "y" dimension
 #define L3 16 // "z" dimension
 #define L4 64 // "time" dimension
-
 #define L1h (L1/2) // half of the full "x" dimension, useful for even/odd lattice indexing
-#define Nh (L1h*L2*L3*L4) // total number of even/odd lattice points
+
+#define N (L1*L2*L3*L4) // total number of lattice points
+#define Nh (N/2) // total number of even/odd lattice points
 
 
 // ---------- dslash_reference.cpp ----------
