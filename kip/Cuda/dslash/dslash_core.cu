@@ -97,14 +97,6 @@ float o32_im;
     a##_re += b##_re * c##_re - b##_im * c##_im, \
     a##_im -= b##_re * c##_im + b##_im * c##_re
 
-#if 1
-#define READ_GAUGE_MATRIX(gauge) \
-    float4 G0 = tex1Dfetch((gauge), ga_idx + 0*Nh); \
-    float4 G1 = tex1Dfetch((gauge), ga_idx + 1*Nh); \
-    float4 G2 = tex1Dfetch((gauge), ga_idx + 2*Nh); \
-    float4 G3 = tex1Dfetch((gauge), ga_idx + 3*Nh); \
-    float4 G4 = tex1Dfetch((gauge), ga_idx + 4*Nh);
-#else
 #define READ_GAUGE_MATRIX(gauge) \
     float4 G0 = tex1Dfetch((gauge), ga_idx + 0*Nh); \
     float4 G1 = tex1Dfetch((gauge), ga_idx + 1*Nh); \
@@ -117,7 +109,6 @@ float o32_im;
     ACC_CONJ_PROD(g21, -g00, +g12); \
     ACC_CONJ_PROD(g22, +g00, +g11); \
     ACC_CONJ_PROD(g22, -g01, +g10);    
-#endif
 
 #define READ_SPINOR(spinor) \
     float4 I0 = tex1Dfetch((spinor), sp_idx + 0*Nh); \
