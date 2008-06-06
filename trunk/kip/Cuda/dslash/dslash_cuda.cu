@@ -28,6 +28,12 @@ dslashKernel(float4* g_out, int oddBit) {
     #include "qcd_core.cu"
 }
 
+__global__ void
+dslashDaggerKernel(float4* g_out, int oddBit) {
+    #define DSLASH_DAGGER
+    #include "qcd_core.cu"
+    #undef DSLASH_DAGGER
+}
 
 // ----------------------------------------------------------------------
 
@@ -139,7 +145,7 @@ void releaseCuda() {
     CUDA_SAFE_CALL(cudaFree(d_spinorOdd));
 }
 
-void dslashCuda(int oddBit) {
+void dslashCuda(int oddBit, int daggerBit) {
     if (oddBit) {
         cudaBindTexture(0 /*offset*/, gauge0Tex, d_gaugeOdd, Nh*PACKED_GAUGE_BYTES); 
         cudaBindTexture(0 /*offset*/, gauge1Tex, d_gaugeEven, Nh*PACKED_GAUGE_BYTES); 
@@ -153,7 +159,13 @@ void dslashCuda(int oddBit) {
     dim3 gridDim(GRID_DIM, 1, 1);
     dim3 blockDim(BLOCK_DIM, 1, 1);
     
-    dslashKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)d_spinorOdd, oddBit);
+    if (!daggerBit) {
+        dslashKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)d_spinorOdd, oddBit);
+    }
+    else {
+        dslashDaggerKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)d_spinorOdd, oddBit);
+    }
+    
     CUT_CHECK_ERROR("Kernel execution failed");
     cudaThreadSynchronize();
 }
@@ -189,14 +201,14 @@ int main(int argc, char **argv) {
     sendSpinorFieldEven(spinorEven);
     
     int ODD_BIT = 1;
-    int DAGGER_BIT = 0;
+    int DAGGER_BIT = 1;
     
     // execute kernel
     printf("Beginning kernel execution\n");
     cutStartTimer(timer);
     const int LOOPS = 100;
     for (int i = 0; i < LOOPS; i++) {
-        dslashCuda(ODD_BIT);
+        dslashCuda(ODD_BIT, DAGGER_BIT);
     }
     cutStopTimer(timer);
 

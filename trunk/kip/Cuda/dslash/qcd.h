@@ -34,4 +34,4 @@ extern "C" void retrieveSpinorFieldOdd(float *res);
 extern "C" void initializeCuda(int argc, char** argv);
 extern "C" void releaseCuda();
 
-extern "C" void dslashCuda(int oddBit);
+extern "C" void dslashCuda(int oddBit, int daggerBit);
