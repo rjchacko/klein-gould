@@ -22,9 +22,9 @@ int main() {
     int c0 = 0;
     constructPointSpinorField(spinorEvenIn, spinorOddIn, i0, s0, c0);
 
-    // full dslash operator
-    dslashReference(spinorEvenOut, gaugeEven, gaugeOdd, spinorOddIn, 0);
-    dslashReference(spinorOddOut, gaugeEven, gaugeOdd, spinorEvenIn, 1);
+    // full dslash operator; final bit indicates "dagger" modifier
+    dslashReference(spinorEvenOut, gaugeEven, gaugeOdd, spinorOddIn, 0, 1);
+    dslashReference(spinorOddOut, gaugeEven, gaugeOdd, spinorEvenIn, 1, 1);
 
     // lastly apply the mass term
     float kappa = 0.125;

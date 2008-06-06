@@ -189,6 +189,7 @@ int main(int argc, char **argv) {
     sendSpinorFieldEven(spinorEven);
     
     int ODD_BIT = 1;
+    int DAGGER_BIT = 0;
     
     // execute kernel
     printf("Beginning kernel execution\n");
@@ -208,7 +209,7 @@ int main(int argc, char **argv) {
 
     // compare to dslash reference implementation
     retrieveSpinorFieldOdd(spinorOdd);
-    dslashReference(spinorRef, gaugeEven, gaugeOdd, spinorEven, ODD_BIT);
+    dslashReference(spinorRef, gaugeEven, gaugeOdd, spinorEven, ODD_BIT, DAGGER_BIT);
     printf("Reference:\n");
     printSpinorHalfField(spinorRef);
     printf("\nCUDA:\n");
