@@ -267,9 +267,9 @@ void printSpinorElement(float *spinorEven, float *spinorOdd, int X) {
 }
 
 
-void accumulateConjugateProduct(float *a, float *b, float *c) {
-    a[0] += b[0]*c[0] - b[1]*c[1];
-    a[1] -= b[0]*c[1] + b[1]*c[0];
+void accumulateConjugateProduct(float *a, float *b, float *c, float sign) {
+    a[0] += sign * (b[0]*c[0] - b[1]*c[1]);
+    a[1] -= sign * (b[0]*c[1] + b[1]*c[0]);
 }
 
 // given first two rows (u,v) of SU(3) matrix mat, reconstruct the third row
@@ -279,8 +279,13 @@ void su3_reconstruct(float *mat) {
     float *u = &mat[0*(3*2)];
     float *v = &mat[1*(3*2)];
     float *w = &mat[2*(3*2)];
+    accumulateConjugateProduct(w+0*(2), u+1*(2), v+2*(2), +1);
+    accumulateConjugateProduct(w+0*(2), u+2*(2), v+1*(2), -1);
+    accumulateConjugateProduct(w+1*(2), u+2*(2), v+0*(2), +1);
+    accumulateConjugateProduct(w+1*(2), u+0*(2), v+2*(2), -1);
+    accumulateConjugateProduct(w+2*(2), u+0*(2), v+1*(2), +1);
+    accumulateConjugateProduct(w+2*(2), u+1*(2), v+0*(2), -1);
 }
-
 
 void constructUnitGaugeField(float **resEven, float **resOdd) {
     for (int dir = 0; dir < 4; dir++) {
@@ -300,7 +305,7 @@ void constructUnitGaugeField(float **resEven, float **resOdd) {
 void constructGaugeField(float **resEven, float **resOdd) {
     for (int dir = 0; dir < 4; dir++) {
         for(int i = 0; i < Nh; i++) {
-            for (int m = 0; m < 3; m++) {
+            for (int m = 0; m < 2; m++) {
                 for (int n = 0; n < 3; n++) {
                     resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
                     resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = rand() / (float)RAND_MAX;
@@ -308,6 +313,8 @@ void constructGaugeField(float **resEven, float **resOdd) {
                     resOdd[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = rand() / (float)RAND_MAX;                    
                 }
             }
+            su3_reconstruct(&resEven[dir][i*(3*3*2)]);
+            su3_reconstruct(&resOdd[dir][i*(3*3*2)]);
         }
     }
 }
