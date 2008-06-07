@@ -1,6 +1,7 @@
 // *** CUDA DSLASH DAGGER ***
 
-#define SHARED_BYTES (BLOCK_DIM*19*sizeof(float))
+#define SHARED_FLOATS_PER_THREAD 25
+#define SHARED_BYTES (BLOCK_DIM*SHARED_FLOATS_PER_THREAD*sizeof(float))
 
 #define i00_re I0.x
 #define i00_im I0.y
@@ -85,11 +86,11 @@
 #define o22_re s[STRIDE*16]
 #define o22_im s[STRIDE*17]
 #define o30_re s[STRIDE*18]
-float o30_im;
-float o31_re;
-float o31_im;
-float o32_re;
-float o32_im;
+#define o30_im s[STRIDE*19]
+#define o31_re s[STRIDE*20]
+#define o31_im s[STRIDE*21]
+#define o32_re s[STRIDE*22]
+#define o32_im s[STRIDE*23]
 
 
 // Performs the complex conjugated accumulation: a += b* c*
@@ -127,7 +128,7 @@ int x2 = (X/L1) % L2;
 int x1 = X % L1;
 
 extern __shared__ float s_data[];
-volatile float *s = s_data+19*threadIdx.x;
+volatile float *s = s_data+SHARED_FLOATS_PER_THREAD*threadIdx.x;
 
 o00_re = o00_im = 0;
 o01_re = o01_im = 0;
@@ -799,6 +800,7 @@ if(1)
 }
 
 
+// this code is disabled due to a hardware bug in our C870 card
 //g_out[0*Nh+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
 //g_out[1*Nh+sid] = make_float4(o02_re, o02_im, o10_re, o10_im);
 //g_out[2*Nh+sid] = make_float4(o11_re, o11_im, o12_re, o12_im);
@@ -806,28 +808,18 @@ if(1)
 //g_out[4*Nh+sid] = make_float4(o22_re, o22_im, o30_re, o30_im);
 //g_out[5*Nh+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
 
-((float*)g_out)[0*Nh+sid] = o00_re;
-((float*)g_out)[1*Nh+sid] = o00_im;
-((float*)g_out)[2*Nh+sid] = o01_re;
-((float*)g_out)[3*Nh+sid] = o01_im;
-((float*)g_out)[4*Nh+sid] = o02_re;
-((float*)g_out)[5*Nh+sid] = o02_im;
-((float*)g_out)[6*Nh+sid] = o10_re;
-((float*)g_out)[7*Nh+sid] = o10_im;
-((float*)g_out)[8*Nh+sid] = o11_re;
-((float*)g_out)[9*Nh+sid] = o11_im;
-((float*)g_out)[10*Nh+sid] = o12_re;
-((float*)g_out)[11*Nh+sid] = o12_im;
-((float*)g_out)[12*Nh+sid] = o20_re;
-((float*)g_out)[13*Nh+sid] = o20_im;
-((float*)g_out)[14*Nh+sid] = o21_re;
-((float*)g_out)[15*Nh+sid] = o21_im;
-((float*)g_out)[16*Nh+sid] = o22_re;
-((float*)g_out)[17*Nh+sid] = o22_im;
-((float*)g_out)[18*Nh+sid] = o30_re;
-((float*)g_out)[19*Nh+sid] = o30_im;
-((float*)g_out)[20*Nh+sid] = o31_re;
-((float*)g_out)[21*Nh+sid] = o31_im;
-((float*)g_out)[22*Nh+sid] = o32_re;
-((float*)g_out)[23*Nh+sid] = o32_im;
+// the alternative to writing float4's directly: almost as fast, a lot more confusing
+__syncthreads();
+// loop over the 6 float4's in one spinor
+for (int i = 0; i < 6; i++) {
+    // loop over the 4 floats in one float4
+    for (int c = 0; c < 4; c++) {
+        int t = threadIdx.x;
+        int B = BLOCK_DIM;
+        int b = blockIdx.x;
+        int f = SHARED_FLOATS_PER_THREAD;
+        // this line took me three hours to write :-)
+        ((float*)g_out)[i*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
+    }
+}
 
