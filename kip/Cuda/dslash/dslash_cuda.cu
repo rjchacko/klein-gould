@@ -68,19 +68,12 @@ void packSpinorField(float4 *res, float *spinor) {
 
 void unpackSpinorField(float *res, float4 *spinorPacked) {
     for (int i = 0; i < Nh; i++) {
-        if (0) {
-            for (int j = 0; j < 6; j++) {
-                float4 f4 = spinorPacked[j*Nh + i];
-                res[i*(6*4) + j*(4) + 0] = f4.x;
-                res[i*(6*4) + j*(4) + 1] = f4.y;
-                res[i*(6*4) + j*(4) + 2] = f4.z;
-                res[i*(6*4) + j*(4) + 3] = f4.w;
-            }
-        }
-        else {
-            for (int j = 0; j < 24; j++) {
-                res[i*24 + j] = ((float *)spinorPacked)[j*Nh + i];
-            }
+        for (int j = 0; j < 6; j++) {
+            float4 f4 = spinorPacked[j*Nh + i];
+            res[i*(6*4) + j*(4) + 0] = f4.x;
+            res[i*(6*4) + j*(4) + 1] = f4.y;
+            res[i*(6*4) + j*(4) + 2] = f4.z;
+            res[i*(6*4) + j*(4) + 3] = f4.w;
         }
     }
 }
@@ -198,7 +191,7 @@ int main(int argc, char **argv) {
     sendGaugeField(gaugeEven, gaugeOdd);
     sendSpinorFieldEven(spinorEven);
     
-    int ODD_BIT = 1;
+    int ODD_BIT = 0;
     int DAGGER_BIT = 0;
     
     // execute kernel
