@@ -15,6 +15,33 @@ void sum(float *dst, float *a, float *b, int cnt) {
 }
 
 
+// performs the operation x[i] *= a
+void ax(float a, float *x, int len) {
+    for (int i=0; i<len; i++) x[i] *= a;
+}
+
+// performs the operation y[i] = a*x[i] + y[i]
+void axpy(float a, float *x, float *y, int len) {
+    for (int i=0; i<len; i++) y[i] += a*x[i];
+}
+
+// performs the operation y[i] = a*x[i] + b*y[i]
+void axpby(float a, float *x, float b, float *y, int len) {
+    for (int i=0; i<len; i++) y[i] = a*x[i] + b*y[i];
+}
+
+// performs the operation y[i] = x[i] + a*y[i]
+void xpay(float *x, float a, float *y, int len) {
+    for (int i=0; i<len; i++) y[i] = x[i] + a*y[i];
+}
+
+// performs the operation y[i] -= x[i] (minus x plus y)
+void mxpy(float *x, float *y, int len) {
+    for (int i=0; i<len; i++) y[i] -= x[i];
+}
+
+
+
 // given a "half index" i into either an even or odd half lattice (corresponding
 // to oddBit = {0, 1}), returns the corresponding full lattice index.
 int fullLatticeIndex(int i, int oddBit) {
@@ -95,6 +122,8 @@ float *spinorNeighbor(int i, int dir, int oddBit, float *spinorField) {
     
     return &spinorField[j*(4*3*2)];
 }
+
+
 
 void dot(float* res, float* a, float* b) {
     res[0] = res[1] = 0;
@@ -181,11 +210,10 @@ const float projector[8][4][4][2] = {
 };
 
 
-void multiplySpinorByDiracProjector(float *res, float *spinorIn, int dir, int daggerBit) {
+// todo pass projector
+void multiplySpinorByDiracProjector(float *res, int projIdx, float *spinorIn) {
     zero(res, 4*3*2);
-    
-    int projIdx = !daggerBit ? dir : (dir + (1 - 2*(dir%2)));
-    
+
     for (int s = 0; s < 4; s++) {
         for (int t = 0; t < 4; t++) {
             float projRe = projector[projIdx][s][t][0];
@@ -219,8 +247,14 @@ void multiplySpinorByDiracProjector(float *res, float *spinorIn, int dir, int da
 //
 // if daggerBit is zero/one then perform dslash without/with dagger operator
 //
-void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spinorField, int oddBit, int daggerBit) {
+void dslashReference(float *res, float **gaugeFull, float *spinorField, int oddBit, int daggerBit) {
     zero(res, Nh*4*3*2);
+    
+    float *gaugeEven[4], *gaugeOdd[4];
+    for (int dir = 0; dir < 4; dir++) {  
+        gaugeEven[dir] = gaugeFull[dir];
+        gaugeOdd[dir]  = gaugeFull[dir]+Nh*gaugeSiteSize;
+    }
     
     for (int i = 0; i < Nh; i++) {
         for (int dir = 0; dir < 8; dir++) {
@@ -228,7 +262,8 @@ void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spi
             float *spinor = spinorNeighbor(i, dir, oddBit, spinorField);
             
             float projectedSpinor[4*3*2], gaugedSpinor[4*3*2];
-            multiplySpinorByDiracProjector(projectedSpinor, spinor, dir, daggerBit);
+            int projIdx = 2*(dir/2)+(dir+daggerBit)%2;
+            multiplySpinorByDiracProjector(projectedSpinor, projIdx, spinor);
             
             for (int s = 0; s < 4; s++) {
                 if (dir % 2 == 0)
@@ -242,7 +277,82 @@ void dslashReference(float *res, float **gaugeEven, float **gaugeOdd, float *spi
     }
 }
 
+void Mat(float *out, float **gauge, float *in, float kappa) {
+    float *inEven = in;
+    float *inOdd  = in + Nh*spinorSiteSize;
+    float *outEven = out;
+    float *outOdd = out + Nh*spinorSiteSize;
+    
+    // full dslash operator
+    dslashReference(outOdd, gauge, inEven, 1, 0);
+    dslashReference(outEven, gauge, inOdd, 0, 0);
+    
+    // lastly apply the kappa term
+    xpay(in, -kappa, out, N*spinorSiteSize);
+}
 
+void MatDag(float *out, float **gauge, float *in, float kappa) {
+    float *inEven = in;
+    float *inOdd  = in + Nh*spinorSiteSize;
+    float *outEven = out;
+    float *outOdd = out + Nh*spinorSiteSize;
+    
+    // full dslash operator
+    dslashReference(outOdd, gauge, inEven, 1, 1);
+    dslashReference(outEven, gauge, inOdd, 0, 1);
+    
+    // lastly apply the kappa term
+    xpay(in, -kappa, out, N*spinorSiteSize);
+}
+
+void MatDagMat(float *out, float **gauge, float *in, float kappa) {
+    float *tmp = (float*)malloc(N*spinorSiteSize*sizeof(float));
+    Mat(tmp, gauge, in, kappa);
+    MatDag(out, gauge, tmp, kappa);
+    free(tmp);
+}
+
+// Apply the even-odd preconditioned Dirac operator
+void MatPC(float *outEven, float **gauge, float *inEven, float kappa) {
+    float *tmpOdd = (float*)malloc(Nh*spinorSiteSize*sizeof(float));
+    
+    // full dslash operator
+    dslashReference(tmpOdd, gauge, inEven, 1, 0);
+    dslashReference(outEven, gauge, tmpOdd, 0, 0);
+    
+    // lastly apply the kappa term
+    float kappa2 = -kappa*kappa;
+    xpay(inEven, kappa2, outEven, Nh*spinorSiteSize);
+}
+
+// Apply the even-odd preconditioned Dirac operator
+void MatPCDag(float *outEven, float **gauge, float *inEven, float kappa) {
+    float *tmpOdd = (float*)malloc(Nh*spinorSiteSize*sizeof(float));
+    
+    // full dslash operator
+    dslashReference(tmpOdd, gauge, inEven, 1, 1);
+    dslashReference(outEven, gauge, tmpOdd, 0, 1);
+    
+    float kappa2 = -kappa*kappa;
+    xpay(inEven, kappa2, outEven, Nh*spinorSiteSize);
+    free(tmpOdd);
+}
+
+void MatPCDagMatPC(float *out, float **gauge, float *in, float kappa) {
+    float *tmp = (float*)malloc(Nh*spinorSiteSize*sizeof(float));
+    MatPC(tmp, gauge, in, kappa);
+    MatPCDag(out, gauge, tmp, kappa);
+    free(tmp);
+}
+
+void applyGamma5(float *out, float *in, int sites) {
+    for (int i=0; i<sites*spinorSiteSize; i+=spinorSiteSize) {
+        for (int j=0; j<spinorSiteSize/2; j++) 
+            out[i+j] = in[i+j];
+        for (int j=0; j<spinorSiteSize/2; j++) 
+            out[i+j+spinorSiteSize/2] = -in[i+j+spinorSiteSize/2];
+    }
+}
 
 // ---------------------------------------------------------------------------------------
 // helper functions
@@ -259,13 +369,12 @@ void printSpinor(float *spinor) {
 }
 
 // X indexes the full lattice
-void printSpinorElement(float *spinorEven, float *spinorOdd, int X) {
+void printSpinorElement(float *spinor, int X) {
     if (getOddBit(X) == 0)
-        printSpinor(&spinorEven[(X/2)*(4*3*2)]);
+        printSpinor(&spinor[(X/2)*(4*3*2)]);
     else
-        printSpinor(&spinorOdd[(X/2)*(4*3*2)]);
+        printSpinor(&spinor[(X/2)*(4*3*2)+Nh*spinorSiteSize]);
 }
-
 
 void accumulateConjugateProduct(float *a, float *b, float *c, float sign) {
     a[0] += sign * (b[0]*c[0] - b[1]*c[1]);
@@ -287,24 +396,36 @@ void su3_reconstruct(float *mat) {
     accumulateConjugateProduct(w+2*(2), u+1*(2), v+0*(2), -1);
 }
 
-void constructUnitGaugeField(float **resEven, float **resOdd) {
+void constructUnitGaugeField(float **res) {
+    float *resOdd[4], *resEven[4];
+    for (int dir = 0; dir < 4; dir++) {  
+        resEven[dir] = res[dir];
+        resOdd[dir]  = res[dir]+Nh*gaugeSiteSize;
+    }
+    
     for (int dir = 0; dir < 4; dir++) {
         for(int i = 0; i < Nh; i++) {
             for (int m = 0; m < 3; m++) {
                 for (int n = 0; n < 3; n++) {
                     resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = (m==n) ? 1 : 0;
-	                resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = 0.0;
+                    resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = 0.0;
                     resOdd[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = (m==n) ? 1 : 0;
-	                resOdd[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = 0.0;
+                    resOdd[dir][i*(3*3*2) + m*(3*2) + n*(2) + 1] = 0.0;
                 }
             }
         }
     }
 }
 
-void constructGaugeField(float **resEven, float **resOdd) {
+void constructGaugeField(float **res) {
+    float *resOdd[4], *resEven[4];
+    for (int dir = 0; dir < 4; dir++) {  
+        resEven[dir] = res[dir];
+        resOdd[dir]  = res[dir]+Nh*gaugeSiteSize;
+    }
+    
     for (int dir = 0; dir < 4; dir++) {
-        for(int i = 0; i < Nh; i++) {
+        for (int i = 0; i < Nh; i++) {
             for (int m = 0; m < 2; m++) {
                 for (int n = 0; n < 3; n++) {
                     resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = rand() / (float)RAND_MAX;
@@ -319,7 +440,10 @@ void constructGaugeField(float **resEven, float **resOdd) {
     }
 }
 
-void constructPointSpinorField(float *resEven, float *resOdd, int i0, int s0, int c0) {
+void constructPointSpinorField(float *res, int i0, int s0, int c0) {
+    float *resEven = res;
+    float *resOdd = res + Nh*spinorSiteSize;
+    
     for(int i = 0; i < Nh; i++) {
         for (int s = 0; s < 4; s++) {
             for (int m = 0; m < 3; m++) {
@@ -339,7 +463,7 @@ void constructPointSpinorField(float *resEven, float *resOdd, int i0, int s0, in
 }
 
 void constructSpinorField(float *res) {
-    for(int i = 0; i < Nh; i++) {
+    for(int i = 0; i < N; i++) {
         for (int s = 0; s < 4; s++) {
             for (int m = 0; m < 3; m++) {
                 res[i*(4*3*2) + s*(3*2) + m*(2) + 0] = rand() / (float)RAND_MAX;
