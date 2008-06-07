@@ -3,9 +3,7 @@ package dslash
 import dslash.DiracSpinor._
 
 
-object CodeGen {
-  val sharedFloats = 19
-  
+class CodeGen(sharedFloats: Int, dagger: Boolean) {
   def block(code: String) = {
     "{\n"+code.lines.map{"    "+_+"\n"}.reduceLeft[String](_+_)+"}\n"
   }
@@ -33,7 +31,8 @@ object CodeGen {
   def prolog() = {
     val str = new StringBuilder()
     
-    str.append("#define SHARED_BYTES (BLOCK_DIM*"+sharedFloats+"*sizeof(float))\n\n")
+    str.append("#define SHARED_FLOATS_PER_THREAD "+sharedFloats+"\n")
+    str.append("#define SHARED_BYTES (BLOCK_DIM*SHARED_FLOATS_PER_THREAD*sizeof(float))\n\n")
     
     for (s <- 0 until 4; c <- 0 until 3; i = 3*s+c) {
       str.append("#define "+in_re(s,c)+" I"+nthFloat4(2*i+0)+"\n")
@@ -71,14 +70,6 @@ object CodeGen {
     a##_re += b##_re * c##_re - b##_im * c##_im, \
     a##_im -= b##_re * c##_im + b##_im * c##_re
 
-#if 1
-#define READ_GAUGE_MATRIX(gauge) \
-    float4 G0 = tex1Dfetch((gauge), ga_idx + 0*Nh); \
-    float4 G1 = tex1Dfetch((gauge), ga_idx + 1*Nh); \
-    float4 G2 = tex1Dfetch((gauge), ga_idx + 2*Nh); \
-    float4 G3 = tex1Dfetch((gauge), ga_idx + 3*Nh); \
-    float4 G4 = tex1Dfetch((gauge), ga_idx + 4*Nh);
-#else
 #define READ_GAUGE_MATRIX(gauge) \
     float4 G0 = tex1Dfetch((gauge), ga_idx + 0*Nh); \
     float4 G1 = tex1Dfetch((gauge), ga_idx + 1*Nh); \
@@ -91,7 +82,6 @@ object CodeGen {
     ACC_CONJ_PROD(g21, -g00, +g12); \
     ACC_CONJ_PROD(g22, +g00, +g11); \
     ACC_CONJ_PROD(g22, -g01, +g10);    
-#endif
 
 #define READ_SPINOR(spinor) \
     float4 I0 = tex1Dfetch((spinor), sp_idx + 0*Nh); \
@@ -112,7 +102,7 @@ int x1 = X % L1;
 """	)
 
     str.append("extern __shared__ float s_data[];\n")
-    str.append("volatile float *s = s_data+"+sharedFloats+"*threadIdx.x;\n\n")
+    str.append("volatile float *s = s_data+SHARED_FLOATS_PER_THREAD*threadIdx.x;\n\n")
 
     for (s <- 0 until 4; c <- 0 until 3) {
       str.append(out_re(s,c) + " = " + out_im(s,c)+" = 0;\n")
@@ -124,6 +114,7 @@ int x1 = X % L1;
   
   def epilog() = {
 """
+// this code is disabled due to a hardware bug in our C870 card
 //g_out[0*Nh+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
 //g_out[1*Nh+sid] = make_float4(o02_re, o02_im, o10_re, o10_im);
 //g_out[2*Nh+sid] = make_float4(o11_re, o11_im, o12_re, o12_im);
@@ -131,30 +122,20 @@ int x1 = X % L1;
 //g_out[4*Nh+sid] = make_float4(o22_re, o22_im, o30_re, o30_im);
 //g_out[5*Nh+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
 
-((float*)g_out)[0*Nh+sid] = o00_re;
-((float*)g_out)[1*Nh+sid] = o00_im;
-((float*)g_out)[2*Nh+sid] = o01_re;
-((float*)g_out)[3*Nh+sid] = o01_im;
-((float*)g_out)[4*Nh+sid] = o02_re;
-((float*)g_out)[5*Nh+sid] = o02_im;
-((float*)g_out)[6*Nh+sid] = o10_re;
-((float*)g_out)[7*Nh+sid] = o10_im;
-((float*)g_out)[8*Nh+sid] = o11_re;
-((float*)g_out)[9*Nh+sid] = o11_im;
-((float*)g_out)[10*Nh+sid] = o12_re;
-((float*)g_out)[11*Nh+sid] = o12_im;
-((float*)g_out)[12*Nh+sid] = o20_re;
-((float*)g_out)[13*Nh+sid] = o20_im;
-((float*)g_out)[14*Nh+sid] = o21_re;
-((float*)g_out)[15*Nh+sid] = o21_im;
-((float*)g_out)[16*Nh+sid] = o22_re;
-((float*)g_out)[17*Nh+sid] = o22_im;
-((float*)g_out)[18*Nh+sid] = o30_re;
-((float*)g_out)[19*Nh+sid] = o30_im;
-((float*)g_out)[20*Nh+sid] = o31_re;
-((float*)g_out)[21*Nh+sid] = o31_im;
-((float*)g_out)[22*Nh+sid] = o32_re;
-((float*)g_out)[23*Nh+sid] = o32_im;
+// the alternative to writing float4's directly: almost as fast, a lot more confusing
+__syncthreads();
+// loop over the 6 float4's in one spinor
+for (int i = 0; i < 6; i++) {
+    // loop over the 4 floats in one float4
+    for (int c = 0; c < 4; c++) {
+        int t = threadIdx.x;
+        int B = BLOCK_DIM;
+        int b = blockIdx.x;
+        int f = SHARED_FLOATS_PER_THREAD;
+        // this line took me three hours to write :-)
+        ((float*)g_out)[i*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
+    }
+}
 """
   }
   
@@ -167,7 +148,8 @@ int x1 = X % L1;
   )
   
   def gen(dir: Int):String = {
-    val proj = projectors(dir)
+    val proj_idx = if (!dagger) dir else dir + (1 - 2*(dir%2))
+    val proj = projectors(proj_idx)
     
     // if row(i) = (j, c), then the i'th row of the projector can be represented
     // as a multiple of the j'th row: i = c j
@@ -181,7 +163,8 @@ int x1 = X % L1;
     
     val str = new StringBuilder()
     
-    str.append("// Projector "+dir+"\n")
+    val projStr = "P"+(dir/2)+Array("-","+")(proj_idx%2)
+    str.append("// Projector "+projStr+"\n")
     proj.toString.lines.foreach{l => str.append("// "+l+"\n")}
     str.append("\n")
     
@@ -268,14 +251,11 @@ int x1 = X % L1;
     (if (dir == 0) "if(1)\n" else "if(1)\n") + block(str.toString)+"\n"
   }
   
-  
-  def main(args: Array[String]) {
-    Console.println(prolog() + gen(0) + gen(1) + gen(2) + gen(3) + gen(4) + gen(5) + gen(6) + gen(7) + epilog())
-    //printProjectorsAsCString()
+  def generate() = {
+    prolog() + gen(0) + gen(1) + gen(2) + gen(3) + gen(4) + gen(5) + gen(6) + gen(7) + epilog()
   }
   
-  
-  def printProjectorsAsCString() = {
+  def projectorsAsCString() = {
     val str = new StringBuilder
     str.append("{\n")
     for (d <- 0 until 8) {
@@ -299,6 +279,22 @@ int x1 = X % L1;
       str.append("\n")
     }
     str.append("}\n")
-    Console.println(str.toString)
+    
+    str.toString
+  }
+}
+
+
+object Dslash {
+  def main(args: Array[String]) {
+    val codeGen = new CodeGen(25, false)
+    Console.println("// *** CUDA DSLASH ***\n\n" + codeGen.generate())
+  }
+}
+
+object DslashDagger {
+  def main(args: Array[String]) {
+    val codeGen = new CodeGen(25, true)
+    Console.println("// *** CUDA DSLASH DAGGER ***\n\n" + codeGen.generate())
   }
 }
