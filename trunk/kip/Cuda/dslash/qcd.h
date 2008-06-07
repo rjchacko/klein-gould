@@ -1,8 +1,8 @@
 
-#define L1 4 // "x" dimension
-#define L2 4 // "y" dimension
-#define L3 4 // "z" dimension
-#define L4 32 // "time" dimension
+#define L1 16 // "x" dimension
+#define L2 16 // "y" dimension
+#define L3 16 // "z" dimension
+#define L4 64 // "time" dimension
 #define L1h (L1/2) // half of the full "x" dimension, useful for even/odd lattice indexing
 
 #define N (L1*L2*L3*L4) // total number of lattice points
@@ -21,17 +21,33 @@ extern "C" void dslashTest(int argc, char **argv);
 
 // ---------- dslash_cuda.cu ----------
 
-extern "C" void sendGaugeField(float **gaugeEven, float **gaugeOdd);
-extern "C" void sendSpinorFieldEven(float *spinorEven);
-extern "C" void sendSpinorFieldOdd(float *spinorOdd);
+typedef struct CudaPGauge_s *CudaPGauge;
+typedef struct CudaPSpinor_s *CudaPSpinor;
 
-extern "C" void retrieveSpinorFieldEven(float *res);
-extern "C" void retrieveSpinorFieldOdd(float *res);
+typedef struct {
+    CudaPSpinor odd;
+    CudaPSpinor even;
+} CudaFullSpinor;
 
-extern "C" void initializeCuda(int argc, char** argv);
-extern "C" void releaseCuda();
+typedef struct {
+    CudaPGauge odd;
+    CudaPGauge even;
+} CudaFullGauge;
 
-extern "C" void dslashCuda(int oddBit, int daggerBit);
+
+extern "C" CudaFullGauge loadGaugeField(float **gauge);
+extern "C" CudaFullSpinor loadSpinorField(float *spinor);
+
+extern "C" void freeGaugeField(CudaFullGauge gauge);
+extern "C" void freeSpinorField(CudaFullSpinor spinor);
+
+extern "C" void retrieveParitySpinor(float *res, CudaPSpinor spinor);
+extern "C" void retrieveSpinorField(float *res, CudaFullSpinor spinor);
+
+extern "C" void compareParitySpinors(float *sp1, CudaPSpinor sp2);
+
+extern "C" void dslashCuda(CudaPSpinor res, CudaFullGauge gauge, CudaPSpinor spinor, int oddBit, int daggerBit);
+extern "C" void printCudaDslashInfo();
 
 
 // ---------- dslash_reference.cpp ----------

@@ -15,9 +15,6 @@
 // ----------------------------------------------------------------------
 // Cuda code
 
-float4 *d_gaugeEven, *d_gaugeOdd;
-float4 *d_spinorEven, *d_spinorOdd;
-
 texture<float4, 1, cudaReadModeElementType> gauge0Tex;
 texture<float4, 1, cudaReadModeElementType> gauge1Tex;
 texture<float4, 1, cudaReadModeElementType> spinorTex;
@@ -33,18 +30,20 @@ dslashDaggerKernel(float4* g_out, int oddBit) {
     #include "dslash_dagger_core.cu"
 }
 
+
 // ----------------------------------------------------------------------
 
-void packGaugeField(float4 *res, float **gauge) {
+void packGaugeField(float4 *res, float **gauge, int oddBit) {
     for (int dir = 0; dir < 4; dir++) {
+        float *g = gauge[dir] + oddBit*(Nh*3*3*2);
         for (int i = 0; i < Nh; i++) {
             for (int j = 0; j < 5; j++) {
                 float a1, a2, a3=0, a4=0;
-                a1 = gauge[dir][i*18 + j*4 + 0];
-                a2 = gauge[dir][i*18 + j*4 + 1];
+                a1 = g[i*18 + j*4 + 0];
+                a2 = g[i*18 + j*4 + 1];
                 if (j < 4) {
-                    a3 = gauge[dir][i*18 + j*4 + 2];
-                    a4 = gauge[dir][i*18 + j*4 + 3];
+                    a3 = g[i*18 + j*4 + 2];
+                    a4 = g[i*18 + j*4 + 3];
                 }
                 float4 f4 = {a1, a2, a3, a4};
                 res[(dir*5+j)*Nh + i] = f4;
@@ -53,110 +52,131 @@ void packGaugeField(float4 *res, float **gauge) {
     }
 }
 
-void packSpinorField(float4 *res, float *spinor) {
+void packSpinorField(float4 *res, float *spinor, int oddBit) {
+    float *s = spinor + oddBit*(Nh*4*3*2);
     for (int i = 0; i < Nh; i++) {
         for (int j = 0; j < 6; j++) {
-            float a1 = spinor[i*(6*4) + j*(4) + 0];
-            float a2 = spinor[i*(6*4) + j*(4) + 1];
-            float a3 = spinor[i*(6*4) + j*(4) + 2];
-            float a4 = spinor[i*(6*4) + j*(4) + 3];
+            float a1 = s[i*(6*4) + j*(4) + 0];
+            float a2 = s[i*(6*4) + j*(4) + 1];
+            float a3 = s[i*(6*4) + j*(4) + 2];
+            float a4 = s[i*(6*4) + j*(4) + 3];
             float4 f4 = {a1, a2, a3, a4};
             res[j*Nh + i] = f4;
         }
     }
 }
 
-void unpackSpinorField(float *res, float4 *spinorPacked) {
+void unpackSpinorField(float *res, float4 *spinorPacked, int oddBit) {
+    float *r = res + oddBit*(Nh*4*3*2);
+    
     for (int i = 0; i < Nh; i++) {
         for (int j = 0; j < 6; j++) {
             float4 f4 = spinorPacked[j*Nh + i];
-            res[i*(6*4) + j*(4) + 0] = f4.x;
-            res[i*(6*4) + j*(4) + 1] = f4.y;
-            res[i*(6*4) + j*(4) + 2] = f4.z;
-            res[i*(6*4) + j*(4) + 3] = f4.w;
+            r[i*(6*4) + j*(4) + 0] = f4.x;
+            r[i*(6*4) + j*(4) + 1] = f4.y;
+            r[i*(6*4) + j*(4) + 2] = f4.z;
+            r[i*(6*4) + j*(4) + 3] = f4.w;
         }
     }
 }
 
-void sendGaugeField(float **gaugeEven, float **gaugeOdd) {
-    float4 *packed1 = (float4*) malloc(Nh*PACKED_GAUGE_BYTES);
-    float4 *packed2 = (float4*) malloc(Nh*PACKED_GAUGE_BYTES);
-    packGaugeField(packed1, gaugeEven);
-    packGaugeField(packed2, gaugeOdd);
-    CUDA_SAFE_CALL(cudaMemcpy(d_gaugeEven, packed1, Nh*PACKED_GAUGE_BYTES, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_gaugeOdd, packed2, Nh*PACKED_GAUGE_BYTES, cudaMemcpyHostToDevice));
-    free(packed1);
-    free(packed2);
+
+CudaFullGauge loadGaugeField(float **gauge) {
+    CudaFullGauge ret;
+    CUDA_SAFE_CALL(cudaMalloc((void **)&ret.even, Nh*PACKED_GAUGE_BYTES));
+    CUDA_SAFE_CALL(cudaMalloc((void **)&ret.odd,  Nh*PACKED_GAUGE_BYTES));
+
+    float4 *packedEven = (float4*) malloc(Nh*PACKED_GAUGE_BYTES);
+    float4 *packedOdd  = (float4*) malloc(Nh*PACKED_GAUGE_BYTES);
+    packGaugeField(packedEven, gauge, 0);
+    packGaugeField(packedOdd,  gauge, 1);
+    CUDA_SAFE_CALL(cudaMemcpy(ret.even, packedEven, Nh*PACKED_GAUGE_BYTES, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(ret.odd,  packedOdd,  Nh*PACKED_GAUGE_BYTES, cudaMemcpyHostToDevice));    
+    free(packedEven);
+    free(packedOdd);
+    
+    return ret;
 }
 
-void sendSpinorFieldEven(float *spinorEven) {
+CudaFullSpinor loadSpinorField(float *spinor) {
+    CudaFullSpinor ret;
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ret.even, Nh*SPINOR_BYTES));
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ret.odd,  Nh*SPINOR_BYTES));
+    
+    float4 *packedEven = (float4*) malloc(Nh*SPINOR_BYTES);
+    float4 *packedOdd  = (float4*) malloc(Nh*SPINOR_BYTES);
+    packSpinorField(packedEven, spinor, 0);
+    packSpinorField(packedOdd,  spinor, 1);
+    CUDA_SAFE_CALL(cudaMemcpy(ret.even, packedEven, Nh*SPINOR_BYTES, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(ret.odd,  packedOdd,  Nh*SPINOR_BYTES, cudaMemcpyHostToDevice));    
+    free(packedEven);
+    free(packedOdd);
+    
+    return ret;
+}
+
+void freeGaugeField(CudaFullGauge gauge) {
+    CUDA_SAFE_CALL(cudaFree(gauge.even));
+    CUDA_SAFE_CALL(cudaFree(gauge.odd));
+}
+
+void freeSpinorField(CudaFullSpinor spinor) {
+    CUDA_SAFE_CALL(cudaFree(spinor.even));
+    CUDA_SAFE_CALL(cudaFree(spinor.odd));
+}
+
+void retrieveParitySpinor(float *res, CudaPSpinor spinor) {
     float4 *packed = (float4*) malloc(Nh*SPINOR_BYTES);
-    packSpinorField(packed, spinorEven);
-    CUDA_SAFE_CALL(cudaMemcpy(d_spinorEven, packed, Nh*SPINOR_BYTES, cudaMemcpyHostToDevice));
+    CUDA_SAFE_CALL(cudaMemcpy(packed,  spinor,  Nh*SPINOR_BYTES, cudaMemcpyDeviceToHost));
+    unpackSpinorField(res, packed, 0);
     free(packed);
 }
 
-void sendSpinorFieldOdd(float *spinorOdd) {
-    float4 *packed = (float4*) malloc(Nh*SPINOR_BYTES);
-    packSpinorField(packed, spinorOdd);
-    CUDA_SAFE_CALL(cudaMemcpy(d_spinorOdd, packed, Nh*SPINOR_BYTES, cudaMemcpyHostToDevice));
-    free(packed);
+void retrieveSpinorField(float *res, CudaFullSpinor spinor) {
+    float4 *packedEven = (float4*) malloc(Nh*SPINOR_BYTES);
+    float4 *packedOdd = (float4*) malloc(Nh*SPINOR_BYTES);
+    CUDA_SAFE_CALL(cudaMemcpy(packedEven, spinor.even, Nh*SPINOR_BYTES, cudaMemcpyDeviceToHost));
+    CUDA_SAFE_CALL(cudaMemcpy(packedOdd,  spinor.odd,  Nh*SPINOR_BYTES, cudaMemcpyDeviceToHost));
+    unpackSpinorField(res, packedEven, 0);
+    unpackSpinorField(res, packedEven, 1);
+    free(packedEven);
+    free(packedOdd);
 }
 
-void retrieveSpinorFieldEven(float *res) {
-    float4 *packed = (float4*) malloc(Nh*SPINOR_BYTES);
-    CUDA_SAFE_CALL(cudaMemcpy(packed, d_spinorEven, Nh*SPINOR_BYTES, cudaMemcpyDeviceToHost));
-    unpackSpinorField(res, packed);
-    free(packed);
+void compareParitySpinors(float *spinor1, CudaPSpinor cudaSpinor2) {
+    float *spinor2 = (float *) malloc(Nh*SPINOR_BYTES);
+    retrieveParitySpinor(spinor2, cudaSpinor2);
+    CUTBoolean res = cutComparefe(spinor1, spinor2, Nh*SPINOR_BYTES, 1e-4);
+    printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
 }
 
-void retrieveSpinorFieldOdd(float *res) {
-    float4 *packed = (float4*) malloc(Nh*SPINOR_BYTES);
-    CUDA_SAFE_CALL(cudaMemcpy(packed, d_spinorOdd, Nh*SPINOR_BYTES, cudaMemcpyDeviceToHost));
-    unpackSpinorField(res, packed);
-    free(packed);
-}
-
-void initializeCuda(int argc, char** argv) {
-    CUT_DEVICE_INIT(argc, argv);
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_gaugeEven, Nh*PACKED_GAUGE_BYTES));
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_gaugeOdd, Nh*PACKED_GAUGE_BYTES));
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_spinorEven, Nh*SPINOR_BYTES));
-    CUDA_SAFE_CALL(cudaMalloc((void**) &d_spinorOdd, Nh*SPINOR_BYTES));
-
-    printf("Spinors: %d\n", Nh);
-    printf("Global kb: %f\n", 2*Nh*(PACKED_GAUGE_BYTES+SPINOR_BYTES)/1024.);
-    printf("Shared kb: %fkB\n", SHARED_BYTES/1024.);
-}
-
-void releaseCuda() {
-    CUDA_SAFE_CALL(cudaFree(d_gaugeEven));
-    CUDA_SAFE_CALL(cudaFree(d_gaugeOdd));
-    CUDA_SAFE_CALL(cudaFree(d_spinorEven));
-    CUDA_SAFE_CALL(cudaFree(d_spinorOdd));
-}
-
-void dslashCuda(int oddBit, int daggerBit) {
+void dslashCuda(CudaPSpinor res, CudaFullGauge gauge, CudaPSpinor spinor, int oddBit, int daggerBit) {
     if (oddBit) {
-        cudaBindTexture(0 /*offset*/, gauge0Tex, d_gaugeOdd, Nh*PACKED_GAUGE_BYTES); 
-        cudaBindTexture(0 /*offset*/, gauge1Tex, d_gaugeEven, Nh*PACKED_GAUGE_BYTES); 
+        cudaBindTexture(0 /*offset*/, gauge0Tex, gauge.odd, Nh*PACKED_GAUGE_BYTES); 
+        cudaBindTexture(0 /*offset*/, gauge1Tex, gauge.even, Nh*PACKED_GAUGE_BYTES); 
     }
     else {
-        cudaBindTexture(0 /*offset*/, gauge0Tex, d_gaugeEven, Nh*PACKED_GAUGE_BYTES); 
-        cudaBindTexture(0 /*offset*/, gauge1Tex, d_gaugeOdd, Nh*PACKED_GAUGE_BYTES); 
+        cudaBindTexture(0 /*offset*/, gauge0Tex, gauge.even, Nh*PACKED_GAUGE_BYTES); 
+        cudaBindTexture(0 /*offset*/, gauge1Tex, gauge.odd, Nh*PACKED_GAUGE_BYTES); 
     }
-    cudaBindTexture(0 /*offset*/, spinorTex, d_spinorEven, Nh*SPINOR_BYTES); 
+    cudaBindTexture(0 /*offset*/, spinorTex, spinor, Nh*SPINOR_BYTES); 
 
     dim3 gridDim(GRID_DIM, 1, 1);
     dim3 blockDim(BLOCK_DIM, 1, 1);
     
     if (!daggerBit) {
-        dslashKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)d_spinorOdd, oddBit);
+        dslashKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)res, oddBit);
     }
     else {
-        dslashDaggerKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)d_spinorOdd, oddBit);
+        dslashDaggerKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)res, oddBit);
     }
     
     CUT_CHECK_ERROR("Kernel execution failed");
     cudaThreadSynchronize();
+}
+
+void printCudaDslashInfo() {
+    printf("Spinors: %d\n", Nh);
+    printf("Global kb: %f\n", N*(PACKED_GAUGE_BYTES+SPINOR_BYTES)/1024.);
+    printf("Shared kb: %fkB\n", SHARED_BYTES/1024.);
 }
