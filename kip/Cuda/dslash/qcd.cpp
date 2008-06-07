@@ -2,6 +2,6 @@
 
 
 int main(int argc, char **argv) {
-//    dslashTest(argc, argv);
-    cgReferenceTest();
+    dslashTest(argc, argv);
+//    cgReferenceTest();
 }
