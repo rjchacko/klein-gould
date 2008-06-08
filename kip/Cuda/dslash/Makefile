@@ -1,7 +1,7 @@
 
 EXECUTABLE	:= dslash
-CUFILES		:= dslash_cuda.cu
-CU_DEPS		:= dslash_core.cu dslash_dagger_core.cu qcd.h
+CUFILES		:= dslash_cuda.cu blas_cuda.cu
+CU_DEPS		:= dslash_core.cu dslash_dagger_core.cu reduce_core.cu qcd.h
 CCFILES		:= qcd.cpp dslash_reference.cpp dslash_test.cpp cg_reference.cpp cg_test.cpp
 C_DEPS		:= qcd.h
 
