@@ -14,6 +14,21 @@
 #define EVEN_ODD
 
 
+// ---------- blas_cuda.cpp ----------
+
+extern "C" void axpbyCuda(float a, float *x, float b, float *y, int len);
+extern "C" void axpyCuda(float a, float *x, float *y, int len);
+extern "C" void xpayCuda(float *x, float a, float *y, int len);
+extern "C" void mxpyCuda(float *x, float *y, int len);
+
+extern "C" float sumCuda(float* d_idata, int n);
+extern "C" float normCuda(float* d_idata, int n);
+extern "C" float dotProductCuda(float* d_idata, int n);
+
+extern "C" void blasTest(int argc, char **argv);
+extern "C" void axpbyTest(int argc, char **argv);
+
+
 // ---------- dslash_test.cpp ----------
 
 extern "C" void dslashTest(int argc, char **argv);
@@ -96,7 +111,4 @@ extern "C" double imDotProductD(float *v1, float *v2, int len);
 extern "C" float copy(float *vector, int len);
 
 extern "C" void cg_reference(float *out, float **gauge, float *in, float kappa, float tol);
-
-
-extern "C" void cgReferenceTest();
 
