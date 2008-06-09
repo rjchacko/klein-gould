@@ -56,6 +56,7 @@ public class IsingField2DApp extends Simulation {
     public double [] inputSlice;
     public int lastClear;
     public int maxi=0;
+    
 	public static void main(String[] args) {
 		new Control(new IsingField2DApp(), "Ising Field");
 	}
