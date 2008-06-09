@@ -2,8 +2,8 @@
 #include <stdio.h>
 #include "qcd.h"
 
-void cgReferenceTest() {
 
+void cgTest() {
   float mass = 0.01;
   float kappa = 1.0 / (2.0*(4 + mass));
 
@@ -46,8 +46,8 @@ void cgReferenceTest() {
   MatDag(source, gauge, spinorIn, kappa);
 #endif
 
-//  cgCuda(spinorOut, gauge, source, kappa, 1e-7);
-  cg_reference(spinorOut, gauge, source, kappa, 1e-7);
+  cgCuda(spinorOut, gauge, source, kappa, 1e-7);
+//  cg_reference(spinorOut, gauge, source, kappa, 1e-7);
 
   // Reconstruct the full inverse
 #ifdef EVEN_ODD
