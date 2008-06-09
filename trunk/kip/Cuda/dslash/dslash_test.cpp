@@ -13,9 +13,13 @@ void printSpinorHalfField(float *spinor) {
 }
 
 
-void dslashTest(int argc, char **argv) {
-    CUT_DEVICE_INIT(argc, argv);
-    printCudaDslashInfo();
+void dslashTest() {
+    float spinorGiB = (float)Nh*spinorSiteSize*sizeof(float) / (1 << 30);
+    float gaugeGiB = (float)4*N*packedGaugeSiteSize*sizeof(float) / (1 << 30);
+    float sharedKB = (float)dslashCudaSharedBytes() / (1 << 10);
+    printf("Spinor mem: %f GiB\n", spinorGiB);
+    printf(" Gauge mem: %f GiB\n", gaugeGiB);
+    printf("Shared mem: %f KB\n", sharedKB);
     
     unsigned int timer = 0;
     cutCreateTimer(&timer);
@@ -31,26 +35,33 @@ void dslashTest(int argc, char **argv) {
     float *spinorEven = spinor;
     float *spinorOdd = spinor + Nh*spinorSiteSize;
     
-    printf("Randomizing fields\n");
+    printf("Randomizing fields...");
+    fflush(stdout);
     constructUnitGaugeField(gauge);
     constructSpinorField(spinor);
-
+    printf("done.\n");
+    
     // copy inputs from host to device
+    printf("Sending fields to GPU...");
+    fflush(stdout);
     CudaFullGauge cudaGauge = loadGaugeField(gauge);
     CudaFullSpinor cudaSpinor = loadSpinorField(spinor);
-
+    printf("done.\n");
+    
     int ODD_BIT = 1;
     int DAGGER_BIT = 1;
     
     // execute kernel
-    printf("Beginning kernel execution\n");
-    cutStartTimer(timer);
     const int LOOPS = 100;
+    printf("Executing %d kernel loops...", LOOPS);
+    fflush(stdout);
+    cutStartTimer(timer);
     for (int i = 0; i < LOOPS; i++) {
         dslashCuda(cudaSpinor.odd, cudaGauge, cudaSpinor.even, ODD_BIT, DAGGER_BIT);
     }
     cutStopTimer(timer);
-
+    printf("done.\n\n");
+    
     // print timing information
     float millisecs = cutGetTimerValue(timer)/LOOPS;
     float secs = millisecs / 1000.;
@@ -59,8 +70,11 @@ void dslashTest(int argc, char **argv) {
     printf("GiB/s = %f\n\n", Nh*(8*7+4)*3*2*sizeof(float)/(secs*(1<<30)));
 
     // compare to dslash reference implementation
+    printf("Comparing to reference implementation...");
+    fflush(stdout);
     retrieveParitySpinor(spinorOdd, cudaSpinor.odd);
     dslashReference(spinorRef, gauge, spinorEven, ODD_BIT, DAGGER_BIT);
+    printf("done.\n");
     
     printf("Reference:\n");
     printSpinorHalfField(spinorRef);

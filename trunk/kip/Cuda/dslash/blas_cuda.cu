@@ -96,9 +96,7 @@ void mxpyCuda(float *x, float *y, int len) {
 
 
 
-void blasTest(int argc, char **argv) {
-    CUT_DEVICE_INIT(argc, argv);
-    
+void blasTest() {
     int n = 3*1<<8;
     float *h_data = (float *)malloc(n*sizeof(float));
     float *d_data;
@@ -118,9 +116,7 @@ void blasTest(int argc, char **argv) {
     free(h_data);
 }
 
-void axpbyTest(int argc, char **argv) {
-    CUT_DEVICE_INIT(argc, argv);
-    
+void axpbyTest() {
     int n = 3 * 1 << 20;
     float *h_x = (float *)malloc(n*sizeof(float));
     float *h_y = (float *)malloc(n*sizeof(float));

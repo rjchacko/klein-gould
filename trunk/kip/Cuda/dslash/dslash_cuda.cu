@@ -195,6 +195,10 @@ void dslashCuda(CudaPSpinor res, CudaFullGauge gauge, CudaPSpinor spinor, int od
     cudaThreadSynchronize();
 }
 
+int dslashCudaSharedBytes() {
+    return SHARED_BYTES;
+}
+
 
 // Apply the even-odd preconditioned Dirac operator
 void MatPCCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, float kappa, CudaPSpinor tmp) {
@@ -220,18 +224,4 @@ void MatPCDagCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, 
 void MatPCDagMatPCCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, float kappa, CudaPSpinor tmp1, CudaPSpinor tmp2) {
     MatPCCuda(tmp2, gauge, inEven, kappa, tmp1);
     MatPCDagCuda(outEven, gauge, tmp2, kappa, tmp1);
-}
-
-
-void printCudaDslashInfo() {
-    printf("Spinors: %d\n", Nh);
-    printf("Global kb: %f\n", N*(PACKED_GAUGE_BYTES+SPINOR_BYTES)/1024.);
-    printf("Shared kb: %fkB\n", SHARED_BYTES/1024.);
-}
-
-void compareParitySpinors(float *spinor1, CudaPSpinor cudaSpinor2) {
-    float *spinor2 = (float *) malloc(Nh*SPINOR_BYTES);
-    retrieveParitySpinor(spinor2, cudaSpinor2);
-    CUTBoolean res = cutComparefe(spinor1, spinor2, Nh*SPINOR_BYTES, 1e-4);
-    printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
 }

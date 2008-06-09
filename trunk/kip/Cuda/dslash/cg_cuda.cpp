@@ -10,6 +10,10 @@ void cgCuda(float *h_x, float **h_gauge, float *h_b, float kappa, float tol) {
     return;
 #endif
     
+    float spinorGiB = (float)Nh*spinorSiteSize*sizeof(float) / (1 << 30);
+    float gaugeGiB = (float)4*N*packedGaugeSiteSize*sizeof(float) / (1 << 30);
+    printf("Cuda Space Required. Spinor:%f + Gauge:%f GiB\n", 7*spinorGiB, gaugeGiB);
+    
     int len = Nh*spinorSiteSize;
     
     CudaFullGauge gauge = loadGaugeField(h_gauge);
