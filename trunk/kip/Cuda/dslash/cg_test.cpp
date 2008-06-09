@@ -46,6 +46,7 @@ void cgReferenceTest() {
   MatDag(source, gauge, spinorIn, kappa);
 #endif
 
+//  cgCuda(spinorOut, gauge, source, kappa, 1e-7);
   cg_reference(spinorOut, gauge, source, kappa, 1e-7);
 
   // Reconstruct the full inverse

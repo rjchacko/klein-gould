@@ -52,34 +52,36 @@ void packGaugeField(float4 *res, float **gauge, int oddBit) {
     }
 }
 
-void packSpinorField(float4 *res, float *spinor, int oddBit) {
-    float *s = spinor + oddBit*(Nh*4*3*2);
+void packParitySpinor(float4 *res, float *spinor) {
     for (int i = 0; i < Nh; i++) {
         for (int j = 0; j < 6; j++) {
-            float a1 = s[i*(6*4) + j*(4) + 0];
-            float a2 = s[i*(6*4) + j*(4) + 1];
-            float a3 = s[i*(6*4) + j*(4) + 2];
-            float a4 = s[i*(6*4) + j*(4) + 3];
+            float a1 = spinor[i*(6*4) + j*(4) + 0];
+            float a2 = spinor[i*(6*4) + j*(4) + 1];
+            float a3 = spinor[i*(6*4) + j*(4) + 2];
+            float a4 = spinor[i*(6*4) + j*(4) + 3];
             float4 f4 = {a1, a2, a3, a4};
             res[j*Nh + i] = f4;
         }
     }
 }
 
-void unpackSpinorField(float *res, float4 *spinorPacked, int oddBit) {
-    float *r = res + oddBit*(Nh*4*3*2);
-    
+void unpackParitySpinor(float *res, float4 *spinorPacked) {
     for (int i = 0; i < Nh; i++) {
         for (int j = 0; j < 6; j++) {
             float4 f4 = spinorPacked[j*Nh + i];
-            r[i*(6*4) + j*(4) + 0] = f4.x;
-            r[i*(6*4) + j*(4) + 1] = f4.y;
-            r[i*(6*4) + j*(4) + 2] = f4.z;
-            r[i*(6*4) + j*(4) + 3] = f4.w;
+            res[i*(6*4) + j*(4) + 0] = f4.x;
+            res[i*(6*4) + j*(4) + 1] = f4.y;
+            res[i*(6*4) + j*(4) + 2] = f4.z;
+            res[i*(6*4) + j*(4) + 3] = f4.w;
         }
     }
 }
 
+CudaPSpinor allocateParitySpinor() {
+    CudaPSpinor ret;
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ret, Nh*SPINOR_BYTES));
+    return ret;
+}
 
 CudaFullGauge loadGaugeField(float **gauge) {
     CudaFullGauge ret;
@@ -98,8 +100,24 @@ CudaFullGauge loadGaugeField(float **gauge) {
     return ret;
 }
 
+CudaPSpinor loadParitySpinor(float *spinor) {
+    CudaPSpinor ret;
+    CUDA_SAFE_CALL(cudaMalloc((void**)&ret, Nh*SPINOR_BYTES));
+    
+    float4 *packed = (float4*) malloc(Nh*SPINOR_BYTES);
+    packParitySpinor(packed, spinor);
+    CUDA_SAFE_CALL(cudaMemcpy(ret, packed, Nh*SPINOR_BYTES, cudaMemcpyHostToDevice));
+    free(packed);
+    
+    return ret;
+}
+
 CudaFullSpinor loadSpinorField(float *spinor) {
     CudaFullSpinor ret;
+    ret.even = loadParitySpinor(spinor);
+    ret.odd  = loadParitySpinor(spinor + Nh*SPINOR_BYTES);
+    
+    /*
     CUDA_SAFE_CALL(cudaMalloc((void**)&ret.even, Nh*SPINOR_BYTES));
     CUDA_SAFE_CALL(cudaMalloc((void**)&ret.odd,  Nh*SPINOR_BYTES));
     
@@ -111,8 +129,13 @@ CudaFullSpinor loadSpinorField(float *spinor) {
     CUDA_SAFE_CALL(cudaMemcpy(ret.odd,  packedOdd,  Nh*SPINOR_BYTES, cudaMemcpyHostToDevice));    
     free(packedEven);
     free(packedOdd);
+    */
     
     return ret;
+}
+
+void freeParitySpinor(CudaPSpinor spinor) {
+    CUDA_SAFE_CALL(cudaFree(spinor));
 }
 
 void freeGaugeField(CudaFullGauge gauge) {
@@ -128,12 +151,15 @@ void freeSpinorField(CudaFullSpinor spinor) {
 void retrieveParitySpinor(float *res, CudaPSpinor spinor) {
     float4 *packed = (float4*) malloc(Nh*SPINOR_BYTES);
     CUDA_SAFE_CALL(cudaMemcpy(packed,  spinor,  Nh*SPINOR_BYTES, cudaMemcpyDeviceToHost));
-    unpackSpinorField(res, packed, 0);
+    unpackParitySpinor(res, packed);
     free(packed);
 }
 
 void retrieveSpinorField(float *res, CudaFullSpinor spinor) {
-    float4 *packedEven = (float4*) malloc(Nh*SPINOR_BYTES);
+    retrieveParitySpinor(res, spinor.even);
+    retrieveParitySpinor(res+Nh*SPINOR_BYTES, spinor.odd);
+    
+/*    float4 *packedEven = (float4*) malloc(Nh*SPINOR_BYTES);
     float4 *packedOdd = (float4*) malloc(Nh*SPINOR_BYTES);
     CUDA_SAFE_CALL(cudaMemcpy(packedEven, spinor.even, Nh*SPINOR_BYTES, cudaMemcpyDeviceToHost));
     CUDA_SAFE_CALL(cudaMemcpy(packedOdd,  spinor.odd,  Nh*SPINOR_BYTES, cudaMemcpyDeviceToHost));
@@ -141,13 +167,7 @@ void retrieveSpinorField(float *res, CudaFullSpinor spinor) {
     unpackSpinorField(res, packedEven, 1);
     free(packedEven);
     free(packedOdd);
-}
-
-void compareParitySpinors(float *spinor1, CudaPSpinor cudaSpinor2) {
-    float *spinor2 = (float *) malloc(Nh*SPINOR_BYTES);
-    retrieveParitySpinor(spinor2, cudaSpinor2);
-    CUTBoolean res = cutComparefe(spinor1, spinor2, Nh*SPINOR_BYTES, 1e-4);
-    printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
+    */
 }
 
 void dslashCuda(CudaPSpinor res, CudaFullGauge gauge, CudaPSpinor spinor, int oddBit, int daggerBit) {
@@ -175,8 +195,43 @@ void dslashCuda(CudaPSpinor res, CudaFullGauge gauge, CudaPSpinor spinor, int od
     cudaThreadSynchronize();
 }
 
+
+// Apply the even-odd preconditioned Dirac operator
+void MatPCCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, float kappa, CudaPSpinor tmp) {
+    // full dslash operator
+    dslashCuda(tmp, gauge, inEven, 1, 0);
+    dslashCuda(outEven, gauge, tmp, 0, 0);
+    
+    // lastly apply the kappa term
+    float kappa2 = -kappa*kappa;
+    xpayCuda((float *)inEven, kappa2, (float *)outEven, Nh*spinorSiteSize);
+}
+
+// Apply the even-odd preconditioned Dirac operator
+void MatPCDagCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, float kappa, CudaPSpinor tmp) {
+    // full dslash operator
+    dslashCuda(tmp, gauge, inEven, 1, 1);
+    dslashCuda(outEven, gauge, tmp, 0, 1);
+    
+    float kappa2 = -kappa*kappa;
+    xpayCuda((float *)inEven, kappa2, (float *)outEven, Nh*spinorSiteSize);
+}
+
+void MatPCDagMatPCCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, float kappa, CudaPSpinor tmp1, CudaPSpinor tmp2) {
+    MatPCCuda(tmp2, gauge, inEven, kappa, tmp1);
+    MatPCDagCuda(outEven, gauge, tmp2, kappa, tmp1);
+}
+
+
 void printCudaDslashInfo() {
     printf("Spinors: %d\n", Nh);
     printf("Global kb: %f\n", N*(PACKED_GAUGE_BYTES+SPINOR_BYTES)/1024.);
     printf("Shared kb: %fkB\n", SHARED_BYTES/1024.);
+}
+
+void compareParitySpinors(float *spinor1, CudaPSpinor cudaSpinor2) {
+    float *spinor2 = (float *) malloc(Nh*SPINOR_BYTES);
+    retrieveParitySpinor(spinor2, cudaSpinor2);
+    CUTBoolean res = cutComparefe(spinor1, spinor2, Nh*SPINOR_BYTES, 1e-4);
+    printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
 }
