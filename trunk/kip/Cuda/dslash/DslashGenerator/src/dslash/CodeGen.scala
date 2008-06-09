@@ -178,11 +178,8 @@ for (int i = 0; i < 6; i++) {
     case 6 => "int sp_idx = ((x4==L4-1) ? X-(L4-1)*L3*L2*L1 : X+L3*L2*L1) / 2;\n"
     case 7 => "int sp_idx = ((x4==0)    ? X+(L4-1)*L3*L2*L1 : X-L3*L2*L1) / 2;\n"
     }))
-    if (dir % 2 == 0)
-      str.append("int ga_idx = sid + ("+dir+"/2)*Nh*(20/4);\n\n")
-    else {
-      str.append("int ga_idx = sp_idx + ("+dir+"/2)*Nh*(20/4);\n\n") 
-    }
+    val baseIdx = if (dir % 2 == 0) "sid" else "sp_idx"
+    str.append("int ga_idx = "+baseIdx+" + ("+dir+"/2)*Nh*3;\n\n")
     
     str.append("// read spinor from device memory\n")
     str.append("READ_SPINOR(spinorTex);\n\n")
