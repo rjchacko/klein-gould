@@ -37,7 +37,7 @@ void dslashTest() {
     
     printf("Randomizing fields...");
     fflush(stdout);
-    constructUnitGaugeField(gauge);
+    constructGaugeField(gauge);
     constructSpinorField(spinor);
     printf("done.\n");
     
