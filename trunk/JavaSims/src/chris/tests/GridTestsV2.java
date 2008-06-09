@@ -15,10 +15,11 @@ import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.ofc.ClustersV4;
 import chris.ofc.NfailDamage2D;
+import chris.ofc.NfailDamage2DV2;
 import chris.util.LatticeNeighbors;
 
 
-public class GridTests extends Simulation{
+public class GridTestsV2 extends Simulation{
 
 	Grid grid1 = new Grid ("Grid 1");
 	Grid grid2 = new Grid ("Grid 2");
@@ -26,7 +27,8 @@ public class GridTests extends Simulation{
 	Grid grid4 = new Grid ("Grid 4");
 	Grid grid5 = new Grid ("Grid 5");
 	
-	NfailDamage2D model;
+	NfailDamage2DV2 model;
+	NfailDamage2D   OLDmodel;
 	ClustersV4 dummy; 
 
 	ColorPalette palette1;
@@ -43,7 +45,7 @@ public class GridTests extends Simulation{
 	int[] parent, foo2, foo3, foo4;
 	
 	public static void main(String[] args) {
-		new Control(new GridTests(), "OFC Model");
+		new Control(new GridTestsV2(), "OFC Model");
 	}
 	
 	public void load(Control c) {		
@@ -115,8 +117,11 @@ public class GridTests extends Simulation{
 
 		// Get functionality of NfailDamage2D
 		
-		model = new NfailDamage2D(params);
+		model = new NfailDamage2DV2(params);
 		model.Initialize("Flat");
+		
+		OLDmodel = new NfailDamage2D(params);
+		OLDmodel.Initialize("Flat");
 		
 		// Set up Lattice Neighbors
 		
@@ -168,6 +173,11 @@ public class GridTests extends Simulation{
 		// Initialize foo
 		
 		foo = new int[model.N];
+		
+		for (int jj = 0 ; jj < model.N ; jj++){
+			foo[jj] = 0;
+		}
+		
 		
 		// Set time = 0
 		
@@ -426,7 +436,7 @@ public class GridTests extends Simulation{
 
 			
 		/**
-	     *	Remind myself with R is for Sqaure Interaction
+	     *	Remind myself with R is for Square Interaction
 		*/	
 //		
 //		int[] thenbs = LN.get(i0);
@@ -440,11 +450,11 @@ public class GridTests extends Simulation{
 //		}
 //		
 //		Job.animate();
-//		
+		
 		
 		/**
 		 * 			E-N-D
-		 * 	Remind myself with R is for Sqaure Interaction
+		 * 	Remind myself with R is for Square Interaction
 		 */
 			
 		
@@ -452,48 +462,35 @@ public class GridTests extends Simulation{
 
 		
 		/**
-	     *	Test "quick" lattice neighbors
+	     *	Check Lattice Neighbors Array 
 		*/	
 		
-		foo2 = new int[model.N];
+		while(true){
 		
-		for (int ii = 0 ; ii < model.N ; ii++){
-			foo[ii]=0;
-			foo2[ii]=0;
-		}
-		
-		int cs;
-		if(model.BCs.equals("Bordered")){
-			cs = (int)(model.L/2)*(1+model.L);
-		}
-		else{
-			cs = 0;
-		}
-		
-		int[] csNBS = LN.get(cs);
+			int[] temp = model.retNbs(i0);
+			for (int kk = 0 ; kk < temp.length ; kk++){
+				foo[temp[kk]] = 1;
+			}
 
-		
-			
-		int[] test1 = LN.get(i0);
-		int[] test2 = LN.get(i0,cs,csNBS);
+			foo2 = new int[model.N];
 
-		for (int jj = 0 ; jj < test1.length ; jj++){
-			foo[test1[jj]] = 1;
-		}
-		for (int jj = 0 ; jj < test2.length ; jj++){
-			foo2[test2[jj]] = 1;
-		}
+			for (int jj = 0 ; jj < model.N ; jj++){
+				foo2[jj] = 0;
+			}
 
-		Job.animate();
-			
-		
-		
+			int[] temp2 = LN.get(i0);
+			for (int kk = 0 ; kk < temp2.length ; kk++){
+				foo2[temp2[kk]] = 1;
+			}
+
+
+			Job.animate();
+		}
 		
 		/**
 		 * 			E-N-D
-	     *	Test "quick" lattice neighbors
+	     *	Check Lattice Neighbors Array 
 		*/	
-		
 		
 	}
 }

@@ -276,6 +276,27 @@ public class PrintUtil {
 		}
 	}
 	
+	static public void printScalarsAndVectorToFile(String fileName, double t1, double t2, double[] vector){
+
+		int Length = vector.length;	
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.print(t1);
+			pw.print("\t");
+			pw.print(t2);
+			pw.print("\t");
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.print(vector[ii]);
+				pw.print("\t");
+			}
+			pw.println();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	static public void print2TimeAndVectorToFile(String fileName, double T1, double T2, double[] vector){
 
 		int Length = vector.length;	

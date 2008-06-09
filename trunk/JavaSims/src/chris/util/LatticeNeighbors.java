@@ -54,6 +54,116 @@ public class LatticeNeighbors {
 		System.arraycopy(list, 0, ret, 0, num);
 		return ret;
 	}
+	
+	/**
+	 * Returns a neighbor list array.
+	 * For each lattice index i, neighbor[i] is an array containing all of i's neighbor
+	 * indices. Neighbor indices are defined to be those whose distance d from i is
+	 * in the interval [r_lo, r_hi).
+	 * 
+	 * This is a faster method than above but requires at least one call
+	 * to the method above prior to calling this one. It simply translates
+	 * all the neighbor sites by the vector which points from the site with
+	 * known neighbors to the site with neighbors to be calculated.
+	 * 
+	 * For case = BORDERED the site i0 *must* be positioned on the lattice such
+	 * that its set of neighbors is the same set that would be returned had the 
+	 * method been called with PERIODIC boundary conditions. Namely, i0 must be
+	 * sufficiently centered on the lattice such that there are no edge effects.
+	 * 
+	 * For case = PERIODIC the site i0 *must* be taken as i0 = 0 or else you will
+	 * get an array index error resulting from JAVA's % operator which is not the
+	 * true modulo operator.
+	 * 
+	 */
+	public int[] get(int i, int i0, int[] nbs0) {
+		
+		int Nsites = nbs0.length;
+		int[] temp = new int[Nsites];
+		
+		int dx = i%Nx - i0%Nx;
+		int dy = (int)(i/Ny) - (int)(i0/Ny);
+		
+		
+		switch (type) {
+		
+		case BORDERED:
+			
+			int counter = 0;
+			
+			for (int jj = 0 ; jj < Nsites ; jj++){
+				int xn = nbs0[jj]%Nx;
+				int yn = (int)(nbs0[jj]/Ny);
+				
+				int xx = xn + dx;
+				int yy = yn + dy;
+					
+				if (xx >= 0 && xx < Nx && yy >= 0 && yy < Ny) temp[counter++] = xx + yy*Ny;
+	
+			}
+			
+			int[] ret = new int[counter];
+			
+			for (int jj = 0 ; jj < counter ; jj++){
+				ret[jj] = temp[jj];
+			}
+			
+			return ret;
+			
+			case PERIODIC:
+					
+				int[] retP = new int[Nsites];
+
+				for (int jj = 0 ; jj < Nsites ; jj++){
+					int xn = nbs0[jj]%Nx;
+					int yn = (int)(nbs0[jj]/Ny);
+					retP[jj] = (xn+dx)%Nx + ((yn + dy)%Ny)*Ny;
+					if(retP[jj] < 0){
+						System.out.print(yn);
+						System.out.print("\t");
+						System.out.print(dy);
+						System.out.print("\t");
+						System.out.print(Ny);
+						System.out.print("\t");
+						System.out.println((yn + dy)%Ny);
+					}
+				}
+
+				return retP;
+			
+			default:
+			
+				return null;
+			
+		}
+		
+	}
+		
+
+//
+//		int[] nbsZero = neighbors.get(0);
+//		int NumNbs = nbsZero.length;
+//		NbrArray[0][0] = NumNbs;
+//		int zX[] = new int[NumNbs];
+//		int zY[] = new int[NumNbs];
+//		for (int i = 1 ; i <= NumNbs; i++){
+//			NbrArray[0][i] = nbsZero[i-1];
+//			zX[i-1] = nbsZero[i-1]%L;
+//			zY[i-1] = (int)(nbsZero[i-1]/L);
+//		}
+//		for (int jj = 1 ; jj < N ; jj++){
+//			if(jj%((int)(N/10)) == 0 ) System.out.println(jj/N);
+//			NbrArray[jj][0] = NumNbs;
+//			int ix = jj%L;
+//			int iy = (int)(jj/L);
+//			for (int kk = 1 ; kk <= NumNbs ; kk++){
+//				NbrArray[jj][kk] = (zX[kk-1] + ix)%L + ((zY[kk-1] + iy)%L)*L;
+//			}	
+//		}
+//		
+		
+
+	
 
 	/**
 	 * Returns a static neighbor list array, terminated by index -1.
