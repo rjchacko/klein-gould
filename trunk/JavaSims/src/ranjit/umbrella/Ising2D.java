@@ -17,7 +17,7 @@ import scikit.jobs.Simulation;
 public class Ising2D extends Simulation {
 	SpinBlocks2D spins;
 	Grid grid = new Grid ("Ising Lattice");
-	Histogram mag=new Histogram(1);
+	Histogram mag[];
     Plot magPlot = new Plot("Magnetizations");
     Accumulator freeEnergy[];
     Plot freeEnergyPlot=new Plot("Free Energy");
@@ -36,11 +36,10 @@ public class Ising2D extends Simulation {
 		params.add("T",1.0);
 		params.add("h",-0.7);
 		params.add("L",32);
-		params.add("R",8);
-		params.add("number of windows", 32);
+		params.add("R",1);
+		params.add("number of windows", 256);
+		params.add("window width",8);
 		params.add("MCS per window", 1000);
-//		params.add("window min",992);
-//		params.add("window max",1024);
 		params.add("mcs");
 		params.add("current window");
 		params.add("prefix","/Users/rjchacko/Desktop/data/");
@@ -59,7 +58,8 @@ public class Ising2D extends Simulation {
 		}
 		grid.setColors(smooth);
 		grid.registerData(L,L,allSpins);
-		magPlot.registerPoints("Magnetizations", mag, Color.RED);
+		if(currentWindow%2==0)magPlot.registerPoints("Magnetizations"+ currentWindow, mag[currentWindow], Color.RED);
+		else magPlot.registerPoints("Magnetizations"+ currentWindow, mag[currentWindow], Color.BLUE);
 		if(currentWindow%2==0)freeEnergyPlot.registerPoints("Free Energy"+currentWindow,freeEnergy[currentWindow],Color.RED);
 		else freeEnergyPlot.registerPoints("Free Energy"+currentWindow,freeEnergy[currentWindow],Color.BLUE);
 	}
@@ -67,7 +67,6 @@ public class Ising2D extends Simulation {
 	
 	public void clear() {
 		grid.clear();
-		mag.clear();
 		magPlot.clear();
 		freeEnergyPlot.clear();
 	}
@@ -81,7 +80,9 @@ public class Ising2D extends Simulation {
 		int numberOfWindows=params.iget("number of windows");
 		int mcsPerWindow=params.iget("MCS per window");
 		String prefix=params.sget("prefix");
-		int windowWidth=2*L*L/numberOfWindows;		
+		int windowSpacing=2*L*L/numberOfWindows;
+		int windowWidth=params.iget("window width");
+		
 		int spinsInRange=(2*R+1)*(2*R+1) - 1;
 		if(R>1)J = 4.0 / spinsInRange;
 		else J=1;
@@ -89,10 +90,13 @@ public class Ising2D extends Simulation {
 		for(int l=0;l<numberOfWindows;l++){
 			freeEnergy[l]=new Accumulator(1);
 		}
+		mag=new Histogram[numberOfWindows];
+		for(int l=0;l<numberOfWindows;l++){
+			mag[l]=new Histogram(1);
+		}
 		for(int j=0;j<numberOfWindows;j++){
-			mag.clear();
 			params.set("current window", j);
-			initializeWindow(windowWidth,j);
+			initializeWindow(windowSpacing,windowWidth, j);
 			Job.animate();
 			for(int mcs=0;mcs<mcsPerWindow;mcs++){
 				for(int k=0;k<L*L;k++){
@@ -103,27 +107,29 @@ public class Ising2D extends Simulation {
 					int x=nextSpin%L;
 					int y=nextSpin/L;
 					if( decreaseEnergy || acceptThermal) spins.flip(x, y);
-					mag.accum(spins.netSum);		
+					mag[currentWindow].accum(spins.netSum);		
 					Job.animate();
 				}
 				params.set("mcs", mcs);	
-				double data[]=mag.copyData();
+				double data[]=mag[currentWindow].copyData();
 				for(int i=0;i<data.length;i+=2){
 					freeEnergy[currentWindow].accum(data[i], -T*Math.log(data[i+1]));
 				}
 			}
 			
 			freeEnergyPlot.saveDataset2(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
+			magPlot.saveDataset2(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
 		}
 		
 	}
 	
-	public void initializeWindow(int windowWidth, int windowNumber){
+	public void initializeWindow(int windowSpacing, int windowWidth, int windowNumber){
 		int x, y, j=0;
 		double dE;
 		currentWindow=windowNumber;
-		windowMax=L*L-windowWidth*windowNumber;
-		windowMin=L*L-windowWidth*(windowNumber+1);
+		int phi0=L*L-(windowNumber+1)*windowSpacing;
+		windowMax=phi0+windowWidth;
+		windowMin=phi0-windowWidth;
 		spins = new SpinBlocks2D(L, R);
 		do{
 			x=j%L;
@@ -135,7 +141,7 @@ public class Ising2D extends Simulation {
 			j++;
 		}while(spins.netSum!=windowMax-(windowMax-windowMin)/2.);
 		
-		for(int cnt=0; cnt<1000; cnt++){
+		for(int cnt=0; cnt<500; cnt++){
 			for(int i=0;i<L*L;i++){
 				int nextSpin=r.nextInt(L);
 				dE=isingDE(nextSpin)+umbrellaDE(nextSpin);
@@ -157,7 +163,7 @@ public class Ising2D extends Simulation {
 			dE=2*spin*(h + J*(spins.sumInRange(x,y)-spin));
 		}
 		else {
-			dE = 2*(h + J*(spins.get(x,y)+spins.get((x+1+L)%L,y)+spins.get(x,(y-1+L)%L)+spins.get(x,(y+1+L)%L)));
+			dE = 2*spin*(h + J*(spins.get(x,y)+spins.get((x+1+L)%L,y)+spins.get(x,(y-1+L)%L)+spins.get(x,(y+1+L)%L)));
 		}
 		return dE;
 	}
