@@ -9,6 +9,17 @@
 #define REDUCE_MAX_BLOCKS 64
 
 
+void zeroCuda(float* dst, int len) {
+    // cuda's floating point format, IEEE-754, represents the floating point
+    // zero as 4 zero bytes
+    CUDA_SAFE_CALL(cudaMemset(dst, 0, len*sizeof(float)));
+}
+
+void copyCuda(float* dst, float *src, int len) {
+    CUDA_SAFE_CALL(cudaMemcpy(dst, src, len*sizeof(float), cudaMemcpyDeviceToDevice));
+}
+
+
 __global__ void axpbyKernel(float a, float *x, float b, float *y, int len) {
     unsigned int i = blockIdx.x*(blockDim.x) + threadIdx.x;
     unsigned int gridSize = gridDim.x*blockDim.x;
@@ -44,7 +55,7 @@ void mxpyCuda(float *x, float *y, int len) {
 
 
 //
-// float sumCuda(float* d_idata, int n) {}
+// float sumCuda(float *a, int n) {}
 //
 #define REDUCE_FUNC_NAME(suffix) sum##suffix
 #define REDUCE_TYPES float *a
@@ -57,7 +68,7 @@ void mxpyCuda(float *x, float *y, int len) {
 #undef REDUCE_OPERATION
 
 //
-// float normCuda(float* d_idata, int n) {}
+// float normCuda(float *a, int n) {}
 //
 #define REDUCE_FUNC_NAME(suffix) norm##suffix
 #define REDUCE_TYPES float *a
@@ -70,9 +81,9 @@ void mxpyCuda(float *x, float *y, int len) {
 #undef REDUCE_OPERATION
 
 //
-// float dotProductCuda(float* d_idata, int n) {}
+// float reDotProductCuda(float *a, float *b, int n) {}
 //
-#define REDUCE_FUNC_NAME(suffix) dotProduct##suffix
+#define REDUCE_FUNC_NAME(suffix) reDotProduct##suffix
 #define REDUCE_TYPES float *a, float *b
 #define REDUCE_PARAMS a, b
 #define REDUCE_OPERATION(i) (a[i]*b[i])
@@ -101,7 +112,7 @@ void blasTest(int argc, char **argv) {
     CUDA_SAFE_CALL(cudaMemcpy(d_data, h_data, n*sizeof(float), cudaMemcpyHostToDevice));
     
     printf("Size: %f MiB\n", (float)n*sizeof(float) / (1 << 20));
-    printf("cuda: %f, expected: %f\n", dotProductCuda(d_data, d_data, n), acc);
+    printf("cuda: %f, expected: %f\n", reDotProductCuda(d_data, d_data, n), acc);
     
     CUDA_SAFE_CALL( cudaFree(d_data) );
     free(h_data);

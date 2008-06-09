@@ -1,2 +1,2 @@
-make keep=1 maxregisters=100
-
+# make keep=1 maxregisters=100
+make
