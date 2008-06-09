@@ -152,7 +152,7 @@ if(1)
     // i 0 0 1 
     
     int sp_idx = ((x1==L1-1) ? X-(L1-1) : X+1) / 2;
-    int ga_idx = sid + (0/2)*Nh*(20/4);
+    int ga_idx = sid + (0/2)*Nh*3;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -234,7 +234,7 @@ if(1)
     // -i 0 0 1 
     
     int sp_idx = ((x1==0)    ? X+(L1-1) : X-1) / 2;
-    int ga_idx = sp_idx + (1/2)*Nh*(20/4);
+    int ga_idx = sp_idx + (1/2)*Nh*3;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -316,7 +316,7 @@ if(1)
     // 1 0 0 1 
     
     int sp_idx = ((x2==L2-1) ? X-(L2-1)*L1 : X+L1) / 2;
-    int ga_idx = sid + (2/2)*Nh*(20/4);
+    int ga_idx = sid + (2/2)*Nh*3;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -398,7 +398,7 @@ if(1)
     // -1 0 0 1 
     
     int sp_idx = ((x2==0)    ? X+(L2-1)*L1 : X-L1) / 2;
-    int ga_idx = sp_idx + (3/2)*Nh*(20/4);
+    int ga_idx = sp_idx + (3/2)*Nh*3;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -480,7 +480,7 @@ if(1)
     // 0 -i 0 1 
     
     int sp_idx = ((x3==L3-1) ? X-(L3-1)*L2*L1 : X+L2*L1) / 2;
-    int ga_idx = sid + (4/2)*Nh*(20/4);
+    int ga_idx = sid + (4/2)*Nh*3;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -562,7 +562,7 @@ if(1)
     // 0 i 0 1 
     
     int sp_idx = ((x3==0)    ? X+(L3-1)*L2*L1 : X-L2*L1) / 2;
-    int ga_idx = sp_idx + (5/2)*Nh*(20/4);
+    int ga_idx = sp_idx + (5/2)*Nh*3;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -644,7 +644,7 @@ if(1)
     // 0 -1 0 1 
     
     int sp_idx = ((x4==L4-1) ? X-(L4-1)*L3*L2*L1 : X+L3*L2*L1) / 2;
-    int ga_idx = sid + (6/2)*Nh*(20/4);
+    int ga_idx = sid + (6/2)*Nh*3;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -726,7 +726,7 @@ if(1)
     // 0 1 0 1 
     
     int sp_idx = ((x4==0)    ? X+(L4-1)*L3*L2*L1 : X-L3*L2*L1) / 2;
-    int ga_idx = sp_idx + (7/2)*Nh*(20/4);
+    int ga_idx = sp_idx + (7/2)*Nh*3;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
