@@ -1,9 +1,38 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
-#include <cutil.h>
+#include <ctime>
+#include <sys/time.h>
 
 #include "qcd.h"
+
+
+int compareFloats(float *a, float *b, int len, float epsilon) {
+    for (int i = 0; i < len; i++) {
+        float diff = a[i] - b[i];
+        if (diff < 0)
+            diff = -diff;
+        if (diff > epsilon)
+            return 0;
+    }
+    return 1;
+}
+
+
+struct timeval startTime;
+
+void stopwatchStart() {
+    gettimeofday(&startTime, NULL);
+}
+
+double stopwatchReadSeconds() {
+    struct timeval endTime;
+    gettimeofday( &endTime, 0);
+    
+    long ds = endTime.tv_sec - startTime.tv_sec;
+    long dus = endTime.tv_usec - startTime.tv_usec;
+    return ds + 0.000001*dus;
+}
 
 
 void printVector(float *v) {
@@ -151,7 +180,24 @@ void applyGamma5(float *out, float *in, int sites) {
 
 
 int main(int argc, char **argv) {
-    CUT_DEVICE_INIT(argc, argv);
+    int deviceCount;
+    cudaGetDeviceCount(&deviceCount);
+    if (deviceCount == 0) {
+        fprintf(stderr, "No devices supporting CUDA.\n");
+        exit(EXIT_FAILURE);
+    }
+    int dev = deviceCount - 1;
+    if (argc > 1) {
+        sscanf(argv[1], "%d", &dev);
+    }
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, dev);
+    if (deviceProp.major < 1) {
+        fprintf(stderr, "Device %d does not support CUDA.\n", dev);
+        exit(EXIT_FAILURE);
+    }
+    fprintf(stderr, "Using device %d: %s\n", dev, deviceProp.name);
+    cudaSetDevice(dev);
 
 //    blasTest();
 //    axpbyTest();

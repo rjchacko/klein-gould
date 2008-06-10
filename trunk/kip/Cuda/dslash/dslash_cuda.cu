@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <cutil.h>
 #include "qcd.h"
 
 #define BLOCK_DIM (64) // threads per block
@@ -74,21 +73,21 @@ void unpackParitySpinor(float *res, float4 *spinorPacked) {
 
 CudaPSpinor allocateParitySpinor() {
     CudaPSpinor ret;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&ret, SPINOR_BYTES));
+    cudaMalloc((void**)&ret, SPINOR_BYTES);
     return ret;
 }
 
 CudaFullGauge loadGaugeField(float **gauge) {
     CudaFullGauge ret;
-    CUDA_SAFE_CALL(cudaMalloc((void **)&ret.even, PACKED_GAUGE_BYTES));
-    CUDA_SAFE_CALL(cudaMalloc((void **)&ret.odd,  PACKED_GAUGE_BYTES));
+    cudaMalloc((void **)&ret.even, PACKED_GAUGE_BYTES);
+    cudaMalloc((void **)&ret.odd,  PACKED_GAUGE_BYTES);
 
     float4 *packedEven = (float4*) malloc(PACKED_GAUGE_BYTES);
     float4 *packedOdd  = (float4*) malloc(PACKED_GAUGE_BYTES);
     packGaugeField(packedEven, gauge, 0);
     packGaugeField(packedOdd,  gauge, 1);
-    CUDA_SAFE_CALL(cudaMemcpy(ret.even, packedEven, PACKED_GAUGE_BYTES, cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(ret.odd,  packedOdd,  PACKED_GAUGE_BYTES, cudaMemcpyHostToDevice));    
+    cudaMemcpy(ret.even, packedEven, PACKED_GAUGE_BYTES, cudaMemcpyHostToDevice);
+    cudaMemcpy(ret.odd,  packedOdd,  PACKED_GAUGE_BYTES, cudaMemcpyHostToDevice);    
     free(packedEven);
     free(packedOdd);
     
@@ -97,11 +96,11 @@ CudaFullGauge loadGaugeField(float **gauge) {
 
 CudaPSpinor loadParitySpinor(float *spinor) {
     CudaPSpinor ret;
-    CUDA_SAFE_CALL(cudaMalloc((void**)&ret, SPINOR_BYTES));
+    cudaMalloc((void**)&ret, SPINOR_BYTES);
     
     float4 *packed = (float4*) malloc(SPINOR_BYTES);
     packParitySpinor(packed, spinor);
-    CUDA_SAFE_CALL(cudaMemcpy(ret, packed, SPINOR_BYTES, cudaMemcpyHostToDevice));
+    cudaMemcpy(ret, packed, SPINOR_BYTES, cudaMemcpyHostToDevice);
     free(packed);
     
     return ret;
@@ -115,22 +114,22 @@ CudaFullSpinor loadSpinorField(float *spinor) {
 }
 
 void freeParitySpinor(CudaPSpinor spinor) {
-    CUDA_SAFE_CALL(cudaFree(spinor));
+    cudaFree(spinor);
 }
 
 void freeGaugeField(CudaFullGauge gauge) {
-    CUDA_SAFE_CALL(cudaFree(gauge.even));
-    CUDA_SAFE_CALL(cudaFree(gauge.odd));
+    cudaFree(gauge.even);
+    cudaFree(gauge.odd);
 }
 
 void freeSpinorField(CudaFullSpinor spinor) {
-    CUDA_SAFE_CALL(cudaFree(spinor.even));
-    CUDA_SAFE_CALL(cudaFree(spinor.odd));
+    cudaFree(spinor.even);
+    cudaFree(spinor.odd);
 }
 
 void retrieveParitySpinor(float *res, CudaPSpinor spinor) {
     float4 *packed = (float4*) malloc(SPINOR_BYTES);
-    CUDA_SAFE_CALL(cudaMemcpy(packed, spinor, SPINOR_BYTES, cudaMemcpyDeviceToHost));
+    cudaMemcpy(packed, spinor, SPINOR_BYTES, cudaMemcpyDeviceToHost);
     unpackParitySpinor(res, packed);
     free(packed);
 }
@@ -160,9 +159,6 @@ void dslashCuda(CudaPSpinor res, CudaFullGauge gauge, CudaPSpinor spinor, int od
     else {
         dslashDaggerKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)res, oddBit);
     }
-    
-    CUT_CHECK_ERROR("Kernel execution failed");
-    cudaThreadSynchronize();
 }
 
 int dslashCudaSharedBytes() {
