@@ -113,6 +113,25 @@ int x1 = X % L1;
   }
   
   def epilog() = {
+    val str = new StringBuilder()
+    str.append(
+"""
+#ifdef DSLASH_XPAY
+    float4 accum0 = tex1Dfetch(accumTex, sid + 0*Nh);
+    float4 accum1 = tex1Dfetch(accumTex, sid + 1*Nh);
+    float4 accum2 = tex1Dfetch(accumTex, sid + 2*Nh);
+    float4 accum3 = tex1Dfetch(accumTex, sid + 3*Nh);
+    float4 accum4 = tex1Dfetch(accumTex, sid + 4*Nh);
+    float4 accum5 = tex1Dfetch(accumTex, sid + 5*Nh);
+""")
+    
+    for (s <- 0 until 4; c <- 0 until 3; i = 3*s+c) {
+      str.append("    "+out_re(s,c) +" = a*"+out_re(s,c)+" + accum"+nthFloat4(2*i+0)+";\n")
+      str.append("    "+out_im(s,c) +" = a*"+out_im(s,c)+" + accum"+nthFloat4(2*i+1)+";\n")
+    }
+    str.append("#endif\n\n")
+    
+    str.append(
 """
 // this code is disabled due to a hardware bug in our C870 card
 //g_out[0*Nh+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
@@ -136,7 +155,7 @@ for (int i = 0; i < 6; i++) {
         ((float*)g_out)[i*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
     }
 }
-"""
+""")
   }
   
   
