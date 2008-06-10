@@ -125,6 +125,11 @@ extern "C" void cgReference(float *out, float **gauge, float *in, float kappa, f
 
 // ---------- qcd.cpp ----------
 
+extern "C" int compareFloats(float *a, float *b, int len, float tol);
+
+extern "C" void   stopwatchStart();
+extern "C" double stopwatchReadSeconds();
+
 extern "C" void printSpinor(float *spinor);
 extern "C" void printSpinorElement(float *spinor, int X);
 

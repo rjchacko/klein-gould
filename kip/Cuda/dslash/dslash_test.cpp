@@ -1,7 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <cuda_runtime.h>
-#include <cutil.h>
 #include "qcd.h"
 
 
@@ -20,9 +19,6 @@ void dslashTest() {
     printf("Spinor mem: %f GiB\n", spinorGiB);
     printf(" Gauge mem: %f GiB\n", gaugeGiB);
     printf("Shared mem: %f KB\n", sharedKB);
-    
-    unsigned int timer = 0;
-    cutCreateTimer(&timer);
     
     // construct input fields
     float *gauge[4];
@@ -55,17 +51,16 @@ void dslashTest() {
     const int LOOPS = 100;
     printf("Executing %d kernel loops...", LOOPS);
     fflush(stdout);
-    cutStartTimer(timer);
+    stopwatchStart();
     for (int i = 0; i < LOOPS; i++) {
         dslashCuda(cudaSpinor.odd, cudaGauge, cudaSpinor.even, ODD_BIT, DAGGER_BIT);
     }
-    cutStopTimer(timer);
+    cudaThreadSynchronize();
+    double secs = stopwatchReadSeconds() / LOOPS;
     printf("done.\n\n");
     
     // print timing information
-    float millisecs = cutGetTimerValue(timer)/LOOPS;
-    float secs = millisecs / 1000.;
-    printf("Elapsed time %fms\n", millisecs);
+    printf("%fms per loop\n", 1000*secs);
     printf("GFLOPS = %f\n", 1e-9*1320*Nh/secs);
     printf("GiB/s = %f\n\n", Nh*(8*7+4)*3*2*sizeof(float)/(secs*(1<<30)));
 
@@ -82,7 +77,7 @@ void dslashTest() {
     printf("\nCUDA:\n");
     printSpinorHalfField(spinorOdd);
     
-    CUTBoolean res = cutComparefe(spinorOdd, spinorRef, Nh*4*3*2, 1e-4);
+    int res = compareFloats(spinorOdd, spinorRef, Nh*4*3*2, 1e-4);
     printf("Test %s\n", (1 == res) ? "PASSED" : "FAILED");
     
     // release memory
@@ -93,5 +88,4 @@ void dslashTest() {
     free(spinorRef);
     freeGaugeField(cudaGauge);
     freeSpinorField(cudaSpinor);
-    cutDeleteTimer(timer);
 }

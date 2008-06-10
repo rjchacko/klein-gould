@@ -50,21 +50,20 @@ float REDUCE_FUNC_NAME(Cuda) (REDUCE_TYPES, int n) {
     int blocks = min(REDUCE_MAX_BLOCKS, n / (2*REDUCE_THREADS));
     float h_odata[REDUCE_MAX_BLOCKS];
     float *d_odata;
-    CUDA_SAFE_CALL( cudaMalloc((void**) &d_odata, blocks*sizeof(float)) );
+    cudaMalloc((void**) &d_odata, blocks*sizeof(float));
     
     // partial reduction; each block generates one number
     dim3 dimBlock(REDUCE_THREADS, 1, 1);
     dim3 dimGrid(blocks, 1, 1);
     int smemSize = REDUCE_THREADS * sizeof(float);
     REDUCE_FUNC_NAME(Kernel)<REDUCE_THREADS><<< dimGrid, dimBlock, smemSize >>>(REDUCE_PARAMS, d_odata, n);
-    CUT_CHECK_ERROR("Kernel execution failed");
-
+    
     // copy result from device to host, and perform final reduction on CPU
-    CUDA_SAFE_CALL( cudaMemcpy( h_odata, d_odata, blocks*sizeof(float), cudaMemcpyDeviceToHost) );
+    cudaMemcpy(h_odata, d_odata, blocks*sizeof(float), cudaMemcpyDeviceToHost);
     float gpu_result = 0;
     for (int i = 0; i < blocks; i++) 
         gpu_result += h_odata[i];
     
-    CUDA_SAFE_CALL( cudaFree(d_odata) );    
+    cudaFree(d_odata);    
     return gpu_result;
 }

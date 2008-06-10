@@ -1,6 +1,5 @@
 #include <stdlib.h>
 #include <stdio.h>
-#include <cutil.h>
 
 #include "qcd.h"
 
@@ -12,11 +11,11 @@
 void zeroCuda(float* dst, int len) {
     // cuda's floating point format, IEEE-754, represents the floating point
     // zero as 4 zero bytes
-    CUDA_SAFE_CALL(cudaMemset(dst, 0, len*sizeof(float)));
+    cudaMemset(dst, 0, len*sizeof(float));
 }
 
 void copyCuda(float* dst, float *src, int len) {
-    CUDA_SAFE_CALL(cudaMemcpy(dst, src, len*sizeof(float), cudaMemcpyDeviceToDevice));
+    cudaMemcpy(dst, src, len*sizeof(float), cudaMemcpyDeviceToDevice);
 }
 
 
@@ -100,19 +99,19 @@ void blasTest() {
     int n = 3*1<<8;
     float *h_data = (float *)malloc(n*sizeof(float));
     float *d_data;
-    CUDA_SAFE_CALL(cudaMalloc((void **)&d_data,  n*sizeof(float)));
+    cudaMalloc((void **)&d_data,  n*sizeof(float));
     
     double acc = 0;
     for (int i = 0; i < n; i++) {
         h_data[i] = i;
         acc += i*i;
     }
-    CUDA_SAFE_CALL(cudaMemcpy(d_data, h_data, n*sizeof(float), cudaMemcpyHostToDevice));
+    cudaMemcpy(d_data, h_data, n*sizeof(float), cudaMemcpyHostToDevice);
     
     printf("Size: %f MiB\n", (float)n*sizeof(float) / (1 << 20));
     printf("cuda: %f, expected: %f\n", reDotProductCuda(d_data, d_data, n), acc);
     
-    CUDA_SAFE_CALL( cudaFree(d_data) );
+    cudaFree(d_data) ;
     free(h_data);
 }
 
@@ -123,20 +122,20 @@ void axpbyTest() {
     float *h_res = (float *)malloc(n*sizeof(float));
     
     float *d_x, *d_y;
-    CUDA_SAFE_CALL(cudaMalloc((void **)&d_x,  n*sizeof(float)));
-    CUDA_SAFE_CALL(cudaMalloc((void **)&d_y,  n*sizeof(float)));
+    cudaMalloc((void **)&d_x,  n*sizeof(float));
+    cudaMalloc((void **)&d_y,  n*sizeof(float));
     
     for (int i = 0; i < n; i++) {
         h_x[i] = 1;
         h_y[i] = 2;
     }
     
-    CUDA_SAFE_CALL(cudaMemcpy(d_x, h_x, n*sizeof(float), cudaMemcpyHostToDevice));
-    CUDA_SAFE_CALL(cudaMemcpy(d_y, h_y, n*sizeof(float), cudaMemcpyHostToDevice));
+    cudaMemcpy(d_x, h_x, n*sizeof(float), cudaMemcpyHostToDevice);
+    cudaMemcpy(d_y, h_y, n*sizeof(float), cudaMemcpyHostToDevice);
     
     axpbyCuda(4, d_x, 3, d_y, n/2);
     
-    CUDA_SAFE_CALL( cudaMemcpy( h_res, d_y, n*sizeof(float), cudaMemcpyDeviceToHost) );
+    cudaMemcpy( h_res, d_y, n*sizeof(float), cudaMemcpyDeviceToHost);
 
     for (int i = 0; i < n; i++) {
         float expect = (i < n/2) ? 4*h_x[i] + 3*h_y[i] : h_y[i];
@@ -144,8 +143,8 @@ void axpbyTest() {
             printf("FAILED %d : %f != %f\n", i, h_res[i], h_y[i]);
     }
     
-    CUDA_SAFE_CALL( cudaFree(d_y) );
-    CUDA_SAFE_CALL( cudaFree(d_x) );
+    cudaFree(d_y);
+    cudaFree(d_x);
     free(h_x);
     free(h_y);
 }
