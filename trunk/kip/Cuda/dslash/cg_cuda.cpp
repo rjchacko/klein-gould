@@ -42,25 +42,26 @@ void cgCuda(float *h_x, float **h_gauge, float *h_b, float kappa, float tol) {
     int k=0;
     printf("%d iterations, r2 = %e\n", k, r2);
     while (r2 > stop) {
-        
+        stopwatchStart();
         MatPCDagMatPCCuda(Ap, gauge, p, kappa, tmp1, tmp2);
         
         pAp = reDotProductCuda((float *)p, (float *)Ap, len);
         
-        alpha = r2 / pAp;
-        
-        axpyCuda(alpha,(float *)p,(float *)x,len);
-        axpyCuda(-alpha,(float *)Ap,(float *)r,len);
-        
+        alpha = r2 / pAp;        
         r2_old = r2;
+        axpyCuda(-alpha,(float *)Ap,(float *)r,len);
         r2 = normCuda((float *)r, len);
         
         beta = r2 / r2_old;
         
-        xpayCuda((float *)r, beta, (float *)p, len);
+//        axpyCuda(alpha,(float *)p,(float *)x,len);
+//        xpayCuda((float *)r, beta, (float *)p, len);
+        axpyZpbxCuda(alpha, (float *)p, (float *)x, (float *)r, beta, len);
         
         k++;
         printf("%d iterations, r2 = %e %e\n", k, r2, normCuda((float *)x, len));
+        printf("%f gflops\n", (float)Nh*(4*1320 + 14*spinorSiteSize)*1.0e-9 / stopwatchReadSeconds());
+
     }
     
     // Calculate the true residual
