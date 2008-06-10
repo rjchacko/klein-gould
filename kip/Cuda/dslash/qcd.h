@@ -24,6 +24,9 @@ extern "C" void axpyCuda(float a, float *x, float *y, int len);
 extern "C" void xpayCuda(float *x, float a, float *y, int len);
 extern "C" void mxpyCuda(float *x, float *y, int len);
 
+extern "C" void axpyZpbxCuda(float a, float *x, float *y, float *z, float b, int len);
+// extern "C" float axpyNormCuda(float a, float *x, float *y, int len);
+
 extern "C" float sumCuda(float *a, int n);
 extern "C" float normCuda(float *a, int n);
 extern "C" float reDotProductCuda(float *a, float *b, int n);

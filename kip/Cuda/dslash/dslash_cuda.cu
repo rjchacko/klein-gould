@@ -15,6 +15,7 @@
 texture<float4, 1, cudaReadModeElementType> gauge0Tex;
 texture<float4, 1, cudaReadModeElementType> gauge1Tex;
 texture<float4, 1, cudaReadModeElementType> spinorTex;
+texture<float4, 1, cudaReadModeElementType> accumTex;
 
 
 __global__ void
@@ -26,6 +27,21 @@ __global__ void
 dslashDaggerKernel(float4* g_out, int oddBit) {
     #include "dslash_dagger_core.cu"
 }
+
+
+#define DSLASH_XPAY
+
+__global__ void
+dslashXpayKernel(float4* g_out, int oddBit, float a) {
+    #include "dslash_core.cu"
+}
+
+__global__ void
+dslashDaggerXpayKernel(float4* g_out, int oddBit, float a) {
+    #include "dslash_dagger_core.cu"
+}
+
+#undef DSLASH_XPAY
 
 
 // ----------------------------------------------------------------------
@@ -161,29 +177,45 @@ void dslashCuda(CudaPSpinor res, CudaFullGauge gauge, CudaPSpinor spinor, int od
     }
 }
 
+void dslashXpayCuda(CudaPSpinor res, CudaFullGauge gauge, CudaPSpinor spinor, int oddBit, int daggerBit, CudaPSpinor x, float a) {
+    if (oddBit) {
+        cudaBindTexture(0 /*offset*/, gauge0Tex, gauge.odd, PACKED_GAUGE_BYTES); 
+        cudaBindTexture(0 /*offset*/, gauge1Tex, gauge.even, PACKED_GAUGE_BYTES); 
+    }
+    else {
+        cudaBindTexture(0 /*offset*/, gauge0Tex, gauge.even, PACKED_GAUGE_BYTES); 
+        cudaBindTexture(0 /*offset*/, gauge1Tex, gauge.odd, PACKED_GAUGE_BYTES); 
+    }
+    cudaBindTexture(0 /*offset*/, spinorTex, spinor, SPINOR_BYTES); 
+    cudaBindTexture(0 /*offset*/, accumTex, x, SPINOR_BYTES); 
+    
+    dim3 gridDim(GRID_DIM, 1, 1);
+    dim3 blockDim(BLOCK_DIM, 1, 1);
+    
+    if (!daggerBit) {
+        dslashXpayKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)res, oddBit, a);
+    }
+    else {
+        dslashDaggerXpayKernel <<<gridDim, blockDim, SHARED_BYTES>>> ((float4 *)res, oddBit, a);
+    }
+}
+
 int dslashCudaSharedBytes() {
     return SHARED_BYTES;
 }
 
 // Apply the even-odd preconditioned Dirac operator
 void MatPCCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, float kappa, CudaPSpinor tmp) {
-    // full dslash operator
-    dslashCuda(tmp, gauge, inEven, 1, 0);
-    dslashCuda(outEven, gauge, tmp, 0, 0);
-    
-    // lastly apply the kappa term
     float kappa2 = -kappa*kappa;
-    xpayCuda((float *)inEven, kappa2, (float *)outEven, Nh*spinorSiteSize);
+    dslashCuda(tmp, gauge, inEven, 1, 0);
+    dslashXpayCuda(outEven, gauge, tmp, 0, 0, inEven, kappa2); 
 }
 
 // Apply the even-odd preconditioned Dirac operator
 void MatPCDagCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, float kappa, CudaPSpinor tmp) {
-    // full dslash operator
-    dslashCuda(tmp, gauge, inEven, 1, 1);
-    dslashCuda(outEven, gauge, tmp, 0, 1);
-    
     float kappa2 = -kappa*kappa;
-    xpayCuda((float *)inEven, kappa2, (float *)outEven, Nh*spinorSiteSize);
+    dslashCuda(tmp, gauge, inEven, 1, 1);
+    dslashXpayCuda(outEven, gauge, tmp, 0, 1, inEven, kappa2);
 }
 
 void MatPCDagMatPCCuda(CudaPSpinor outEven, CudaFullGauge gauge, CudaPSpinor inEven, float kappa, CudaPSpinor tmp1, CudaPSpinor tmp2) {

@@ -52,6 +52,28 @@ void mxpyCuda(float *x, float *y, int len) {
     axpbyCuda(-1.0, x, 1.0, y, len);
 }
 
+__global__ void axpyZpbxKernel(float a, float *x, float *y, float *z, float b, int len) {
+    unsigned int i = blockIdx.x*(blockDim.x) + threadIdx.x;
+    unsigned int gridSize = gridDim.x*blockDim.x;
+    while (i < len) {
+        float x_i = x[i];
+        y[i] = a*x_i + y[i];
+        x[i] = z[i] + b*x_i;
+        i += gridSize;
+    }
+}
+
+// performs the operations: {y[i] = a x[i] + y[i]; x[i] = z[i] + b x[i]}
+void axpyZpbxCuda(float a, float *x, float *y, float *z, float b, int len) {
+    int blocks = min(REDUCE_MAX_BLOCKS, max(len/REDUCE_THREADS, 1));
+    dim3 dimBlock(REDUCE_THREADS, 1, 1);
+    dim3 dimGrid(blocks, 1, 1);
+    axpyZpbxKernel<<<dimGrid, dimBlock>>>(a, x, y, z, b, len);
+}
+
+// performs the operation y[i] = a*x[i] + y[i], and returns norm(y)
+// float axpyNormCuda(float a, float *x, float *y, int len);
+
 
 //
 // float sumCuda(float *a, int n) {}

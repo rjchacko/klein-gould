@@ -14,8 +14,7 @@ __global__ void REDUCE_FUNC_NAME(Kernel) (REDUCE_TYPES, float *g_odata, unsigned
     // we reduce multiple elements per thread.  The number is determined by the 
     // number of active thread blocks (via gridSize).  More blocks will result
     // in a larger gridSize and therefore fewer elements per thread
-    while (i < n)
-    {
+    while (i < n) {
         sdata[tid] += REDUCE_OPERATION(i) + REDUCE_OPERATION(i+blockSize);  
         i += gridSize;
     } 

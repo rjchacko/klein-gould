@@ -800,6 +800,40 @@ if(1)
 }
 
 
+#ifdef DSLASH_XPAY
+    float4 accum0 = tex1Dfetch(accumTex, sid + 0*Nh);
+    float4 accum1 = tex1Dfetch(accumTex, sid + 1*Nh);
+    float4 accum2 = tex1Dfetch(accumTex, sid + 2*Nh);
+    float4 accum3 = tex1Dfetch(accumTex, sid + 3*Nh);
+    float4 accum4 = tex1Dfetch(accumTex, sid + 4*Nh);
+    float4 accum5 = tex1Dfetch(accumTex, sid + 5*Nh);
+    o00_re = a*o00_re + accum0.x;
+    o00_im = a*o00_im + accum0.y;
+    o01_re = a*o01_re + accum0.z;
+    o01_im = a*o01_im + accum0.w;
+    o02_re = a*o02_re + accum1.x;
+    o02_im = a*o02_im + accum1.y;
+    o10_re = a*o10_re + accum1.z;
+    o10_im = a*o10_im + accum1.w;
+    o11_re = a*o11_re + accum2.x;
+    o11_im = a*o11_im + accum2.y;
+    o12_re = a*o12_re + accum2.z;
+    o12_im = a*o12_im + accum2.w;
+    o20_re = a*o20_re + accum3.x;
+    o20_im = a*o20_im + accum3.y;
+    o21_re = a*o21_re + accum3.z;
+    o21_im = a*o21_im + accum3.w;
+    o22_re = a*o22_re + accum4.x;
+    o22_im = a*o22_im + accum4.y;
+    o30_re = a*o30_re + accum4.z;
+    o30_im = a*o30_im + accum4.w;
+    o31_re = a*o31_re + accum5.x;
+    o31_im = a*o31_im + accum5.y;
+    o32_re = a*o32_re + accum5.z;
+    o32_im = a*o32_im + accum5.w;
+#endif
+
+
 // this code is disabled due to a hardware bug in our C870 card
 //g_out[0*Nh+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
 //g_out[1*Nh+sid] = make_float4(o02_re, o02_im, o10_re, o10_im);
