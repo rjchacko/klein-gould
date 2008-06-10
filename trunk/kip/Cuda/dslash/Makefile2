@@ -1,0 +1,29 @@
+
+EXECUTABLE	:= dslash
+CUFILES		:= dslash_cuda.cu blas_cuda.cu
+CCFILES		:= qcd.cpp blas_reference.cpp dslash_reference.cpp dslash_test.cpp cg_reference.cpp cg_cuda.cpp cg_test.cpp
+
+
+CUDA_INSTALL_PATH = /usr/local/cuda
+INCLUDES = -I. -I$(CUDA_INSTALL_PATH)/include
+LIB = -L$(CUDA_INSTALL_PATH)/lib -lcudart
+
+CC = g++
+NVCC = $(CUDA_INSTALL_PATH)/bin/nvcc 
+CFLAGS = -c $(INCLUDES) -DUNIX -O3
+NVCCFLAGS = -c $(INCLUDES) -DUNIX -O3
+LDFLAGS = -fPIC $(LIB)
+CCOBJECTS = $(CCFILES:.cpp=.o)
+CUOBJECTS = $(CUFILES:.cu=.o)
+
+$(EXECUTABLE): $(CCOBJECTS) $(CUOBJECTS)
+	$(CC) $(LDFLAGS) $(CCOBJECTS) $(CUOBJECTS) -o $@
+
+clean:
+	rm $(CCOBJECTS) $(CUOBJECTS) $(EXECUTABLE)
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) $< -o $@
+
+%.o: %.cu
+	$(NVCC) $(NVCCFLAGS) $< -o $@
