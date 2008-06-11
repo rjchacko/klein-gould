@@ -1,0 +1,3 @@
+nvcc dslash_cuda.cu -O3 -cubin
+more dslash_cuda.cubin
+

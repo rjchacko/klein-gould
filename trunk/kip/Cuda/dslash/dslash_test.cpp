@@ -44,8 +44,8 @@ void dslashTest() {
     CudaFullSpinor cudaSpinor = loadSpinorField(spinor);
     printf("done.\n");
     
-    int ODD_BIT = 1;
-    int DAGGER_BIT = 1;
+    int ODD_BIT = 0;
+    int DAGGER_BIT = 0;
     
     // execute kernel
     const int LOOPS = 100;
