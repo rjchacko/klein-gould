@@ -40,9 +40,9 @@ void cgCuda(float *h_x, float **h_gauge, float *h_b, float kappa, float tol) {
     zeroCuda((float *)x, len);
     
     int k=0;
-    printf("%d iterations, r2 = %e\n", k, r2);
+    // printf("%d iterations, r2 = %e\n", k, r2);
+    stopwatchStart();
     while (r2 > stop) {
-        stopwatchStart();
         MatPCDagMatPCCuda(Ap, gauge, p, kappa, tmp1, tmp2);
         
         pAp = reDotProductCuda((float *)p, (float *)Ap, len);
@@ -58,10 +58,10 @@ void cgCuda(float *h_x, float **h_gauge, float *h_b, float kappa, float tol) {
         axpyZpbxCuda(alpha, (float *)p, (float *)x, (float *)r, beta, len);
         
         k++;
-        printf("%d iterations, r2 = %e %e\n", k, r2, normCuda((float *)x, len));
-        printf("%f gflops\n", (float)Nh*(4*1320 + 14*spinorSiteSize)*1.0e-9 / stopwatchReadSeconds());
-
+        // printf("%d iterations, r2 = %e %e\n", k, r2, normCuda((float *)x, len));
     }
+    float gflops = (1.0e-9*Nh)*(4*1320 + 14*spinorSiteSize);
+    printf("%f gflops\n", k*gflops / stopwatchReadSeconds());
     
     // Calculate the true residual
     MatPCDagMatPCCuda(Ap, gauge, x, kappa, tmp1, tmp2);
