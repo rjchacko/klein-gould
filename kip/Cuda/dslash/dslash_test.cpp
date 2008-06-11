@@ -3,6 +3,8 @@
 #include <cuda_runtime.h>
 #include "qcd.h"
 
+#define FULL_WILSON 1
+
 
 void printSpinorHalfField(float *spinor) {
     printSpinor(&spinor[0*(4*3*2)]);
@@ -42,18 +44,23 @@ void dslashTest() {
     fflush(stdout);
     CudaFullGauge cudaGauge = loadGaugeField(gauge);
     CudaFullSpinor cudaSpinor = loadSpinorField(spinor);
+    CudaPSpinor tmp = allocateParitySpinor();
     printf("done.\n");
     
+    float kappa = 1.0;
     int ODD_BIT = 0;
     int DAGGER_BIT = 0;
     
     // execute kernel
-    const int LOOPS = 100;
+    const int LOOPS = 200;
     printf("Executing %d kernel loops...", LOOPS);
     fflush(stdout);
     stopwatchStart();
     for (int i = 0; i < LOOPS; i++) {
-        dslashCuda(cudaSpinor.odd, cudaGauge, cudaSpinor.even, ODD_BIT, DAGGER_BIT);
+    	if (FULL_WILSON)
+    		MatPCCuda(cudaSpinor.odd, cudaGauge, cudaSpinor.even, kappa, tmp);
+		else
+        	dslashCuda(cudaSpinor.odd, cudaGauge, cudaSpinor.even, ODD_BIT, DAGGER_BIT);
     }
     cudaThreadSynchronize();
     double secs = stopwatchReadSeconds() / LOOPS;
@@ -61,14 +68,18 @@ void dslashTest() {
     
     // print timing information
     printf("%fms per loop\n", 1000*secs);
-    printf("GFLOPS = %f\n", 1e-9*1320*Nh/secs);
+    int flops = FULL_WILSON ? 1320*2 + 48 : 1320;
+    printf("GFLOPS = %f\n", 1.0e-9*flops*Nh/secs);
     printf("GiB/s = %f\n\n", Nh*(8*7+4)*3*2*sizeof(float)/(secs*(1<<30)));
 
     // compare to dslash reference implementation
     printf("Comparing to reference implementation...");
     fflush(stdout);
     retrieveParitySpinor(spinorOdd, cudaSpinor.odd);
-    dslashReference(spinorRef, gauge, spinorEven, ODD_BIT, DAGGER_BIT);
+    if (FULL_WILSON)
+	    MatPC(spinorRef, gauge, spinorEven, kappa);
+    else
+    	dslashReference(spinorRef, gauge, spinorEven, ODD_BIT, DAGGER_BIT);
     printf("done.\n");
     
     printf("Reference:\n");
