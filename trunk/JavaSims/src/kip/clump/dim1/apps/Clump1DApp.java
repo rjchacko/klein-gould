@@ -1,7 +1,5 @@
 package kip.clump.dim1.apps;
 
-import static scikit.util.Utilities.frame;
-
 import java.awt.Color;
 
 import kip.clump.dim1.FieldClump1D;
@@ -14,21 +12,21 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
+import scikit.util.DoubleArray;
 
 
 public class Clump1DApp extends Simulation {
     Plot plot = new Plot("Clump density");
     Plot sfplot = new Plot("Structure factor");
-    
-    Accumulator sf;
+    Accumulator sf, mag;
     FieldClump1D clump;
 
 	public static void main(String[] args) {
 		new Control(new Clump1DApp(), "Clump Model");
 	}
 	
-	public Clump1DApp() {
-		frame(plot, sfplot);
+	public void load(Control c) {
+		c.frame(plot, sfplot);
 		params.addm("Noisy", new ChoiceValue("Yes", "No"));
 		params.addm("T", new DoubleValue(0.09, 0, 0.3).withSlider());
 		params.addm("dt", 1.0);
@@ -41,7 +39,7 @@ public class Clump1DApp extends Simulation {
 		flags.add("Clear S.F.");
 	}
 	
-	public void animate() {		
+	public void animate() {
 		if (flags.contains("Clear S.F."))
 			sf.clear();
 		flags.clear();
@@ -62,9 +60,14 @@ public class Clump1DApp extends Simulation {
 		plot.clear();
 	}
 	
+	public void accumMagnitude() {
+		mag.accum(clump.T, DoubleArray.max(clump.coarseGrained())-1);
+	}
+	
 	public void run() {
 		clump = new FieldClump1D(params);
         sf = clump.newStructureAccumulator(params.fget("kR bin-width"));
+        mag = new Accumulator();
         
         while (true) {
 			params.set("Time", clump.time());

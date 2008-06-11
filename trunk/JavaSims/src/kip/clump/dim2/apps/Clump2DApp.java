@@ -19,6 +19,7 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
+import scikit.util.DoubleArray;
 import scikit.util.FileUtil;
 
 
@@ -26,9 +27,9 @@ public class Clump2DApp extends Simulation {
 	final static boolean WRITE_FILES = false;
 	Grid grid = new Grid("Grid");
     Plot plot = new Plot("Structure factor");
-    Accumulator sf;
+    Accumulator sf, mag;
     AbstractClump2D clump;
-    boolean fieldDynamics = false;
+    boolean fieldDynamics = true;
 	
 	public static void main(String[] args) {
 		new Control(new Clump2DApp(), "Clump Model");
@@ -54,6 +55,7 @@ public class Clump2DApp extends Simulation {
 		params.add("kR bin-width", 0.1);
 		params.add("Random seed", 0);
 		params.add("Time");
+		params.add("Magnitude");
 		flags.add("Clear S.F.");
 	}
 	
@@ -72,6 +74,8 @@ public class Clump2DApp extends Simulation {
 			grid.setScale(0, 5);
 		grid.registerData(clump.numColumns(), clump.numColumns(), clump.coarseGrained());
 		
+		params.set("Magnitude", format(DoubleArray.max(clump.coarseGrained())-1));
+		
         plot.registerLines("Structure Data", sf, Color.BLACK);
         plot.registerLines("Structure Theory", new Function() {
         	public double eval(double kR) {
@@ -85,15 +89,20 @@ public class Clump2DApp extends Simulation {
 		plot.clear();
 	}
 	
+	public void accumMagnitude() {
+		mag.accum(clump.T, DoubleArray.max(clump.coarseGrained())-1);
+	}
+
 	public void run() {
 		clump = fieldDynamics ? new FieldClump2D(params) : new Clump2D(params);
         sf = clump.newStructureAccumulator(params.fget("kR bin-width"));
+        mag = new Accumulator();
         
 		File dir = makeDirectory();
         while (true) {
 			params.set("Time", clump.time());
 			clump.simulate();
-			clump.accumulateStructure(sf);
+			// clump.accumulateStructure(sf);
 			writeField(dir);
 			Job.animate();
 		}
