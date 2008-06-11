@@ -117,7 +117,7 @@ public class Ising2D extends Simulation {
 				}
 			}
 			
-			freeEnergyPlot.saveDataset2(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
+//			freeEnergyPlot.saveDataset2(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
 			magPlot.saveDataset2(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
 		}
 		
@@ -141,7 +141,7 @@ public class Ising2D extends Simulation {
 			j++;
 		}while(spins.netSum!=windowMax-(windowMax-windowMin)/2.);
 		
-		for(int cnt=0; cnt<500; cnt++){
+		for(int cnt=0; cnt<5000; cnt++){
 			for(int i=0;i<L*L;i++){
 				int nextSpin=r.nextInt(L);
 				dE=isingDE(nextSpin)+umbrellaDE(nextSpin);
