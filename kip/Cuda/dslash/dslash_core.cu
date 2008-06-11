@@ -1,6 +1,6 @@
 // *** CUDA DSLASH ***
 
-#define SHARED_FLOATS_PER_THREAD 25
+#define SHARED_FLOATS_PER_THREAD 19
 #define SHARED_BYTES (BLOCK_DIM*SHARED_FLOATS_PER_THREAD*sizeof(float))
 
 #define i00_re I0.x
@@ -66,31 +66,30 @@
 #define gT22_re (+g22_re)
 #define gT22_im (-g22_im)
 
-#define STRIDE 1
-#define o00_re s[STRIDE*0]
-#define o00_im s[STRIDE*1]
-#define o01_re s[STRIDE*2]
-#define o01_im s[STRIDE*3]
-#define o02_re s[STRIDE*4]
-#define o02_im s[STRIDE*5]
-#define o10_re s[STRIDE*6]
-#define o10_im s[STRIDE*7]
-#define o11_re s[STRIDE*8]
-#define o11_im s[STRIDE*9]
-#define o12_re s[STRIDE*10]
-#define o12_im s[STRIDE*11]
-#define o20_re s[STRIDE*12]
-#define o20_im s[STRIDE*13]
-#define o21_re s[STRIDE*14]
-#define o21_im s[STRIDE*15]
-#define o22_re s[STRIDE*16]
-#define o22_im s[STRIDE*17]
-#define o30_re s[STRIDE*18]
-#define o30_im s[STRIDE*19]
-#define o31_re s[STRIDE*20]
-#define o31_im s[STRIDE*21]
-#define o32_re s[STRIDE*22]
-#define o32_im s[STRIDE*23]
+#define o00_re s[0]
+#define o00_im s[1]
+#define o01_re s[2]
+#define o01_im s[3]
+#define o02_re s[4]
+#define o02_im s[5]
+#define o10_re s[6]
+#define o10_im s[7]
+#define o11_re s[8]
+#define o11_im s[9]
+#define o12_re s[10]
+#define o12_im s[11]
+#define o20_re s[12]
+#define o20_im s[13]
+#define o21_re s[14]
+#define o21_im s[15]
+#define o22_re s[16]
+#define o22_im s[17]
+#define o30_re s[18]
+volatile float o30_im;
+volatile float o31_re;
+volatile float o31_im;
+volatile float o32_re;
+volatile float o32_im;
 
 
 // Performs the complex conjugated accumulation: a += b* c*
@@ -843,17 +842,26 @@ if(1)
 //g_out[5*Nh+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
 
 // the alternative to writing float4's directly: almost as fast, a lot more confusing
+int t = threadIdx.x;
+int B = BLOCK_DIM;
+int b = blockIdx.x;
+int f = SHARED_FLOATS_PER_THREAD;
 __syncthreads();
-// loop over the 6 float4's in one spinor
-for (int i = 0; i < 6; i++) {
-    // loop over the 4 floats in one float4
-    for (int c = 0; c < 4; c++) {
-        int t = threadIdx.x;
-        int B = BLOCK_DIM;
-        int b = blockIdx.x;
-        int f = SHARED_FLOATS_PER_THREAD;
-        // this line took me three hours to write :-)
+for (int i = 0; i < 4; i++) // spinor indices
+    for (int c = 0; c < 4; c++) // components of float4
         ((float*)g_out)[i*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
-    }
-}
+__syncthreads();
+s[0] = o22_re;
+s[1] = o22_im;
+s[2] = o30_re;
+s[3] = o30_im;
+s[4] = o31_re;
+s[5] = o31_im;
+s[6] = o32_re;
+s[7] = o32_im;
+__syncthreads();
+for (int i = 0; i < 2; i++)
+    for (int c = 0; c < 4; c++)
+        ((float*)g_out)[(i+4)*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
+
 

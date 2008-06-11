@@ -49,13 +49,12 @@ void cgCuda(float *h_x, float **h_gauge, float *h_b, float kappa, float tol) {
         
         alpha = r2 / pAp;        
         r2_old = r2;
+        
         axpyCuda(-alpha,(float *)Ap,(float *)r,len);
         r2 = normCuda((float *)r, len);
         
         beta = r2 / r2_old;
         
-//        axpyCuda(alpha,(float *)p,(float *)x,len);
-//        xpayCuda((float *)r, beta, (float *)p, len);
         axpyZpbxCuda(alpha, (float *)p, (float *)x, (float *)r, beta, len);
         
         k++;
