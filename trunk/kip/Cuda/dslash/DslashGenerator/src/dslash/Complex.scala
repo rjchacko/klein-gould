@@ -6,7 +6,7 @@ object Complex {
   implicit def num2complex[T<%double](x: T): Complex = new Complex(x, 0)
 }
 
-case class Complex(val re: double, val im: double) { 
+case class Complex(val re: Double, val im: Double) { 
   def unary_- : Complex =
     new Complex(-re, -im)
   def + (that: Complex): Complex =

@@ -50,16 +50,15 @@ class CodeGen(sharedFloats: Int, dagger: Boolean) {
     }
     str.append("\n")
     
-    str.append("#define STRIDE 1\n")
     for (s <- 0 until 4; c <- 0 until 3; i = 3*s+c) {
       if (2*i < sharedFloats)
-        str.append("#define "+out_re(s,c)+" s[STRIDE*"+(2*i+0)+"]\n")
+        str.append("#define "+out_re(s,c)+" s["+(2*i+0)+"]\n")
       else
-        str.append("float "+out_re(s,c)+";\n")
+        str.append("volatile float "+out_re(s,c)+";\n")
       if (2*i+1 < sharedFloats)
-        str.append("#define "+out_im(s,c)+" s[STRIDE*"+(2*i+1)+"]\n")
+        str.append("#define "+out_im(s,c)+" s["+(2*i+1)+"]\n")
       else
-        str.append("float "+out_im(s,c)+";\n")        
+        str.append("volatile float "+out_im(s,c)+";\n")        
     }
     str.append("\n")
     
@@ -142,19 +141,28 @@ int x1 = X % L1;
 //g_out[5*Nh+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
 
 // the alternative to writing float4's directly: almost as fast, a lot more confusing
+int t = threadIdx.x;
+int B = BLOCK_DIM;
+int b = blockIdx.x;
+int f = SHARED_FLOATS_PER_THREAD;
 __syncthreads();
-// loop over the 6 float4's in one spinor
-for (int i = 0; i < 6; i++) {
-    // loop over the 4 floats in one float4
-    for (int c = 0; c < 4; c++) {
-        int t = threadIdx.x;
-        int B = BLOCK_DIM;
-        int b = blockIdx.x;
-        int f = SHARED_FLOATS_PER_THREAD;
-        // this line took me three hours to write :-)
+for (int i = 0; i < 4; i++) // spinor indices
+    for (int c = 0; c < 4; c++) // components of float4
         ((float*)g_out)[i*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
-    }
-}
+__syncthreads();
+s[0] = o22_re;
+s[1] = o22_im;
+s[2] = o30_re;
+s[3] = o30_im;
+s[4] = o31_re;
+s[5] = o31_im;
+s[6] = o32_re;
+s[7] = o32_im;
+__syncthreads();
+for (int i = 0; i < 2; i++)
+    for (int c = 0; c < 4; c++)
+        ((float*)g_out)[(i+4)*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
+
 """)
   }
   
@@ -303,14 +311,14 @@ for (int i = 0; i < 6; i++) {
 
 object Dslash {
   def main(args: Array[String]) {
-    val codeGen = new CodeGen(25, false)
+    val codeGen = new CodeGen(19, false)
     Console.println("// *** CUDA DSLASH ***\n\n" + codeGen.generate())
   }
 }
 
 object DslashDagger {
   def main(args: Array[String]) {
-    val codeGen = new CodeGen(25, true)
+    val codeGen = new CodeGen(19, true)
     Console.println("// *** CUDA DSLASH DAGGER ***\n\n" + codeGen.generate())
   }
 }
