@@ -833,14 +833,28 @@ if(1)
 #endif
 
 
-// this code is disabled due to a hardware bug in our C870 card
-//g_out[0*Nh+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
-//g_out[1*Nh+sid] = make_float4(o02_re, o02_im, o10_re, o10_im);
-//g_out[2*Nh+sid] = make_float4(o11_re, o11_im, o12_re, o12_im);
-//g_out[3*Nh+sid] = make_float4(o20_re, o20_im, o21_re, o21_im);
-//g_out[4*Nh+sid] = make_float4(o22_re, o22_im, o30_re, o30_im);
-//g_out[5*Nh+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
+#ifdef WRITE_FLOAT4
+// this code exhibits a hardware bug in our C870 card
+g_out[0*Nh+sid] = make_float4(o00_re, o00_im, o01_re, o01_im);
+g_out[1*Nh+sid] = make_float4(o02_re, o02_im, o10_re, o10_im);
+g_out[2*Nh+sid] = make_float4(o11_re, o11_im, o12_re, o12_im);
+g_out[3*Nh+sid] = make_float4(o20_re, o20_im, o21_re, o21_im);
+g_out[4*Nh+sid] = make_float4(o22_re, o22_im, o30_re, o30_im);
+g_out[5*Nh+sid] = make_float4(o31_re, o31_im, o32_re, o32_im);
+#endif
 
+#ifdef WRITE_FLOAT1_SMEM
+int t = threadIdx.x;
+int B = BLOCK_DIM;
+int b = blockIdx.x;
+int f = SHARED_FLOATS_PER_THREAD;
+__syncthreads();
+for (int i = 0; i < 6; i++) // spinor indices
+    for (int c = 0; c < 4; c++) // components of float4
+        ((float*)g_out)[i*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
+#endif
+
+#ifdef WRITE_FLOAT1_STAGGERED
 // the alternative to writing float4's directly: almost as fast, a lot more confusing
 int t = threadIdx.x;
 int B = BLOCK_DIM;
@@ -863,5 +877,6 @@ __syncthreads();
 for (int i = 0; i < 2; i++)
     for (int c = 0; c < 4; c++)
         ((float*)g_out)[(i+4)*(Nh*4) + b*(B*4) + c*(B) + t] = s_data[(c*B/4 + t/4)*(f) + i*(4) + t%4];
+#endif
 
 

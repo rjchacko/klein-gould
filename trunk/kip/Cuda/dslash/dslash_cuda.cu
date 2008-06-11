@@ -17,6 +17,9 @@ texture<float4, 1, cudaReadModeElementType> gauge1Tex;
 texture<float4, 1, cudaReadModeElementType> spinorTex;
 texture<float4, 1, cudaReadModeElementType> accumTex;
 
+//#define WRITE_FLOAT4
+//#define WRITE_FLOAT1_SMEM
+#define WRITE_FLOAT1_STAGGERED
 
 __global__ void
 dslashKernel(float4* g_out, int oddBit) {
