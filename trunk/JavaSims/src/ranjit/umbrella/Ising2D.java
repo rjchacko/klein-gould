@@ -118,7 +118,7 @@ public class Ising2D extends Simulation {
 			}
 			
 //			freeEnergyPlot.saveDataset2(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
-			magPlot.saveDataset2(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
+//			magPlot.saveDataset2(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
 		}
 		
 	}

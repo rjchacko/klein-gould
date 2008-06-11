@@ -50,7 +50,7 @@ public class cdmXi extends Simulation {
 		initialize();
 		Job.animate();	
 		
-		for(h=0;h>-0.06;h-=0.001){
+		for(h=0.06;h>-0.06;h-=0.001){
 			params.set("h", h);
 			clear();
 			initialize();
@@ -62,12 +62,12 @@ public class cdmXi extends Simulation {
 			double susceptibility=l2accum/runLength-(laccum/runLength)*(laccum/runLength);
 			xi.accum(h,susceptibility);
 			double lnum=0,ldenom=0;
-			for(int i=0;i<Nl.length;i++){
-				lnum+=i*Nl[i];
-				ldenom+=Nl[i];
+			for(int size=0;size<Nl.length;size++){
+				lnum+=size*Nl[size];
+				ldenom+=Nl[size];
 			}
-			double x=lnum/ldenom;
-			lbar.accum(h, x);
+			double avgl=lnum/ldenom;
+			lbar.accum(h, avgl);
 		}
 	}
 	
