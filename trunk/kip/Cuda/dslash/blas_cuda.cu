@@ -6,6 +6,7 @@
 
 #define REDUCE_THREADS 128
 #define REDUCE_MAX_BLOCKS 64
+#define REDUCE_DOUBLE_PRECISION
 
 
 void zeroCuda(float* dst, int len) {
@@ -75,6 +76,18 @@ void axpyZpbxCuda(float a, float *x, float *y, float *z, float b, int len) {
 // float axpyNormCuda(float a, float *x, float *y, int len);
 
 
+// Computes c = a + b.
+__device__ void dsadd(float &c0, float &c1, const float a0, const float a1, const float b0, const float b1) {
+    // Compute dsa + dsb using Knuth's trick.
+    float t1 = a0 + b0;
+    float e = t1 - a0;
+    float t2 = ((b0 - e) + (a0 - (t1 - e))) + a1 + b1;
+    // The result is t1 + t2, after normalization.
+    c0 = e = t1 + t2;
+    c1 = t2 - (e - t1);
+}
+
+
 //
 // float sumCuda(float *a, int n) {}
 //
@@ -116,22 +129,41 @@ void axpyZpbxCuda(float a, float *x, float *y, float *z, float b, int len) {
 
 
 
+double cpuDouble(float *data, int size) {
+    double sum = 0;
+    for (int i = 0; i < size; i++)
+        sum += data[i];
+    return sum;
+}
 
 void blasTest() {
-    int n = 3*1<<8;
+    int n = 3*1<<24;
     float *h_data = (float *)malloc(n*sizeof(float));
     float *d_data;
     cudaMalloc((void **)&d_data,  n*sizeof(float));
     
-    double acc = 0;
     for (int i = 0; i < n; i++) {
-        h_data[i] = i;
-        acc += i*i;
+        h_data[i] = rand()/(float)RAND_MAX - 0.5; // n-1.0-i;
     }
+    
     cudaMemcpy(d_data, h_data, n*sizeof(float), cudaMemcpyHostToDevice);
     
-    printf("Size: %f MiB\n", (float)n*sizeof(float) / (1 << 20));
-    printf("cuda: %f, expected: %f\n", reDotProductCuda(d_data, d_data, n), acc);
+    cudaThreadSynchronize();
+    stopwatchStart();
+    int LOOPS = 20;
+    for (int i = 0; i < LOOPS; i++) {
+        sumCuda(d_data, n);
+    }
+    cudaThreadSynchronize();
+    float secs = stopwatchReadSeconds();
+    
+    printf("%f GiB/s\n", 1.e-9*n*sizeof(float)*LOOPS / secs);
+    printf("Device: %f MiB\n", (float)n*sizeof(float) / (1 << 20));
+    printf("Shared: %f KiB\n", (float)REDUCE_THREADS*sizeof(float) / (1 << 10));
+
+    float correctDouble = cpuDouble(h_data, n);
+    printf("Total: %f\n", correctDouble);
+    printf("CUDA db: %f\n", fabs(correctDouble-sumCuda(d_data, n)));
     
     cudaFree(d_data) ;
     free(h_data);

@@ -60,7 +60,7 @@ void cgCuda(float *h_x, float **h_gauge, float *h_b, float kappa, float tol) {
         k++;
         // printf("%d iterations, r2 = %e %e\n", k, r2, normCuda((float *)x, len));
     }
-    float gflops = (1.0e-9*Nh)*(4*1320 + 14*spinorSiteSize);
+    float gflops = (1.0e-9*Nh)*(2*(2*1320+48) + 10*spinorSiteSize);
     printf("%f gflops\n", k*gflops / stopwatchReadSeconds());
     
     // Calculate the true residual
