@@ -201,6 +201,6 @@ int main(int argc, char **argv) {
 
 //    blasTest();
 //    axpbyTest();
-    dslashTest();
-//    cgTest();
+//    dslashTest();
+    cgTest();
 }
