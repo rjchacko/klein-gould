@@ -4,9 +4,10 @@
 #include "qcd.h"
 
 
+#define REDUCE_DOUBLE_PRECISION
+
 #define REDUCE_THREADS 128
 #define REDUCE_MAX_BLOCKS 64
-#define REDUCE_DOUBLE_PRECISION
 
 
 void zeroCuda(float* dst, int len) {
@@ -76,7 +77,7 @@ void axpyZpbxCuda(float a, float *x, float *y, float *z, float b, int len) {
 // float axpyNormCuda(float a, float *x, float *y, int len);
 
 
-// Computes c = a + b.
+// Computes c = a + b in "double single" precision.
 __device__ void dsadd(float &c0, float &c1, const float a0, const float a1, const float b0, const float b1) {
     // Compute dsa + dsb using Knuth's trick.
     float t1 = a0 + b0;
@@ -87,18 +88,19 @@ __device__ void dsadd(float &c0, float &c1, const float a0, const float a1, cons
     c1 = t2 - (e - t1);
 }
 
-
 //
 // float sumCuda(float *a, int n) {}
 //
 #define REDUCE_FUNC_NAME(suffix) sum##suffix
 #define REDUCE_TYPES float *a
 #define REDUCE_PARAMS a
+#define REDUCE_AUXILIARY(i)
 #define REDUCE_OPERATION(i) a[i]
 #include "reduce_core.cu"
 #undef REDUCE_FUNC_NAME
 #undef REDUCE_TYPES
 #undef REDUCE_PARAMS
+#undef REDUCE_AUXILIARY
 #undef REDUCE_OPERATION
 
 //
@@ -107,11 +109,13 @@ __device__ void dsadd(float &c0, float &c1, const float a0, const float a1, cons
 #define REDUCE_FUNC_NAME(suffix) norm##suffix
 #define REDUCE_TYPES float *a
 #define REDUCE_PARAMS a
+#define REDUCE_AUXILIARY(i)
 #define REDUCE_OPERATION(i) (a[i]*a[i])
 #include "reduce_core.cu"
 #undef REDUCE_FUNC_NAME
 #undef REDUCE_TYPES
 #undef REDUCE_PARAMS
+#undef REDUCE_AUXILIARY
 #undef REDUCE_OPERATION
 
 //
@@ -120,11 +124,33 @@ __device__ void dsadd(float &c0, float &c1, const float a0, const float a1, cons
 #define REDUCE_FUNC_NAME(suffix) reDotProduct##suffix
 #define REDUCE_TYPES float *a, float *b
 #define REDUCE_PARAMS a, b
+#define REDUCE_AUXILIARY(i)
 #define REDUCE_OPERATION(i) (a[i]*b[i])
 #include "reduce_core.cu"
 #undef REDUCE_FUNC_NAME
 #undef REDUCE_TYPES
 #undef REDUCE_PARAMS
+#undef REDUCE_AUXILIARY
+#undef REDUCE_OPERATION
+
+
+//
+// float axpyNormCuda(float a, float *x, float *y, n){}
+//
+// First performs the operation y[i] = a*x[i] + y[i]
+// Second returns the norm of y
+//
+
+#define REDUCE_FUNC_NAME(suffix) axpyNorm##suffix
+#define REDUCE_TYPES float a, float *x, float *y
+#define REDUCE_PARAMS a, x, y
+#define REDUCE_AUXILIARY(i) y[i] = a*x[i] + y[i]
+#define REDUCE_OPERATION(i) (y[i]*y[i])
+#include "reduce_core.cu"
+#undef REDUCE_FUNC_NAME
+#undef REDUCE_TYPES
+#undef REDUCE_PARAMS
+#undef REDUCE_AUXILIARY
 #undef REDUCE_OPERATION
 
 
