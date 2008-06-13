@@ -13,6 +13,7 @@ __global__ void REDUCE_FUNC_NAME(Kernel) (REDUCE_TYPES, float *g_odata, unsigned
     float acc1 = 0;
 
     while (i < n) {
+        REDUCE_AUXILIARY(i);
         DSACC(acc0, acc1, REDUCE_OPERATION(i), 0);
         i += gridSize;
     }
@@ -82,7 +83,8 @@ __global__ void REDUCE_FUNC_NAME(Kernel) (REDUCE_TYPES, float *g_odata, unsigned
     s[0] = 0;
 
     while (i < n) {
-        s[0] += REDUCE_OPERATION(i);  
+        REDUCE_AUXILIARY(i);
+        s[0] += REDUCE_OPERATION(i);
         i += gridSize;
     }
     __syncthreads();
