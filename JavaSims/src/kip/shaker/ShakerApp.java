@@ -18,7 +18,9 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
+import java.util.ArrayList;
 import java.util.Hashtable;
+import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.swing.Timer;
@@ -174,6 +176,49 @@ class FrameSequence {
 		}
 	}
 	
+	boolean bondExists(double x1, double y1, double x2, double y2, double rstar) {
+		return (sqr(x2-x1) + sqr(y2-y1) < sqr(rstar));
+	}
+	
+	public List<Frame> getStrings(int t, int tstar, double rstar) {
+		ArrayList<Frame> ret = new ArrayList<Frame>();
+		
+		Frame mobile = getMobileParticles(t, tstar, rstar);
+		Hashtable<Integer,Integer> h_pre = frames[t-tstar].getIndexHash();
+		
+		Percolator<Integer> perc = new Percolator<Integer>();
+		for (int i = 0; i < mobile.size(); i++) {
+			int id1 = (int)mobile.id.get(i);
+			double x1_cur = mobile.x.get(i);
+			double y1_cur = mobile.y.get(i);
+			double x1_pre = frames[t-tstar].x.get(h_pre.get(id1));
+			double y1_pre = frames[t-tstar].y.get(h_pre.get(id1));
+			
+			perc.add(id1);
+			for (int j = 0; j < i; j++) {
+				int id2 = (int)mobile.id.get(j);
+				double x2_cur = mobile.x.get(j);
+				double y2_cur = mobile.y.get(j);
+				double x2_pre = frames[t-tstar].x.get(h_pre.get(id2));
+				double y2_pre = frames[t-tstar].y.get(h_pre.get(id2));
+				
+				if (bondExists(x1_cur, y1_cur, x2_pre, y2_pre, rstar) ||
+					bondExists(x1_pre, y1_pre, x2_cur, y2_cur, rstar))
+					perc.bond(id1, id2);
+			}
+		}
+		
+		Hashtable<Integer,Integer> h_cur = mobile.getIndexHash();
+		for (ArrayList<Integer> group : perc.getGroups()) {
+			Frame f = new Frame(t);
+			for (int id : group) {
+				f.acc(id, mobile.x.get(h_cur.get(id)), mobile.y.get(h_cur.get(id)));
+			}
+			ret.add(f);
+		}
+		return ret;
+	}
+	
 	public Scene2D plot(int t) {
 		if (t >= frames.length)
 			term.println("Time " + t + " exceeds maximum frame " + (frames.length-1));
@@ -193,6 +238,22 @@ class FrameSequence {
 			plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.3f)));
 			plot.addDrawable(mobile.getDrawable(new Color(0f, 0f, 1f, 1f)));
 		}
+	}
+	
+	public void plotStrings(int t, List<Frame> strings) {
+		if (t >= frames.length)
+			term.println("Time " + t + " exceeds maximum frame " + (frames.length-1));
+
+		plot.clearDrawables();
+		plot.addDrawable(Geom2D.rectangle(bds, Color.BLACK));
+		plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.3f)));
+		
+		Color colors[] = {Color.BLUE, Color.CYAN, Color.GRAY, Color.GREEN,
+						  Color.MAGENTA, Color.ORANGE, Color.PINK, Color.RED};
+		for (int i = 0; i < strings.size(); i++) {
+			Frame f = strings.get(i);
+			plot.addDrawable(f.getDrawable(colors[i%colors.length]));
+		}		
 	}
 	
 	private void calculateSceneBounds(ShakerData d) {
@@ -255,6 +316,7 @@ class Frame {
 		};
 	}
 	
+	// Maps the particle's global id to the the particle's index in this frame
 	public Hashtable<Integer,Integer> getIndexHash() {
 		Hashtable<Integer,Integer> ret = new Hashtable<Integer,Integer>();
 		for (int i = 0; i < size(); i++) {
@@ -532,6 +594,11 @@ public class ShakerApp extends Terminal {
 			"\ts.plot(1); // plot the first frame of the data\n"+
 			"\t// plot \"mobile\" particles using t=1000, t*=100, r*=10\n"+
 			"\ts.plotMobile(1000, 100, 10);\n"+
+			"\n"+
+			"\t// String analysis\n"+
+			"\t// Get a list of strings using t = 1000, t*=100, r*=10\n"+
+			"\tstrs = s.getStrings(1000, 100, 10);\n"+
+			"\ts.plotStrings(1000, strs); // plot strings at t=1000\n"+
 			"\n"+
 			"\t// Animate the data\n"+
 			"\ta = s.animator();\n" +
