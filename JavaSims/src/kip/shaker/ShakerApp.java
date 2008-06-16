@@ -30,7 +30,6 @@ import scikit.dataset.DynamicArray;
 import scikit.dataset.Function;
 import scikit.dataset.Histogram;
 import scikit.graphics.Drawable;
-import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Gfx2D;
 import scikit.graphics.dim2.Scene2D;
 import scikit.util.Bounds;
@@ -219,12 +218,30 @@ class FrameSequence {
 		return ret;
 	}
 	
+	public Drawable<Gfx2D> getBackgroundDrawable(final int t) { 
+		return new Drawable<Gfx2D>() {
+			public void draw(Gfx2D g) {
+				g.setColor(Color.BLACK);
+				g.drawRect(bds.xmin, bds.ymin, bds.xmax-bds.xmin, bds.ymax-bds.ymin);
+				
+				g.setProjection(g.pixelBounds());
+				g.setColor(Color.RED);
+				g.drawString("Frame " + t, 4, 4);
+				g.setProjection(g.viewBounds());
+			}
+			public Bounds getBounds() {
+				return bds;
+			}
+		};
+	}
+	
+
 	public Scene2D plot(int t) {
 		if (t >= frames.length)
 			term.println("Time " + t + " exceeds maximum frame " + (frames.length-1));
 		plot.clearDrawables();
-		plot.addDrawable(Geom2D.rectangle(bds, Color.BLACK));
 		plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.5f)));
+		plot.addDrawable(getBackgroundDrawable(t));
 		return plot;
 	}
 	
@@ -234,9 +251,9 @@ class FrameSequence {
 		Frame mobile = getMobileParticles(t, tstar, rstar);
 		if (mobile != null) {
 			plot.clearDrawables();
-			plot.addDrawable(Geom2D.rectangle(bds, Color.BLACK));
 			plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.3f)));
 			plot.addDrawable(mobile.getDrawable(new Color(0f, 0f, 1f, 1f)));
+			plot.addDrawable(getBackgroundDrawable(t));
 		}
 	}
 	
@@ -245,7 +262,6 @@ class FrameSequence {
 			term.println("Time " + t + " exceeds maximum frame " + (frames.length-1));
 
 		plot.clearDrawables();
-		plot.addDrawable(Geom2D.rectangle(bds, Color.BLACK));
 		plot.addDrawable(frames[t].getDrawable(new Color(0f, 0f, 1f, 0.3f)));
 		
 		Color colors[] = {Color.BLUE, Color.CYAN, Color.GRAY, Color.GREEN,
@@ -253,7 +269,8 @@ class FrameSequence {
 		for (int i = 0; i < strings.size(); i++) {
 			Frame f = strings.get(i);
 			plot.addDrawable(f.getDrawable(colors[i%colors.length]));
-		}		
+		}
+		plot.addDrawable(getBackgroundDrawable(t));
 	}
 	
 	private void calculateSceneBounds(ShakerData d) {
@@ -300,15 +317,10 @@ class Frame {
 	public Drawable<Gfx2D> getDrawable(final Color color) {
 		return new Drawable<Gfx2D>() {
 			public void draw(Gfx2D g) {
+				g.setColor(color);
 				for (int i = 0; i < id.size(); i++) {
-					g.setColor(color);
 					g.fillCircle(x.get(i), y.get(i), 4.0);
 				}
-				g.setColor(Color.RED);
-				
-				g.setProjection(g.pixelBounds());
-				g.drawString("Frame " + t, 4, 4);
-				g.setProjection(g.viewBounds());
 			}
 			public Bounds getBounds() {
 				return new Bounds();
