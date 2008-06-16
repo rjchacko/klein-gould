@@ -291,7 +291,6 @@ public class IsingField2DApp extends Simulation {
 			//sf.accumulateAll(ising.time(), ising.coarseGrained());
 			
 			if (ising.time() > recordSteps){
-
 				//sf.accumMin(ising.coarseGrained(), params.fget("kR"));
 				boolean circleOn=false;
 				sf.accumulateMelt(circleOn, ising.phi, maxi);

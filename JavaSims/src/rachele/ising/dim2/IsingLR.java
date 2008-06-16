@@ -7,10 +7,9 @@ import kip.ising.spinblock.SpinBlocks2D;
 import kip.util.Random;
 import scikit.jobs.params.Parameters;
 
-
-
 public class IsingLR extends RewindableDynamics {
 	public SpinBlocks2D spins;
+
 
 	public enum DynType {METROPOLIS, GLAUBER, KAWA_GLAUBER, KAWA_METROPOLIS};
 	public DynType dynamics = DynType.GLAUBER;
@@ -77,6 +76,10 @@ public class IsingLR extends RewindableDynamics {
 		}
 	}
 
+	public void restartClock(){
+		time = 0.0;
+	}
+	
 	public void setField(double m) {
 		double mAcc = 0;
 		for (int i = 0; i < L*L; i++) {

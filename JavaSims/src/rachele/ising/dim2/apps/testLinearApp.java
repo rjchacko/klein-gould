@@ -46,7 +46,7 @@ import scikit.dataset.PointSet;
 public class testLinearApp extends Simulation{
     IsingField2D ising;
     FourierTransformer fft;
-    double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice; //right hand side
+    double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice, etaK; //right hand side
     double [] g_k, c, eigenvalue, etaLC;
     double [] phi0, phi0_bar; // Background stripe configuration and this configuration convoluted with potential.
     double [] f_x, f_k; // f(x) = 1/(1-phi_0^2)
@@ -98,6 +98,7 @@ public class testLinearApp extends Simulation{
     Plot convolve = new Plot("convolve");
 	Plot hSlice = new Plot("Horizontal Slice");
 	Plot vSlice = new Plot("Vertical Slice"); 
+	Plot eVector = new Plot ("Largest Eigenvector");
 
     
 	public static void main(String[] args) {
@@ -106,7 +107,8 @@ public class testLinearApp extends Simulation{
 	
 	public void load(Control c) {
 		if(accEtaValues) c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
-		c.frame(phiGrid);
+		c.frameTogether("Grids", phiGrid, etaDotSF);
+		c.frame(eVector);
 		c.frameTogether("Slices", vSlice, hSlice);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
@@ -144,12 +146,14 @@ public class testLinearApp extends Simulation{
 		params.set("Mean Phi", ising.mean(ising.phi));
 		params.set("Lp", ising.Lp);
 		phiGrid.registerData(Lp, Lp, ising.phi);
+		etaDotSF.registerData(Lp, Lp, etaK);
 		etaVsTimeSim.setAutoScale(true);
 		etaVsTimeLinear.setAutoScale(true);
 		etaVsTimeLinearK.setAutoScale(true);
 		etaVsTimeLC.setAutoScale(true);
 		hSlice.setAutoScale(true);
 		vSlice.setAutoScale(true);
+		eVector.setAutoScale(true);
 		
 		if(accEtaValues){
 			etaVsTimeSim.registerLines("acc", etaAcc, Color.BLACK);
@@ -186,13 +190,33 @@ public class testLinearApp extends Simulation{
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
 		
-		double [] eigenVect2D = new double [Lp*Lp];
+//		double [] eigenVect = new double [Lp];
+//		int i = Lp-1;
+//		for (int  j = 0; j < Lp; j++){
+//			eigenVect[i+Lp*j]=VV[j][i];
+//		}
+		
+		
+		double [] eta_k_slice = new double [Lp];
+		double findMax=0.0;
+		double findMin=0.0;
+		double findMaxe = 0.0;
+		double findMine = 0.0;
 		for (int i = 0; i < Lp; i++){
-			for (int  j = 0; j < Lp; j++){
-				eigenVect2D[i+Lp*j]=VV[j][i];
-			}
+			eta_k_slice[i]=etaK[Lp*ky+i];
+			if (eta_k_slice[i] > findMax) findMax = eta_k_slice[i];
+			if (eta_k_slice[i] < findMin) findMin = eta_k_slice[i];
+			if (VV[Lp-1][i] < findMine) findMine = VV[Lp-1][i];
+			if (VV[Lp-1][i] > findMaxe) findMaxe = VV[Lp-1][i];
 		}
-
+		double range = findMax-findMin;
+		double eRange = findMaxe-findMine;
+		double [] eVec = new double [Lp];
+		for (int i = 0; i < Lp; i++)
+			eVec[i] =VV[Lp-1][i]*range/eRange; 
+		eVector.registerLines("actual etak slice", new PointSet(0,1,eta_k_slice), Color.BLUE);
+		eVector.registerLines("last eigenvector", new PointSet(0,1,eVec), Color.BLACK);
+		
 		if(flags.contains("Clear")){
 			etaAcc.clear();
 			etaAcc2.clear();
@@ -238,7 +262,7 @@ public class testLinearApp extends Simulation{
 		clearFile = true;
 		initialize();
 		ky = params.iget("ky");
-		double [] etaK = new double[Lp*Lp];
+		etaK = new double[Lp*Lp];
 		double recordStep = 1;	
 		
 		for (int i = 0; i < Lp*Lp; i++)
@@ -257,6 +281,7 @@ public class testLinearApp extends Simulation{
 
 		diagonalize();
 		findAndDiagonalizeLittleMatrix();
+		calcHspinodal();
 		Job.animate();
 
 		while (true) {
@@ -279,7 +304,8 @@ public class testLinearApp extends Simulation{
         	}
 			for (int i = 0; i < Lp*Lp; i++)
 				eta[i] = ising.phi[i] - phi0[i%Lp];
-			etaK = fft.calculate2DFT(eta);			
+			//etaK = fft.calculate2DFT(eta);			
+			etaK = fft.calculate2DSF(eta, true, true);
 			if(accEtaValues){
 				
 				for (int i = 0; i < Lp*Lp; i++)
@@ -319,6 +345,12 @@ public class testLinearApp extends Simulation{
     			}
     		}
 		}	
+	}
+	
+	private void calcHspinodal(){
+		double rho = Math.sqrt(1+ising.T/(ising.findVkSquare(IsingField2D.KRsquare,0.0)));
+		double hs = rho + (ising.T/2.0)*(Math.log(1.0+rho) - Math.log (1-rho));
+		System.out.println("H spinodal for T = " + ising.T + " is " + hs);
 	}
 	
 	/**
