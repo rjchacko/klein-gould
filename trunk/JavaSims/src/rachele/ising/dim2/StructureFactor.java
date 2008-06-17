@@ -600,8 +600,8 @@ public class StructureFactor {
 		for (int x = -Lp/2; x < Lp/2; x++) {
 			int y=0;
 			int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
-			if(abs(y) == kR1int)	accPeakC.accum(t, sFactor[i]);
-			if(abs(y) == kR2int)    acc2PeakC.accum(t, sFactor[i]);
+			if(abs(x) == kR1int)	accPeakC.accum(t, sFactor[i]);
+			if(abs(x) == kR2int)    acc2PeakC.accum(t, sFactor[i]);
 		}		
 	}
 
