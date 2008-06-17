@@ -35,6 +35,9 @@ public class NfailDamage2D extends SimpleDamage2D{
 
 	 //String outfileCHK;
 	 
+	 String outDB;
+	 
+	 
 	// Constructor
 	public NfailDamage2D(Parameters params) {
 		
@@ -63,6 +66,8 @@ public class NfailDamage2D extends SimpleDamage2D{
 		outfile2=outdir+File.separator+"Damage2.txt";
 		//outfileCHK=outdir+File.separator+"DamageCHK.txt";
 		
+		outDB = outdir+File.separator+"Debug_Orig.txt";
+		
 		PicDir=outdir+"/Pics/";
 		DirUtil.MkDir(PicDir);
 		
@@ -75,10 +80,10 @@ public class NfailDamage2D extends SimpleDamage2D{
 		SonFS      = new double[Nlives*N];
 		NlivesLeft = new double[Nlives+1];
 		
-		if (Nlives == 1){
-			Sr0=0.;
-			Srwidth=0.;
-		}
+//		if (Nlives == 1){
+//			Sr0=0.;
+//			Srwidth=0.;
+//		}
 		
 		return;
 	}
@@ -111,6 +116,10 @@ public class NfailDamage2D extends SimpleDamage2D{
 		}
 				
 		if(str.equals("Flat")){
+						
+			System.out.println(Sr0);
+			System.out.println(Sc0);
+			
 			
 			for (int i = 0 ; i < N ; i++){
 
@@ -121,9 +130,14 @@ public class NfailDamage2D extends SimpleDamage2D{
 					Sc[i]=Sc0;
 				}
 				
-				stress[i]  = Sc0*rand.nextDouble();
+				
+				//stress[i] = Sc0*rand.nextDouble();
+				stress[i]  = Sr0+(Sc0-Sr0)*rand.nextDouble();
+				
+				
+				
 				if((Sc[i]-stress[i])<(Sc[imax]-stress[imax])) imax=i;
-				alive[i+N] = 1;
+				alive[i+N] = 1;				
 				
 				if (residualnoise.equals("On")) {
 					Sr[i]=Srwidth*rand.nextGaussian()+Sr0;
@@ -171,7 +185,7 @@ public class NfailDamage2D extends SimpleDamage2D{
 		time=0;
 		tkip=0;
 		showernumber=0;
-				
+						
 		return;
 	}	
 	
@@ -481,6 +495,10 @@ public class NfailDamage2D extends SimpleDamage2D{
 
 	public void Avalanche() {
 		
+		Job.animate();
+				
+		//System.out.println(rand.nextDouble());
+		
 		SonFSindex=0;
 		showernumber=0;
 		Nshowers=0;
@@ -507,6 +525,12 @@ public class NfailDamage2D extends SimpleDamage2D{
 		// search for an avalanche
 		findAvalanche();
 		
+//		int[] foo = CopyArray.copyArray(dead,search);
+//		
+//		PrintUtil.printlnToFile(outDB,time);
+//		PrintUtil.printArrayToFile(outDB,foo,foo.length,1);
+//		PrintUtil.printlnToFile(outDB,"----------------");
+		
 		while (search>0){
 			
 			showernumber++;
@@ -519,7 +543,13 @@ public class NfailDamage2D extends SimpleDamage2D{
 			// look for subsequent avalanche
 			findAvalanche();
 			
-			showering=true;
+//			int[] foo2 = CopyArray.copyArray(dead,search);
+//			
+//			PrintUtil.printlnToFile(outDB,time);
+//			PrintUtil.printArrayToFile(outDB,foo2,foo2.length,1);
+//			PrintUtil.printlnToFile(outDB,"----------------");
+			
+//			showering=true;
 			Job.animate();
 	
 		}
@@ -611,6 +641,11 @@ public class NfailDamage2D extends SimpleDamage2D{
 						release=stress[dead[i]]/Nalive;
 					}
 					
+//					PrintUtil.printlnToFile(outDB,time);
+//					PrintUtil.printlnToFile(outDB,dead[i]);
+//					PrintUtil.printlnToFile(outDB,release);
+////					PrintUtil.printArrayToFile(outDB,nbs,nbs.length,1);
+//					PrintUtil.printlnToFile(outDB,"----------------");
 					
 					if(Nbool){
 						for (int j = 0; j<nbs.length; j++){

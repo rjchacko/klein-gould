@@ -29,6 +29,10 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 	 public double SonFS[], NlivesLeft[];
 	 public double pretime;
 	 
+	 public int Nbins;
+	 
+	 public int[][] Sband;
+	 
 	 // Formats
 	 
 	 public DecimalFormat fmt = new DecimalFormat("0000000");
@@ -75,6 +79,7 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 		SsoFar     = new double[N];
 		SonFS      = new double[Nlives*N];
 		NlivesLeft = new double[Nlives+1];
+		Sband      = new int [Nlives+1][1000];
 		
 		if (Nlives == 1){
 			Sr0=0.;
@@ -86,6 +91,13 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 	
 	public void Initialize(String str){
 		
+		Nbins = 1000;
+		
+		for (int m = 0 ; m < Nbins ; m++){
+			for (int n = 0 ; n < Nlives+1 ; n++){
+				Sband[n][m] = 0;
+			}
+		}
 		
 		
 		if (BCs.equals("Bordered")){
@@ -122,7 +134,7 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 					Sc[i]=Sc0;
 				}
 				
-				stress[i]  = Sc0*rand.nextDouble();
+				stress[i]  = Sr0 + (Sc0-Sr0)*rand.nextDouble();
 				if((Sc[i]-stress[i])<(Sc[imax]-stress[imax])) imax=i;
 				alive[i+N] = 1;
 				
@@ -973,6 +985,12 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 		double ret=0;	
 		double Sbar=0;
 		
+		// clear out old stress bands
+		for (int m = 0 ; m < 1000 ; m++){
+			for (int n = 0 ; n < Nlives+1 ; n++){
+				Sband[n][m] = 0;
+			}
+		}
 		
 		for (int i = 0 ; i < N ; i++){
 			SsoFar[i]+=stress[i];
@@ -986,6 +1004,11 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 		
 		for (int i = 0 ; i < N ; i++){
 			ret+=(SsoFar[i]*alive[i+N]-Sbar)*(SsoFar[i]*alive[i+N]-Sbar);
+			// stress bands HERE!!!!!!
+//			System.out.println(Sr0);
+//			System.out.println(Sc0);
+//			System.out.println(stress[i]);
+			//Sband[alive[i]][(int)((Nbins-1)*((stress[i]-Sr0)/(Sc0-Sr0)))]++;
 		}
 		
 		ret=ret/(time*time);
@@ -1127,6 +1150,22 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 		TakeData(outdir + File.separator + "Data_LL_1.txt",outdir + File.separator + "Data_LL_2.txt");
 		
 		return;
+	}
+	
+	public void WriteStressBand(){
+		String of1 = outdir+File.separator+"SB1.txt";
+		String of2 = outdir+File.separator+"SB2.txt";
+		String of3 = outdir+File.separator+"SB3.txt";
+		String of4 = outdir+File.separator+"SB4.txt";
+		String of5 = outdir+File.separator+"SB5.txt";
+		String of6 = outdir+File.separator+"SB6.txt";
+		
+		PrintUtil.printTimeAndVectorToFile(of1,time,Sband,1,Nbins);
+		PrintUtil.printTimeAndVectorToFile(of2,time,Sband,2,Nbins);
+		PrintUtil.printTimeAndVectorToFile(of3,time,Sband,3,Nbins);
+		PrintUtil.printTimeAndVectorToFile(of4,time,Sband,4,Nbins);
+		PrintUtil.printTimeAndVectorToFile(of5,time,Sband,5,Nbins);
+		PrintUtil.printTimeAndVectorToFile(of6,time,Sband,6,Nbins);
 	}
 
 		

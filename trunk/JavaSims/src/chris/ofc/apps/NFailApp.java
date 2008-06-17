@@ -122,9 +122,9 @@ public class NFailApp extends Simulation {
 		
 		int max = model.GetMax(model.alive);
 
-		Color[] Carray = new Color[]{Color.RED,Color.YELLOW,Color.GREEN,Color.BLUE,Color.GRAY};
+		Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};
 		
-		palette1.setColor(0,Color.WHITE);
+		palette1.setColor(0,Color.BLACK);
 		for (int i = 1 ; i <= max ; i++){
 			palette1.setColor(i,Carray[i%5]);
 		}
