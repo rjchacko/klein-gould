@@ -55,6 +55,7 @@ public class NFailLagApp extends Simulation {
 		params.add("\u03B1 Noise", new ChoiceValue("On","Off"));
 		params.add("\u03B1 Width", 0.05);
 		params.addm("Record", new ChoiceValue("Off","On"));
+		params.add("Lag Time", (int) 100000);
 		params.add("Number of Resets");
 		params.add("Number of Showers");
 			
@@ -123,9 +124,9 @@ public class NFailLagApp extends Simulation {
 		
 		int max = model.GetMax(model.alive);
 
-		Color[] Carray = new Color[]{Color.RED,Color.YELLOW,Color.GREEN,Color.BLUE,Color.GRAY};
+		Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};
 		
-		palette1.setColor(0,Color.WHITE);
+		palette1.setColor(0,Color.BLACK);
 		for (int i = 1 ; i <= max ; i++){
 			palette1.setColor(i,Carray[i%5]);
 		}
@@ -137,7 +138,7 @@ public class NFailLagApp extends Simulation {
 		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		model.WriteDataHeader();
 		
-		int lagtime = 100000;
+		int lagtime = params.iget("Lag Time");
 		
 		while(model.pretime < lagtime){
 			model.Calibrate();
@@ -151,6 +152,8 @@ public class NFailLagApp extends Simulation {
 			model.Avalanche();
 
 			model.TakeData();
+			
+			//if (model.time%500 == 0) model.WriteStressBand();
 			
 		}
 		

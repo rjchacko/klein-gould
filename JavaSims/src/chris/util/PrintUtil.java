@@ -5,8 +5,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
-import scikit.util.FileUtil;
-
 public class PrintUtil {
 	static public void deleteFile(String fileName){
 		File file = new File(fileName);
@@ -190,21 +188,23 @@ public class PrintUtil {
 	static public void printArrayToFile(String fileName, int[] array, int m, int n){
 		try{
 			
-			PrintWriter pw = FileUtil.pwFromString(fileName);
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			
 			
 			// print info here
-			pw.println("m by n array");
-			pw.println("printing:");
-			pw.println("i = 0, 1, 2, . . . m-1 ");
-			pw.println("i = m, m+1 , . . . ");
-			pw.println("    .");
-			pw.println("    .");
-			pw.println("    .");
-			pw.println("    n, n+1, . . . n+m");
-			pw.print("m = ");
-			pw.println(m);
-			pw.print("n = ");
-			pw.println(n);
+//			pw.println("m by n array");
+//			pw.println("printing:");
+//			pw.println("i = 0, 1, 2, . . . m-1 ");
+//			pw.println("i = m, m+1 , . . . ");
+//			pw.println("    .");
+//			pw.println("    .");
+//			pw.println("    .");
+//			pw.println("    n, n+1, . . . n+m");
+//			pw.print("m = ");
+//			pw.println(m);
+//			pw.print("n = ");
+//			pw.println(n);
 			for (int ii = 0 ; ii < m*n ; ii++){
 				pw.print(array[ii]);
 				if ( (ii + 1)%n == 0){
@@ -225,7 +225,9 @@ public class PrintUtil {
 	static public void printArrayToFile(String fileName, double[] array, int m, int n){
 		try{
 			
-			PrintWriter pw = FileUtil.pwFromString(fileName);
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			
 			
 			// print info here
 			pw.println("m by n array");
@@ -297,6 +299,12 @@ public class PrintUtil {
 		}
 	}
 	
+	/*
+	 * 
+	 * Replace this with the above method!!!!!
+	 * 
+	 */
+	
 	static public void print2TimeAndVectorToFile(String fileName, double T1, double T2, double[] vector){
 
 		int Length = vector.length;	
@@ -313,6 +321,71 @@ public class PrintUtil {
 			}
 			pw.println();
 
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void print2TimeAndVectorToFile(String fileName, double T1, double T2, int[] vector){
+
+		int Length = vector.length;	
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.print(T1);
+			pw.print("\t");
+			pw.print(T2);
+			pw.print("\t");
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.print(vector[ii]);
+				pw.print("\t");
+			}
+			pw.println();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	// this is ad hoc...delete it!!!!
+	static public void printTimeAndVectorToFile(String fileName, double t1, int[][] array, int index, int length){
+		int Length = length;	
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.print(t1);
+			pw.print("\t");
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.print(array[index][ii]);
+				pw.print("\t");
+			}
+			pw.println();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+
+	static public void printlnToFile(String fileName, Boolean b1, Boolean b2){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			if(b1 = true){
+				pw.print("true");
+				pw.print("\t");
+			}
+			else{
+				pw.print("false");
+				pw.print("\t");
+			}
+			if(b2 = true){
+				pw.println("true");
+			}
+			else{
+				pw.println("false");
+			}
+			
+			
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
