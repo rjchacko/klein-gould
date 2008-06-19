@@ -61,15 +61,6 @@ public class IsingLR extends RewindableDynamics {
 		return (double)spins.sumAll() / (L*L);
 	}
 	
-	public void randomizeSpins(){
-		for (int i = 0; i < L; i ++){
-			for (int j = 0; j < L; j++){
-				double rand = random.nextDouble();
-				int spinValue = (int)(rand*2.0)-1;
-				spins.set(i, j, spinValue);
-			}
-		}
-	}
 
 	public void randomizeField(double m) {
 		if (m == 1 || m == -1) {

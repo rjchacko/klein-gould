@@ -60,7 +60,7 @@ public class LinearTheoryApp extends Simulation{
 		params.add("R/dx", 16.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Random seed", 0);
-		params.add("Max Time", 100);
+		params.add("Max Time", 350);
 		params.add("Time");
 		params.add("Reps");
 		params.add("Mean Phi");
@@ -78,23 +78,22 @@ public class LinearTheoryApp extends Simulation{
 		sfPeakBoth.setAutoScale(true);
 		sfVsKR.setAutoScale(true);
 		grid.registerData(ising.Lp, ising.Lp, ising.phi);
-//		if(ising.circleInt() == true){
+		if(ising.circleInt() == true){
 			structurePeakV.registerLines("Peak Value", sf.getPeakC(), Color.BLACK);
 			structurePeakV.registerLines("Theory", sfTheoryAcc, Color.BLUE);
 			structurePeakV.registerLines("Theory2", sfTheory2Acc, Color.BLUE);
 			structurePeakV.registerLines("2nd Peak", sf.get2PeakC(), Color.RED);
 			variance.registerLines("Variance", varianceAcc, Color.BLACK);
 			sfVsKR.registerLines("SF", sf.getAccumulatorC(), Color.BLACK);
-//		}
-//		}else{
-//			structurePeakV.registerLines("Peak Value", sf.getPeakC(), Color.BLACK);
-//			//structurePeakV.registerLines("Vertical Peak", sf.getPeakV(), Color.CYAN);
-//			structurePeakV.registerLines("Theory", sfTheoryAcc, Color.BLUE);
-//			structurePeakV.registerLines("Theory2", sfTheory2Acc, Color.BLUE);
-//			structurePeakV.registerLines("2nd Peak", sf.get2PeakC(), Color.RED);
-//			variance.registerLines("Variance", varianceAcc, Color.BLACK);
-//			sfVsKR.registerLines("SF", sf.getAccumulatorC(), Color.BLACK);
-//		}
+		}else{
+			structurePeakV.registerLines("Peak Value", sf.getPeakC(), Color.BLACK);
+			//structurePeakV.registerLines("Vertical Peak", sf.getPeakV(), Color.CYAN);
+			structurePeakV.registerLines("Theory", sfTheoryAcc, Color.BLUE);
+			structurePeakV.registerLines("Theory2", sfTheory2Acc, Color.BLUE);
+			structurePeakV.registerLines("2nd Peak", sf.get2PeakC(), Color.RED);
+			variance.registerLines("Variance", varianceAcc, Color.BLACK);
+			sfVsKR.registerLines("SF", sf.getAccumulatorC(), Color.BLACK);
+		}
 	}
 
 	public void clear() {
@@ -109,17 +108,8 @@ public class LinearTheoryApp extends Simulation{
         sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
 		sf.setBounds(0.1, 14);	
 		double density = findMeanPhi();
-		int kR1int;
-		int kR2int;
-		if(params.sget("Interaction")=="Circle"){
-			kR1int = getkRint(5.13562230);
-			kR2int = getkRint(11.6198);
-			System.out.println("circle int = " + kR1int + " " + kR2int);
-		}else{
-			kR1int = getkRint(4.4934092);
-			kR2int = getkRint(10.9041);
-			System.out.println("square int = " + kR1int + " " + kR2int);
-		}
+		int kR1int = getkRint(5.13562230);
+		int kR2int = getkRint(11.6198);
 		fillTheoryAccum(density, kR1int, kR2int);
 		varianceAcc = new Accumulator(params.fget("dt"));
 		meanPhiAcc = new Accumulator(params.fget("dt"));
@@ -133,7 +123,7 @@ public class LinearTheoryApp extends Simulation{
 				params.set("Mean Phi", ising.mean(ising.phi));
 				ising.simulate();
 				//accumTheoryPoint(kR, t);
-				//sf.accumulateAll(t, ising.coarseGrained());
+				sf.accumulateAll(t, ising.coarseGrained());
 				sf.accumExact(t, ising.coarseGrained(),kR1int,kR2int);
 				varianceAcc.accum(t, ising.phiVariance());
 				meanPhiAcc.accum(t,ising.mean(ising.phi));
@@ -164,26 +154,26 @@ public class LinearTheoryApp extends Simulation{
 	}
 	
 	public double circleLinearTheory(double kR, double mu, double time){
+		//double V = ising.Lp*ising.Lp;
 		double rho = ising.DENSITY;
 		double D = -circlePotential(kR) - ising.T/ (1-rho*rho);
-		if (params.sget("Approx")=="Exact Stable") D *= pow(1-rho*rho,2);
-		//the following is not correct because we use modified dynamics
-		double V = ising.Lp*ising.Lp;
-		double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
+		D *= pow(1-rho*rho,2);
+		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
+		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
 		
-		//double sf = exp(2*time*D);
+		double sf = exp(2*time*D);
 		return sf;
 	}
 
 	public double squareLinearTheory(double kR, double mu, double time){
-		
+		//double V = ising.Lp*ising.Lp;
 		double rho = ising.DENSITY;
 		double D = -squarePotential(kR) - ising.T/ (1-rho*rho);
-		if (params.sget("Approx")=="Exact Stable") D *= pow(1-rho*rho,2);
-		//the following is not correct when using modified dynamics
-		double V = ising.Lp*ising.Lp;
-		double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
-		//double sf = exp(2*time*D);
+		D *= pow(1-rho*rho,2);
+		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
+		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
+		
+		double sf = exp(2*time*D);
 		return sf;
 	}
 	
@@ -193,16 +183,21 @@ public class LinearTheoryApp extends Simulation{
 		//double kR = sf.circlekRValue();
 		double kR1 = ising.R*2*PI*kR1int/ising.L;
 		double kR2 = ising.R*2*PI*kR2int/ising.L;
-		if(params.sget("Interaction")=="Square"){
-			for(double time = 0.0; time < params.fget("Max Time"); time = time + params.fget("dt")){
-				sfTheoryAcc.accum(time, squareLinearTheory(kR1, 0, time));
-				sfTheory2Acc.accum(time, squareLinearTheory(kR2, 0, time));
-			}
-		}else{
-			for(double time = 0.0; time < params.fget("Max Time"); time = time + params.fget("dt")){
-				sfTheoryAcc.accum(time, circleLinearTheory(kR1, 0, time));
-				sfTheory2Acc.accum(time, circleLinearTheory(kR2, 0, time));
-			}
+		for(double time = 0.0; time < params.fget("Max Time"); time = time + params.fget("dt")){
+			sfTheoryAcc.accum(time, squareLinearTheory(kR1, 0, time));
+			sfTheory2Acc.accum(time, squareLinearTheory(kR2, 0, time));
+		}
+	}
+
+	public void fillSquareTheoryAccum(double density, int kR1int, int kR2int){
+		sfTheoryAcc = new Accumulator(ising.dt);
+		sfTheory2Acc = new Accumulator(ising.dt);
+		//double kR = sf.circlekRValue();
+		double kR1 = ising.R*2*PI*kR1int/ising.L;
+		double kR2 = ising.R*2*PI*kR2int/ising.L;
+		for(double time = 0.0; time < params.fget("Max Time"); time = time + params.fget("dt")){
+			sfTheoryAcc.accum(time, circleLinearTheory(kR1, 0, time));
+			sfTheory2Acc.accum(time, circleLinearTheory(kR2, 0, time));
 		}
 	}
 	

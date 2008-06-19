@@ -189,14 +189,13 @@ public class IsingField2D extends AbstractIsing2D{
 	}
 	
 	public void randomizeField(double m) {
-		for (int i = 0; i < Lp*Lp; i++){
+		for (int i = 0; i < Lp*Lp; i++)
 			
 			//phi[i] = 0.00001*random.nextGaussian()/(dx);
 			phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
 			//whether or not you start the system at the specified density doesn't matter too much because
 			//the mag conservation algorithm will quickly take it to the correct density
-			}
-		}
+	}
 	
 	public void readParams(Parameters params) {
 		//if (params.sget("Plot FEvT") == "Off") T = params.fget("T");
@@ -332,9 +331,9 @@ public class IsingField2D extends AbstractIsing2D{
 				dF_dPhi = -phi_bar[i]+T*(phi[i]+pow(phi[i],3)) - H;	
 				Lambda[i] = 1;
 			}else{
-				dF_dPhi = -phi_bar[i] - H+T* scikit.numerics.Math2.atanh(phi[i]);
+				dF_dPhi = -phi_bar[i] - H;//+T* scikit.numerics.Math2.atanh(phi[i]);
 				//dF_dPhi = -phi_bar[i]+T*(-log(1.0-phi[i])+log(1.0+phi[i]))/2.0 - H;
-				if(theory == "HalfStep" || theory == "Exact"){
+				if(theory == "HalfStep"){
 					Lambda[i] = 1;
 					entropy = -((1.0 + phi[i])*log(1.0 + phi[i]) +(1.0 - phi[i])*log(1.0 - phi[i]))/2.0;
 				}else{
@@ -342,7 +341,7 @@ public class IsingField2D extends AbstractIsing2D{
 					entropy = -((1.0 + phi[i])*log(1.0 + phi[i]) +(1.0 - phi[i])*log(1.0 - phi[i]))/2.0;
 				}
 			}
-			delPhi[i] = - dt*Lambda[i]*dF_dPhi + sqrt(Lambda[i]*(dt*2*T)/(dx*dx))*noise();
+			delPhi[i] = - dt*Lambda[i]*dF_dPhi + sqrt(Lambda[i]*(dt*2*T)/dx)*noise();
 			phiVector[i] = delPhi[i];
 			meanLambda += Lambda[i];
 			double potential = -(phi[i]*phi_bar[i])/2.0;

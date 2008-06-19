@@ -16,6 +16,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import static scikit.util.Utilities.format;
 import rachele.util.*;
+import static java.lang.Math.*;
 
 
 public class IsingLRApp extends Simulation {
@@ -28,6 +29,7 @@ public class IsingLRApp extends Simulation {
 	public FourierTransformer fft;
 	double [] sFactor;
 	Accumulator sf_k;
+	Accumulator sfTheoryAcc, sfTheory2Acc;
     boolean clearFile;
     boolean takeAverages;
    	double [] sfTimeArray;
@@ -40,15 +42,15 @@ public class IsingLRApp extends Simulation {
 		c.frameTogether("grids", grid, sfGrid);		
 		c.frame(sfkPlot);
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
-		params.addm("init", new ChoiceValue("Read From File", "Random"));
-		params.addm("Take Averages", new ChoiceValue("None", "S(t)", "S(k)"));
+		params.addm("init", new ChoiceValue( "Random", "Read From File"));
+		params.addm("Take Averages", new ChoiceValue("S(k)","None", "S(t)", "StripeToClump S(k)"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<8);
-		params.add("R", 86);
+		params.add("L", 1<<10);
+		params.add("R", 1<<6);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.04);
 		params.addm("J", -1.0);
-		params.addm("h", 0.8);
+		params.addm("h", 0.0);
 		params.addm("dt", 0.1);
 		params.add("time");
 		params.add("magnetization");
@@ -56,7 +58,9 @@ public class IsingLRApp extends Simulation {
 		params.add("Reps");
 		flags.add("Write Config");
 
-		sf_k = new Accumulator(0.1);
+		sf_k = new Accumulator();
+		sfTheoryAcc = new Accumulator();
+		
 	}	
 	
 	public void animate() {
@@ -67,8 +71,10 @@ public class IsingLRApp extends Simulation {
 		
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
 		sfGrid.registerData(sim.L/dx, sim.L/dx, sFactor);
-		sfkPlot.registerLines("sf(k)", sf_k, Color.BLACK);
-		
+		if (params.sget("Take Averages") == "S(k)"){
+			sfkPlot.registerLines("sf(k)", sf_k, Color.BLACK);
+			sfkPlot.registerLines("theory", sfTheoryAcc, Color.BLUE);
+		}
 		if(flags.contains("Write Config")) writeConfigToFile();
 		flags.clear();
 	}
@@ -79,6 +85,7 @@ public class IsingLRApp extends Simulation {
 	public void run() {
 		//if (params.sget("Take Averages")=="True") takeAverages = true;
 		//else takeAverages = false;
+		//if(params.sget("Take Averages") == "S(k)") structureTheoryAcc();
 		initialize();
 		fft = new FourierTransformer((int)(sim.L/dx));
 		sFactor = new double [sim.L/dx*sim.L/dx];
@@ -111,7 +118,9 @@ public class IsingLRApp extends Simulation {
 			}
 		}else if(params.sget("Take Averages") == "S(k)"){
 			sf_k.clear();
-			double maxTime = 0.4;
+			double maxTime = 0.2;
+			double kRmax= 25;
+			structureTheoryAcc(maxTime-sim.dTime(), kRmax);
 			System.out.println("take data time = " + maxTime);
 			int repNo = 0;
 			sfTimeArray = new double[sim.L/dx];			
@@ -127,7 +136,7 @@ public class IsingLRApp extends Simulation {
 				
 				for (int i = 1; i < sim.L/(2*dx); i++ ){
 					double kRValue = 2*Math.PI*sim.R*(double)i/sim.L;
-					sf_k.accum(kRValue, sFactor[i]);
+					if (kRValue < kRmax) sf_k.accum(kRValue, sFactor[i]);
 				}
 				repNo += 1;
 				params.set("Reps", repNo);
@@ -146,6 +155,25 @@ public class IsingLRApp extends Simulation {
 		}
 	}
 
+	public void structureTheoryAcc(double time, double kRmax){
+		double kRbinWidth = 0.2;
+		sf_k = new Accumulator(kRbinWidth);
+		sfTheoryAcc = new Accumulator(kRbinWidth);
+		sfTheory2Acc = new Accumulator(kRbinWidth);
+
+		for(int i = 0; i < sim.L/(2*dx); i++){
+			double kR=2*Math.PI*(double)i*sim.R/sim.L;
+			if (kR < kRmax){
+				double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
+				double D = -pot/sim.T-1;
+				//double V = sim.L/dx;
+				double sf = (exp(2*time*D)*(1 + 1/D)-1/D);
+	//			exp(M*D*t)*(1 + 1/D) - 1/D
+				//System.out.println("time = " + time + "sf = " + sf);
+				sfTheoryAcc.accum(kR,sf);
+			}
+		}
+	}
 	
 	public void writeArray(int repNo, double stepSize){
 
