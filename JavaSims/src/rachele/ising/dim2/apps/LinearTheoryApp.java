@@ -60,7 +60,7 @@ public class LinearTheoryApp extends Simulation{
 		params.add("R/dx", 16.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Random seed", 0);
-		params.add("Max Time", 350);
+		params.add("Max Time", 100);
 		params.add("Time");
 		params.add("Reps");
 		params.add("Mean Phi");
@@ -164,26 +164,26 @@ public class LinearTheoryApp extends Simulation{
 	}
 	
 	public double circleLinearTheory(double kR, double mu, double time){
-		//double V = ising.Lp*ising.Lp;
 		double rho = ising.DENSITY;
 		double D = -circlePotential(kR) - ising.T/ (1-rho*rho);
-		D *= pow(1-rho*rho,2);
-		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
-		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
+		if (params.sget("Approx")=="Exact Stable") D *= pow(1-rho*rho,2);
+		//the following is not correct because we use modified dynamics
+		double V = ising.Lp*ising.Lp;
+		double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
 		
-		double sf = exp(2*time*D);
+		//double sf = exp(2*time*D);
 		return sf;
 	}
 
 	public double squareLinearTheory(double kR, double mu, double time){
-		//double V = ising.Lp*ising.Lp;
+		
 		double rho = ising.DENSITY;
 		double D = -squarePotential(kR) - ising.T/ (1-rho*rho);
-		D *= pow(1-rho*rho,2);
-		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
-		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
-		
-		double sf = exp(2*time*D);
+		if (params.sget("Approx")=="Exact Stable") D *= pow(1-rho*rho,2);
+		//the following is not correct when using modified dynamics
+		double V = ising.Lp*ising.Lp;
+		double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
+		//double sf = exp(2*time*D);
 		return sf;
 	}
 	
