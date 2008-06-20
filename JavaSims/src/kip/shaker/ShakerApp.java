@@ -225,8 +225,16 @@ class FrameSequence {
 				g.drawRect(bds.xmin, bds.ymin, bds.xmax-bds.xmin, bds.ymax-bds.ymin);
 				
 				g.setProjection(g.pixelBounds());
+				
+				g.setColor(new Color(1f, 1f, 1f, 0.5f));
+				g.fillRect(0, 0, g.pixelBounds().getWidth(), 22);
+				
 				g.setColor(Color.RED);
-				g.drawString("Frame " + t, 4, 4);
+				int particles = frames[t].size();
+				double area = bds.getWidth()*bds.getHeight();
+				String s = "Frame="+t+" #part="+particles+" len*="+sqrt(area/particles);
+				g.drawString(s, 4, 4);
+				
 				g.setProjection(g.viewBounds());
 			}
 			public Bounds getBounds() {
