@@ -1,6 +1,5 @@
 package rachele.ising.dim2.apps;
 
-import java.awt.Color;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -9,7 +8,6 @@ import java.io.FileNotFoundException;
 import rachele.ising.dim2.*;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
-import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
@@ -23,7 +21,6 @@ public class IsingLRApp extends Simulation {
 	
 	Grid grid = new Grid("Long Range Ising Model");
 	Grid sfGrid = new Grid("SF");
-	Plot sfkPlot = new Plot("sf_k plot");
 	int dx;
 	IsingLR sim;
 	public FourierTransformer fft;
@@ -40,10 +37,8 @@ public class IsingLRApp extends Simulation {
 	
 	public void load(Control c) {
 		c.frameTogether("grids", grid, sfGrid);		
-		c.frame(sfkPlot);
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
-		params.addm("Take Averages", new ChoiceValue("S(k)","None", "S(t)", "StripeToClump S(k)"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<9);
 		params.add("R", 1<<6);
@@ -57,7 +52,6 @@ public class IsingLRApp extends Simulation {
 		params.add("Lp");
 		params.add("Reps");
 		flags.add("Write Config");
-
 		sf_k = new Accumulator();
 		sfTheoryAcc = new Accumulator();
 		
@@ -71,10 +65,6 @@ public class IsingLRApp extends Simulation {
 		
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
 		sfGrid.registerData(sim.L/dx, sim.L/dx, sFactor);
-		if (params.sget("Take Averages") == "S(k)"){
-			sfkPlot.registerLines("sf(k)", sf_k, Color.BLACK);
-			sfkPlot.registerLines("theory", sfTheoryAcc, Color.BLUE);
-		}
 		if(flags.contains("Write Config")) writeConfigToFile();
 		flags.clear();
 	}
@@ -83,76 +73,19 @@ public class IsingLRApp extends Simulation {
 	}
 	
 	public void run() {
-		//if (params.sget("Take Averages")=="True") takeAverages = true;
-		//else takeAverages = false;
-		//if(params.sget("Take Averages") == "S(k)") structureTheoryAcc();
 		initialize();
 		fft = new FourierTransformer((int)(sim.L/dx));
 		sFactor = new double [sim.L/dx*sim.L/dx];
 		double step = 0.10;
-		if(params.sget("Take Averages")=="S(t)"){
-			double maxTime = 2.0;
-			int ky = 2;
-			int sfLabel = ky*sim.L/dx + 0;
-			sfTimeArray = new double[(int)((maxTime/step)+1)];
-			int repNo = 0;
-			while (true) {
-				if(params.sget("init") == "Read From File") readInitialConfiguration();
-				else sim.randomizeField(params.fget("Initial magnetization"));
-				sim.restartClock();
-				int recordInt = 0;
-				int recordStep = 0;
-				while (sim.time() < maxTime){
-					sim.step();
-					Job.animate();
-					if (sim.time() > recordStep){
-						sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-						sfTimeArray[recordInt] += sFactor[sfLabel];
-						recordStep += step;
-						recordInt +=1;
-					}
-				}	
-				repNo += 1;
-				params.set("Reps", repNo);
-				writeArray(repNo, step);
-			}
-		}else if(params.sget("Take Averages") == "S(k)"){
-			sf_k.clear();
-			double maxTime = 0.2;
-			double kRmax= 25;
-			structureTheoryAcc(0.25, kRmax);
-			System.out.println("take data time = " + maxTime);
-			int repNo = 0;
-			sfTimeArray = new double[sim.L/dx];			
-			while (true) {
-				if(params.sget("init") == "Read From File") readInitialConfiguration();
-				else sim.randomizeField(params.fget("Initial magnetization"));
-				sim.restartClock();
-				while (sim.time() < maxTime){
-					sim.step();
-					Job.animate();
-				}	
+		int recordStep = 0;
+		while (true) {
+			sim.step();
+			if (sim.time() > recordStep){
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-				
-				for (int i = 1; i < sim.L/(2*dx); i++ ){
-					System.out.println("print time = " + sim.time());
-					double kRValue = 2*Math.PI*sim.R*(double)i/sim.L;
-					if (kRValue < kRmax) sf_k.accum(kRValue, sFactor[i]);
-				}
-				repNo += 1;
-				params.set("Reps", repNo);
+				recordSfDataToFile(sFactor);
+				recordStep += step;
 			}
-		}else{
-			int recordStep = 0;
-			while (true) {
-				sim.step();
-				if (sim.time() > recordStep){
-					sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-					recordSfDataToFile(sFactor);
-					recordStep += step;
-				}
-				Job.animate();
-			}
+			Job.animate();
 		}
 	}
 
