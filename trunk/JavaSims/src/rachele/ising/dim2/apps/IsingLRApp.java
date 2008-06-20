@@ -45,13 +45,13 @@ public class IsingLRApp extends Simulation {
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.addm("Take Averages", new ChoiceValue("S(k)","None", "S(t)", "StripeToClump S(k)"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<10);
+		params.add("L", 1<<9);
 		params.add("R", 1<<6);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.04);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
-		params.addm("dt", 0.1);
+		params.addm("dt", 1/(double)(1<<3));
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -120,7 +120,7 @@ public class IsingLRApp extends Simulation {
 			sf_k.clear();
 			double maxTime = 0.2;
 			double kRmax= 25;
-			structureTheoryAcc(maxTime-sim.dTime(), kRmax);
+			structureTheoryAcc(0.25, kRmax);
 			System.out.println("take data time = " + maxTime);
 			int repNo = 0;
 			sfTimeArray = new double[sim.L/dx];			
@@ -135,6 +135,7 @@ public class IsingLRApp extends Simulation {
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 				
 				for (int i = 1; i < sim.L/(2*dx); i++ ){
+					System.out.println("print time = " + sim.time());
 					double kRValue = 2*Math.PI*sim.R*(double)i/sim.L;
 					if (kRValue < kRmax) sf_k.accum(kRValue, sFactor[i]);
 				}
@@ -156,6 +157,7 @@ public class IsingLRApp extends Simulation {
 	}
 
 	public void structureTheoryAcc(double time, double kRmax){
+		System.out.println("time = " + time);
 		double kRbinWidth = 0.2;
 		sf_k = new Accumulator(kRbinWidth);
 		sfTheoryAcc = new Accumulator(kRbinWidth);
