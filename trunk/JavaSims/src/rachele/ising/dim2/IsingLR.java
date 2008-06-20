@@ -13,10 +13,10 @@ public class IsingLR extends RewindableDynamics {
 
 	public enum DynType {METROPOLIS, GLAUBER, KAWA_GLAUBER, KAWA_METROPOLIS};
 	public DynType dynamics = DynType.GLAUBER;
-	
 	public int L, R;
 	public double T, J, h;
 	public Random random = new Random();
+	public static final double kRpeak = 4.4934092;
 
 	
 	public IsingLR(Parameters params) {
