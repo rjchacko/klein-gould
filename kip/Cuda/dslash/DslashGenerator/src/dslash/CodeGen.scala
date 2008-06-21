@@ -69,10 +69,10 @@ class CodeGen(sharedFloats: Int, dagger: Boolean) {
     a##_re += b##_re * c##_re - b##_im * c##_im, \
     a##_im -= b##_re * c##_im + b##_im * c##_re
 
-#define READ_GAUGE_MATRIX(gauge) \
-    float4 G0 = tex1Dfetch((gauge), ga_idx + 0*Nh); \
-    float4 G1 = tex1Dfetch((gauge), ga_idx + 1*Nh); \
-    float4 G2 = tex1Dfetch((gauge), ga_idx + 2*Nh); \
+#define READ_GAUGE_MATRIX(gauge, dir) \
+    float4 G0 = tex1Dfetch((gauge), ga_idx + ((dir/2)*3+0)*Nh); \
+    float4 G1 = tex1Dfetch((gauge), ga_idx + ((dir/2)*3+1)*Nh); \
+    float4 G2 = tex1Dfetch((gauge), ga_idx + ((dir/2)*3+2)*Nh); \
     float4 G3 = make_float4(0,0,0,0); \
     float4 G4 = make_float4(0,0,0,0); \
     ACC_CONJ_PROD(g20, +g01, +g12); \
@@ -80,7 +80,9 @@ class CodeGen(sharedFloats: Int, dagger: Boolean) {
     ACC_CONJ_PROD(g21, +g02, +g10); \
     ACC_CONJ_PROD(g21, -g00, +g12); \
     ACC_CONJ_PROD(g22, +g00, +g11); \
-    ACC_CONJ_PROD(g22, -g01, +g10);    
+    ACC_CONJ_PROD(g22, -g01, +g10); \
+    float u0 = (dir < 6 ? SPATIAL_SCALING : (ga_idx >= Nh-L1h*L2*L3 ? TIME_SYMMETRY : 1)); \
+    G3.x*=u0; G3.y*=u0; G3.z*=u0; G3.w*=u0; G4.x*=u0; G4.y*=u0;
 
 #define READ_SPINOR(spinor) \
     float4 I0 = tex1Dfetch((spinor), sp_idx + 0*Nh); \
@@ -220,8 +222,8 @@ for (int i = 0; i < 2; i++)
     case 6 => "int sp_idx = ((x4==L4-1) ? X-(L4-1)*L3*L2*L1 : X+L3*L2*L1) / 2;\n"
     case 7 => "int sp_idx = ((x4==0)    ? X+(L4-1)*L3*L2*L1 : X-L3*L2*L1) / 2;\n"
     }))
-    val baseIdx = if (dir % 2 == 0) "sid" else "sp_idx"
-    str.append("int ga_idx = "+baseIdx+" + ("+dir+"/2)*Nh*3;\n\n")
+    val ga_idx = if (dir % 2 == 0) "sid" else "sp_idx"
+    str.append("int ga_idx = "+ga_idx+";\n\n")
     
     str.append("// read spinor from device memory\n")
     str.append("READ_SPINOR(spinorTex);\n\n")
@@ -250,7 +252,7 @@ for (int i = 0; i < 2; i++)
     }
     
     str.append("// read gauge matrix from device memory\n")
-    str.append("READ_GAUGE_MATRIX(gauge"+(dir%2)+"Tex);\n\n")
+    str.append("READ_GAUGE_MATRIX(gauge"+(dir%2)+"Tex, "+dir+");\n\n")
     
     for (m <- 0 until 3) {
       str.append("// multiply row "+m+" by half spinors\n")
