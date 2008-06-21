@@ -97,10 +97,10 @@ volatile float o32_im;
     a##_re += b##_re * c##_re - b##_im * c##_im, \
     a##_im -= b##_re * c##_im + b##_im * c##_re
 
-#define READ_GAUGE_MATRIX(gauge) \
-    float4 G0 = tex1Dfetch((gauge), ga_idx + 0*Nh); \
-    float4 G1 = tex1Dfetch((gauge), ga_idx + 1*Nh); \
-    float4 G2 = tex1Dfetch((gauge), ga_idx + 2*Nh); \
+#define READ_GAUGE_MATRIX(gauge, dir) \
+    float4 G0 = tex1Dfetch((gauge), ga_idx + ((dir/2)*3+0)*Nh); \
+    float4 G1 = tex1Dfetch((gauge), ga_idx + ((dir/2)*3+1)*Nh); \
+    float4 G2 = tex1Dfetch((gauge), ga_idx + ((dir/2)*3+2)*Nh); \
     float4 G3 = make_float4(0,0,0,0); \
     float4 G4 = make_float4(0,0,0,0); \
     ACC_CONJ_PROD(g20, +g01, +g12); \
@@ -108,7 +108,9 @@ volatile float o32_im;
     ACC_CONJ_PROD(g21, +g02, +g10); \
     ACC_CONJ_PROD(g21, -g00, +g12); \
     ACC_CONJ_PROD(g22, +g00, +g11); \
-    ACC_CONJ_PROD(g22, -g01, +g10);    
+    ACC_CONJ_PROD(g22, -g01, +g10); \
+    float u0 = (dir < 6 ? SPATIAL_SCALING : (ga_idx >= Nh-L1h*L2*L3 ? TIME_SYMMETRY : 1)); \
+    G3.x*=u0; G3.y*=u0; G3.z*=u0; G3.w*=u0; G4.x*=u0; G4.y*=u0;
 
 #define READ_SPINOR(spinor) \
     float4 I0 = tex1Dfetch((spinor), sp_idx + 0*Nh); \
@@ -151,7 +153,7 @@ if(1)
     // i 0 0 1 
     
     int sp_idx = ((x1==L1-1) ? X-(L1-1) : X+1) / 2;
-    int ga_idx = sid + (0/2)*Nh*3;
+    int ga_idx = sid;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -172,7 +174,7 @@ if(1)
     float b2_im = +i12_im-i22_re;
     
     // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge0Tex);
+    READ_GAUGE_MATRIX(gauge0Tex, 0);
     
     // multiply row 0 by half spinors
     {
@@ -233,7 +235,7 @@ if(1)
     // -i 0 0 1 
     
     int sp_idx = ((x1==0)    ? X+(L1-1) : X-1) / 2;
-    int ga_idx = sp_idx + (1/2)*Nh*3;
+    int ga_idx = sp_idx;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -254,7 +256,7 @@ if(1)
     float b2_im = +i12_im+i22_re;
     
     // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge1Tex);
+    READ_GAUGE_MATRIX(gauge1Tex, 1);
     
     // multiply row 0 by half spinors
     {
@@ -315,7 +317,7 @@ if(1)
     // 1 0 0 1 
     
     int sp_idx = ((x2==L2-1) ? X-(L2-1)*L1 : X+L1) / 2;
-    int ga_idx = sid + (2/2)*Nh*3;
+    int ga_idx = sid;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -336,7 +338,7 @@ if(1)
     float b2_im = +i12_im-i22_im;
     
     // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge0Tex);
+    READ_GAUGE_MATRIX(gauge0Tex, 2);
     
     // multiply row 0 by half spinors
     {
@@ -397,7 +399,7 @@ if(1)
     // -1 0 0 1 
     
     int sp_idx = ((x2==0)    ? X+(L2-1)*L1 : X-L1) / 2;
-    int ga_idx = sp_idx + (3/2)*Nh*3;
+    int ga_idx = sp_idx;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -418,7 +420,7 @@ if(1)
     float b2_im = +i12_im+i22_im;
     
     // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge1Tex);
+    READ_GAUGE_MATRIX(gauge1Tex, 3);
     
     // multiply row 0 by half spinors
     {
@@ -479,7 +481,7 @@ if(1)
     // 0 -i 0 1 
     
     int sp_idx = ((x3==L3-1) ? X-(L3-1)*L2*L1 : X+L2*L1) / 2;
-    int ga_idx = sid + (4/2)*Nh*3;
+    int ga_idx = sid;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -500,7 +502,7 @@ if(1)
     float b2_im = +i12_im+i32_re;
     
     // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge0Tex);
+    READ_GAUGE_MATRIX(gauge0Tex, 4);
     
     // multiply row 0 by half spinors
     {
@@ -561,7 +563,7 @@ if(1)
     // 0 i 0 1 
     
     int sp_idx = ((x3==0)    ? X+(L3-1)*L2*L1 : X-L2*L1) / 2;
-    int ga_idx = sp_idx + (5/2)*Nh*3;
+    int ga_idx = sp_idx;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -582,7 +584,7 @@ if(1)
     float b2_im = +i12_im-i32_re;
     
     // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge1Tex);
+    READ_GAUGE_MATRIX(gauge1Tex, 5);
     
     // multiply row 0 by half spinors
     {
@@ -643,7 +645,7 @@ if(1)
     // 0 -1 0 1 
     
     int sp_idx = ((x4==L4-1) ? X-(L4-1)*L3*L2*L1 : X+L3*L2*L1) / 2;
-    int ga_idx = sid + (6/2)*Nh*3;
+    int ga_idx = sid;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -664,7 +666,7 @@ if(1)
     float b2_im = +i12_im-i32_im;
     
     // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge0Tex);
+    READ_GAUGE_MATRIX(gauge0Tex, 6);
     
     // multiply row 0 by half spinors
     {
@@ -725,7 +727,7 @@ if(1)
     // 0 1 0 1 
     
     int sp_idx = ((x4==0)    ? X+(L4-1)*L3*L2*L1 : X-L3*L2*L1) / 2;
-    int ga_idx = sp_idx + (7/2)*Nh*3;
+    int ga_idx = sp_idx;
     
     // read spinor from device memory
     READ_SPINOR(spinorTex);
@@ -746,7 +748,7 @@ if(1)
     float b2_im = +i12_im+i32_im;
     
     // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge1Tex);
+    READ_GAUGE_MATRIX(gauge1Tex, 7);
     
     // multiply row 0 by half spinors
     {

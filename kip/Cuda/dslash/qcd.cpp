@@ -53,6 +53,19 @@ void printSpinorElement(float *spinor, int X) {
         printSpinor(&spinor[(X/2)*(4*3*2)+Nh*spinorSiteSize]);
 }
 
+void printGauge(float *gauge) {
+    for (int m = 0; m < 3; m++) {
+        printVector(&gauge[m*(3*2)]);
+    }
+}
+
+// X indexes the full lattice
+void printGaugeElement(float *gauge, int X) {
+    if (getOddBit(X) == 0)
+        printGauge(&gauge[(X/2)*gaugeSiteSize]);
+    else
+        printGauge(&gauge[(X/2+Nh)*gaugeSiteSize]);
+}
 
 
 // given a "half index" i into either an even or odd half lattice (corresponding
@@ -91,6 +104,25 @@ void su3_reconstruct(float *mat) {
     accumulateConjugateProduct(w+2*(2), u+1*(2), v+0*(2), -1);
 }
 
+
+void applyGaugeFieldScaling(float **gauge) {
+    // Apply spatial scaling factor (u0) to spatial links
+    for (int d=0; d<3; d++) {
+        for (int i=0; i<gaugeSiteSize*N; i++) {
+            gauge[d][i] /= SPATIAL_SCALING;
+        }
+    }
+    
+    // Apply boundary conditions to temporal links
+    int surface = L1h*L2*L3;
+    for (int j=Nh-surface; j<Nh; j++) {
+        for (int i=0; i<gaugeSiteSize; i++) {
+            gauge[3][j*gaugeSiteSize+i] *= TIME_SYMMETRY;
+            gauge[3][(Nh+j)*gaugeSiteSize+i] *= TIME_SYMMETRY;
+        }
+    }
+}
+
 void constructUnitGaugeField(float **res) {
     float *resOdd[4], *resEven[4];
     for (int dir = 0; dir < 4; dir++) {  
@@ -110,6 +142,8 @@ void constructUnitGaugeField(float **res) {
             }
         }
     }
+    
+    applyGaugeFieldScaling(res);
 }
 
 void constructGaugeField(float **res) {
@@ -133,6 +167,8 @@ void constructGaugeField(float **res) {
             su3_reconstruct(&resOdd[dir][i*(3*3*2)]);
         }
     }
+    
+    applyGaugeFieldScaling(res);
 }
 
 void constructPointSpinorField(float *res, int i0, int s0, int c0) {
@@ -201,6 +237,6 @@ int main(int argc, char **argv) {
 
 //    blasTest();
 //    axpbyTest();
-//    dslashTest();
-    cgTest();
+    dslashTest();
+//    cgTest();
 }

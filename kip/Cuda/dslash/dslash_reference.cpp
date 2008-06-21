@@ -266,6 +266,7 @@ void MatPC(float *outEven, float **gauge, float *inEven, float kappa) {
     // lastly apply the kappa term
     float kappa2 = -kappa*kappa;
     xpay(inEven, kappa2, outEven, Nh*spinorSiteSize);
+    free(tmpOdd);
 }
 
 // Apply the even-odd preconditioned Dirac operator
