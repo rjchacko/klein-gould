@@ -144,6 +144,7 @@ extern "C" void printGaugeElement(float *gauge, int X);
 extern "C" int fullLatticeIndex(int i, int oddBit);
 extern "C" int getOddBit(int X);
 
+extern "C" void applyGaugeFieldScaling(float **gauge);
 extern "C" void constructUnitGaugeField(float **gauge);
 extern "C" void constructGaugeField(float **gauge);
 extern "C" void constructPointSpinorField(float *spinor, int i0, int s0, int c0);
