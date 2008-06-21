@@ -7,6 +7,9 @@
 #define N (L1*L2*L3*L4) // total number of lattice points
 #define Nh (N/2) // total number of even/odd lattice points
 
+#define SPATIAL_SCALING 2.38 // scale gauge links in spatial dimensions
+#define TIME_SYMMETRY -1 // if -1, make gauge field antisymmetric in time
+
 #define packedGaugeSiteSize 12 // real numbers per link, using SU(3) reconstruction
 #define gaugeSiteSize 18 // real numbers per link
 #define spinorSiteSize 24 // real numbers per spinor
@@ -135,6 +138,8 @@ extern "C" double stopwatchReadSeconds();
 
 extern "C" void printSpinor(float *spinor);
 extern "C" void printSpinorElement(float *spinor, int X);
+extern "C" void printGauge(float *gauge);
+extern "C" void printGaugeElement(float *gauge, int X);
 
 extern "C" int fullLatticeIndex(int i, int oddBit);
 extern "C" int getOddBit(int X);
@@ -146,4 +151,8 @@ extern "C" void constructSpinorField(float *res);
 
 extern "C" void applyGamma5(float *out, float *in, int len);
 
+
+// ---------- gauge_read.cpp ----------
+
+extern "C" void readGaugeField(char *filename, float *gauge[], int argc, char *argv[]);
 
