@@ -1,7 +1,6 @@
 package rachele.ising.dim2.apps;
 
 import java.awt.Color;
-
 import rachele.ising.dim2.*;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
@@ -11,8 +10,6 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
-import static java.lang.Math.PI;
-import static java.lang.Math.abs;
 import static java.lang.Math.floor;
 import static scikit.numerics.Math2.j1;
 import static scikit.util.Utilities.frameTogether;
@@ -40,7 +37,7 @@ public class LinearTheoryApp extends Simulation{
 	public LinearTheoryApp() {
 		frameTogether("Plots", grid, sfVsKR, structurePeakV, variance);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
-		params.addm("Interaction", new ChoiceValue("Circle", "Square"));
+		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin Conserve M", "Langevin No M Convervation"));
 		params.add("Init Conditions", new ChoiceValue("Random Gaussian", 
 				"Artificial Stripe 3", "Read From File", "Constant" ));
@@ -52,15 +49,15 @@ public class LinearTheoryApp extends Simulation{
 		//params.addm("Conserve M?", new ChoiceValue("Yes", "No"));
 		params.addm("T", 0.05);
 		params.addm("H", 0.0);
-		params.add("Magnetization", 0.5);
-		params.addm("dt", 1.0);
+		params.add("Magnetization", 0.0);
+		params.addm("dt", 0.01);
 		params.addm("J", -1.0);
 		params.addm("R", 1000000.0);
-		params.add("L/R", 4.0);
-		params.add("R/dx", 16.0);
+		params.add("L/R", 2.56);
+		params.add("R/dx", 50.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Random seed", 0);
-		params.add("Max Time", 350);
+		params.add("Max Time", 10.0);
 		params.add("Time");
 		params.add("Reps");
 		params.add("Mean Phi");
@@ -70,6 +67,7 @@ public class LinearTheoryApp extends Simulation{
 	
 	public void animate() {
 		ising.readParams(params);
+		params.set("Time", ising.time());
 		//params.set("Mean Phi", ising.mean(ising.phi));
 		if (params.sget("Zoom").equals("Yes")) 	grid.setAutoScale();
 		else grid.setScale(-1, 1);
@@ -105,59 +103,69 @@ public class LinearTheoryApp extends Simulation{
 		sfTheory2Acc = new Accumulator(ising.dt);
 		double binWidth = params.fget("kR bin-width");
 		binWidth = IsingLangevin.KR_SP / floor(IsingLangevin.KR_SP/binWidth);
-        sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
+
+		sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
 		sf.setBounds(0.1, 14);	
-		double density = findMeanPhi();
-		int kR1int = getkRint(5.13562230);
-		int kR2int = getkRint(11.6198);
-		fillTheoryAccum(density, kR1int, kR2int);
+		//double density = findMeanPhi();
+		double density = 0;
+
+		//int kR1int = ising.findKRSquareInt(IsingField2D.KRsquare);//getkRint(5.13562230);
+		int kR1int = ising.findKRSquareInt(5.006913291658733);
+		int kR2int = ising.findKRSquareInt(IsingField2D.KRsquare2);
+		double maxTime = params.fget("Max Time");
+		fillTheory(density, kR1int, kR2int, maxTime);
 		varianceAcc = new Accumulator(params.fget("dt"));
 		meanPhiAcc = new Accumulator(params.fget("dt"));
-		//double kR = sf.getCircleKR();
-
 		int reps = 0;
+		double abortTimeSum = 0;
+		
 		while (true) {
 			ising.randomizeField(density);
-			for (double t = 0.0; t < params.fget("Max Time"); t = t + params.fget("dt")){
-				params.set("Time", t);
+			ising.restartClock();
+			boolean abort = false;
+			collect(kR1int, kR2int);
+			Job.animate();
+			params.set("dt", 0.01);
+			while(ising.time()< maxTime & abort == false){
+				//if(ising.time()>4.5) params.set("dt", 0.001);
 				params.set("Mean Phi", ising.mean(ising.phi));
-				ising.simulate();
-				//accumTheoryPoint(kR, t);
-				sf.accumulateAll(t, ising.coarseGrained());
-				sf.accumExact(t, ising.coarseGrained(),kR1int,kR2int);
-				varianceAcc.accum(t, ising.phiVariance());
-				meanPhiAcc.accum(t,ising.mean(ising.phi));
-				//System.out.println(t);
+				abort = ising.simulateUnstable();	
+				//ising.simulate();
+				if (abort){
+					System.out.println("abort at " + ising.time());
+					abortTimeSum += ising.time();
+				}else collect(kR1int, kR2int);
 				Job.animate();
 			}
-			reps += 1;
-			params.set("Reps", reps);
+		reps += 1;
+		params.set("Reps", reps);
+		System.out.println(abort);
+		double aveAbortTime = abortTimeSum/(double)reps;
+		System.out.println("ave abort time = " + aveAbortTime);
 		}
 	}
 	
-//	private void accumTheoryPoint(double kR, double t) {
-//		sfTheoryAcc.accum(t, linearTheory(kR, ising.lastMu, t));
-//	}
-
-	private int getkRint(double peakValue) {
-		double dblePeakLength = peakValue*ising.L/(2*PI*ising.R);
-		int circlePeakInt = (int)dblePeakLength;
-		if(abs(2*PI*circlePeakInt*ising.R/ising.L - peakValue) >= abs(2*PI*(circlePeakInt+1)*ising.R/ising.L - peakValue))
-			circlePeakInt = circlePeakInt + 1;
-		return circlePeakInt;
+	public void collect(int kR1int, int kR2int){
+		sf.accumulateAll(ising.time(), ising.coarseGrained());
+		sf.accumExact(ising.time(), ising.coarseGrained(),kR1int,kR2int);
+		varianceAcc.accum(ising.time(), ising.phiVariance());
+		meanPhiAcc.accum(ising.time(),ising.mean(ising.phi));		
 	}
-
+	
 	public double findMeanPhi(){
-		for (double t = 0.0; t < 50.0; t = t + params.fget("dt"))
-		ising.simulate();
+		for (double t = 0.0; t < 50.0; t = t + params.fget("dt")){
+			ising.simulate();
+			System.out.println("init for density: time = " + ising.time());
+		}
 		return ising.mean(ising.phi);
 	}
 	
-	public double circleLinearTheory(double kR, double mu, double time){
+	public double circleLinearTheory(double kR, double time){
+		System.out.println("check this routine!!");
 		//double V = ising.Lp*ising.Lp;
 		double rho = ising.DENSITY;
 		double D = -circlePotential(kR) - ising.T/ (1-rho*rho);
-		D *= pow(1-rho*rho,2);
+		//D *= pow(1-rho*rho,2);
 		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
 		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
 		
@@ -165,41 +173,52 @@ public class LinearTheoryApp extends Simulation{
 		return sf;
 	}
 
-	public double squareLinearTheory(double kR, double mu, double time){
-		//double V = ising.Lp*ising.Lp;
+	public double squareLinearTheory(double kR, double time){
+		double V = ising.Lp*ising.Lp;
 		double rho = ising.DENSITY;
-		double D = -squarePotential(kR) - ising.T/ (1-rho*rho);
-		D *= pow(1-rho*rho,2);
-		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
-		//double sf = (exp(2*time*D)*(V + ising.T/D)-ising.T/D)/V;
-		
-		double sf = exp(2*time*D);
+		double D = ising.mobility*(-squarePotential(kR) - ising.T/ (1-rho*rho));
+		//D *= pow(1-rho*rho,2);
+		double sf = (exp(2*time*D)*(V + ising.T*ising.mobility/D)-ising.T*ising.mobility/D)/V;	
+		//double sf = exp(2*time*D);
 		return sf;
 	}
 	
-	public void fillTheoryAccum(double density, int kR1int, int kR2int){
+	private void fillTheory(double density, int kR1int, int kR2int, double maxTime){
 		sfTheoryAcc = new Accumulator(ising.dt);
 		sfTheory2Acc = new Accumulator(ising.dt);
-		//double kR = sf.circlekRValue();
-		double kR1 = ising.R*2*PI*kR1int/ising.L;
-		double kR2 = ising.R*2*PI*kR2int/ising.L;
-		for(double time = 0.0; time < params.fget("Max Time"); time = time + params.fget("dt")){
-			sfTheoryAcc.accum(time, squareLinearTheory(kR1, 0, time));
-			sfTheory2Acc.accum(time, squareLinearTheory(kR2, 0, time));
+		double kR1 = ising.R*2*Math.PI*kR1int/ising.L;
+		double kR2 = ising.R*2*Math.PI*kR2int/ising.L;
+		ising.randomizeField(density);
+		ising.restartClock();	
+		double timeNotify = 0;
+		if(params.sget("Interaction")=="Square"){
+			sfTheoryAcc.accum(ising.time(), squareLinearTheory(kR1, ising.time()));
+			sfTheory2Acc.accum(ising.time(), squareLinearTheory(kR2, ising.time()));
+			while(ising.time()<maxTime){
+				if(ising.time() > timeNotify){
+					System.out.println("init time " + ising.time() + " of " + maxTime);
+					timeNotify += 1;
+				}
+				ising.simulate();
+				sfTheoryAcc.accum(ising.time(), squareLinearTheory(kR1, ising.time()));
+				sfTheory2Acc.accum(ising.time(), squareLinearTheory(kR2, ising.time()));
+			}
+		}
+		else if(params.sget("Interaction")=="Circle"){
+			sfTheoryAcc.accum(ising.time(), circleLinearTheory(kR1, ising.time()));
+			sfTheory2Acc.accum(ising.time(), circleLinearTheory(kR2, ising.time()));
+			while(ising.time()<maxTime){	
+				if(ising.time() > timeNotify){
+					System.out.println("init time " + ising.time() + " of " + maxTime);
+					timeNotify += 1;
+				}
+				ising.simulate();
+				sfTheoryAcc.accum(ising.time(), circleLinearTheory(kR1, ising.time()));
+				sfTheory2Acc.accum(ising.time(), circleLinearTheory(kR2, ising.time()));
+			}
 		}
 	}
-
-	public void fillSquareTheoryAccum(double density, int kR1int, int kR2int){
-		sfTheoryAcc = new Accumulator(ising.dt);
-		sfTheory2Acc = new Accumulator(ising.dt);
-		//double kR = sf.circlekRValue();
-		double kR1 = ising.R*2*PI*kR1int/ising.L;
-		double kR2 = ising.R*2*PI*kR2int/ising.L;
-		for(double time = 0.0; time < params.fget("Max Time"); time = time + params.fget("dt")){
-			sfTheoryAcc.accum(time, circleLinearTheory(kR1, 0, time));
-			sfTheory2Acc.accum(time, circleLinearTheory(kR2, 0, time));
-		}
-	}
+	
 	
 	public double squarePotential(double kR){
 		return sin(kR)/kR;
