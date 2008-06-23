@@ -53,6 +53,7 @@ public class IsingField2DApp extends Simulation {
     Accumulator landscapeFiller;
     Accumulator brLandscapeFiller;
     Accumulator sfChange;
+    Accumulator sfSliceAcc;
     public double [] inputSlice;
     public int lastClear;
     public int maxi=0;
@@ -106,6 +107,7 @@ public class IsingField2DApp extends Simulation {
 		landscapeFiller = new Accumulator(.01);
 		brLandscapeFiller = new Accumulator(.01);
 		sfChange = new Accumulator(1);
+		sfSliceAcc = new Accumulator(.1);
 	}
 	
 	public void animate() {

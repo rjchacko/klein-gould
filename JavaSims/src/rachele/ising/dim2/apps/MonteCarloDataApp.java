@@ -8,6 +8,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import rachele.ising.dim2.*;
 import scikit.dataset.Accumulator;
+import scikit.dataset.Function;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -21,16 +22,18 @@ import static java.lang.Math.*;
 public class MonteCarloDataApp extends Simulation{
 
 	//Choose function of app
-	//String averages = "S_k_DO";//take s(k) averages for disorder to order case
-	String averages = "S_t_DO";//take s(t) averages for disorder to order case
-	//String averages = "S_k_SC;;//take s(k) averages for stripe to clump case
+	String averages = "S_k_DO";//take s(k) averages for disorder to order case
+	//String averages = "S_t_DO";//take s(t) averages for disorder to order case
+	//String averages = "S_k_SC";//take s(k) averages for stripe to clump case
 	//String averages = "S_t_SC";//take s(k) averages for stripe to clump case
+	//String averages = "S_t_SC1D";//take s(t) averages for stripe to clump case starting with 1D stripe solution
 	//String averages = "None";
 	
 	Grid grid = new Grid("Long Range Ising Model");
 	Grid sfGrid = new Grid("SF");
 	Plot sfkPlot = new Plot("sf_k plot");
 	Plot sftPlot = new Plot("sf_t plot");
+	//if(averages == "S_t_SC1D") Plot plot1DIsing = new Plot ("1D Ising Model");
 	int dx;
 	IsingLR sim;
 	public FourierTransformer fft;
@@ -46,30 +49,27 @@ public class MonteCarloDataApp extends Simulation{
 	
 	public void load(Control c) {
 		
-		c.frameTogether("grids", grid, sfGrid);		
-		if (averages == "S_k_DO"){
+		//c.frameTogether("grids", grid, sfGrid);		
+		c.frame(grid);
+		if (averages == "S_k_DO" || averages == "S_k_SC"){
 			c.frame(sfkPlot);
 			sf_kAcc = new Accumulator();
-		}else if(averages == "S_t_DO"){
-			c.frame(sftPlot);
-			sf_tAveAcc = new Accumulator();
-		}else if (averages == "S_k_SC"){
-			c.frame(sfkPlot);
-			sf_kAcc = new Accumulator();
-		}else if (averages == "S_t_SC"){
+		}else if(averages == "S_t_DO" || averages == "S_t_SC" || averages == "S_t_SC1D"){
 			c.frame(sftPlot);
 			sf_tAveAcc = new Accumulator();
 		}
+		//if(averages == "S_t_SC1D") c.frame(plot1DIsing);
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<8);
-		params.add("R", 100);//1<<6);
+		params.add("L", 1<<10);
+		//params.add("N", 1<<8);
+		params.add("R", 410);//1<<6);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.04);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
-		params.addm("dt", 1/(double)(1<<3));
+		params.addm("dt", 1/(double)(1<<6));
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -87,12 +87,23 @@ public class MonteCarloDataApp extends Simulation{
 		if (averages == "S_k_DO"){
 			sfkPlot.registerLines("sf(k)", sf_kAcc, Color.BLACK);
 			sfkPlot.registerLines("theory", sf_kTheoryAcc, Color.BLUE);
+			sfkPlot.registerLines("Structure theory", new Function() {
+				public double eval(double kR) {
+					double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
+					double D = -pot/sim.T-1;
+					return  (exp(2*sim.time()*D)*(1 + 1/D)-1/D);	
+				}
+			}, Color.RED);
 		}else if(averages == "S_t_DO"){
 			sftPlot.registerLines("st(k)", sf_tAveAcc, Color.BLACK);
 			sftPlot.registerLines("theory", sf_tTheoryAcc, Color.BLUE);			
 		}else if(averages == "S_t_SC"){
 			sftPlot.registerLines("st(k) Ave", sf_tAveAcc, Color.BLACK);
 			sftPlot.registerLines("st(k)", sf_tAcc, Color.RED);
+		}else if (averages == "S_t_SC1D"){
+			sftPlot.registerLines("st(k) Ave", sf_tAveAcc, Color.BLACK);
+			sftPlot.registerLines("st(k)", sf_tAcc, Color.RED);
+			//plot1DIsing.registerLines(name, data, color);
 		}
 		if(flags.contains("Write Config")) writeConfigToFile();
 		flags.clear();
@@ -107,7 +118,7 @@ public class MonteCarloDataApp extends Simulation{
 		sFactor = new double [sim.L/dx*sim.L/dx];
 		double step = 0.10;
 		if(averages == "S_t_DO"){
-			double maxTime = 2.0;
+			double maxTime = 0.10;
 			int sfLabel = sf_t_theory(maxTime);
 			sfTimeArray = new double[(int)((maxTime/step)+1)];
 			int repNo = 0;
@@ -135,7 +146,7 @@ public class MonteCarloDataApp extends Simulation{
 		}else if (averages == "S_k_DO"){
 			double maxTime = 0.2;
 			double kRmax= 25;
-			sf_k_theory(0.25, kRmax);
+			sf_k_theory(sim.dTime(), kRmax);
 			System.out.println("take data time = " + maxTime);
 			int repNo = 0;
 			sfTimeArray = new double[sim.L/dx];			
@@ -143,10 +154,10 @@ public class MonteCarloDataApp extends Simulation{
 				if(params.sget("init") == "Read From File") readInitialConfiguration();
 				else sim.randomizeField(params.fget("Initial magnetization"));
 				sim.restartClock();
-				while (sim.time() < maxTime){
+				//while (sim.time() < maxTime){
 					sim.step();
 					Job.animate();
-				}
+				//}
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 				
 				for (int i = 1; i < sim.L/(2*dx); i++ ){
@@ -264,9 +275,9 @@ public class MonteCarloDataApp extends Simulation{
 	public double theoryPoint(double kR, double time){
 		double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
 		double D = -pot/sim.T-1;
-		double V = sim.L*sim.L/(dx*dx);
+		//double V = sim.L*sim.L/(dx*dx);
 		//System.out.println("D= "+D);
-		double sf = (exp(2*time*D)*(V + 1/D)-1/D)/V;		
+		double sf = (exp(2*time*D)*(1 + 1/D)-1/D);		
 		return sf;
 	}
 	
