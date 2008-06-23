@@ -27,7 +27,6 @@ public class IsingField2D extends AbstractIsing2D{
 	public double [] phi_bar, delPhi, Lambda, A;
 	ComplexDouble2DFFT fft;	// Object to perform transforms
 	double[] fftScratch;
-	
 	public double lambda;
 	static double delta = 1e-10;
 	public double switchD = 1;
@@ -35,12 +34,11 @@ public class IsingField2D extends AbstractIsing2D{
 	//trying to achieve fractional accuracy for a minimum that happens to be
 	// exactly zero
 	static double sigma = .2;
-
+	public double mobility;
 	public double [] lineminDirection;
 	public double [] xi;
 	public double [] g;
 	public double [] h;
-	
 	public double f_p;
 	public double fret;
 	
@@ -66,6 +64,7 @@ public class IsingField2D extends AbstractIsing2D{
 		R = params.fget("R");
 		L = R*params.fget("L/R");
 		T = params.fget("T");
+		mobility = 1.0/T;
 		dx = R/params.fget("R/dx");
 		dt = params.fget("dt");
 		H = params.fget("H");
@@ -200,7 +199,6 @@ public class IsingField2D extends AbstractIsing2D{
 	public void readParams(Parameters params) {
 		//if (params.sget("Plot FEvT") == "Off") T = params.fget("T");
 		dt = params.fget("dt");
-
 		J = params.fget("J");
 		R = params.fget("R");
 		L = R*params.fget("L/R");
@@ -209,6 +207,7 @@ public class IsingField2D extends AbstractIsing2D{
 		dx = L / Lp;
 		H = params.fget("H");
 		T = params.fget("T");
+		mobility = 1.0/T;
 		//double backgroundH = params.fget("H");
 		//double stripeH = params.fget("H Stripe");
 		//setExternalField(backgroundH, stripeH);
@@ -277,43 +276,60 @@ public class IsingField2D extends AbstractIsing2D{
 		}		
 	}
 
-	public void simulateUnstable(){
+	public boolean simulateUnstable(){
+		boolean abortMode = true;
+		boolean abort = false; //abort simulation with range exception?
 		convolveWithRange(phi, phi_bar, R);		
 		double dt0 = dt;
 		for (int i = 0; i < Lp*Lp; i++){
-			delPhi[i] = -dt0*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H);
+			delPhi[i] = -dt0*mobility*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H)+ sqrt((dt0*2*T*mobility)/dx)*noise();
 		}
-		
 		double [] testPhi = new double [Lp*Lp];
-		int ct = 0;
-		for (int i = 0; i < Lp*Lp; i++){
-			testPhi[i] = phi[i]+ delPhi[i];
-			if(testPhi[i] > 1.0){
-				ct += 1;
-				//System.out.println("high exception");
-				double dtTest = dt0*((1-phi[i])/2.0)/testPhi[i];
-				if(dtTest < dt) dt = dtTest;
-			}else if(testPhi[i] < -1.0){
-				ct += 1;
-				//System.out.println("low exception");
-				double dtTest = dt0*((-1-phi[i])/2.0)/testPhi[i];
-				if(dtTest < dt) dt = dtTest;
+		if(abortMode){
+			for (int i = 0; i < Lp*Lp; i++){
+				testPhi[i] = phi[i]+ delPhi[i];
+				if(testPhi[i] >= 1.0){ 
+					abort = true;
+				}else if(testPhi[i] <= -1.0){
+					abort = true;
+				}
 			}
+			if(abort){
+				System.out.println("abort at " + time());
+			}else
+				for (int i = 0; i < Lp*Lp; i++) phi[i] += dt*delPhi[i]/dt0;			
+			t += dt;
+		}else{//older code:  keeps the program going but kind of screws it up
+			int ct = 0;
+			for (int i = 0; i < Lp*Lp; i++){
+				testPhi[i] = phi[i]+ delPhi[i];
+				if(testPhi[i] > 1.0){
+					ct += 1;
+					double dtTest = dt0*((1-phi[i])/2.0)/testPhi[i];
+					if(dtTest < dt) dt = dtTest;
+				}else if(testPhi[i] < -1.0){
+					ct += 1;
+					double dtTest = dt0*((-1-phi[i])/2.0)/testPhi[i];
+					if(dtTest < dt) dt = dtTest;
+				}
+			}
+			if (ct != 0) System.out.println("ct = " + ct);
+		
+			for (int i = 0; i < Lp*Lp; i++) 
+				phi[i] += dt*delPhi[i]/dt0;			
+			t += dt;
+			//find max, min and average delphis	
+			double meanDelPhi = mean(delPhi);
+			double maxDelPhi = DoubleArray.max(delPhi);
+			double minDelPhi = DoubleArray.min(delPhi);
+			System.out.println("mean = " + meanDelPhi + " min = " + minDelPhi + " max = " + maxDelPhi);
+
 		}
-		if (ct != 0) System.out.println("ct = " + ct);
-		
-		for (int i = 0; i < Lp*Lp; i++) 
-			phi[i] += dt*delPhi[i]/dt0;			
-		t += dt;
-		
-		//find max, min and average delphis
-		
-		double meanDelPhi = mean(delPhi);
-		double maxDelPhi = DoubleArray.max(delPhi);
-		double minDelPhi = DoubleArray.min(delPhi);
-		System.out.println("mean = " + meanDelPhi + " min = " + minDelPhi + " max = " + maxDelPhi);
+		return abort;
 	}
 	
+	public void restartClock(){t=0.0;}
+		
 	public void simulate() {
 		freeEnergy = 0;  //free energy is calculated for previous time step
 		double potAccum = 0;
@@ -328,10 +344,10 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int i = 0; i < Lp*Lp; i++) {
 			double dF_dPhi = 0, entropy = 0;
 			if (theory == "Phi4" || theory == "Phi4HalfStep"){
-				dF_dPhi = -phi_bar[i]+T*(phi[i]+pow(phi[i],3)) - H;	
+				dF_dPhi = mobility*(-phi_bar[i]+T*(phi[i]+pow(phi[i],3)) - H);	
 				Lambda[i] = 1;
 			}else{
-				dF_dPhi = -phi_bar[i] - H;//+T* scikit.numerics.Math2.atanh(phi[i]);
+				dF_dPhi = mobility*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
 				//dF_dPhi = -phi_bar[i]+T*(-log(1.0-phi[i])+log(1.0+phi[i]))/2.0 - H;
 				if(theory == "HalfStep"){
 					Lambda[i] = 1;
@@ -341,7 +357,7 @@ public class IsingField2D extends AbstractIsing2D{
 					entropy = -((1.0 + phi[i])*log(1.0 + phi[i]) +(1.0 - phi[i])*log(1.0 - phi[i]))/2.0;
 				}
 			}
-			delPhi[i] = - dt*Lambda[i]*dF_dPhi + sqrt(Lambda[i]*(dt*2*T)/dx)*noise();
+			delPhi[i] = - dt*Lambda[i]*dF_dPhi + sqrt(Lambda[i]*(dt*2*T*mobility)/dx)*noise();
 			phiVector[i] = delPhi[i];
 			meanLambda += Lambda[i];
 			double potential = -(phi[i]*phi_bar[i])/2.0;

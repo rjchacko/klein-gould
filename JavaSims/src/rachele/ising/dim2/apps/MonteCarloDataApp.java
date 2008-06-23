@@ -20,6 +20,13 @@ import static java.lang.Math.*;
 
 public class MonteCarloDataApp extends Simulation{
 
+	//Choose function of app
+	//String averages = "S_k_DO";//take s(k) averages for disorder to order case
+	String averages = "S_t_DO";//take s(t) averages for disorder to order case
+	//String averages = "S_k_SC;;//take s(k) averages for stripe to clump case
+	//String averages = "S_t_SC";//take s(k) averages for stripe to clump case
+	//String averages = "None";
+	
 	Grid grid = new Grid("Long Range Ising Model");
 	Grid sfGrid = new Grid("SF");
 	Plot sfkPlot = new Plot("sf_k plot");
@@ -28,10 +35,9 @@ public class MonteCarloDataApp extends Simulation{
 	IsingLR sim;
 	public FourierTransformer fft;
 	double [] sFactor;
-	Accumulator sf_kAcc, sf_tAcc;
+	Accumulator sf_kAcc, sf_tAveAcc,sf_tAcc;
 	Accumulator sf_kTheoryAcc, sf_kTheory2Acc, sf_tTheoryAcc, sf_tTheory2Acc;
     boolean clearFile;
-    String averages;
    	double [] sfTimeArray;
 	
 	public static void main(String[] args) {
@@ -39,12 +45,6 @@ public class MonteCarloDataApp extends Simulation{
 	}
 	
 	public void load(Control c) {
-
-		//averages = "S_k_DO";//take s(k) averages for disorder to order case
-		//averages = "S_t_DO";//take s(t) averages for disorder to order case
-		//averages = "S_k_SC;;//take s(k) averages for stripe to clump case
-		averages = "S_t_SC";//take s(k) averages for stripe to clump case
-		//averages = "None";
 		
 		c.frameTogether("grids", grid, sfGrid);		
 		if (averages == "S_k_DO"){
@@ -52,19 +52,19 @@ public class MonteCarloDataApp extends Simulation{
 			sf_kAcc = new Accumulator();
 		}else if(averages == "S_t_DO"){
 			c.frame(sftPlot);
-			sf_tAcc = new Accumulator();
+			sf_tAveAcc = new Accumulator();
 		}else if (averages == "S_k_SC"){
 			c.frame(sfkPlot);
 			sf_kAcc = new Accumulator();
 		}else if (averages == "S_t_SC"){
 			c.frame(sftPlot);
-			sf_tAcc = new Accumulator();
+			sf_tAveAcc = new Accumulator();
 		}
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<9);
-		params.add("R", 1<<6);
+		params.add("L", 1<<8);
+		params.add("R", 100);//1<<6);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.04);
 		params.addm("J", -1.0);
@@ -88,8 +88,11 @@ public class MonteCarloDataApp extends Simulation{
 			sfkPlot.registerLines("sf(k)", sf_kAcc, Color.BLACK);
 			sfkPlot.registerLines("theory", sf_kTheoryAcc, Color.BLUE);
 		}else if(averages == "S_t_DO"){
-			sftPlot.registerLines("st(k)", sf_tAcc, Color.BLACK);
+			sftPlot.registerLines("st(k)", sf_tAveAcc, Color.BLACK);
 			sftPlot.registerLines("theory", sf_tTheoryAcc, Color.BLUE);			
+		}else if(averages == "S_t_SC"){
+			sftPlot.registerLines("st(k) Ave", sf_tAveAcc, Color.BLACK);
+			sftPlot.registerLines("st(k)", sf_tAcc, Color.RED);
 		}
 		if(flags.contains("Write Config")) writeConfigToFile();
 		flags.clear();
@@ -120,7 +123,7 @@ public class MonteCarloDataApp extends Simulation{
 					if (sim.time() > recordStep){
 						sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 						sfTimeArray[recordInt] += sFactor[sfLabel];
-						sf_tAcc.accum(sim.time(),sFactor[sfLabel]);
+						sf_tAveAcc.accum(sim.time(),sFactor[sfLabel]);
 						recordStep += step;
 						recordInt +=1;
 					}
@@ -143,7 +146,7 @@ public class MonteCarloDataApp extends Simulation{
 				while (sim.time() < maxTime){
 					sim.step();
 					Job.animate();
-				}	
+				}
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 				
 				for (int i = 1; i < sim.L/(2*dx); i++ ){
@@ -155,26 +158,35 @@ public class MonteCarloDataApp extends Simulation{
 				params.set("Reps", repNo);
 			}
 		}else if(averages == "S_t_SC"){
-			double maxTime = 2.0;//max time after quench time
-			int sfLabel = findBestkR();
-			int sfLabelVert = sfLabel*sim.L/dx;
-			sfTimeArray = new double[(int)((maxTime/step)+1)];
-			int repNo = 0;
+			double maxTime = 50.0;//max time after quench time
 			double initTime = 15.0;
-			while (true) {
-				sim.randomizeField(0.0);
-				sim.restartClock();
-				boolean init = true;
+			double initH = 0;
+			double quenchH = 0.9;
+			int repNo = 0;
+			sf_tAcc = new Accumulator(sim.dTime());
+			sf_tAveAcc = new Accumulator(sim.dTime());
+			int sfLabel;
+			int sfLabelHor = findBestkR();
+			int sfLabelVert = sfLabelHor*sim.L/dx;
+			sfTimeArray = new double[(int)((maxTime/step)+1)];
 
-				while(init){
-					while(sim.time() < initTime){ 
-						sim.step();
-						System.out.println("init time = " + sim.time());
-					}
-					sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-					if(sFactor[sfLabel]>sFactor[sfLabelVert]) init = false;
-				}
+			while (true) {
+				sf_tAcc.clear();
+				sim.randomizeField(0.0);
+				params.set("h", initH);
 				sim.restartClock();
+				while(sim.time() < initTime){ 
+					sim.step();
+					Job.animate();
+					//System.out.println("init time = " + sim.time() + " of " + initTime);
+				}
+				
+				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
+				if(sFactor[sfLabelHor]>sFactor[sfLabelVert]) sfLabel = sfLabelVert;
+				else sfLabel = sfLabelHor;
+
+				sim.restartClock();
+				params.set("h", quenchH);
 				int recordInt = 0;
 				int recordStep = 0;
 				while (sim.time() < maxTime){
@@ -182,7 +194,7 @@ public class MonteCarloDataApp extends Simulation{
 					Job.animate();
 					if (sim.time() > recordStep){
 						sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-						sfTimeArray[recordInt] += sFactor[sfLabel];
+						sf_tAveAcc.accum(sim.time(),sFactor[sfLabel]);
 						sf_tAcc.accum(sim.time(),sFactor[sfLabel]);
 						recordStep += step;
 						recordInt +=1;
@@ -190,7 +202,6 @@ public class MonteCarloDataApp extends Simulation{
 				}	
 				repNo += 1;
 				params.set("Reps", repNo);
-				writeArray(repNo, step);
 			}
 		}else{
 			int recordStep = 0;
@@ -207,8 +218,8 @@ public class MonteCarloDataApp extends Simulation{
 	}
 
 	public int sf_t_theory(double maxTime){
-		sf_tAcc.clear();
-		sf_tAcc = new Accumulator(sim.dTime());
+		sf_tAveAcc.clear();
+		sf_tAveAcc = new Accumulator(sim.dTime());
 		sf_tTheoryAcc = new Accumulator(sim.dTime());
 		sf_tTheory2Acc = new Accumulator(sim.dTime());
 		int kRint = findBestkR();
@@ -253,7 +264,9 @@ public class MonteCarloDataApp extends Simulation{
 	public double theoryPoint(double kR, double time){
 		double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
 		double D = -pot/sim.T-1;
-		double sf = (exp(2*time*D)*(1 + 1/D)-1/D);		
+		double V = sim.L*sim.L/(dx*dx);
+		//System.out.println("D= "+D);
+		double sf = (exp(2*time*D)*(V + 1/D)-1/D)/V;		
 		return sf;
 	}
 	

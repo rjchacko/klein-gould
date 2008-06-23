@@ -85,7 +85,7 @@ public class IsingField2DApp extends Simulation {
 		params.addm("H", 0.80);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.0001);
-		params.addm("dt", 1.0);
+		params.addm("dt", 0.01);
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
@@ -173,9 +173,9 @@ public class IsingField2DApp extends Simulation {
 				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLACK)));
 		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
-		String fileName = "../../../research/javaData/configs1d/config";
-		double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
-		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
+		//String fileName = "../../../research/javaData/configs1d/config";
+		//double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
+		//hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
 		freeEnergyPlot.registerLines("Free Energy", ising.getFreeEnergyAcc(), Color.MAGENTA);
 		
