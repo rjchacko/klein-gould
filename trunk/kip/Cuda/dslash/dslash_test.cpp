@@ -69,8 +69,9 @@ void dslashTest() {
     // print timing information
     printf("%fms per loop\n", 1000*secs);
     int flops = FULL_WILSON ? 1320*2 + 48 : 1320;
+    int floats = FULL_WILSON ? 2*(8*(24+12)+24)+24 : 8*(24+12)+24;
     printf("GFLOPS = %f\n", 1.0e-9*flops*Nh/secs);
-    printf("GiB/s = %f\n\n", Nh*(8*7+4)*3*2*sizeof(float)/(secs*(1<<30)));
+    printf("GiB/s = %f\n\n", Nh*floats*sizeof(float)/(secs*(1<<30)));
 
     // compare to dslash reference implementation
     printf("Comparing to reference implementation...");
