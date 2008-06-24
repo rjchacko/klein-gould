@@ -22,8 +22,8 @@ import static java.lang.Math.*;
 public class MonteCarloDataApp extends Simulation{
 
 	//Choose function of app
-	String averages = "S_k_DO";//take s(k) averages for disorder to order case
-	//String averages = "S_t_DO";//take s(t) averages for disorder to order case
+	//String averages = "S_k_DO";//take s(k) averages for disorder to order case
+	String averages = "S_t_DO";//take s(t) averages for disorder to order case
 	//String averages = "S_k_SC";//take s(k) averages for stripe to clump case
 	//String averages = "S_t_SC";//take s(k) averages for stripe to clump case
 	//String averages = "S_t_SC1D";//take s(t) averages for stripe to clump case starting with 1D stripe solution
@@ -133,7 +133,7 @@ public class MonteCarloDataApp extends Simulation{
 					Job.animate();
 					if (sim.time() > recordStep){
 						sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-						sfTimeArray[recordInt] += sFactor[sfLabel];
+						//sfTimeArray[recordInt] += sFactor[sfLabel];
 						sf_tAveAcc.accum(sim.time(),sFactor[sfLabel]);
 						recordStep += step;
 						recordInt +=1;

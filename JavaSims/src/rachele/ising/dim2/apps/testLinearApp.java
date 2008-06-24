@@ -293,7 +293,8 @@ public class testLinearApp extends Simulation{
         		}
         	}else{
         		ising.readParams(params);
-        		ising.simulateUnstable();
+        		//ising.simulateUnstable();
+        		ising.simulate();
         		params.set("dt new", ising.dt);
        			if(accEtaValues){	
        				rhs2D = simulateLinear(etaLT);	
