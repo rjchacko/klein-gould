@@ -7,6 +7,7 @@
 #define N (L1*L2*L3*L4) // total number of lattice points
 #define Nh (N/2) // total number of even/odd lattice points
 
+#define GAUGE_FIXED 1 // gauge chosen so that which most temporal links are identity
 #define SPATIAL_SCALING 2.38 // scale gauge links in spatial dimensions
 #define TIME_SYMMETRY -1 // if -1, make gauge field antisymmetric in time
 

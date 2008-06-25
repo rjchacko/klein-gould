@@ -109,7 +109,7 @@ volatile float o32_im;
     ACC_CONJ_PROD(g21, -g00, +g12); \
     ACC_CONJ_PROD(g22, +g00, +g11); \
     ACC_CONJ_PROD(g22, -g01, +g10); \
-    float u0 = (dir < 6 ? SPATIAL_SCALING : (ga_idx >= Nh-L1h*L2*L3 ? TIME_SYMMETRY : 1)); \
+    float u0 = (dir < 6 ? SPATIAL_SCALING : (ga_idx < L1h*L2*L3 ? TIME_SYMMETRY : 1)); \
     G3.x*=u0; G3.y*=u0; G3.z*=u0; G3.w*=u0; G4.x*=u0; G4.y*=u0;
 
 #define READ_SPINOR(spinor) \
@@ -119,6 +119,10 @@ volatile float o32_im;
     float4 I3 = tex1Dfetch((spinor), sp_idx + 3*Nh); \
     float4 I4 = tex1Dfetch((spinor), sp_idx + 4*Nh); \
     float4 I5 = tex1Dfetch((spinor), sp_idx + 5*Nh);
+
+float A0_re, A0_im, B0_re, B0_im;
+float A1_re, A1_im, B1_re, B1_im;
+float A2_re, A2_im, B2_re, B2_im;
 
 int sid = BLOCK_DIM*blockIdx.x + threadIdx.x;
 int boundaryCrossings = sid/L1h + sid/(L2*L1h) + sid/(L3*L2*L1h);
@@ -144,7 +148,6 @@ o30_re = o30_im = 0;
 o31_re = o31_im = 0;
 o32_re = o32_im = 0;
 
-if(1)
 {
     // Projector P0-
     // 1 0 0 -i 
@@ -176,57 +179,53 @@ if(1)
     // read gauge matrix from device memory
     READ_GAUGE_MATRIX(gauge0Tex, 0);
     
-    // multiply row 0 by half spinors
-    {
-        float A_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
-        float A_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
-        float B_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
-        float B_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
-        o00_re += +A_re;
-        o00_im += +A_im;
-        o10_re += +B_re;
-        o10_im += +B_im;
-        o20_re += -B_im;
-        o20_im += +B_re;
-        o30_re += -A_im;
-        o30_im += +A_re;
-    }
+    // multiply row 0
+    A0_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
+    A0_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
+    B0_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
+    B0_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
     
-    // multiply row 1 by half spinors
-    {
-        float A_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
-        float A_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
-        float B_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
-        float B_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
-        o01_re += +A_re;
-        o01_im += +A_im;
-        o11_re += +B_re;
-        o11_im += +B_im;
-        o21_re += -B_im;
-        o21_im += +B_re;
-        o31_re += -A_im;
-        o31_im += +A_re;
-    }
+    // multiply row 1
+    A1_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
+    A1_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
+    B1_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
+    B1_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
     
-    // multiply row 2 by half spinors
-    {
-        float A_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
-        float A_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
-        float B_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
-        float B_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
-        o02_re += +A_re;
-        o02_im += +A_im;
-        o12_re += +B_re;
-        o12_im += +B_im;
-        o22_re += -B_im;
-        o22_im += +B_re;
-        o32_re += -A_im;
-        o32_im += +A_re;
-    }
+    // multiply row 2
+    A2_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
+    A2_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
+    B2_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
+    B2_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
+    
+    o00_re += A0_re;
+    o00_im += A0_im;
+    o10_re += B0_re;
+    o10_im += B0_im;
+    o20_re -= B0_im;
+    o20_im += B0_re;
+    o30_re -= A0_im;
+    o30_im += A0_re;
+    
+    o01_re += A1_re;
+    o01_im += A1_im;
+    o11_re += B1_re;
+    o11_im += B1_im;
+    o21_re -= B1_im;
+    o21_im += B1_re;
+    o31_re -= A1_im;
+    o31_im += A1_re;
+    
+    o02_re += A2_re;
+    o02_im += A2_im;
+    o12_re += B2_re;
+    o12_im += B2_im;
+    o22_re -= B2_im;
+    o22_im += B2_re;
+    o32_re -= A2_im;
+    o32_im += A2_re;
     
 }
 
-if(1)
 {
     // Projector P0+
     // 1 0 0 i 
@@ -258,57 +257,53 @@ if(1)
     // read gauge matrix from device memory
     READ_GAUGE_MATRIX(gauge1Tex, 1);
     
-    // multiply row 0 by half spinors
-    {
-        float A_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
-        float A_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
-        float B_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
-        float B_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
-        o00_re += +A_re;
-        o00_im += +A_im;
-        o10_re += +B_re;
-        o10_im += +B_im;
-        o20_re += +B_im;
-        o20_im += -B_re;
-        o30_re += +A_im;
-        o30_im += -A_re;
-    }
+    // multiply row 0
+    A0_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
+    A0_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
+    B0_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
+    B0_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
     
-    // multiply row 1 by half spinors
-    {
-        float A_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
-        float A_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
-        float B_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
-        float B_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
-        o01_re += +A_re;
-        o01_im += +A_im;
-        o11_re += +B_re;
-        o11_im += +B_im;
-        o21_re += +B_im;
-        o21_im += -B_re;
-        o31_re += +A_im;
-        o31_im += -A_re;
-    }
+    // multiply row 1
+    A1_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
+    A1_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
+    B1_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
+    B1_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
     
-    // multiply row 2 by half spinors
-    {
-        float A_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
-        float A_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
-        float B_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
-        float B_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
-        o02_re += +A_re;
-        o02_im += +A_im;
-        o12_re += +B_re;
-        o12_im += +B_im;
-        o22_re += +B_im;
-        o22_im += -B_re;
-        o32_re += +A_im;
-        o32_im += -A_re;
-    }
+    // multiply row 2
+    A2_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
+    A2_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
+    B2_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
+    B2_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
+    
+    o00_re += A0_re;
+    o00_im += A0_im;
+    o10_re += B0_re;
+    o10_im += B0_im;
+    o20_re += B0_im;
+    o20_im -= B0_re;
+    o30_re += A0_im;
+    o30_im -= A0_re;
+    
+    o01_re += A1_re;
+    o01_im += A1_im;
+    o11_re += B1_re;
+    o11_im += B1_im;
+    o21_re += B1_im;
+    o21_im -= B1_re;
+    o31_re += A1_im;
+    o31_im -= A1_re;
+    
+    o02_re += A2_re;
+    o02_im += A2_im;
+    o12_re += B2_re;
+    o12_im += B2_im;
+    o22_re += B2_im;
+    o22_im -= B2_re;
+    o32_re += A2_im;
+    o32_im -= A2_re;
     
 }
 
-if(1)
 {
     // Projector P1-
     // 1 0 0 1 
@@ -340,57 +335,53 @@ if(1)
     // read gauge matrix from device memory
     READ_GAUGE_MATRIX(gauge0Tex, 2);
     
-    // multiply row 0 by half spinors
-    {
-        float A_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
-        float A_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
-        float B_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
-        float B_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
-        o00_re += +A_re;
-        o00_im += +A_im;
-        o10_re += +B_re;
-        o10_im += +B_im;
-        o20_re += -B_re;
-        o20_im += -B_im;
-        o30_re += +A_re;
-        o30_im += +A_im;
-    }
+    // multiply row 0
+    A0_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
+    A0_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
+    B0_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
+    B0_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
     
-    // multiply row 1 by half spinors
-    {
-        float A_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
-        float A_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
-        float B_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
-        float B_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
-        o01_re += +A_re;
-        o01_im += +A_im;
-        o11_re += +B_re;
-        o11_im += +B_im;
-        o21_re += -B_re;
-        o21_im += -B_im;
-        o31_re += +A_re;
-        o31_im += +A_im;
-    }
+    // multiply row 1
+    A1_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
+    A1_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
+    B1_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
+    B1_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
     
-    // multiply row 2 by half spinors
-    {
-        float A_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
-        float A_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
-        float B_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
-        float B_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
-        o02_re += +A_re;
-        o02_im += +A_im;
-        o12_re += +B_re;
-        o12_im += +B_im;
-        o22_re += -B_re;
-        o22_im += -B_im;
-        o32_re += +A_re;
-        o32_im += +A_im;
-    }
+    // multiply row 2
+    A2_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
+    A2_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
+    B2_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
+    B2_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
+    
+    o00_re += A0_re;
+    o00_im += A0_im;
+    o10_re += B0_re;
+    o10_im += B0_im;
+    o20_re -= B0_re;
+    o20_im -= B0_im;
+    o30_re += A0_re;
+    o30_im += A0_im;
+    
+    o01_re += A1_re;
+    o01_im += A1_im;
+    o11_re += B1_re;
+    o11_im += B1_im;
+    o21_re -= B1_re;
+    o21_im -= B1_im;
+    o31_re += A1_re;
+    o31_im += A1_im;
+    
+    o02_re += A2_re;
+    o02_im += A2_im;
+    o12_re += B2_re;
+    o12_im += B2_im;
+    o22_re -= B2_re;
+    o22_im -= B2_im;
+    o32_re += A2_re;
+    o32_im += A2_im;
     
 }
 
-if(1)
 {
     // Projector P1+
     // 1 0 0 -1 
@@ -422,57 +413,53 @@ if(1)
     // read gauge matrix from device memory
     READ_GAUGE_MATRIX(gauge1Tex, 3);
     
-    // multiply row 0 by half spinors
-    {
-        float A_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
-        float A_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
-        float B_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
-        float B_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
-        o00_re += +A_re;
-        o00_im += +A_im;
-        o10_re += +B_re;
-        o10_im += +B_im;
-        o20_re += +B_re;
-        o20_im += +B_im;
-        o30_re += -A_re;
-        o30_im += -A_im;
-    }
+    // multiply row 0
+    A0_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
+    A0_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
+    B0_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
+    B0_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
     
-    // multiply row 1 by half spinors
-    {
-        float A_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
-        float A_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
-        float B_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
-        float B_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
-        o01_re += +A_re;
-        o01_im += +A_im;
-        o11_re += +B_re;
-        o11_im += +B_im;
-        o21_re += +B_re;
-        o21_im += +B_im;
-        o31_re += -A_re;
-        o31_im += -A_im;
-    }
+    // multiply row 1
+    A1_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
+    A1_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
+    B1_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
+    B1_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
     
-    // multiply row 2 by half spinors
-    {
-        float A_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
-        float A_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
-        float B_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
-        float B_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
-        o02_re += +A_re;
-        o02_im += +A_im;
-        o12_re += +B_re;
-        o12_im += +B_im;
-        o22_re += +B_re;
-        o22_im += +B_im;
-        o32_re += -A_re;
-        o32_im += -A_im;
-    }
+    // multiply row 2
+    A2_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
+    A2_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
+    B2_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
+    B2_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
+    
+    o00_re += A0_re;
+    o00_im += A0_im;
+    o10_re += B0_re;
+    o10_im += B0_im;
+    o20_re += B0_re;
+    o20_im += B0_im;
+    o30_re -= A0_re;
+    o30_im -= A0_im;
+    
+    o01_re += A1_re;
+    o01_im += A1_im;
+    o11_re += B1_re;
+    o11_im += B1_im;
+    o21_re += B1_re;
+    o21_im += B1_im;
+    o31_re -= A1_re;
+    o31_im -= A1_im;
+    
+    o02_re += A2_re;
+    o02_im += A2_im;
+    o12_re += B2_re;
+    o12_im += B2_im;
+    o22_re += B2_re;
+    o22_im += B2_im;
+    o32_re -= A2_re;
+    o32_im -= A2_im;
     
 }
 
-if(1)
 {
     // Projector P2-
     // 1 0 -i 0 
@@ -504,57 +491,53 @@ if(1)
     // read gauge matrix from device memory
     READ_GAUGE_MATRIX(gauge0Tex, 4);
     
-    // multiply row 0 by half spinors
-    {
-        float A_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
-        float A_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
-        float B_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
-        float B_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
-        o00_re += +A_re;
-        o00_im += +A_im;
-        o10_re += +B_re;
-        o10_im += +B_im;
-        o20_re += -A_im;
-        o20_im += +A_re;
-        o30_re += +B_im;
-        o30_im += -B_re;
-    }
+    // multiply row 0
+    A0_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
+    A0_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
+    B0_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
+    B0_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
     
-    // multiply row 1 by half spinors
-    {
-        float A_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
-        float A_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
-        float B_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
-        float B_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
-        o01_re += +A_re;
-        o01_im += +A_im;
-        o11_re += +B_re;
-        o11_im += +B_im;
-        o21_re += -A_im;
-        o21_im += +A_re;
-        o31_re += +B_im;
-        o31_im += -B_re;
-    }
+    // multiply row 1
+    A1_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
+    A1_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
+    B1_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
+    B1_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
     
-    // multiply row 2 by half spinors
-    {
-        float A_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
-        float A_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
-        float B_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
-        float B_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
-        o02_re += +A_re;
-        o02_im += +A_im;
-        o12_re += +B_re;
-        o12_im += +B_im;
-        o22_re += -A_im;
-        o22_im += +A_re;
-        o32_re += +B_im;
-        o32_im += -B_re;
-    }
+    // multiply row 2
+    A2_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
+    A2_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
+    B2_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
+    B2_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
+    
+    o00_re += A0_re;
+    o00_im += A0_im;
+    o10_re += B0_re;
+    o10_im += B0_im;
+    o20_re -= A0_im;
+    o20_im += A0_re;
+    o30_re += B0_im;
+    o30_im -= B0_re;
+    
+    o01_re += A1_re;
+    o01_im += A1_im;
+    o11_re += B1_re;
+    o11_im += B1_im;
+    o21_re -= A1_im;
+    o21_im += A1_re;
+    o31_re += B1_im;
+    o31_im -= B1_re;
+    
+    o02_re += A2_re;
+    o02_im += A2_im;
+    o12_re += B2_re;
+    o12_im += B2_im;
+    o22_re -= A2_im;
+    o22_im += A2_re;
+    o32_re += B2_im;
+    o32_im -= B2_re;
     
 }
 
-if(1)
 {
     // Projector P2+
     // 1 0 i 0 
@@ -586,57 +569,53 @@ if(1)
     // read gauge matrix from device memory
     READ_GAUGE_MATRIX(gauge1Tex, 5);
     
-    // multiply row 0 by half spinors
-    {
-        float A_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
-        float A_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
-        float B_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
-        float B_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
-        o00_re += +A_re;
-        o00_im += +A_im;
-        o10_re += +B_re;
-        o10_im += +B_im;
-        o20_re += +A_im;
-        o20_im += -A_re;
-        o30_re += -B_im;
-        o30_im += +B_re;
-    }
+    // multiply row 0
+    A0_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
+    A0_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
+    B0_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
+    B0_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
     
-    // multiply row 1 by half spinors
-    {
-        float A_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
-        float A_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
-        float B_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
-        float B_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
-        o01_re += +A_re;
-        o01_im += +A_im;
-        o11_re += +B_re;
-        o11_im += +B_im;
-        o21_re += +A_im;
-        o21_im += -A_re;
-        o31_re += -B_im;
-        o31_im += +B_re;
-    }
+    // multiply row 1
+    A1_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
+    A1_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
+    B1_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
+    B1_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
     
-    // multiply row 2 by half spinors
-    {
-        float A_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
-        float A_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
-        float B_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
-        float B_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
-        o02_re += +A_re;
-        o02_im += +A_im;
-        o12_re += +B_re;
-        o12_im += +B_im;
-        o22_re += +A_im;
-        o22_im += -A_re;
-        o32_re += -B_im;
-        o32_im += +B_re;
-    }
+    // multiply row 2
+    A2_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
+    A2_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
+    B2_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
+    B2_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
+    
+    o00_re += A0_re;
+    o00_im += A0_im;
+    o10_re += B0_re;
+    o10_im += B0_im;
+    o20_re += A0_im;
+    o20_im -= A0_re;
+    o30_re -= B0_im;
+    o30_im += B0_re;
+    
+    o01_re += A1_re;
+    o01_im += A1_im;
+    o11_re += B1_re;
+    o11_im += B1_im;
+    o21_re += A1_im;
+    o21_im -= A1_re;
+    o31_re -= B1_im;
+    o31_im += B1_re;
+    
+    o02_re += A2_re;
+    o02_im += A2_im;
+    o12_re += B2_re;
+    o12_im += B2_im;
+    o22_re += A2_im;
+    o22_im -= A2_re;
+    o32_re -= B2_im;
+    o32_im += B2_re;
     
 }
 
-if(1)
 {
     // Projector P3-
     // 1 0 -1 0 
@@ -665,60 +644,67 @@ if(1)
     float b2_re = +i12_re-i32_re;
     float b2_im = +i12_im-i32_im;
     
-    // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge0Tex, 6);
-    
-    // multiply row 0 by half spinors
-    {
-        float A_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
-        float A_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
-        float B_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
-        float B_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
-        o00_re += +A_re;
-        o00_im += +A_im;
-        o10_re += +B_re;
-        o10_im += +B_im;
-        o20_re += -A_re;
-        o20_im += -A_im;
-        o30_re += -B_re;
-        o30_im += -B_im;
+    if (GAUGE_FIXED && ga_idx >= L1h*L2*L3) {
+        // identity gauge matrix
+        A0_re = a0_re; A0_im = a0_im;
+        B0_re = b0_re; B0_im = b0_im;
+        A1_re = a1_re; A1_im = a1_im;
+        B1_re = b1_re; B1_im = b1_im;
+        A2_re = a2_re; A2_im = a2_im;
+        B2_re = b2_re; B2_im = b2_im;
+    }
+    else {
+        // read gauge matrix from device memory
+        READ_GAUGE_MATRIX(gauge0Tex, 6);
+        
+        // multiply row 0
+        A0_re = + (g00_re * a0_re - g00_im * a0_im) + (g01_re * a1_re - g01_im * a1_im) + (g02_re * a2_re - g02_im * a2_im);
+        A0_im = + (g00_re * a0_im + g00_im * a0_re) + (g01_re * a1_im + g01_im * a1_re) + (g02_re * a2_im + g02_im * a2_re);
+        B0_re = + (g00_re * b0_re - g00_im * b0_im) + (g01_re * b1_re - g01_im * b1_im) + (g02_re * b2_re - g02_im * b2_im);
+        B0_im = + (g00_re * b0_im + g00_im * b0_re) + (g01_re * b1_im + g01_im * b1_re) + (g02_re * b2_im + g02_im * b2_re);
+        
+        // multiply row 1
+        A1_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
+        A1_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
+        B1_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
+        B1_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
+        
+        // multiply row 2
+        A2_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
+        A2_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
+        B2_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
+        B2_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
     }
     
-    // multiply row 1 by half spinors
-    {
-        float A_re = + (g10_re * a0_re - g10_im * a0_im) + (g11_re * a1_re - g11_im * a1_im) + (g12_re * a2_re - g12_im * a2_im);
-        float A_im = + (g10_re * a0_im + g10_im * a0_re) + (g11_re * a1_im + g11_im * a1_re) + (g12_re * a2_im + g12_im * a2_re);
-        float B_re = + (g10_re * b0_re - g10_im * b0_im) + (g11_re * b1_re - g11_im * b1_im) + (g12_re * b2_re - g12_im * b2_im);
-        float B_im = + (g10_re * b0_im + g10_im * b0_re) + (g11_re * b1_im + g11_im * b1_re) + (g12_re * b2_im + g12_im * b2_re);
-        o01_re += +A_re;
-        o01_im += +A_im;
-        o11_re += +B_re;
-        o11_im += +B_im;
-        o21_re += -A_re;
-        o21_im += -A_im;
-        o31_re += -B_re;
-        o31_im += -B_im;
-    }
+    o00_re += A0_re;
+    o00_im += A0_im;
+    o10_re += B0_re;
+    o10_im += B0_im;
+    o20_re -= A0_re;
+    o20_im -= A0_im;
+    o30_re -= B0_re;
+    o30_im -= B0_im;
     
-    // multiply row 2 by half spinors
-    {
-        float A_re = + (g20_re * a0_re - g20_im * a0_im) + (g21_re * a1_re - g21_im * a1_im) + (g22_re * a2_re - g22_im * a2_im);
-        float A_im = + (g20_re * a0_im + g20_im * a0_re) + (g21_re * a1_im + g21_im * a1_re) + (g22_re * a2_im + g22_im * a2_re);
-        float B_re = + (g20_re * b0_re - g20_im * b0_im) + (g21_re * b1_re - g21_im * b1_im) + (g22_re * b2_re - g22_im * b2_im);
-        float B_im = + (g20_re * b0_im + g20_im * b0_re) + (g21_re * b1_im + g21_im * b1_re) + (g22_re * b2_im + g22_im * b2_re);
-        o02_re += +A_re;
-        o02_im += +A_im;
-        o12_re += +B_re;
-        o12_im += +B_im;
-        o22_re += -A_re;
-        o22_im += -A_im;
-        o32_re += -B_re;
-        o32_im += -B_im;
-    }
+    o01_re += A1_re;
+    o01_im += A1_im;
+    o11_re += B1_re;
+    o11_im += B1_im;
+    o21_re -= A1_re;
+    o21_im -= A1_im;
+    o31_re -= B1_re;
+    o31_im -= B1_im;
+    
+    o02_re += A2_re;
+    o02_im += A2_im;
+    o12_re += B2_re;
+    o12_im += B2_im;
+    o22_re -= A2_re;
+    o22_im -= A2_im;
+    o32_re -= B2_re;
+    o32_im -= B2_im;
     
 }
 
-if(1)
 {
     // Projector P3+
     // 1 0 1 0 
@@ -747,56 +733,64 @@ if(1)
     float b2_re = +i12_re+i32_re;
     float b2_im = +i12_im+i32_im;
     
-    // read gauge matrix from device memory
-    READ_GAUGE_MATRIX(gauge1Tex, 7);
-    
-    // multiply row 0 by half spinors
-    {
-        float A_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
-        float A_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
-        float B_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
-        float B_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
-        o00_re += +A_re;
-        o00_im += +A_im;
-        o10_re += +B_re;
-        o10_im += +B_im;
-        o20_re += +A_re;
-        o20_im += +A_im;
-        o30_re += +B_re;
-        o30_im += +B_im;
+    if (GAUGE_FIXED && ga_idx >= L1h*L2*L3) {
+        // identity gauge matrix
+        A0_re = a0_re; A0_im = a0_im;
+        B0_re = b0_re; B0_im = b0_im;
+        A1_re = a1_re; A1_im = a1_im;
+        B1_re = b1_re; B1_im = b1_im;
+        A2_re = a2_re; A2_im = a2_im;
+        B2_re = b2_re; B2_im = b2_im;
+    }
+    else {
+        // read gauge matrix from device memory
+        READ_GAUGE_MATRIX(gauge1Tex, 7);
+        
+        // multiply row 0
+        A0_re = + (gT00_re * a0_re - gT00_im * a0_im) + (gT01_re * a1_re - gT01_im * a1_im) + (gT02_re * a2_re - gT02_im * a2_im);
+        A0_im = + (gT00_re * a0_im + gT00_im * a0_re) + (gT01_re * a1_im + gT01_im * a1_re) + (gT02_re * a2_im + gT02_im * a2_re);
+        B0_re = + (gT00_re * b0_re - gT00_im * b0_im) + (gT01_re * b1_re - gT01_im * b1_im) + (gT02_re * b2_re - gT02_im * b2_im);
+        B0_im = + (gT00_re * b0_im + gT00_im * b0_re) + (gT01_re * b1_im + gT01_im * b1_re) + (gT02_re * b2_im + gT02_im * b2_re);
+        
+        // multiply row 1
+        A1_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
+        A1_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
+        B1_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
+        B1_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
+        
+        // multiply row 2
+        A2_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
+        A2_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
+        B2_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
+        B2_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
     }
     
-    // multiply row 1 by half spinors
-    {
-        float A_re = + (gT10_re * a0_re - gT10_im * a0_im) + (gT11_re * a1_re - gT11_im * a1_im) + (gT12_re * a2_re - gT12_im * a2_im);
-        float A_im = + (gT10_re * a0_im + gT10_im * a0_re) + (gT11_re * a1_im + gT11_im * a1_re) + (gT12_re * a2_im + gT12_im * a2_re);
-        float B_re = + (gT10_re * b0_re - gT10_im * b0_im) + (gT11_re * b1_re - gT11_im * b1_im) + (gT12_re * b2_re - gT12_im * b2_im);
-        float B_im = + (gT10_re * b0_im + gT10_im * b0_re) + (gT11_re * b1_im + gT11_im * b1_re) + (gT12_re * b2_im + gT12_im * b2_re);
-        o01_re += +A_re;
-        o01_im += +A_im;
-        o11_re += +B_re;
-        o11_im += +B_im;
-        o21_re += +A_re;
-        o21_im += +A_im;
-        o31_re += +B_re;
-        o31_im += +B_im;
-    }
+    o00_re += A0_re;
+    o00_im += A0_im;
+    o10_re += B0_re;
+    o10_im += B0_im;
+    o20_re += A0_re;
+    o20_im += A0_im;
+    o30_re += B0_re;
+    o30_im += B0_im;
     
-    // multiply row 2 by half spinors
-    {
-        float A_re = + (gT20_re * a0_re - gT20_im * a0_im) + (gT21_re * a1_re - gT21_im * a1_im) + (gT22_re * a2_re - gT22_im * a2_im);
-        float A_im = + (gT20_re * a0_im + gT20_im * a0_re) + (gT21_re * a1_im + gT21_im * a1_re) + (gT22_re * a2_im + gT22_im * a2_re);
-        float B_re = + (gT20_re * b0_re - gT20_im * b0_im) + (gT21_re * b1_re - gT21_im * b1_im) + (gT22_re * b2_re - gT22_im * b2_im);
-        float B_im = + (gT20_re * b0_im + gT20_im * b0_re) + (gT21_re * b1_im + gT21_im * b1_re) + (gT22_re * b2_im + gT22_im * b2_re);
-        o02_re += +A_re;
-        o02_im += +A_im;
-        o12_re += +B_re;
-        o12_im += +B_im;
-        o22_re += +A_re;
-        o22_im += +A_im;
-        o32_re += +B_re;
-        o32_im += +B_im;
-    }
+    o01_re += A1_re;
+    o01_im += A1_im;
+    o11_re += B1_re;
+    o11_im += B1_im;
+    o21_re += A1_re;
+    o21_im += A1_im;
+    o31_re += B1_re;
+    o31_im += B1_im;
+    
+    o02_re += A2_re;
+    o02_im += A2_im;
+    o12_re += B2_re;
+    o12_im += B2_im;
+    o22_re += A2_re;
+    o22_im += A2_im;
+    o32_re += B2_re;
+    o32_im += B2_im;
     
 }
 
