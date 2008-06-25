@@ -107,18 +107,35 @@ void su3_reconstruct(float *mat) {
 
 void applyGaugeFieldScaling(float **gauge) {
     // Apply spatial scaling factor (u0) to spatial links
-    for (int d=0; d<3; d++) {
-        for (int i=0; i<gaugeSiteSize*N; i++) {
+    for (int d = 0; d < 3; d++) {
+        for (int i = 0; i < gaugeSiteSize*N; i++) {
             gauge[d][i] /= SPATIAL_SCALING;
         }
     }
     
     // Apply boundary conditions to temporal links
-    int surface = L1h*L2*L3;
-    for (int j=Nh-surface; j<Nh; j++) {
-        for (int i=0; i<gaugeSiteSize; i++) {
+    for (int j = 0; j < L1h*L2*L3; j++) {
+        for (int i = 0; i < gaugeSiteSize; i++) {
             gauge[3][j*gaugeSiteSize+i] *= TIME_SYMMETRY;
             gauge[3][(Nh+j)*gaugeSiteSize+i] *= TIME_SYMMETRY;
+        }
+    }
+    
+    if (GAUGE_FIXED) {
+        // set all gauge links (except for the first L1h*L2*L3) to be identity.
+        // this corresponds to fixing a special gauge.
+        int dir = 3; // time direction only
+        float *even = gauge[dir];
+        float *odd  = gauge[dir]+Nh*gaugeSiteSize;
+        for (int i = L1h*L2*L3; i < Nh; i++) {
+            for (int m = 0; m < 3; m++) {
+                for (int n = 0; n < 3; n++) {
+                    even[i*(3*3*2) + m*(3*2) + n*(2) + 0] = (m==n) ? 1 : 0;
+                    even[i*(3*3*2) + m*(3*2) + n*(2) + 1] = 0.0;
+                    odd [i*(3*3*2) + m*(3*2) + n*(2) + 0] = (m==n) ? 1 : 0;
+                    odd [i*(3*3*2) + m*(3*2) + n*(2) + 1] = 0.0;
+                }
+            }
         }
     }
 }
@@ -131,7 +148,7 @@ void constructUnitGaugeField(float **res) {
     }
     
     for (int dir = 0; dir < 4; dir++) {
-        for(int i = 0; i < Nh; i++) {
+        for (int i = 0; i < Nh; i++) {
             for (int m = 0; m < 3; m++) {
                 for (int n = 0; n < 3; n++) {
                     resEven[dir][i*(3*3*2) + m*(3*2) + n*(2) + 0] = (m==n) ? 1 : 0;
