@@ -24,8 +24,8 @@ class CodeGen(sharedFloats: Int, dagger: Boolean) {
   def out_im(s:Int, c:Int) = "o"+s+c+"_im"
   def h1_re(h:Int, c:Int) = Array("a","b")(h)+c+"_re"
   def h1_im(h:Int, c:Int) = Array("a","b")(h)+c+"_im"
-  def h2_re(h:Int) = Array("A","B")(h)+"_re"
-  def h2_im(h:Int) = Array("A","B")(h)+"_im"
+  def h2_re(h:Int, c:Int) = Array("A","B")(h)+c+"_re"
+  def h2_im(h:Int, c:Int) = Array("A","B")(h)+c+"_im"
   
   
   def prolog() = {
@@ -81,7 +81,7 @@ class CodeGen(sharedFloats: Int, dagger: Boolean) {
     ACC_CONJ_PROD(g21, -g00, +g12); \
     ACC_CONJ_PROD(g22, +g00, +g11); \
     ACC_CONJ_PROD(g22, -g01, +g10); \
-    float u0 = (dir < 6 ? SPATIAL_SCALING : (ga_idx >= Nh-L1h*L2*L3 ? TIME_SYMMETRY : 1)); \
+    float u0 = (dir < 6 ? SPATIAL_SCALING : (ga_idx < L1h*L2*L3 ? TIME_SYMMETRY : 1)); \
     G3.x*=u0; G3.y*=u0; G3.z*=u0; G3.w*=u0; G4.x*=u0; G4.y*=u0;
 
 #define READ_SPINOR(spinor) \
@@ -91,6 +91,10 @@ class CodeGen(sharedFloats: Int, dagger: Boolean) {
     float4 I3 = tex1Dfetch((spinor), sp_idx + 3*Nh); \
     float4 I4 = tex1Dfetch((spinor), sp_idx + 4*Nh); \
     float4 I5 = tex1Dfetch((spinor), sp_idx + 5*Nh);
+
+float A0_re, A0_im, B0_re, B0_im;
+float A1_re, A1_im, B1_re, B1_im;
+float A2_re, A2_im, B2_re, B2_im;
 
 int sid = BLOCK_DIM*blockIdx.x + threadIdx.x;
 int boundaryCrossings = sid/L1h + sid/(L2*L1h) + sid/(L3*L2*L1h);
@@ -251,45 +255,66 @@ for (int i = 0; i < 2; i++)
       str.append("\n")
     }
     
-    str.append("// read gauge matrix from device memory\n")
-    str.append("READ_GAUGE_MATRIX(gauge"+(dir%2)+"Tex, "+dir+");\n\n")
-    
+    val ident = new StringBuilder
+    ident.append("// identity gauge matrix\n")
     for (m <- 0 until 3) {
-      str.append("// multiply row "+m+" by half spinors\n")
-      val mstr = new StringBuilder
-      
       for (h <- 0 until 2) {
-        val re = new StringBuilder("float "+h2_re(h)+" =")
-        val im = new StringBuilder("float "+h2_im(h)+" =")
+        ident.append(h2_re(h,m)+" = " + h1_re(h,m) + "; ")
+        ident.append(h2_im(h,m)+" = " + h1_im(h,m) + ";\n")
+      }
+    }
+    
+    val mult = new StringBuilder
+    mult.append("// read gauge matrix from device memory\n")
+    mult.append("READ_GAUGE_MATRIX(gauge"+(dir%2)+"Tex, "+dir+");\n")
+    for (m <- 0 until 3) {
+      mult.append("\n// multiply row "+m+"\n")
+      for (h <- 0 until 2) {
+        val re = new StringBuilder(h2_re(h,m)+" =")
+        val im = new StringBuilder(h2_im(h,m)+" =")
         for (c <- 0 until 3) {
           re.append(" + ("+g_re(dir,m,c)+" * "+h1_re(h,c)+" - "+g_im(dir,m,c)+" * "+h1_im(h,c)+")")
           im.append(" + ("+g_re(dir,m,c)+" * "+h1_im(h,c)+" + "+g_im(dir,m,c)+" * "+h1_re(h,c)+")")
         }
-        mstr.append(re.toString+";\n")
-        mstr.append(im.toString+";\n")
+        mult.append(re.toString+";\n")
+        mult.append(im.toString+";\n")
       }
-      
-      mstr.append(out_re(0, m) + " += +" + h2_re(0) + ";\n")
-      mstr.append(out_im(0, m) + " += +" + h2_im(0) + ";\n")
-      mstr.append(out_re(1, m) + " += +" + h2_re(1) + ";\n")
-      mstr.append(out_im(1, m) + " += +" + h2_im(1) + ";\n")
+    }
+    
+    if (dir >= 6) {
+      str.append("if (GAUGE_FIXED && ga_idx >= L1h*L2*L3) ")
+      str.append(block(ident.toString))
+      str.append("else ")
+      str.append(block(mult.toString))
+      str.append("\n")
+    }
+    else {
+      str.append(mult.toString+"\n")
+    }
+
+    for (m <- 0 until 3) {
+      val mstr = new StringBuilder
+      mstr.append(out_re(0, m) + " += " + h2_re(0,m) + ";\n")
+      mstr.append(out_im(0, m) + " += " + h2_im(0,m) + ";\n")
+      mstr.append(out_re(1, m) + " += " + h2_re(1,m) + ";\n")
+      mstr.append(out_im(1, m) + " += " + h2_im(1,m) + ";\n")
     
       for (s <- 2 until 4) {
         row(s) match {
         case (h, Complex(re, 0)) => {
-          mstr.append(out_re(s, m) + " += " + sign(re)+h2_re(h)+";\n")
-          mstr.append(out_im(s, m) + " += " + sign(re)+h2_im(h)+";\n")
+          mstr.append(out_re(s, m) + " " + sign(re) + "= " + h2_re(h,m) + ";\n")
+          mstr.append(out_im(s, m) + " " + sign(re) + "= " + h2_im(h,m) + ";\n")
         }
         case (h, Complex(0, im)) => {
-          mstr.append(out_re(s, m) + " += " + sign(-im)+h2_im(h)+";\n")
-          mstr.append(out_im(s, m) + " += " + sign(+im)+h2_re(h)+";\n")
+          mstr.append(out_re(s, m) + " " + sign(-im) + "= " + h2_im(h,m) + ";\n")
+          mstr.append(out_im(s, m) + " " + sign(+im) + "= " + h2_re(h,m) + ";\n")
         }
         }
       }
-      str.append(block(mstr.toString) + "\n")
+      str.append(mstr.toString + "\n")
     }
 
-    (if (dir == 0) "if(1)\n" else "if(1)\n") + block(str.toString)+"\n"
+    block(str.toString)+"\n"
   }
   
   def generate() = {
