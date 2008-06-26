@@ -92,10 +92,6 @@ class CodeGen(sharedFloats: Int, dagger: Boolean) {
     float4 I4 = tex1Dfetch((spinor), sp_idx + 4*Nh); \
     float4 I5 = tex1Dfetch((spinor), sp_idx + 5*Nh);
 
-float A0_re, A0_im, B0_re, B0_im;
-float A1_re, A1_im, B1_re, B1_im;
-float A2_re, A2_im, B2_re, B2_im;
-
 int sid = BLOCK_DIM*blockIdx.x + threadIdx.x;
 int boundaryCrossings = sid/L1h + sid/(L2*L1h) + sid/(L3*L2*L1h);
 int X = 2*sid + (boundaryCrossings + oddBit) % 2;
@@ -229,10 +225,10 @@ for (int i = 0; i < 2; i++)
     val ga_idx = if (dir % 2 == 0) "sid" else "sp_idx"
     str.append("int ga_idx = "+ga_idx+";\n\n")
     
-    str.append("// read spinor from device memory\n")
-    str.append("READ_SPINOR(spinorTex);\n\n")
-    
-    str.append("// project spinor into half spinors\n")
+    val project = new StringBuilder
+    project.append("// read spinor from device memory\n")
+    project.append("READ_SPINOR(spinorTex);\n\n")
+    project.append("// project spinor into half spinors\n")
     for (h <- 0 until 2) {
       for (c <- 0 until 3) {
         val strRe = new StringBuilder()
@@ -249,29 +245,30 @@ for (int i = 0; i < 2; i++)
             strIm.append(sign(im)+in_re(s,c))
           }
         }
-        str.append("float "+h1_re(h,c)+ " = "+strRe+";\n")
-        str.append("float "+h1_im(h,c)+ " = "+strIm+";\n")
+        project.append("float "+h1_re(h,c)+ " = "+strRe+";\n")
+        project.append("float "+h1_im(h,c)+ " = "+strIm+";\n")
       }
-      str.append("\n")
+      project.append("\n")
     }
     
     val ident = new StringBuilder
     ident.append("// identity gauge matrix\n")
     for (m <- 0 until 3) {
       for (h <- 0 until 2) {
-        ident.append(h2_re(h,m)+" = " + h1_re(h,m) + "; ")
-        ident.append(h2_im(h,m)+" = " + h1_im(h,m) + ";\n")
+        ident.append("float "+h2_re(h,m)+" = " + h1_re(h,m) + "; ")
+        ident.append("float "+h2_im(h,m)+" = " + h1_im(h,m) + ";\n")
       }
     }
-    
+    ident.append("\n")
+   
     val mult = new StringBuilder
     mult.append("// read gauge matrix from device memory\n")
-    mult.append("READ_GAUGE_MATRIX(gauge"+(dir%2)+"Tex, "+dir+");\n")
+    mult.append("READ_GAUGE_MATRIX(gauge"+(dir%2)+"Tex, "+dir+");\n\n")
     for (m <- 0 until 3) {
-      mult.append("\n// multiply row "+m+"\n")
+      mult.append("// multiply row "+m+"\n")
       for (h <- 0 until 2) {
-        val re = new StringBuilder(h2_re(h,m)+" =")
-        val im = new StringBuilder(h2_im(h,m)+" =")
+        val re = new StringBuilder("float "+h2_re(h,m)+" =")
+        val im = new StringBuilder("float "+h2_im(h,m)+" =")
         for (c <- 0 until 3) {
           re.append(" + ("+g_re(dir,m,c)+" * "+h1_re(h,c)+" - "+g_im(dir,m,c)+" * "+h1_im(h,c)+")")
           im.append(" + ("+g_re(dir,m,c)+" * "+h1_im(h,c)+" + "+g_im(dir,m,c)+" * "+h1_re(h,c)+")")
@@ -279,41 +276,41 @@ for (int i = 0; i < 2; i++)
         mult.append(re.toString+";\n")
         mult.append(im.toString+";\n")
       }
-    }
-    
-    if (dir >= 6) {
-      str.append("if (GAUGE_FIXED && ga_idx >= L1h*L2*L3) ")
-      str.append(block(ident.toString))
-      str.append("else ")
-      str.append(block(mult.toString))
-      str.append("\n")
-    }
-    else {
-      str.append(mult.toString+"\n")
+      mult.append("\n")
     }
 
+    val reconstruct = new StringBuilder
     for (m <- 0 until 3) {
-      val mstr = new StringBuilder
-      mstr.append(out_re(0, m) + " += " + h2_re(0,m) + ";\n")
-      mstr.append(out_im(0, m) + " += " + h2_im(0,m) + ";\n")
-      mstr.append(out_re(1, m) + " += " + h2_re(1,m) + ";\n")
-      mstr.append(out_im(1, m) + " += " + h2_im(1,m) + ";\n")
+      reconstruct.append(out_re(0, m) + " += " + h2_re(0,m) + ";\n")
+      reconstruct.append(out_im(0, m) + " += " + h2_im(0,m) + ";\n")
+      reconstruct.append(out_re(1, m) + " += " + h2_re(1,m) + ";\n")
+      reconstruct.append(out_im(1, m) + " += " + h2_im(1,m) + ";\n")
     
       for (s <- 2 until 4) {
         row(s) match {
-        case (h, Complex(re, 0)) => {
-          mstr.append(out_re(s, m) + " " + sign(re) + "= " + h2_re(h,m) + ";\n")
-          mstr.append(out_im(s, m) + " " + sign(re) + "= " + h2_im(h,m) + ";\n")
-        }
-        case (h, Complex(0, im)) => {
-          mstr.append(out_re(s, m) + " " + sign(-im) + "= " + h2_im(h,m) + ";\n")
-          mstr.append(out_im(s, m) + " " + sign(+im) + "= " + h2_re(h,m) + ";\n")
-        }
+          case (h, Complex(re, 0)) => {
+            reconstruct.append(out_re(s, m) + " " + sign(re) + "= " + h2_re(h,m) + ";\n")
+            reconstruct.append(out_im(s, m) + " " + sign(re) + "= " + h2_im(h,m) + ";\n")
+          }
+          case (h, Complex(0, im)) => {
+            reconstruct.append(out_re(s, m) + " " + sign(-im) + "= " + h2_im(h,m) + ";\n")
+            reconstruct.append(out_im(s, m) + " " + sign(+im) + "= " + h2_re(h,m) + ";\n")
+          }
         }
       }
-      str.append(mstr.toString + "\n")
+      reconstruct.append("\n")
     }
-
+        
+    if (dir >= 6) {
+      str.append("if (GAUGE_FIXED && ga_idx >= L1h*L2*L3) ")
+      str.append(block(project.toString + ident.toString + reconstruct.toString))
+      str.append("else ")
+      str.append(block(project.toString + mult.toString + reconstruct.toString))
+    }
+    else {
+      str.append(project.toString + mult.toString + reconstruct.toString)
+    }
+    
     block(str.toString)+"\n"
   }
   
