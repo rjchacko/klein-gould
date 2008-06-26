@@ -11,6 +11,8 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import scikit.dataset.Accumulator;
+
 public class FileUtil {
 	static public void deleteFile(String fileName){
 		File file = new File(fileName);
@@ -41,6 +43,16 @@ public class FileUtil {
 		}
 	}
 
+	static public void printlnToFile(String fileName, String text, String text2){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(text + " " + text2);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	static public void printlnToFile(String fileName, double d1, double d2){
 		try{
 			File file = new File(fileName);
@@ -66,6 +78,19 @@ public class FileUtil {
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.println(d1 + " " + d2 + " " + d3 + " " + d4);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+
+	static public void printAccumToFile(String fileName, Accumulator acc){
+		double [] data = acc.copyData();
+		int size = data.length/2;
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int i = 0; i < size; i++)
+				pw.println(data[2*i] + " " + data[2*i+1]);
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
