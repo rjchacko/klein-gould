@@ -2,6 +2,7 @@ package rachele.ising.dim2.apps;
 
 import java.awt.Color;
 import rachele.ising.dim2.*;
+import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
 import scikit.dataset.Function;
@@ -12,8 +13,6 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
-import static java.lang.Math.exp;
-import static java.lang.Math.floor;
 import static java.lang.Math.*;
 
 public class LinearTheorySkApp extends Simulation{
@@ -39,17 +38,17 @@ public class LinearTheorySkApp extends Simulation{
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
-		params.addm("T", 0.05);
+		params.addm("T", 0.1);
 		params.addm("H", 0.0);
 		params.add("Magnetization", 0.0);
-		params.addm("dt", 0.01);
+		params.addm("dt", 0.001);
 		params.addm("J", -1.0);
 		params.addm("R", 1000000.0);
 		params.add("L/R", 20.0);
 		params.add("R/dx", 10.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Random seed", 0);
-		params.add("Max Time", 0.10);
+		params.add("Max Time", 0.125);
 		params.add("Time");
 		params.add("Reps");
 		params.add("Mean Phi");
@@ -105,6 +104,21 @@ public class LinearTheorySkApp extends Simulation{
 			Job.animate();
 			reps += 1;
 			params.set("Reps", reps);
+			if(reps%20 == 0) writeToFile(ising.dt, reps);
 		}
 	}
+	
+	private void writeToFile(double recordTime1, int reps){
+		String message1 = "#Field theory data: S vs k for one or more times. Disorder to Order Early times.";
+		StringBuffer sb = new StringBuffer();
+		sb.append("# record time = ");
+		sb.append(recordTime1);
+		String message2 = sb.toString();
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare1/sf";
+		FileUtil.deleteFile(fileName);		
+		ising.initFile(params, fileName, message1, message2);
+		FileUtil.printAccumToFile(fileName, sfAcc);
+		System.out.println("file written for rep " + reps);
+	}
+
 }

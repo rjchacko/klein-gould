@@ -591,6 +591,28 @@ public class IsingField2D extends AbstractIsing2D{
 	public void randomizeSeed(int newSeed){
 		random.setSeed(newSeed);		
 	}
+
+	public void initFile(Parameters params, String fileName, String message1, String message2){
+		FileUtil.printlnToFile(fileName, message1);
+		FileUtil.printlnToFile(fileName, message2);
+		FileUtil.printlnToFile(fileName, "# Parameters follow:");
+		FileUtil.printlnToFile(fileName, "# Interaction = ", params.sget("Interaction"));
+		FileUtil.printlnToFile(fileName, "# Dynamics = ", params.sget("Dynamics?"));
+		FileUtil.printlnToFile(fileName, "# init = ", params.sget("Init Conditions"));
+		FileUtil.printlnToFile(fileName, "# Approx = ", params.sget("Approx"));
+		FileUtil.printlnToFile(fileName, "# Noise = ", params.sget("Noise"));
+		FileUtil.printlnToFile(fileName, "# Random Seed = ", params.sget("Random seed"));
+		FileUtil.printlnToFile(fileName, "# L/R = ", params.sget("L/R"));
+		FileUtil.printlnToFile(fileName, "# R/dx  = ", params.sget("R/dx"));
+		FileUtil.printlnToFile(fileName, "# init mag = ", params.sget("Magnetization"));
+		FileUtil.printlnToFile(fileName, "# temperature ", params.sget("T"));
+		FileUtil.printlnToFile(fileName, "# Random Seed = ", params.sget("Random seed"));
+		FileUtil.printlnToFile(fileName, "# J = ", params.sget("J"));
+		FileUtil.printlnToFile(fileName, "# h = ", params.sget("H"));
+		FileUtil.printlnToFile(fileName, "# dt = ", params.sget("dt"));
+		FileUtil.printlnToFile(fileName, "# max time = ", params.sget("Max Time"));
+		FileUtil.printlnToFile(fileName, "# reps = ", params.sget("Reps"));
+	}
 	
 //	private void setExternalField(double backgroundH, double stripeH){
 //		for (int i = Lp; i < Lp*Lp; i++)
