@@ -218,10 +218,7 @@ public class StructureFactor {
 		this.kRmin = kRmin;
 		this.kRmax = kRmax;
 	}
-	
-
-	
-	
+		
 	public void accumulateAll(double t, double[] data) {
 		double dx = (L/Lp);
 		for (int i = 0; i < Lp*Lp; i++) {

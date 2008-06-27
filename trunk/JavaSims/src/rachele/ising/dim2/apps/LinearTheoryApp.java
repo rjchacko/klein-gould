@@ -3,6 +3,8 @@ package rachele.ising.dim2.apps;
 import java.awt.Color;
 import rachele.ising.dim2.*;
 import scikit.dataset.Accumulator;
+import scikit.dataset.Function;
+import scikit.dataset.PointSet;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -10,9 +12,11 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
+import static java.lang.Math.exp;
 import static java.lang.Math.floor;
 import static scikit.numerics.Math2.j1;
-import static scikit.util.Utilities.frameTogether;
+//import static scikit.util.Utilities.frameTogether;
+//import static scikit.util.Utilities.frame;
 import static java.lang.Math.*;
 
 public class LinearTheoryApp extends Simulation{
@@ -22,6 +26,7 @@ public class LinearTheoryApp extends Simulation{
 	Plot sfPeakBoth = new Plot("Both Structure factors");
 	Plot variance = new Plot("Variance");
 	Plot sfVsKR = new Plot("Structure Function");
+	Plot sfSlice = new Plot("SF Slice");
 	StructureFactor sf;
     //IsingLangevin ising;
     IsingField2D ising;
@@ -34,8 +39,9 @@ public class LinearTheoryApp extends Simulation{
 		new Control(new LinearTheoryApp(), "Ising Field");
 	}
 
-	public LinearTheoryApp() {
-		frameTogether("Plots", grid, sfVsKR, structurePeakV, variance);
+	public void load(Control c) {
+		c.frameTogether("Plots", grid, sfVsKR, structurePeakV, variance);
+		c.frame(sfSlice);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin Conserve M", "Langevin No M Convervation"));
@@ -91,6 +97,18 @@ public class LinearTheoryApp extends Simulation{
 			structurePeakV.registerLines("2nd Peak", sf.get2PeakC(), Color.RED);
 			variance.registerLines("Variance", varianceAcc, Color.BLACK);
 			sfVsKR.registerLines("SF", sf.getAccumulatorC(), Color.BLACK);
+			double binSize = 2*Math.PI*ising.R/ising.L;
+			double [] slice = new double [ising.Lp];
+			for (int i = 0; i < ising.Lp/2; i++)
+				slice[i] = sf.sFactor[i];
+			sfSlice.registerLines("slice", new PointSet(0,binSize,slice), Color.BLACK);
+			sfSlice.registerLines("Structure theory", new Function() {
+				public double eval(double kR) {
+					double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
+					double D = -pot/ising.T-1;
+					return  (exp(2*ising.time()*D)*(1 + 1/D)-1/D);	
+				}
+			}, Color.RED);
 		}
 	}
 
