@@ -69,12 +69,12 @@ public class MonteCarloDataApp extends Simulation{
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
 		//params.add("N", 1<<8);
-		params.add("R", 50);//1<<6);
+		params.add("R", 10);//1<<6);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.04);
+		params.addm("T", 0.1);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
-		params.addm("dt", 1/(double)(1<<6));
+		params.addm("dt", 1/(double)(1<<3));
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -176,20 +176,17 @@ public class MonteCarloDataApp extends Simulation{
 				if(params.sget("init") == "Read From File") readInitialConfiguration();
 				else sim.randomizeField(params.fget("Initial magnetization"));
 				sim.restartClock();
-				//while (sim.time() < maxTime){
-					sim.step();
-					//Job.animate();
-				//}
+				sim.step();
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-				
 				for (int i = 1; i < sim.L/(2*dx); i++ ){
-					System.out.println("print time = " + sim.time());
+					//System.out.println("print time = " + sim.time());
 					double kRValue = 2*Math.PI*sim.R*(double)i/sim.L;
 					if (kRValue < kRmax) sf_kAcc.accum(kRValue, sFactor[i]);
 				}
 				repNo += 1;
 				params.set("Reps", repNo);
 				Job.animate();
+				if(repNo%30==0)writeSkDOtoFile(sim.dTime(), repNo);
 			}
 		}else if(averages == "S_t_SC"){
 
@@ -214,20 +211,20 @@ public class MonteCarloDataApp extends Simulation{
 			int sfLabel0, sfLabel1, sfLabel2, sfLabel3, sfLabel4, sfLabel5;
 			int sfLabelHor = findBestkR();
 			int sfLabelVert = sfLabelHor*sim.L/dx;
-			StringBuffer sb = new StringBuffer();
-			sb.append("# sf label = ");	sb.append(sfLabelHor); sb.append(" kR values = ");
-			double krvalue = 2*sim.R*Math.PI*sfLabelHor/sim.L;
-			sb.append(krvalue);	sb.append(", ");
-			krvalue = 2*sim.R*Math.PI*(sfLabelHor+1)/sim.L;
-			sb.append(krvalue);	sb.append(", ");
-			krvalue = 2*sim.R*Math.PI*(sfLabelHor+2)/sim.L;
-			sb.append(krvalue);	sb.append(", ");
-			krvalue = 2*sim.R*Math.PI*(sfLabelHor+3)/sim.L;
-			sb.append(krvalue);	sb.append(", ");
-			krvalue = 2*sim.R*Math.PI*(sfLabelHor+4)/sim.L;
-			sb.append(krvalue);	sb.append(", ");
-			krvalue = 2*sim.R*Math.PI*(sfLabelHor+5)/sim.L;
-			sb.append(krvalue);
+//			StringBuffer sb = new StringBuffer();
+//			sb.append("# sf label = ");	sb.append(sfLabelHor); sb.append(" kR values = ");
+//			double krvalue = 2*sim.R*Math.PI*sfLabelHor/sim.L;
+//			sb.append(krvalue);	sb.append(", ");
+//			krvalue = 2*sim.R*Math.PI*(sfLabelHor+1)/sim.L;
+//			sb.append(krvalue);	sb.append(", ");
+//			krvalue = 2*sim.R*Math.PI*(sfLabelHor+2)/sim.L;
+//			sb.append(krvalue);	sb.append(", ");
+//			krvalue = 2*sim.R*Math.PI*(sfLabelHor+3)/sim.L;
+//			sb.append(krvalue);	sb.append(", ");
+//			krvalue = 2*sim.R*Math.PI*(sfLabelHor+4)/sim.L;
+//			sb.append(krvalue);	sb.append(", ");
+//			krvalue = 2*sim.R*Math.PI*(sfLabelHor+5)/sim.L;
+//			sb.append(krvalue);
 			
 
 			sfTimeArray = new double[(int)((maxTime/step)+1)];
@@ -367,6 +364,19 @@ public class MonteCarloDataApp extends Simulation{
 				sf_kTheoryAcc.accum(kR,sf);
 			}
 		}
+	}
+	
+	private void writeSkDOtoFile(double recordTime1, int reps){
+		String message1 = "#Glauber Monte Carlo run: S vs k for one or more times. Disorder to Order Early times.";
+		StringBuffer sb = new StringBuffer();
+		sb.append("# record time = ");
+		sb.append(recordTime1);
+		String message2 = sb.toString();
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare1/smc";
+		FileUtil.deleteFile(fileName);		
+		initFile(fileName, message1, message2);
+		FileUtil.printAccumToFile(fileName, sf_kAcc);
+		System.out.println("file written for rep no: " + reps);
 	}
 	
 	private void writeStSCtoFile(int sfInt, double initializeTime){
