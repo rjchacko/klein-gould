@@ -22,10 +22,10 @@ import static java.lang.Math.*;
 public class MonteCarloDataApp extends Simulation{
 
 	//Choose function of app
-	//String averages = "S_k_DO";//take s(k) averages for disorder to order case
+	String averages = "S_k_DO";//take s(k) averages for disorder to order case
 	//String averages = "S_t_DO";//take s(t) averages for disorder to order case
 	//String averages = "S_k_SC";//take s(k) averages for stripe to clump case
-	String averages = "S_t_SC";//take s(k) averages for stripe to clump case
+	//String averages = "S_t_SC";//take s(k) averages for stripe to clump case
 	//String averages = "S_t_SC1D";//take s(t) averages for stripe to clump case starting with 1D stripe solution
 	//String averages = "None";
 	
@@ -83,6 +83,7 @@ public class MonteCarloDataApp extends Simulation{
 	}	
 	
 	public void animate() {
+		sftPlot.setLogScale(false, true);
 		params.set("time", format(sim.time()));
 		params.set("magnetization", format(sim.magnetization()));
 		sim.setParameters(params);
@@ -177,7 +178,7 @@ public class MonteCarloDataApp extends Simulation{
 				sim.restartClock();
 				//while (sim.time() < maxTime){
 					sim.step();
-					Job.animate();
+					//Job.animate();
 				//}
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 				
@@ -188,6 +189,7 @@ public class MonteCarloDataApp extends Simulation{
 				}
 				repNo += 1;
 				params.set("Reps", repNo);
+				Job.animate();
 			}
 		}else if(averages == "S_t_SC"){
 

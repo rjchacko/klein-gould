@@ -182,6 +182,25 @@ public class FourierTransformer {
 		return dst;
 	}
 	
+	public double [] find2DSF(double [] src, double size){
+		double dx = size/L;
+		double [] dst = new double [L*L];
+		for (int i = 0; i < L*L; i++) {
+			scratch2D[2*i] = src[i]*dx*dx;
+			scratch2D[2*i+1] = 0;
+		}
+		fft2D.transform(scratch2D);
+		scratch2D = fft2D.toWraparoundOrder(scratch2D);
+	
+		for (int i=0; i < L*L; i++){
+			double re = scratch2D[2*i];
+			double im = scratch2D[2*i+1];
+			dst[i] = (re*re + im*im)/(size*size);
+		}
+		return dst;		
+		
+	}
+	
 	private double [] find2DSF(double [] src){
 		double [] dst = new double [L*L];
 		for (int i = 0; i < L*L; i++) {
