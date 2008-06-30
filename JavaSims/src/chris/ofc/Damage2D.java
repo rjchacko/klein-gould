@@ -8,7 +8,6 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 
 import scikit.graphics.dim2.Grid;
-import scikit.jobs.Job;
 import scikit.jobs.params.Parameters;
 import chris.util.CopyArray;
 import chris.util.DirUtil;
@@ -16,12 +15,31 @@ import chris.util.LatticeNeighbors;
 import chris.util.PrintUtil;
 
 
+
+/*
+ * 
+ * 
+ * Make EQ an option and thus merge, for example
+ * Avalanche and AvalancheEQ, or what is more important
+ * maybe, ResetPlate so one change changes everything?
+ * 
+ * 
+ */
+
+
 public class Damage2D {
 
 	// OFC Parameters
 	
 	private int imax, alive[], Nrichter;
-	private double L, N, alpha0, alphaW, Sf0, Sr0, Sf[], Sr[], SfW, SrW, stress[], R, t1, t2, dt, pt, Scum[], Omega;
+	private double L, N, alpha0, alphaW, Sf0, Sr0, Sf[], Sr[], SfW, SrW, stress[], R, t1,
+				   t2, dt, pt, pt2, Scum[], Scum2[], Omega, Omega2, tMAX, Omega3;
+	/*
+	 * 
+	 * Add a SrQnch[]
+	 * 
+	 */
+	
 	private String shape, bc;
 	private boolean alphaN, SfN, SrN, killed[];
 	
@@ -35,7 +53,7 @@ public class Damage2D {
 	private int Nlives0, LivesLeft[];
 	private double NlivesW;
 	private boolean NlivesN, crack;
-	private String LifeStyle;
+	private String LifeStyle, Mode;
 	
 	// I/O Parameters
 	
@@ -43,6 +61,9 @@ public class Damage2D {
 	private boolean showGrid;
 	private DecimalFormat fmtT = new DecimalFormat("000000");
 	private DecimalFormat fmtH = new DecimalFormat("000");
+	
+	// Metric Study Parameters
+	//private String outfileOmega;
 	
 	public Damage2D(Parameters params){
 		Constructor(params);
@@ -53,6 +74,7 @@ public class Damage2D {
 		String animate;
 		
 		outdir    = params.sget("Data Directory");
+		Mode      = params.sget("Mode");
 		seed      = params.iget("Random Seed",0);
 		shape     = params.sget("Interaction Shape");
 		R         = params.fget("Interaction Radius (R)");
@@ -76,6 +98,7 @@ public class Damage2D {
 		
 		outfile1 = outdir + File.separator+"DamageData.txt";
 		outfile2 = outdir + File.separator+"DamageLives.txt";
+		//outfileOmega = outdir + File.separator+"Omega.txt";
 		PicDir   = outdir + "/Pics/";
 		DirUtil.MkDir(PicDir);
 		
@@ -99,15 +122,16 @@ public class Damage2D {
 		else{
 			alphaN = true;
 		}
-		
-		if(LifeStyle.equals("Constant")){
-			NlivesN = false;
-		}
-		else if(LifeStyle.equals("Gaussian")){
-			NlivesN = true;
-		}
-		else{
-			NlivesN = true;
+		if(Mode.equals("Damage")){
+			if(LifeStyle.equals("Constant")){
+				NlivesN = false;
+			}
+			else if(LifeStyle.equals("Gaussian")){
+				NlivesN = true;
+			}
+			else{
+				NlivesN = true;
+			}
 		}
 		
 		if(animate.equals("On")){
@@ -132,6 +156,7 @@ public class Damage2D {
 		Sr     = new double[(int) N];
 		stress = new double[(int) N];
 		Scum   = new double[(int) N];
+		Scum2  = new double[(int) N];
 		killed = new boolean[(int) N];
 				
 		// Set up Lattice Neighbors
@@ -141,7 +166,7 @@ public class Damage2D {
 		InitArrays();
 
 		// Set up N_lives Left
-		LivesLeft = SetupNlives();
+		LivesLeft = SetupNlives(Mode);
 		
 		// Set up First Failure
 		if(pt <= 0){
@@ -153,9 +178,10 @@ public class Damage2D {
 		}
 		
 		// start clocks
-		t1 = 0;
-		t2 = 0;
-		pt = -pt;
+		t1  = 0;
+		t2  = 0;
+		pt2 = 0;
+		pt  = -pt;
 		
 	}
 	
@@ -217,7 +243,8 @@ public class Damage2D {
 				Sr[jj] = Sr0;
 			}
 			else{
-				Sr[jj] = Sr0 + SrW*rand.nextGaussian();
+				// Sr[jj] = Sr0 + SrW*rand.nextGaussian();
+				Sr[jj] = Sr0 + SrW*(rand.nextDouble()-0.5);
 			}
 			
 		}
@@ -225,26 +252,36 @@ public class Damage2D {
 		return;
 	}
 	
-	private int[] SetupNlives(){
+	private int[] SetupNlives(String md){
 		
-		int max = alive[0];
-		int ret[];
 		
-		for (int jj = 0 ; jj < N ; jj++){
-			if(alive[jj] > max ) max = alive[jj];
+		if (md.equals("Damage")){
+			
+			int ret[];
+			int max = alive[0];
+
+			for (int jj = 0 ; jj < N ; jj++){
+				if(alive[jj] > max ) max = alive[jj];
+			}
+
+			ret = new int[max + 1];
+
+			for (int jj = 0 ; jj < max + 1 ; jj++){
+				ret[jj] = 0;
+			}
+
+			for (int jj = 0 ; jj < N ; jj++){
+				ret[alive[jj]]++;
+			}
+			return ret;
+		}
+		else{
+			tMAX = Nlives0;
+			int[] ret = {0};
+			return ret;
 		}
 		
-		ret = new int[max + 1];
 		
-		for (int jj = 0 ; jj < max + 1 ; jj++){
-			ret[jj] = 0;
-		}
-		
-		for (int jj = 0 ; jj < N ; jj++){
-			ret[alive[jj]]++;
-		}
-		
-		return ret;
 	}
 	
 	public boolean Avalanche(){
@@ -269,16 +306,12 @@ public class Damage2D {
 			ResetPlate(copy);
 			CascadeSites(avlnch);
 
-			Job.animate();
-
 		}
 		
 		Omega = StressMetric();
 		
 		ForceFailure();
-		
-		Job.animate();
-		
+				
 		return (!crack);
 	}
 	
@@ -287,6 +320,14 @@ public class Damage2D {
 		double stressMax;
 		imax = 0;
 		
+		/*
+		 * replace this with
+		 * minimizing the difference
+		 * between the stress on a 
+		 * site and that site's 
+		 * failure stress 
+		 * 
+		 */		
 		
 		for (int jj = 0 ; jj < N ; jj++){
 			if(stress[jj] > stress[imax]){ 
@@ -420,11 +461,8 @@ public class Damage2D {
 				if(alphaN){	// alpha is a random variable
 					
 					for (int kk = 0 ; kk < dsnbs.length ; kk++){
-
 						stress[dsnbs[kk]] += alive[dsnbs[kk]+(int)N]*release*(1 - alphaW*rand.nextGaussian() - alpha0);	
-						
 						if ((alive[dsnbs[kk]+(int)N]*stress[dsnbs[kk]] > Sf[dsnbs[kk]]) && !(killed[dsnbs[kk]])){
-							
 							toKill[toKillindex++] = dsnbs[kk];
 							killed[dsnbs[kk]] = true;
 						}
@@ -433,7 +471,7 @@ public class Damage2D {
 				else{	// alpha is fixed
 					for (int kk = 0 ; kk < dsnbs.length ; kk++){
 						stress[dsnbs[kk]] += alive[dsnbs[kk]+(int)N]*release*(1 - alpha0);
-						if ((stress[dsnbs[kk]] > alive[dsnbs[kk]+(int)N]*Sf[dsnbs[kk]]) && !(killed[dsnbs[kk]])){
+						if ((alive[dsnbs[kk]+(int)N]*stress[dsnbs[kk]] > Sf[dsnbs[kk]]) && !(killed[dsnbs[kk]])){
 							toKill[toKillindex++] = dsnbs[kk];
 							killed[dsnbs[kk]] = true;
 						}
@@ -451,15 +489,33 @@ public class Damage2D {
 		
 		int length = ds.length;
 		
-		for (int jj = 0 ; jj < length; jj++){
-			if(alive[ds[jj]] > 0){
-				stress[ds[jj]] = Sr[ds[jj]];
-				alive[ds[jj]+(int)N] = 1;
-			}
-			else{
-				stress[ds[jj]] = -2;
+		
+		if(SrN){	
+			for (int jj = 0 ; jj < length; jj++){
+				if(alive[ds[jj]] > 0){
+					stress[ds[jj]] = Sr[ds[jj]];
+					Sr[ds[jj]] = Sr0 + SrW*(rand.nextDouble()-0.5); 
+					alive[ds[jj]+(int)N] = 1;
+				}
+				else{
+					stress[ds[jj]] = -2;
+				}
 			}
 		}
+		else{
+			for (int jj = 0 ; jj < length; jj++){
+				if(alive[ds[jj]] > 0){
+					stress[ds[jj]] = Sr[ds[jj]];
+					alive[ds[jj]+(int)N] = 1;
+				}
+				else{
+					stress[ds[jj]] = -2;
+				}
+			}
+		}
+		
+		
+		
 		return;
 	}
 	
@@ -481,10 +537,21 @@ public class Damage2D {
 	
 	}
 	
-	public boolean AvalancheEQ(){
+	public boolean Equilibrate(){
+		
+		
+		/*
+		 * replace this with
+		 * minimizing the difference
+		 * between the stress on a 
+		 * site and that site's 
+		 * failure stress 
+		 * 
+		 */
 		
 		pt++;
-		 
+		pt2 += dt; 
+		
 		Nrichter = 1; // the forced failure
 		
 		int[] orig = {imax};
@@ -499,15 +566,53 @@ public class Damage2D {
 			ResetPlateEQ(copy);
 			CascadeSitesEQ(avlnch);
 
-			Job.animate();
+		}
+		
+		Omega = StressMetric();
+		
+		ForceFailureEQ();
+				
+		return (pt < 0);
+	}
+	
+	public boolean AvalancheEQ(){
+		
+		
+		/*
+		 * replace this with
+		 * minimizing the difference
+		 * between the stress on a 
+		 * site and that site's 
+		 * failure stress 
+		 * 
+		 */
+
+		t1++;
+		t2+=dt;
+		pt2+=dt;
+				 
+		Nrichter = 1; // the forced failure
+		
+		int[] orig = {imax};
+		
+		int[] avlnch = DistributeStress(orig);
+		ResetPlateEQ(orig);
+		CascadeSitesEQ(avlnch);
+	
+		while(avlnch.length > 0){
+			int[] copy = avlnch;
+			avlnch = DistributeStress(avlnch);
+			ResetPlateEQ(copy);
+			CascadeSitesEQ(avlnch);
 
 		}
 		
+		Omega  = StressMetric();
+		Omega2 = StressMetricV2();
+		
 		ForceFailureEQ();
-		
-		Job.animate();
-		
-		return (pt < 0);
+				
+		return (t1 < tMAX);
 	}
 	
 	private void ForceFailureEQ(){
@@ -539,11 +644,24 @@ public class Damage2D {
 	private void ResetPlateEQ(int[] ds){
 		int length = ds.length;
 		
-		for (int jj = 0 ; jj < length; jj++){
-	
-			stress[ds[jj]] = Sr[ds[jj]];
-			alive[ds[jj]+(int)N] = 1;
+		
+		if(SrN){	
+			for (int jj = 0 ; jj < length; jj++){
+				stress[ds[jj]] = Sr[ds[jj]];
+				Sr[ds[jj]] = Sr0 + SrW*(rand.nextDouble()-0.5); 
+				alive[ds[jj]+(int)N] = 1;
+			}
 		}
+		else{
+			for (int jj = 0 ; jj < length; jj++){
+				stress[ds[jj]] = Sr[ds[jj]];
+				alive[ds[jj]+(int)N] = 1;
+			}
+		}
+		
+		
+		
+		
 		return;
 	}
 	
@@ -580,7 +698,14 @@ public class Damage2D {
 				Omega += (Scum[jj] - Sbar)*(Scum[jj] - Sbar);
 			}
 
-			Omega = Omega/(t2*t2*((int)N - LivesLeft[0]));
+			
+			Omega3 = Omega/(t2*t2*((int)N - LivesLeft[0]));
+			
+			Omega = Omega/(pt2*pt2*((int)N - LivesLeft[0]));
+			
+			//Sbar = Sbar/t2;
+			
+			//PrintUtil.printlnToFile(outfileOmega,t2,stress[(1+getL())*getL()/2],Scum[(1+getL())*getL()/2]/t2,Sbar,Omega);
 			
 			return Omega;
 			
@@ -589,16 +714,50 @@ public class Damage2D {
 		return -1;
 	}
 	
+	private double StressMetricV2(){
+		
+		if(N > LivesLeft[0]){
+			double Sbar = 0;
+
+			for (int jj = 0 ; jj < N ; jj++){
+				Scum2[jj] += alive[jj+(int)N]*stress[jj]*dt;
+			}
+
+			for (int jj = 0 ; jj < N ; jj++){
+				Sbar += Scum2[jj];
+			}
+
+			Sbar = Sbar/((int)N - LivesLeft[0]); // all the sites save the dead ones
+
+			Omega2 = 0;
+			for (int jj = 0 ; jj < N ; jj++){
+				Omega2 += (Scum2[jj] - Sbar)*(Scum2[jj] - Sbar);
+			}
+
+			Omega2 = Omega2/(t2*t2*((int)N - LivesLeft[0]));
+			
+			//Sbar = Sbar/t2;
+			
+			//PrintUtil.printlnToFile(outfileOmega,t2,stress[(1+getL())*getL()/2],Scum[(1+getL())*getL()/2]/t2,Sbar,Omega);
+			
+			return Omega2;
+			
+		}
+		
+		return -1;
+	}
+	
 	public void WriteDataHeaders(){
 		
-		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","N_sts/avl","Omega");
+		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","pt","N_sts/avl","Omega","Omega2","Omega3");
 		PrintUtil.printlnToFile(outfile2,"Sweeps","t_vel","N_lvs=0","N_lvs=1",". . . ","N_lvs=N_max");
+		//PrintUtil.printlnToFile(outfileOmega,"t_vel","sigma_cntr","sigma(t)_cntr","sigma(t)--bar","Omega");
 		
 	}
 	
 	public void TakeDate(){
-		PrintUtil.printlnToFile(outfile1,t1,t2,Nrichter,Omega);
-		PrintUtil.print2TimeAndVectorToFile(outfile2,t1,t2,LivesLeft);
+		PrintUtil.printlnToFile(outfile1,t1,t2,pt2,Nrichter,Omega,Omega2,Omega3);
+		//PrintUtil.print2TimeAndVectorToFile(outfile2,t1,t2,LivesLeft);
 	}
 	
 	public static void PrintParams(String fout, Parameters prms){
@@ -683,6 +842,17 @@ public class Damage2D {
 	public int getAS(){
 		
 		return Nrichter;
+	}
+	
+	public double getAveLL(){
+
+		double ret = 0;
+		
+		for(int jj = 0 ; jj < LivesLeft.length ; jj++){
+			ret += jj*LivesLeft[jj];
+		}
+		
+		return ret/getN();
 	}
 	
 }

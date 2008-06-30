@@ -14,6 +14,7 @@ import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
+import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.FileValue;
 
 public class HistUtil extends Simulation{
@@ -31,6 +32,7 @@ public class HistUtil extends Simulation{
 		params.add("Number of Header Rows / Rows to Skip", (int) 1);
 		params.add("Column Number", (int) 1);
 		params.add("Bin Width", (double) 1);
+		params.add("Log-Log", new ChoiceValue("Yes","No"));
 		params.add("Status");
 		
 		c.frame(grid);
@@ -48,6 +50,16 @@ public class HistUtil extends Simulation{
 	public void run() {
 		
 		params.set("Status","Initializing . . .");
+		
+		
+		boolean loglog;
+		
+		if(params.sget("Log-Log").equals("Yes")){
+			loglog = true;
+		}
+		else{
+			loglog = false;
+		}
 
 		int cn = params.iget("Column Number");
 		int skip = params.iget("Number of Header Rows / Rows to Skip");
@@ -63,12 +75,22 @@ public class HistUtil extends Simulation{
 		params.set("Status","Filling Histogram . . .");
 		double[] hist = fillHist(data,bw);
 	
-		params.set("Status","Writing Histogram . . .");
-		PrintUtil.printlnToFile(fout,"Coordinate","Number");
-		for (int jj = 0 ; jj < hist.length ; jj=jj+2){
-			PrintUtil.printlnToFile(fout,hist[jj],hist[jj+1]);
+		if(loglog){
+			params.set("Status","Writing Histogram . . .");
+			PrintUtil.printlnToFile(fout,"Coordinate","Number","Log[coord]","Log[#]");
+			for (int jj = 0 ; jj < hist.length ; jj=jj+2){
+				double coord = hist[jj];
+				double num = hist[jj+1];
+				PrintUtil.printlnToFile(fout,coord,num,Math.log(coord),Math.log(num));
+			}
 		}
-		
+		else{
+			params.set("Status","Writing Histogram . . .");
+			PrintUtil.printlnToFile(fout,"Coordinate","Number");
+			for (int jj = 0 ; jj < hist.length ; jj=jj+2){
+				PrintUtil.printlnToFile(fout,hist[jj],hist[jj+1]);
+			}
+		}
 		Job.animate();
 		
 		params.set("Status","Done");
@@ -105,7 +127,7 @@ public class HistUtil extends Simulation{
 	
 	private double[] ReadIn(File fin, int cn, int skip){
 		
-		double[] values = new double[1000000];
+		double[] values = new double[2000000];
 		int counter = 0;
 		
 		try {
