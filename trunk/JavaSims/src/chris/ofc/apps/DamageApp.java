@@ -2,6 +2,7 @@ package chris.ofc.apps;
 
 import java.awt.Color;
 import java.io.File;
+import java.text.DecimalFormat;
 
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -24,6 +25,8 @@ public class DamageApp extends Simulation{
 	ColorPalette palette1;
 	ColorGradient cGradient;
 	
+	DecimalFormat fmt = new DecimalFormat("0000.00");
+	
 	double ScMax;
 	Boolean pretime;
 	
@@ -34,6 +37,7 @@ public class DamageApp extends Simulation{
 public void load(Control c) {
 		
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
+		params.add("Mode", new ChoiceValue("Damage","Earthquake"));
 		params.add("Random Seed",0);
 		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
 		params.add("Interaction Radius (R)",(int)(50));
@@ -53,6 +57,7 @@ public void load(Control c) {
 		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("Number of Plate Updates");
 		params.add("Last Avalanche Size");
+		params.add("<Lives Left>");
 		
 		c.frameTogether("OFC Model with Damage", gridS, gridL);
 		
@@ -62,10 +67,12 @@ public void load(Control c) {
 
 		if(pretime){
 			params.set("Number of Plate Updates",model.getTime(-1));
+			params.set("Last Avalanche Size",model.getAS());
 		}
 		else{
 			params.set("Number of Plate Updates",model.getTime(1));
 			params.set("Last Avalanche Size",model.getAS());
+			//params.set("<Lives Left>",fmt.format(model.getAveLL()));
 		}
 		
 		if(model.draw()){
@@ -85,13 +92,6 @@ public void load(Control c) {
 			gridS.setColors(cGradient);
 			gridS.registerData(L,L,copyStress);
 			gridL.registerData(L, L, foo);
-
-			if (params.sget("Record").equals("On")){
-				model.TakePicture(gridS);
-				model.TakePicture(gridL);
-
-			}
-			
 			
 		}
 	
@@ -113,14 +113,16 @@ public void load(Control c) {
 		palette1  = new ColorPalette();
 		cGradient = new ColorGradient();
 		
-		int MostLives = model.maxLives();
-		Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};		
-		palette1.setColor(0,Color.BLACK);
-		for (int jj = 1 ; jj <= MostLives ; jj++){
-			palette1.setColor(jj,Carray[jj%5]);
+		if(params.sget("Mode").equals("Damage")){
+			int MostLives = model.maxLives();
+			Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};		
+			palette1.setColor(0,Color.BLACK);
+			for (int jj = 1 ; jj <= MostLives ; jj++){
+				palette1.setColor(jj,Carray[jj%5]);
+			}
+
+			gridL.setColors(palette1);
 		}
-		
-		gridL.setColors(palette1);
 		
 		// Setup output files
 		Damage2D.PrintParams(model.getOutdir()+File.separator+"Params.txt",params);	
@@ -129,17 +131,37 @@ public void load(Control c) {
 		// Run the simulation
 		pretime = true;
 		if(model.getTime(-1) != 0){
-			params.set("Last Avalanche Size","Equilibrating");
-			while(model.AvalancheEQ()){
+			params.set("<Lives Left>","Equilibrating");
+			while(model.Equilibrate()){
 				Job.animate();
 			}
 		}
 		pretime = false;
-		while(model.Avalanche()){
-			Job.animate();
+		
+		if(params.sget("Mode").equals("Damage")){
+			while(model.Avalanche()){
+				Job.animate();
+				model.TakeDate();
+				if (params.sget("Record").equals("On")){
+					// prevents taking multiple pics at a single time step
+					model.TakePicture(gridS);
+					model.TakePicture(gridL);
+				}
+			}
+		}
+		else{
+			while(model.AvalancheEQ()){
+				params.set("<Lives Left>","Running");
+				Job.animate();
+				model.TakeDate();
+				if (params.sget("Record").equals("On")){
+					// prevents taking multiple pics at a single time step
+					model.TakePicture(gridS);
+				}
+			}
 		}
 		
-		params.set("Last Avalanche Size","Finished");
+		params.set("<Lives Left>","Finished");
 		
 		return;
 	}
