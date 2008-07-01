@@ -18,9 +18,11 @@ import static java.lang.Math.*;
 public class LinearTheorySkApp extends Simulation{
     Grid grid = new Grid("Phi(x)");
 	Plot sfSlice = new Plot("SF Slice");
-	Accumulator sfAcc;
+	Accumulator sfAcc,sfInstance;
+	double [] sfAve, sfSumSq;
 	FourierTransformer ft;
     IsingField2D ising;
+    
     
 	public static void main(String[] args) {
 		new Control(new LinearTheorySkApp(), "Ising Field");
@@ -61,6 +63,7 @@ public class LinearTheorySkApp extends Simulation{
 		params.set("Time", ising.time());
 		grid.registerData(ising.Lp, ising.Lp, ising.phi);
 		sfSlice.registerLines("slice2", sfAcc, Color.BLUE);
+		sfSlice.registerLines("slice3", sfInstance, Color.YELLOW);
 		double maxValue = PI*ising.Lp*ising.R/ising.L;
 		sfSlice.registerLines("Structure theory", new Function(0, maxValue) {
 			public double eval(double kR) {
@@ -82,17 +85,20 @@ public class LinearTheorySkApp extends Simulation{
 	}
 
 	public void run() {
-		sfAcc = new Accumulator(.1);
+		sfAcc = new Accumulator();
+		sfInstance = new Accumulator();
 		ising = new IsingField2D(params);
 		ft = new FourierTransformer(ising.Lp);
-		double binWidth = params.fget("kR bin-width");
-		binWidth = IsingLangevin.KR_SP / floor(IsingLangevin.KR_SP/binWidth);
+		//double binWidth = 2.0*PI*ising.R/ising.Lp;
+		sfAve = new double [ising.Lp];
+		sfSumSq = new double [ising.Lp];
 		double maxTime = params.fget("Max Time");
 		int reps = 0;
 		while (true) {
+			sfInstance.clear();
 			ising.randomizeField(0);
 			ising.restartClock();
-			while(ising.time() < maxTime){
+			while(ising.time() <= maxTime){
 				ising.simulateSimple();
 			}
 			//have to input dx into FFT. I don't know why, but its true
@@ -100,11 +106,15 @@ public class LinearTheorySkApp extends Simulation{
 			for (int i = 0; i < ising.Lp/2; i++){
 				double kRValue = 2*PI*i*ising.R/ising.L;
 				sfAcc.accum(kRValue, sf2[i]);
+				sfInstance.accum(kRValue, sf2[i]);
+				sfAve[i] = (sfAve[i]*(double)reps+sf2[i])/(double)(reps+1);
+				sfSumSq[i] += sf2[i]*sf2[i];
+				
 			}
 			Job.animate();
 			reps += 1;
 			params.set("Reps", reps);
-			if(reps%20 == 0) writeToFile(ising.dt, reps);
+			if(reps%2 == 0) writeToFile(ising.dt, reps);
 		}
 	}
 	
@@ -113,11 +123,21 @@ public class LinearTheorySkApp extends Simulation{
 		StringBuffer sb = new StringBuffer();
 		sb.append("# record time = ");
 		sb.append(recordTime1);
+		sb.append(", rep no = ");
+		sb.append(reps);
 		String message2 = sb.toString();
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare1/sf";
-		FileUtil.deleteFile(fileName);		
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare1/sfTest";
+		String aveFileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare1/sfeTest";
+		FileUtil.deleteFile(fileName); FileUtil.deleteFile(aveFileName);		
 		ising.initFile(params, fileName, message1, message2);
 		FileUtil.printAccumToFile(fileName, sfAcc);
+		ising.initFile(params, aveFileName, message1, message2);
+		double binWidth = 2.0*PI*ising.R/ising.L;
+		for (int i = 0; i < ising.Lp/2; i++){
+			double kRValue = binWidth*i;
+			double error = sqrt((sfSumSq[i] -reps*sfAve[i]*sfAve[i])/reps);
+			FileUtil.printlnToFile(aveFileName, kRValue, sfAve[i], error);
+		}
 		System.out.println("file written for rep " + reps);
 	}
 

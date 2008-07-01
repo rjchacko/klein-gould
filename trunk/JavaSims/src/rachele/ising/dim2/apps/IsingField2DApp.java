@@ -301,7 +301,7 @@ public class IsingField2DApp extends Simulation {
 				sf.accumulateAll(ising.t, ising.phi);
 				recordSFvTime();
 				//record3Ddata();
-				recordSteps += 1;
+				recordSteps += 0.1;
 				writeDataToFile();
 			}
 			Job.animate();
