@@ -128,7 +128,7 @@ public class LinearTheoryApp extends Simulation{
 		double density = 0;
 
 		//int kR1int = ising.findKRSquareInt(IsingField2D.KRsquare);//getkRint(5.13562230);
-		int kR1int = ising.findKRSquareInt(5.006913291658733);
+		int kR1int = ising.findKRSquareInt(4.4934092);
 		int kR2int = ising.findKRSquareInt(IsingField2D.KRsquare2);
 		double maxTime = params.fget("Max Time");
 		fillTheory(density, kR1int, kR2int, maxTime);

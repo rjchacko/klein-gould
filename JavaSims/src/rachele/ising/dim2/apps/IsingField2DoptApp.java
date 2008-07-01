@@ -158,7 +158,7 @@ public class IsingField2DoptApp extends Simulation{
 			//System.out.println(ising.t);
     		params.set("dt new", ising.dt);
     		Job.animate();
-			//ising.adjustRanges();
+			ising.adjustRanges();
 			if (ising.t > steps){
 				sf.takeFT(ising.phi);
 				Job.animate();
