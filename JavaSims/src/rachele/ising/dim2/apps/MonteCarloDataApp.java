@@ -197,18 +197,18 @@ public class MonteCarloDataApp extends Simulation{
 			double initH = 0;
 			double quenchH = 0.9;
 			int repNo = 0;
-			sf_tAcc0 = new Accumulator(sim.dTime());
-			sf_tAcc1 = new Accumulator(sim.dTime());
-			sf_tAcc2 = new Accumulator(sim.dTime());
-			sf_tAcc3 = new Accumulator(sim.dTime());
-			sf_tAcc4 = new Accumulator(sim.dTime());
-			sf_tAcc5 = new Accumulator(sim.dTime());
-			sf_tAveAcc0 = new Accumulator(sim.dTime());
-			sf_tAveAcc1 = new Accumulator(sim.dTime());
-			sf_tAveAcc2 = new Accumulator(sim.dTime());
-			sf_tAveAcc3 = new Accumulator(sim.dTime());
-			sf_tAveAcc4 = new Accumulator(sim.dTime());
-			sf_tAveAcc5 = new Accumulator(sim.dTime());
+			sf_tAcc0 = new Accumulator();
+			sf_tAcc1 = new Accumulator();
+			sf_tAcc2 = new Accumulator();
+			sf_tAcc3 = new Accumulator();
+			sf_tAcc4 = new Accumulator();
+			sf_tAcc5 = new Accumulator();
+			sf_tAveAcc0 = new Accumulator();
+			sf_tAveAcc1 = new Accumulator();
+			sf_tAveAcc2 = new Accumulator();
+			sf_tAveAcc3 = new Accumulator();
+			sf_tAveAcc4 = new Accumulator();
+			sf_tAveAcc5 = new Accumulator();
 			
 			int sfLabel0, sfLabel1, sfLabel2, sfLabel3, sfLabel4, sfLabel5;
 			int sfLabelHor = findBestkR();
@@ -292,24 +292,9 @@ public class MonteCarloDataApp extends Simulation{
 		}
 	}
 
-	public void initFile(String fileName, String message1, String message2){
-		FileUtil.printlnToFile(fileName, message1);
-		FileUtil.printlnToFile(fileName, message2);
-		FileUtil.printlnToFile(fileName, "# Parameters follow:");
-		FileUtil.printlnToFile(fileName, "# Dynamics = ", params.sget("Dynamics"));
-		FileUtil.printlnToFile(fileName, "# init = ", params.sget("init"));
-		FileUtil.printlnToFile(fileName, "# Random Seed = ", params.sget("Random seed"));
-		FileUtil.printlnToFile(fileName, "# L = ", params.sget("L"));
-		FileUtil.printlnToFile(fileName, "# R = ", params.sget("R"));
-		FileUtil.printlnToFile(fileName, "# init mag = ", params.sget("Initial magnetization"));
-		FileUtil.printlnToFile(fileName, "# temperature ", params.sget("T"));
-		FileUtil.printlnToFile(fileName, "# Random Seed = ", params.sget("Random seed"));
-		FileUtil.printlnToFile(fileName, "# J = ", params.sget("J"));
-		FileUtil.printlnToFile(fileName, "# h = ", params.sget("h"));
-		FileUtil.printlnToFile(fileName, "# dt = ", params.sget("dt"));
-	}
+
 	
-	public int sf_t_theory(double maxTime){
+	private int sf_t_theory(double maxTime){
 		sf_tAcc0 =  new Accumulator(sim.dTime());
 		sf_tAveAcc0 = new Accumulator(sim.dTime());
 		sf_tTheoryAcc = new Accumulator(sim.dTime());
@@ -359,9 +344,8 @@ public class MonteCarloDataApp extends Simulation{
 		sb.append("# record time = ");
 		sb.append(recordTime1);
 		String message2 = sb.toString();
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare1/smc";
-		FileUtil.deleteFile(fileName);		
-		initFile(fileName, message1, message2);
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare2/smcR256";
+		FileUtil.initFile(fileName, params, message1, message2);
 		FileUtil.printAccumToFile(fileName, sf_kAcc);
 		System.out.println("file written for rep no: " + reps);
 	}
@@ -374,8 +358,7 @@ public class MonteCarloDataApp extends Simulation{
 		sb.append(kRValue);
 		String message2 = sb.toString();
 		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svt1/smc";
-		FileUtil.deleteFile(fileName);		
-		initFile(fileName, message1, message2);
+		FileUtil.initFile(fileName, params, message1, message2);
 		FileUtil.printAccumToFile(fileName, sf_tAveAcc0);
 		System.out.println("file written for rep no: " + reps);
 	}
@@ -400,36 +383,32 @@ public class MonteCarloDataApp extends Simulation{
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
 		String message2 = messageBuffer.toString();
 		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtRunQuenchH2/s";
-		FileUtil.deleteFile(fileName);		
-		initFile(fileName, message1, message2);
+		FileUtil.initFile(fileName, params, message1, message2);
 		FileUtil.printAccumToFile(fileName, sf_tAveAcc0);
 		
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);fileBuffer.append(1);
 		String file1 = fileBuffer.toString();
-		FileUtil.deleteFile(file1);	initFile(file1, message1, message2);		
+		FileUtil.initFile(file1, params, message1, message2);		
 		FileUtil.printAccumToFile(file1, sf_tAveAcc1);
 		
 		fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(2);String file2 = fileBuffer.toString();
-		FileUtil.deleteFile(file2);	initFile(file2, message1, message2);		
+		FileUtil.initFile(file2, params, message1, message2);		
 		FileUtil.printAccumToFile(file2, sf_tAveAcc2);
 
 		fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(3);String file3 = fileBuffer.toString();
-		FileUtil.deleteFile(file3);	initFile(file3, message1, message2);		
+		FileUtil.initFile(file3, params, message1, message2);		
 		FileUtil.printAccumToFile(file3, sf_tAveAcc3);
 		
 		fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(4);String file4 = fileBuffer.toString();
-		FileUtil.deleteFile(file4);	initFile(file4, message1, message2);		
+		FileUtil.initFile(file4, params, message1, message2);		
 		FileUtil.printAccumToFile(file4, sf_tAveAcc4);
 		
 		fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(5);String file5 = fileBuffer.toString();
-		FileUtil.deleteFile(file5);	initFile(file5, message1, message2);		
+		FileUtil.initFile(file5, params, message1, message2);		
 		FileUtil.printAccumToFile(file5, sf_tAveAcc5);
-		
-
-		
 	}
 	
-	public double theoryPoint(double kR, double time){
+	private double theoryPoint(double kR, double time){
 		double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
 		double D = -pot/sim.T-1;
 		//double V = sim.L*sim.L/(dx*dx);

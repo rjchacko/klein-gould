@@ -293,7 +293,7 @@ public class IsingField2D extends AbstractIsing2D{
 		convolveWithRange(phi, phi_bar, R);		
 		double dt0 = dt;
 		for (int i = 0; i < Lp*Lp; i++){
-			delPhi[i] = -dt0*mobility*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H)+ sqrt((dt0*2*T*mobility)/dx)*noise();
+			delPhi[i] = -dt0*mobility*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H)+ sqrt(dt0*2/(dx*dx))*noise();
 		}
 		double [] testPhi = new double [Lp*Lp];
 		if(abortMode){
@@ -603,6 +603,7 @@ public class IsingField2D extends AbstractIsing2D{
 		FileUtil.printlnToFile(fileName, "# Noise = ", params.sget("Noise"));
 		FileUtil.printlnToFile(fileName, "# Random Seed = ", params.sget("Random seed"));
 		FileUtil.printlnToFile(fileName, "# L/R = ", params.sget("L/R"));
+		FileUtil.printlnToFile(fileName, "# R = ", params.sget("R"));
 		FileUtil.printlnToFile(fileName, "# R/dx  = ", params.sget("R/dx"));
 		FileUtil.printlnToFile(fileName, "# init mag = ", params.sget("Magnetization"));
 		FileUtil.printlnToFile(fileName, "# temperature ", params.sget("T"));
