@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import scikit.dataset.Accumulator;
+import scikit.jobs.params.Parameters;
 
 public class FileUtil {
 	static public void deleteFile(String fileName){
@@ -138,6 +139,46 @@ public class FileUtil {
 		}	
 		
 		return A;
+	}
+	
+	static public void initFile(String fileName, Parameters params){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			String [] keys = params.keys();
+			for (int i = 0; i < keys.length; i++)
+				pw.println(keys[i] + " " + params.sget(keys[i]));
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+
+	static public void initFile(String fileName, Parameters params, String message1){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(message1);
+			String [] keys = params.keys();
+			for (int i = 0; i < keys.length; i++)
+				pw.println(keys[i] + " " + params.sget(keys[i]));
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void initFile(String fileName, Parameters params, String message1, String message2){
+		deleteFile(fileName);
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(message1);
+			pw.println(message2);
+			String [] keys = params.keys();
+			for (int i = 0; i < keys.length; i++)
+				pw.println(keys[i] + " " + params.sget(keys[i]));
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
 	}
 	
 }

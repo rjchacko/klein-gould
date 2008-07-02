@@ -126,8 +126,8 @@ public class LinearTheorySkApp extends Simulation{
 		sb.append(", rep no = ");
 		sb.append(reps);
 		String message2 = sb.toString();
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare1/sfTest";
-		String aveFileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare1/sfeTest";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare2/sfTest";
+		String aveFileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare2/sfeTest";
 		FileUtil.deleteFile(fileName); FileUtil.deleteFile(aveFileName);		
 		ising.initFile(params, fileName, message1, message2);
 		FileUtil.printAccumToFile(fileName, sfAcc);
@@ -135,7 +135,7 @@ public class LinearTheorySkApp extends Simulation{
 		double binWidth = 2.0*PI*ising.R/ising.L;
 		for (int i = 0; i < ising.Lp/2; i++){
 			double kRValue = binWidth*i;
-			double error = sqrt((sfSumSq[i] -reps*sfAve[i]*sfAve[i])/reps);
+			double error = sqrt((sfSumSq[i] -reps*sfAve[i]*sfAve[i])/reps)/sqrt(reps);
 			FileUtil.printlnToFile(aveFileName, kRValue, sfAve[i], error);
 		}
 		System.out.println("file written for rep " + reps);
