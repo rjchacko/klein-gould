@@ -3,10 +3,11 @@ package ranjit.cdm;
 import java.awt.Color;
 
 import scikit.dataset.Accumulator;
+import scikit.dataset.DatasetBuffer;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
-import scikit.jobs.Simulation;
 import scikit.jobs.Job;
+import scikit.jobs.Simulation;
 
 public class cdmFreeEnergy extends Simulation {
 	Accumulator f=new Accumulator(0.00001);
@@ -68,13 +69,13 @@ public class cdmFreeEnergy extends Simulation {
 			f.accum(h, ff);
 		}
 		
-		double fe[]=f.copyData();
-		double feprime[]=new double[fe.length];
-		for(int i=0;i<fe.length/2-1;i++){
-			feprime[2*i]=fe[2*i];
-			feprime[2*i+1]=fe[2*i+3]-fe[2*i+1];
-			fprime.accum(feprime[2*i],-feprime[2*i+1]);
-			g.accum(-T*feprime[2*i+1], fe[2*i+1]);
+		// TODO: check me - kip
+		DatasetBuffer fe=f.copyData();
+		for(int i=0;i<fe.size()-1;i++){
+			double feprime_x=fe.x(i);
+			double feprime_y=fe.y(i+1)-fe.y(i);
+			fprime.accum(feprime_x,-feprime_y);
+			g.accum(-T*feprime_y, fe.y(i));
 		}
 
 		Job.animate();
