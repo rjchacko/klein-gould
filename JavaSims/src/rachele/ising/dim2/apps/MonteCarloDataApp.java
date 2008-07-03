@@ -22,29 +22,26 @@ import static java.lang.Math.*;
 public class MonteCarloDataApp extends Simulation{
 
 	//Choose function of app
-	String averages = "S_k_DO";//take s(k) averages for disorder to order case
+	//String averages = "S_k_DO";//take s(k) averages for disorder to order case
 	//String averages = "S_t_DO";//take s(t) averages for disorder to order case
 	//String averages = "S_k_SC";//take s(k) averages for stripe to clump case
-	//String averages = "S_t_SC";//take s(k) averages for stripe to clump case
+	String averages = "S_t_SC";//take s(k) averages for stripe to clump case
 	//String averages = "S_t_SC1D";//take s(t) averages for stripe to clump case starting with 1D stripe solution
 	//String averages = "None";
 	
 	Grid grid = new Grid("Long Range Ising Model");
 	Grid sfGrid = new Grid("SF");
 	Plot sfkPlot = new Plot("sf_k plot");
-	Plot sftPlot = new Plot("sf_t plot");
-	//if(averages == "S_t_SC1D") Plot plot1DIsing = new Plot ("1D Ising Model");
+	Plot sftPlot = new Plot("sf_t plot"); 
 	int dx;
 	IsingLR sim;
 	public FourierTransformer fft;
 	double [] sFactor;
-	Accumulator sf_kAcc;
-	Accumulator sf_tAveAcc0,sf_tAcc0;
-	Accumulator sf_tAveAcc1,sf_tAcc1;
-	Accumulator sf_tAveAcc2,sf_tAcc2;
-	Accumulator sf_tAveAcc3,sf_tAcc3;
-	Accumulator sf_tAveAcc4,sf_tAcc4;
-	Accumulator sf_tAveAcc5,sf_tAcc5;
+	Accumulator sf_kAcc; 
+	Accumulator [] sf_tAveAcc;
+	Accumulator [] sf_tAcc;
+	int [] sfLabel;
+	int accNo = 6;
 	Accumulator sf_kTheoryAcc, sf_kTheory2Acc, sf_tTheoryAcc, sf_tTheory2Acc;
     boolean clearFile;
    	double [] sfTimeArray;
@@ -69,13 +66,13 @@ public class MonteCarloDataApp extends Simulation{
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
 		//params.add("N", 1<<8);
-		params.add("R", 10);//1<<6);
+		params.add("R", 50);//1<<6);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.1);
+		params.addm("T", 0.04);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
 		params.addm("dt", 1/(double)(1<<3));
-		params.addm("maxTime", 5.0);
+		params.addm("maxTime", 15.0);
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -102,31 +99,31 @@ public class MonteCarloDataApp extends Simulation{
 				}
 			}, Color.RED);
 		}else if(averages == "S_t_DO"){
-			sftPlot.registerLines("st(k)", sf_tAveAcc0, Color.BLACK);
+			sftPlot.registerLines("st(k)", sf_tAveAcc[0], Color.BLACK);
 			//sftPlot.registerLines("theory", sf_tTheoryAcc, Color.BLUE);			
-			sftPlot.registerLines("run", sf_tAcc0, Color.YELLOW);			
+			sftPlot.registerLines("run", sf_tAcc[0], Color.YELLOW);			
 		}else if(averages == "S_t_SC"){
-			sftPlot.registerLines("st(k) Ave0", sf_tAveAcc0, Color.BLACK);
-			sftPlot.registerLines("st(k)0", sf_tAcc0, Color.BLACK);
+			sftPlot.registerLines("st(k) Ave0", sf_tAveAcc[0], Color.BLACK);
+			sftPlot.registerLines("st(k)0", sf_tAcc[0], Color.BLACK);
 			
-			sftPlot.registerLines("st(k) Ave1", sf_tAveAcc1, Color.LIGHT_GRAY);
-			sftPlot.registerLines("st(k)1", sf_tAcc1, Color.LIGHT_GRAY);
+			sftPlot.registerLines("st(k) Ave1", sf_tAveAcc[1], Color.LIGHT_GRAY);
+			sftPlot.registerLines("st(k)1", sf_tAcc[1], Color.LIGHT_GRAY);
 			
-			sftPlot.registerLines("st(k) Ave2", sf_tAveAcc2, Color.BLUE);
-			sftPlot.registerLines("st(k)2", sf_tAcc2, Color.BLUE);
+			sftPlot.registerLines("st(k) Ave2", sf_tAveAcc[2], Color.BLUE);
+			sftPlot.registerLines("st(k)2", sf_tAcc[2], Color.BLUE);
 			
-			sftPlot.registerLines("st(k) Ave3", sf_tAveAcc3, Color.CYAN);
-			sftPlot.registerLines("st(k)3", sf_tAcc3, Color.CYAN);
+			sftPlot.registerLines("st(k) Ave3", sf_tAveAcc[3], Color.CYAN);
+			sftPlot.registerLines("st(k)3", sf_tAcc[3], Color.CYAN);
 			
-			sftPlot.registerLines("st(k) Ave4", sf_tAveAcc4, Color.GREEN);
-			sftPlot.registerLines("st(k)4", sf_tAcc4, Color.GREEN);
+			sftPlot.registerLines("st(k) Ave4", sf_tAveAcc[4], Color.GREEN);
+			sftPlot.registerLines("st(k)4", sf_tAcc[4], Color.GREEN);
 			
-			sftPlot.registerLines("st(k) Ave5", sf_tAveAcc5, Color.RED);
-			sftPlot.registerLines("st(k)5", sf_tAcc5, Color.RED);
+			sftPlot.registerLines("st(k) Ave5", sf_tAveAcc[5], Color.RED);
+			sftPlot.registerLines("st(k)5", sf_tAcc[5], Color.RED);
 			
 		}else if (averages == "S_t_SC1D"){
-			sftPlot.registerLines("st(k) Ave", sf_tAveAcc0, Color.BLACK);
-			sftPlot.registerLines("st(k)", sf_tAcc0, Color.RED);
+			sftPlot.registerLines("st(k) Ave", sf_tAveAcc[0], Color.BLACK);
+			sftPlot.registerLines("st(k)", sf_tAcc[0], Color.RED);
 			//plot1DIsing.registerLines(name, data, color);
 		}
 		if(flags.contains("Write Config")) writeConfigToFile();
@@ -146,7 +143,7 @@ public class MonteCarloDataApp extends Simulation{
 			int sfLabel = sf_t_theory(maxTime);
 			int repNo = 0;
 			while (true) {
-				sf_tAcc0.clear();
+				sf_tAcc[0].clear();
 				if(params.sget("init") == "Read From File") readInitialConfiguration();
 				else sim.randomizeField(params.fget("Initial magnetization"));
 				sim.restartClock();
@@ -157,8 +154,8 @@ public class MonteCarloDataApp extends Simulation{
 					Job.animate();
 					if (sim.time() > recordStep){
 						sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-						sf_tAveAcc0.accum(sim.time(),sFactor[sfLabel]);
-						sf_tAcc0.accum(sim.time(),sFactor[sfLabel]);
+						sf_tAveAcc[0].accum(sim.time(),sFactor[sfLabel]);
+						sf_tAcc[0].accum(sim.time(),sFactor[sfLabel]);
 						recordStep += step;
 						recordInt +=1;
 					}
@@ -192,36 +189,25 @@ public class MonteCarloDataApp extends Simulation{
 			}
 		}else if(averages == "S_t_SC"){
 
-			double maxTime = 15.0;//max time after quench time
+			double maxTime = params.fget("maxTime");//max time after quench time
 			double initTime = 15.0;
 			double initH = 0;
 			double quenchH = 0.9;
 			int repNo = 0;
-			sf_tAcc0 = new Accumulator();
-			sf_tAcc1 = new Accumulator();
-			sf_tAcc2 = new Accumulator();
-			sf_tAcc3 = new Accumulator();
-			sf_tAcc4 = new Accumulator();
-			sf_tAcc5 = new Accumulator();
-			sf_tAveAcc0 = new Accumulator();
-			sf_tAveAcc1 = new Accumulator();
-			sf_tAveAcc2 = new Accumulator();
-			sf_tAveAcc3 = new Accumulator();
-			sf_tAveAcc4 = new Accumulator();
-			sf_tAveAcc5 = new Accumulator();
 			
-			int sfLabel0, sfLabel1, sfLabel2, sfLabel3, sfLabel4, sfLabel5;
+			
+			for (int i = 0; i < accNo; i++){
+				sf_tAcc[i] = new Accumulator(); 
+				sf_tAveAcc[i] = new Accumulator(); sf_tAveAcc[i].enableErrorBars(true);
+			}
+			
 			int sfLabelHor = findBestkR();
 			int sfLabelVert = sfLabelHor*sim.L/dx;
 			sfTimeArray = new double[(int)((maxTime/step)+1)];
 
 			while (true) {
-				sf_tAcc0.clear();
-				sf_tAcc1.clear();
-				sf_tAcc2.clear();
-				sf_tAcc3.clear();
-				sf_tAcc4.clear();
-				sf_tAcc5.clear();
+				for (int i = 0; i < accNo; i++)
+					sf_tAcc[i].clear();
 				sim.randomizeField(0.0);
 				params.set("h", initH);
 				sim.restartClock();
@@ -233,19 +219,11 @@ public class MonteCarloDataApp extends Simulation{
 				
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 				if(sFactor[sfLabelHor]>sFactor[sfLabelVert]){
-					sfLabel0 = sfLabelVert;
-					sfLabel1 = sfLabelVert + 1;
-					sfLabel2 = sfLabelVert + 2;
-					sfLabel3 = sfLabelVert + 3;
-					sfLabel4 = sfLabelVert + 4;
-					sfLabel5 = sfLabelVert + 5;
+					for (int i = 0; i < accNo; i ++)
+						sfLabel[i] = sfLabelVert + i;
 				}else{
-					sfLabel0 = sfLabelHor;
-					sfLabel1 = sfLabelHor + 1*sim.L/dx;
-					sfLabel2 = sfLabelHor + 2*sim.L/dx;
-					sfLabel3 = sfLabelHor + 3*sim.L/dx;
-					sfLabel4 = sfLabelHor + 4*sim.L/dx;
-					sfLabel5 = sfLabelHor + 5*sim.L/dx;
+					for (int i = 0; i < accNo; i ++)
+						sfLabel[i] = sfLabelHor + i*sim.L/dx;
 				}
 
 				sim.restartClock();
@@ -258,18 +236,10 @@ public class MonteCarloDataApp extends Simulation{
 					Job.animate();
 					if (sim.time() > recordStep){
 						sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-						sf_tAveAcc0.accum(sim.time(),sFactor[sfLabel0]);
-						sf_tAveAcc1.accum(sim.time(),sFactor[sfLabel1]);
-						sf_tAveAcc2.accum(sim.time(),sFactor[sfLabel2]);
-						sf_tAveAcc3.accum(sim.time(),sFactor[sfLabel3]);
-						sf_tAveAcc4.accum(sim.time(),sFactor[sfLabel4]);
-						sf_tAveAcc5.accum(sim.time(),sFactor[sfLabel5]);
-						sf_tAcc0.accum(sim.time(),sFactor[sfLabel0]);
-						sf_tAcc1.accum(sim.time(),sFactor[sfLabel1]);
-						sf_tAcc2.accum(sim.time(),sFactor[sfLabel2]);
-						sf_tAcc3.accum(sim.time(),sFactor[sfLabel3]);
-						sf_tAcc4.accum(sim.time(),sFactor[sfLabel4]);
-						sf_tAcc5.accum(sim.time(),sFactor[sfLabel5]);
+						for (int i = 0; i < accNo; i ++){
+							sf_tAveAcc[i].accum(sim.time(),sFactor[sfLabel[i]]);
+							sf_tAcc[i].accum(sim.time(),sFactor[sfLabel[i]]);	
+						}
 						recordStep += step;
 						recordInt +=1;
 					}
@@ -295,10 +265,10 @@ public class MonteCarloDataApp extends Simulation{
 
 	
 	private int sf_t_theory(double maxTime){
-		sf_tAcc0 =  new Accumulator(sim.dTime());
-		sf_tAveAcc0 = new Accumulator(sim.dTime());
-		sf_tTheoryAcc = new Accumulator(sim.dTime());
-		sf_tTheory2Acc = new Accumulator(sim.dTime());
+		sf_tAcc[0] =  new Accumulator(); sf_tAcc[0].enableErrorBars(true);
+		sf_tAveAcc[0] = new Accumulator(); sf_tAveAcc[0].enableErrorBars(true);
+		sf_tTheoryAcc = new Accumulator(); sf_tTheoryAcc.enableErrorBars(true);
+		sf_tTheory2Acc = new Accumulator(); sf_tTheory2Acc.enableErrorBars(true);
 		int kRint = findBestkR();
 		double kRValue = 2*PI*kRint*sim.R/sim.L;
 		while (sim.time() < maxTime){
@@ -325,9 +295,9 @@ public class MonteCarloDataApp extends Simulation{
 		sf_kAcc.clear();
 		System.out.println("time = " + time);
 		//double kRbinWidth = 0.0001;
-		sf_kAcc = new Accumulator();
-		sf_kTheoryAcc = new Accumulator();
-		sf_kTheory2Acc = new Accumulator();
+		sf_kAcc = new Accumulator(); sf_kAcc.enableErrorBars(true);
+		sf_kTheoryAcc = new Accumulator(); sf_kTheoryAcc.enableErrorBars(true);
+		sf_kTheory2Acc = new Accumulator(); sf_kTheory2Acc.enableErrorBars(true);
 
 		for(int i = 0; i < sim.L/(2*dx); i++){
 			double kR=2*Math.PI*(double)i*sim.R/sim.L;
@@ -344,7 +314,7 @@ public class MonteCarloDataApp extends Simulation{
 		sb.append("# record time = ");
 		sb.append(recordTime1);
 		String message2 = sb.toString();
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare2/smcR256";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare2/smc";
 		FileUtil.initFile(fileName, params, message1, message2);
 		FileUtil.printAccumToFile(fileName, sf_kAcc);
 		System.out.println("file written for rep no: " + reps);
@@ -359,7 +329,7 @@ public class MonteCarloDataApp extends Simulation{
 		String message2 = sb.toString();
 		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svt1/smc";
 		FileUtil.initFile(fileName, params, message1, message2);
-		FileUtil.printAccumToFile(fileName, sf_tAveAcc0);
+		FileUtil.printAccumToFile(fileName, sf_tAveAcc[0]);
 		System.out.println("file written for rep no: " + reps);
 	}
 	
@@ -382,30 +352,15 @@ public class MonteCarloDataApp extends Simulation{
 		messageBuffer.append(initializeTime);
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
 		String message2 = messageBuffer.toString();
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtRunQuenchH2/s";
-		FileUtil.initFile(fileName, params, message1, message2);
-		FileUtil.printAccumToFile(fileName, sf_tAveAcc0);
-		
-		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);fileBuffer.append(1);
-		String file1 = fileBuffer.toString();
-		FileUtil.initFile(file1, params, message1, message2);		
-		FileUtil.printAccumToFile(file1, sf_tAveAcc1);
-		
-		fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(2);String file2 = fileBuffer.toString();
-		FileUtil.initFile(file2, params, message1, message2);		
-		FileUtil.printAccumToFile(file2, sf_tAveAcc2);
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtH4/s0";
+		StringBuffer fileBuffer = new StringBuffer(); 
+		fileBuffer.append(fileName);
 
-		fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(3);String file3 = fileBuffer.toString();
-		FileUtil.initFile(file3, params, message1, message2);		
-		FileUtil.printAccumToFile(file3, sf_tAveAcc3);
-		
-		fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(4);String file4 = fileBuffer.toString();
-		FileUtil.initFile(file4, params, message1, message2);		
-		FileUtil.printAccumToFile(file4, sf_tAveAcc4);
-		
-		fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(5);String file5 = fileBuffer.toString();
-		FileUtil.initFile(file5, params, message1, message2);		
-		FileUtil.printAccumToFile(file5, sf_tAveAcc5);
+		for (int i = 0; i < accNo; i++){
+			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(i); fileName = fileBuffer.toString();
+			FileUtil.initFile(fileName, params, message1, message2);		
+			FileUtil.printAccumToFile(fileName, sf_tAveAcc[i]);			
+		}
 	}
 	
 	private double theoryPoint(double kR, double time){

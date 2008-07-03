@@ -306,7 +306,7 @@ public class testLinearApp extends Simulation{
 			for (int i = 0; i < Lp*Lp; i++)
 				eta[i] = ising.phi[i] - phi0[i%Lp];
 			//etaK = fft.calculate2DFT(eta);			
-			etaK = fft.calculate2DSF(eta, true, true);
+			etaK = fft.calculate2DSF(eta, false, true);
 			if(accEtaValues){
 				
 				for (int i = 0; i < Lp*Lp; i++)
