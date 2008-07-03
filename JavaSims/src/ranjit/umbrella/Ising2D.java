@@ -23,10 +23,11 @@ public class Ising2D extends Simulation {
 	SpinBlocks2D spins;
 	Grid grid = new Grid ("Ising Lattice");
 	Histogram mag[];
-    Plot magPlot = new Plot("Magnetizations");
-    Accumulator freeEnergy[];
-    Plot freeEnergyPlot=new Plot("Free Energy");
-    
+	Plot magPlot = new Plot("Magnetizations");
+	Accumulator freeEnergy[];
+	Plot freeEnergyPlot=new Plot("Free Energy");
+	boolean randomic=true;
+
 	int L,R;
 	double T,h,J;
 	double E;
@@ -34,30 +35,31 @@ public class Ising2D extends Simulation {
 	int windowMin, windowMax, currentWindow;
 	int firstWindow, lastWindow;
 	public Ising2D() {
-		
+
 	}
 
 	public void load(Control c){		
 		params.add("T",1.0);
-		params.add("h",-0.5);
+		params.add("h",-0.4);
 		params.add("L",256);
 		params.add("R",1);
-		params.add("number of windows", 16384);
+		params.add("number of windows", 32768);
 		params.add("first window",0);
 		params.add("last window", 100);
-		params.add("window width",8);
+		params.add("window width",4);
 		params.add("MCS per window", 1000);
 		params.add("mcs");
 		params.add("current window");
+		params.add("phi0");
 		params.add("prefix","/Users/rjchacko/Desktop/data/");
 		c.frame(grid,magPlot,freeEnergyPlot);
 	}
-	
+
 	public void animate() {
 		ColorPalette palette = new ColorPalette();
 		palette.setColor(0,Color.BLACK);
 		palette.setColor(1,Color.WHITE);
-		
+
 		ColorGradient smooth = new ColorGradient();
 		int allSpins[]=spins.blocksAtScale(0);
 		for (int i=0 ; i<spins.N ; i++){
@@ -71,7 +73,7 @@ public class Ising2D extends Simulation {
 		else freeEnergyPlot.registerPoints("Free Energy"+currentWindow,freeEnergy[currentWindow],Color.BLUE);
 	}
 
-	
+
 	public void clear() {
 		grid.clear();
 		magPlot.clear();
@@ -88,7 +90,7 @@ public class Ising2D extends Simulation {
 		} catch (IOException e) {}
 	}
 
-	
+
 	public void run() {
 		R=params.iget("R");
 		L=params.iget("L");
@@ -101,7 +103,7 @@ public class Ising2D extends Simulation {
 		int windowWidth=params.iget("window width");
 		int firstWindow=params.iget("first window");
 		int lastWindow=params.iget("last window");
-		
+
 		int spinsInRange=(2*R+1)*(2*R+1) - 1;
 		if(R>1)J = 4.0 / spinsInRange;
 		else J=1;
@@ -114,14 +116,22 @@ public class Ising2D extends Simulation {
 			mag[l]=new Histogram(1);
 		}
 		int init[]=new int[L*L];
-		for(int i=0;i<L*L;i++){
-			init[i]=1;
-		}
-		
+		spins = new SpinBlocks2D(L, R);
+
+		do{
+			int z=r.nextInt(L*L);
+			int x=z%L;
+			int y=z/L;
+			if(spins.get(x, y)==1)spins.flip(x, y);
+		}while(spins.netSum>L*L-windowSpacing);
+		init=spins.blocksAtScale(0).clone();
+
 		for(int j=firstWindow;j<=lastWindow;j++){
 			params.set("current window", j);
 			initializeWindow(windowSpacing,windowWidth, j, init);
+
 			int phi0=L*L-(j+1)*windowSpacing;
+			params.set("phi0", phi0);
 			Job.animate();
 			boolean saved=false;
 			for(int mcs=0;mcs<mcsPerWindow;mcs++){
@@ -132,9 +142,10 @@ public class Ising2D extends Simulation {
 					boolean acceptThermal=r.nextDouble()<Math.exp(-dE/T);
 					int x=nextSpin%L;
 					int y=nextSpin/L;
-					if( decreaseEnergy || acceptThermal) spins.flip(x, y);
+					if( decreaseEnergy || acceptThermal)spins.flip(x, y);
 					mag[currentWindow].accum(spins.netSum);
-					if(spins.netSum<phi0 && !saved && mcs>100){
+
+					if(!randomic && spins.netSum<phi0 && !saved && mcs>100){
 						init=spins.blocksAtScale(0).clone();
 						saved=true;
 					}
@@ -147,14 +158,14 @@ public class Ising2D extends Simulation {
 					freeEnergy[currentWindow].accum(data.x(i), -T*Math.log(data.y(i)));
 				}
 			}
-			
+
 			saveDataset(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
 			saveDataset(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
 		}
-		
+
 	}
-	
-	public void initializeWindow(int windowSpacing, int windowWidth, int windowNumber, int init[]){
+
+	public void initializeWindow(int windowSpacing, int windowWidth, int windowNumber,int init[]){
 		int x, y;
 		double dE;
 		currentWindow=windowNumber;
@@ -162,23 +173,24 @@ public class Ising2D extends Simulation {
 		windowMax=phi0+windowWidth;
 		windowMin=phi0-windowWidth;
 		spins = new SpinBlocks2D(L, R);
-//		do{
-//			x=j%L;
-//			y=j/L;
-//			spins.flip(x,y);
-//			if(R>1) dE = 2*(h + J*(spins.sumInRange(x,y)-1));
-//			else dE = 2*(h + J*(spins.get((x-1+L)%L,y)+spins.get((x+1+L)%L,y)+spins.get(x,(y-1+L)%L)+spins.get(x,(y+1+L)%L)));
-//			E+=dE;
-//			j++;
-//		}while(spins.netSum!=windowMax-(windowMax-windowMin)/2.);
-		
-		for(int i=0;i<init.length;i++){
-			x=i%L;
-			y=i/L;
-			if(init[i]==-1)spins.flip(x, y);
+
+		if(!randomic){
+			for(int i=0;i<init.length;i++){
+				x=i%L;
+				y=i/L;
+				if(init[i]==-1)spins.flip(x, y);
+			}
 		}
-		
-		for(int cnt=0; cnt<100; cnt++){
+		else{
+			while(spins.netSum>phi0){
+				int spin=r.nextInt(L*L);
+				x=spin%L;
+				y=spin/L;
+				if(spins.get(x, y)==1) spins.flip(x,y);
+			}
+		}
+
+		for(int cnt=0; cnt<1000; cnt++){
 			for(int i=0;i<L*L;i++){
 				int nextSpin=r.nextInt(L);
 				dE=isingDE(nextSpin)+umbrellaDE(nextSpin);
@@ -200,11 +212,11 @@ public class Ising2D extends Simulation {
 			dE=2*spin*(h + J*(spins.sumInRange(x,y)-spin));
 		}
 		else {
-			dE = 2*spin*(h + J*(spins.get(x,y)+spins.get((x+1+L)%L,y)+spins.get(x,(y-1+L)%L)+spins.get(x,(y+1+L)%L)));
+			dE = 2*spin*(h + J*(spins.get((x-1+L)%L,y)+spins.get((x+1+L)%L,y)+spins.get(x,(y-1+L)%L)+spins.get(x,(y+1+L)%L)));
 		}
 		return dE;
 	}
-	
+
 	public double umbrellaDE(int location){
 		double dE=0;
 		int x=location%L;

@@ -18,6 +18,7 @@ public class globalFreeEnergy extends Simulation {
 	Accumulator freeEnergy2=new Accumulator();
 	Accumulator freeEnergy3=new Accumulator();
 	Accumulator freeEnergy4=new Accumulator();
+	Accumulator freeEnergy5=new Accumulator();
 	Accumulator fslope=new Accumulator();
 	Plot freeEnergyPlot=new Plot("Free Energy");
 	int firstWindow,lastWindow;
@@ -26,12 +27,18 @@ public class globalFreeEnergy extends Simulation {
 	}
 
 	public void load(Control c){
-		params.add("directory1", "/Users/rjchacko/Desktop/L256h0.4w32k/Free Energy");
-		params.add("directory2", "/Users/rjchacko/Desktop/L256h0.45w32k/Free Energy");
-		params.add("directory3", "/Users/rjchacko/Desktop/L256h0.5w32k/Free Energy");
-		params.add("directory4", "/Users/rjchacko/Desktop/L256h0.55w32k/Free Energy");
-		params.add("first window",1);
-		params.add("last window",180);
+//		params.add("directory1", "/Users/rjchacko/Desktop/L32h0.4w512/Free Energy");
+//		params.add("directory2", "/Users/rjchacko/Desktop/L32h0.45w512/Free Energy");
+//		params.add("directory3", "/Users/rjchacko/Desktop/L32h0.5w512/Free Energy");
+//		params.add("directory4", "/Users/rjchacko/Desktop/L32h0.55w512/Free Energy");
+//		params.add("directory5", "/Users/rjchacko/Desktop/L32h0.6w512/Free Energy");
+		params.add("directory1", "/Users/rjchacko/Desktop/eq initial conditions/L256h0.4w32kr1/Free Energy");
+		params.add("directory2", "/Users/rjchacko/Desktop/eq initial conditions/L256h0.4w32kr1/Free Energy");
+		params.add("directory3", "/Users/rjchacko/Desktop/eq initial conditions/L256h0.4w32kr1/Free Energy");
+		params.add("directory4", "/Users/rjchacko/Desktop/eq initial conditions/L256h0.4w32kr1/Free Energy");
+		params.add("directory5", "/Users/rjchacko/Desktop/eq initial conditions/L256h0.4w32kr1/Free Energy");
+		params.add("first window",0);
+		params.add("last window",100);
 		params.add("current window");
 		c.frame(freeEnergyPlot);
 	}
@@ -40,7 +47,8 @@ public class globalFreeEnergy extends Simulation {
 		freeEnergyPlot.registerPoints("free energy1", freeEnergy1, Color.RED);
 		freeEnergyPlot.registerPoints("free energy2", freeEnergy2, Color.BLUE);
 		freeEnergyPlot.registerPoints("free energy3", freeEnergy3, Color.GREEN);
-		freeEnergyPlot.registerPoints("free energy4", freeEnergy4, Color.YELLOW);
+		freeEnergyPlot.registerPoints("free energy4", freeEnergy4, Color.RED);
+		freeEnergyPlot.registerPoints("free energy5", freeEnergy5, Color.BLUE);
 	}
 
 	@Override
@@ -55,7 +63,7 @@ public class globalFreeEnergy extends Simulation {
 		firstWindow=params.iget("first window");
 		lastWindow=params.iget("last window");
 		
-		for(int i=firstWindow;i<lastWindow;i++){
+		for(int i=firstWindow;i<=lastWindow;i++){
 			try {
 				readHistograms(i);
 			} catch (FileNotFoundException e) {
@@ -78,11 +86,13 @@ public class globalFreeEnergy extends Simulation {
 	    	freeEnergy1.accum(data1.x(i),integration1);
 	    }
 	    Job.animate();
+	    fslope.clear();
+	    
 	    filename=params.sget("directory2");
 		firstWindow=params.iget("first window");
 		lastWindow=params.iget("last window");
 		
-		for(int i=firstWindow;i<lastWindow;i++){
+		for(int i=firstWindow;i<=lastWindow;i++){
 			try {
 				readHistograms(i);
 			} catch (FileNotFoundException e) {
@@ -106,11 +116,12 @@ public class globalFreeEnergy extends Simulation {
 	    }
 	    Job.animate();
 	    
+	    fslope.clear();
 	    filename=params.sget("directory3");
 		firstWindow=params.iget("first window");
 		lastWindow=params.iget("last window");
 		
-		for(int i=firstWindow;i<lastWindow;i++){
+		for(int i=firstWindow;i<=lastWindow;i++){
 			try {
 				readHistograms(i);
 			} catch (FileNotFoundException e) {
@@ -134,11 +145,12 @@ public class globalFreeEnergy extends Simulation {
 	    }
 	    Job.animate();
 	    
+	    fslope.clear();
 	    filename=params.sget("directory4");
 		firstWindow=params.iget("first window");
 		lastWindow=params.iget("last window");
 		
-		for(int i=firstWindow;i<lastWindow;i++){
+		for(int i=firstWindow;i<=lastWindow;i++){
 			try {
 				readHistograms(i);
 			} catch (FileNotFoundException e) {
@@ -159,6 +171,35 @@ public class globalFreeEnergy extends Simulation {
 	    for(int i=0;i<data4.size();i++){
 	    	integration4+=data4.y(i);
 	    	freeEnergy4.accum(data4.x(i),integration4);
+	    }
+	    Job.animate();
+	    
+	    fslope.clear();
+	    filename=params.sget("directory5");
+		firstWindow=params.iget("first window");
+		lastWindow=params.iget("last window");
+		
+		for(int i=firstWindow;i<=lastWindow;i++){
+			try {
+				readHistograms(i);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+			double data[]=temp.copyData();
+			for(int j=0;j<data.length/2-1;j++){	
+				double slope=data[2*j+3]-data[2*j+1];
+				fslope.accum((data[2*j+2]+data[2*j])/2.,slope);
+			}
+			
+			params.set("current window",i);
+		}
+		double integration5=0;
+		double data5[]=fslope.copyData();
+	    for(int i=0;i<data5.length/2;i++){
+	    	integration5+=data5[2*i+1];
+	    	freeEnergy5.accum(data5[2*i],integration5);
 	    }
 	    Job.animate();
 	}
