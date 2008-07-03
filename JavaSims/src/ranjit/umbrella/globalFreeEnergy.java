@@ -187,19 +187,19 @@ public class globalFreeEnergy extends Simulation {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			double data[]=temp.copyData();
-			for(int j=0;j<data.length/2-1;j++){	
-				double slope=data[2*j+3]-data[2*j+1];
-				fslope.accum((data[2*j+2]+data[2*j])/2.,slope);
+			DatasetBuffer data=temp.copyData();
+			for(int j=0;j<data.size()-1;j++){	
+				double slope=data.y(j+1)-data.y(j);
+				fslope.accum((data.x(j+1)+data.x(j))/2.,slope);
 			}
 			
 			params.set("current window",i);
 		}
 		double integration5=0;
-		double data5[]=fslope.copyData();
-	    for(int i=0;i<data5.length/2;i++){
-	    	integration5+=data5[2*i+1];
-	    	freeEnergy5.accum(data5[2*i],integration5);
+		DatasetBuffer data5=fslope.copyData();
+	    for(int i=0;i<data5.size();i++){
+	    	integration5+=data5.y(i);
+	    	freeEnergy5.accum(data5.x(i),integration5);
 	    }
 	    Job.animate();
 	}
