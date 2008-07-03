@@ -5,11 +5,13 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import scikit.dataset.Accumulator;
+import scikit.dataset.DatasetBuffer;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 
+// TODO: check all instances of data.copyData() - kip
 public class globalFreeEnergy extends Simulation {
 	Accumulator temp=new Accumulator();
 	Accumulator freeEnergy1=new Accumulator();
@@ -61,19 +63,19 @@ public class globalFreeEnergy extends Simulation {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			double data[]=temp.copyData();
-			for(int j=0;j<data.length/2-1;j++){	
-				double slope=data[2*j+3]-data[2*j+1];
-				fslope.accum((data[2*j+2]+data[2*j])/2.,slope);
+			DatasetBuffer data=temp.copyData();
+			for(int j=0;j<data.size()-1;j++){	
+				double slope=data.y(j+1)-data.y(j);
+				fslope.accum((data.x(j+1)+data.x(j))/2.,slope);
 			}
 			
 			params.set("current window",i);
 		}
 		double integration1=0;
-		double data1[]=fslope.copyData();
-	    for(int i=0;i<data1.length/2;i++){
-	    	integration1+=data1[2*i+1];
-	    	freeEnergy1.accum(data1[2*i],integration1);
+		DatasetBuffer data1=fslope.copyData();
+	    for(int i=0;i<data1.size();i++){
+	    	integration1+=data1.y(i);
+	    	freeEnergy1.accum(data1.x(i),integration1);
 	    }
 	    Job.animate();
 	    filename=params.sget("directory2");
@@ -88,19 +90,19 @@ public class globalFreeEnergy extends Simulation {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			double data[]=temp.copyData();
-			for(int j=0;j<data.length/2-1;j++){	
-				double slope=data[2*j+3]-data[2*j+1];
-				fslope.accum((data[2*j+2]+data[2*j])/2.,slope);
+			DatasetBuffer data=temp.copyData();
+			for(int j=0;j<data.size()-1;j++){	
+				double slope=data.y(j+1)-data.y(j);
+				fslope.accum((data.x(j+1)+data.x(j))/2.,slope);
 			}
 			
 			params.set("current window",i);
 		}
 		double integration2=0;
-		double data2[]=fslope.copyData();
-	    for(int i=0;i<data2.length/2;i++){
-	    	integration2+=data2[2*i+1];
-	    	freeEnergy2.accum(data2[2*i],integration2);
+		DatasetBuffer data2=fslope.copyData();
+	    for(int i=0;i<data2.size();i++){
+	    	integration2+=data2.y(i);
+	    	freeEnergy2.accum(data2.x(i),integration2);
 	    }
 	    Job.animate();
 	    
@@ -116,19 +118,19 @@ public class globalFreeEnergy extends Simulation {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			double data[]=temp.copyData();
-			for(int j=0;j<data.length/2-1;j++){	
-				double slope=data[2*j+3]-data[2*j+1];
-				fslope.accum((data[2*j+2]+data[2*j])/2.,slope);
+			DatasetBuffer data=temp.copyData();
+			for(int j=0;j<data.size()-1;j++){	
+				double slope=data.y(j+1)-data.y(j);
+				fslope.accum((data.x(j+1)+data.x(j))/2.,slope);
 			}
 			
 			params.set("current window",i);
 		}
 		double integration3=0;
-		double data3[]=fslope.copyData();
-	    for(int i=0;i<data3.length/2;i++){
-	    	integration3+=data3[2*i+1];
-	    	freeEnergy3.accum(data3[2*i],integration3);
+		DatasetBuffer data3=fslope.copyData();
+	    for(int i=0;i<data3.size();i++){
+	    	integration3+=data3.y(i);
+	    	freeEnergy3.accum(data3.x(i),integration3);
 	    }
 	    Job.animate();
 	    
@@ -144,19 +146,19 @@ public class globalFreeEnergy extends Simulation {
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			double data[]=temp.copyData();
-			for(int j=0;j<data.length/2-1;j++){	
-				double slope=data[2*j+3]-data[2*j+1];
-				fslope.accum((data[2*j+2]+data[2*j])/2.,slope);
+			DatasetBuffer data=temp.copyData();
+			for(int j=0;j<data.size()-1;j++){	
+				double slope=data.y(j+1)-data.y(j);
+				fslope.accum((data.x(j+1)+data.x(j))/2.,slope);
 			}
 			
 			params.set("current window",i);
 		}
 		double integration4=0;
-		double data4[]=fslope.copyData();
-	    for(int i=0;i<data4.length/2;i++){
-	    	integration4+=data4[2*i+1];
-	    	freeEnergy4.accum(data4[2*i],integration4);
+		DatasetBuffer data4=fslope.copyData();
+	    for(int i=0;i<data4.size();i++){
+	    	integration4+=data4.y(i);
+	    	freeEnergy4.accum(data4.x(i),integration4);
 	    }
 	    Job.animate();
 	}

@@ -88,7 +88,7 @@ public class ClumpCollectionApp extends Simulation {
             String filename = params.sget("Output directory")+
                 "/R="+clump.R+",T="+format(clump.T)+"" +
                 ",ts="+eqTime+",tf="+stopTime+".txt";
-            FileUtil.dumpColumns(filename, sf.copyData(), 2);
+            FileUtil.dumpColumns(filename, sf.copyData().columns());
             
             params.set("T", format(clump.T+dT));
         }

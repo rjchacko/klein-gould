@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -73,22 +74,23 @@ public class HistUtil extends Simulation{
 		double[] data = ReadIn(fin, cn, skip);
 		
 		params.set("Status","Filling Histogram . . .");
-		double[] hist = fillHist(data,bw);
+		// TODO: check code using hist - kip
+		DatasetBuffer hist = fillHist(data,bw);
 	
 		if(loglog){
 			params.set("Status","Writing Histogram . . .");
 			PrintUtil.printlnToFile(fout,"Coordinate","Number","Log[coord]","Log[#]");
-			for (int jj = 0 ; jj < hist.length ; jj=jj+2){
-				double coord = hist[jj];
-				double num = hist[jj+1];
+			for (int jj = 0 ; jj < hist.size() ; jj++){
+				double coord = hist.x(jj);
+				double num = hist.y(jj);
 				PrintUtil.printlnToFile(fout,coord,num,Math.log(coord),Math.log(num));
 			}
 		}
 		else{
 			params.set("Status","Writing Histogram . . .");
 			PrintUtil.printlnToFile(fout,"Coordinate","Number");
-			for (int jj = 0 ; jj < hist.length ; jj=jj+2){
-				PrintUtil.printlnToFile(fout,hist[jj],hist[jj+1]);
+			for (int jj = 0 ; jj < hist.size() ; jj=jj++){
+				PrintUtil.printlnToFile(fout,hist.x(jj),hist.y(jj));
 			}
 		}
 		Job.animate();
@@ -114,7 +116,7 @@ public class HistUtil extends Simulation{
 		return ret;
 	}
 	
-	private double[] fillHist(double[] data, double bw){
+	private DatasetBuffer fillHist(double[] data, double bw){
 		histGLOB = new Histogram(bw);
 		for (int jj = 0 ; jj < data.length ; jj++){
 			histGLOB.accum(data[jj]);

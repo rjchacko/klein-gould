@@ -12,6 +12,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 
 import scikit.dataset.Accumulator;
+import scikit.dataset.DatasetBuffer;
 import scikit.jobs.params.Parameters;
 
 public class FileUtil {
@@ -85,13 +86,13 @@ public class FileUtil {
 	}
 
 	static public void printAccumToFile(String fileName, Accumulator acc){
-		double [] data = acc.copyData();
-		int size = data.length/2;
+		DatasetBuffer data = acc.copyData();
+		int size = data.size();
 		try{
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int i = 0; i < size; i++)
-				pw.println(data[2*i] + " " + data[2*i+1]);
+				pw.println(data.x(i) + " " + data.y(i));
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}

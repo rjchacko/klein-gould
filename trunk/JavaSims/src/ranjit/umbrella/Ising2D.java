@@ -8,6 +8,7 @@ import java.util.Random;
 import ranjit.ising.spinblock.SpinBlocks2D;
 import scikit.dataset.Accumulator;
 import scikit.dataset.DataSet;
+import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -81,7 +82,7 @@ public class Ising2D extends Simulation {
 		try {
 			if (fname != null) {
 				PrintWriter pw = FileUtil.pwFromString(fname);
-				FileUtil.writeColumns(pw, data.copyData(), 2);
+				FileUtil.writeColumns(pw, data.copyData().columns());
 				pw.close();
 			}
 		} catch (IOException e) {}
@@ -140,9 +141,10 @@ public class Ising2D extends Simulation {
 					Job.animate();
 				}
 				params.set("mcs", mcs);	
-				double data[]=mag[currentWindow].copyData();
-				for(int i=0;i<data.length;i+=2){
-					freeEnergy[currentWindow].accum(data[i], -T*Math.log(data[i+1]));
+				// TODO: check - kip
+				DatasetBuffer data=mag[currentWindow].copyData();
+				for(int i=0;i<data.size();i++){
+					freeEnergy[currentWindow].accum(data.x(i), -T*Math.log(data.y(i)));
 				}
 			}
 			

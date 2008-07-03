@@ -67,6 +67,7 @@ public class Clump1DApp extends Simulation {
 	public void run() {
 		clump = new FieldClump1D(params);
         sf = clump.newStructureAccumulator(params.fget("kR bin-width"));
+        sf.enableErrorBars(true);
         mag = new Accumulator();
         
         while (true) {
