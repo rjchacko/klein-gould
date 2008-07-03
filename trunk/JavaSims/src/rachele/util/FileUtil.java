@@ -176,7 +176,7 @@ public class FileUtil {
 			pw.println(message2);
 			String [] keys = params.keys();
 			for (int i = 0; i < keys.length; i++)
-				pw.println(keys[i] + " " + params.sget(keys[i]));
+				pw.println(" #" + keys[i] + " " + params.sget(keys[i]));
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
