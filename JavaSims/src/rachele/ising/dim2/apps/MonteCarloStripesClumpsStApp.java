@@ -33,10 +33,10 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	double [] sFactor;
 	Random random = new Random();
 	Accumulator sf_kAcc;
-	Accumulator [] sf_tAveAcc;
-	Accumulator [] sf_tAcc;
-	int [] sfLabel;
-	int accNo;
+	int accNo = 6;
+	Accumulator [] sf_tAveAcc = new Accumulator [accNo];
+	Accumulator [] sf_tAcc = new Accumulator [accNo];
+	int [] sfLabel = new int [accNo];
 	Accumulator sf_kTheoryAcc, sf_kTheory2Acc, sf_tTheoryAcc, sf_tTheory2Acc;
 
 	public static void main(String[] args) {
@@ -51,11 +51,11 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
-		params.add("R", 10);//1<<6);
+		params.add("R", 50);//1<<6);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.1);
+		params.addm("T", 0.04);
 		params.addm("J", -1.0);
-		params.addm("h", 0.0);
+		params.addm("h", 0.8);
 		params.addm("dt", 1/(double)(1<<3));
 		params.addm("maxTime", 5.0);
 		params.add("time");
@@ -74,11 +74,11 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
 		for (int i = 0; i < accNo; i ++){
 			StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
-			sftPlot.registerLines(sb.toString(), sf_tAveAcc[i], Color.BLACK);//getColor("fill", i*2));
+			sftPlot.registerLines(sb.toString(), sf_tAveAcc[i], Color.getColor("fill", i*2));
 			sb = new StringBuffer();sb.append("s(t) "); sb.append(i);
 			sftPlot.registerLines(sb.toString(), sf_tAcc[i], Color.getColor("fill", i*2+1));
 		}
-		sftPlot.registerLines("Blah", sf_tAcc[0], Color.BLACK);
+		//sftPlot.registerLines("Blah", sf_tAcc[0], Color.BLACK);
 		
 		if(flags.contains("Write Config")) writeConfigToFile();
 		flags.clear();
@@ -103,7 +103,6 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 			for (int i = 0; i < accNo; i ++)
 				sf_tAcc[i].clear();
 			initializeStripes(init1D, initTime);
-			sim.randomizeField(0.0);
 			sim.restartClock();
 			sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 			boolean vertStripes;
@@ -157,19 +156,19 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 				if (tempPhi0[i] < minPhi0Value){
 					minPhi0Location = i;
 					minPhi0Value = tempPhi0[i];
-					System.out.println(tempPhi0[i] + " " + i);
+					//System.out.println(tempPhi0[i] + " " + i);
 				}
 			}	
-			System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
+			//System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
 			for (int i = 0; i < sim.L; i++){
 				phi0[i] = tempPhi0[(minPhi0Location+i)%sim.L];
-				System.out.println("phi0 " + i + " = " + phi0[i]);
+				//System.out.println("phi0 " + i + " = " + phi0[i]);
 			}		
 			//now load the Ising lattice with the proper probability
 			for (int i = 0; i < sim.L*sim.L; i++){
 				double prob = (phi0[i%sim.L]+1.0)/2.0;
-				if(random.nextDouble()>prob) sim.spins.set(i%sim.L, i/sim.L, +1);
-				else sim.spins.set(i%sim.L, i/sim.L, -1);
+				if(random.nextDouble()>prob) sim.spins.set(i%sim.L, i/sim.L, -1);
+				else sim.spins.set(i%sim.L, i/sim.L, 1);
 			}
 		}else{
 			params.set("h", 0.0);
@@ -193,9 +192,10 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	
 	private void writeStSCtoFile(int sfInt, double initializeTime){
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D1/s0";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D3/k0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
+			System.out.println("start " + i);
 			StringBuffer mb = new StringBuffer();
 			mb.append("# init time = "); mb.append(initializeTime); mb.append(", sf label = ");	mb.append(sfInt+i); mb.append(" kR value = ");
 			double krvalue = 2*sim.R*Math.PI*(sfInt+i)/sim.L;
