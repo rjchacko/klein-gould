@@ -15,6 +15,11 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
 import static java.lang.Math.*;
 
+/**
+*Creates a plot of Structure factor vs kR for a 
+*critical quench from disorder to below the critical temperature.
+*Writes to file with error bars.
+*/
 public class LinearTheorySkApp extends Simulation{
     Grid grid = new Grid("Phi(x)");
 	Plot sfSlice = new Plot("SF Slice");
