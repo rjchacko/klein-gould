@@ -103,23 +103,15 @@ public class MonteCarloDataApp extends Simulation{
 			//sftPlot.registerLines("theory", sf_tTheoryAcc, Color.BLUE);			
 			sftPlot.registerLines("run", sf_tAcc[0], Color.YELLOW);			
 		}else if(averages == "S_t_SC"){
-			sftPlot.registerLines("st(k) Ave0", sf_tAveAcc[0], Color.BLACK);
-			sftPlot.registerLines("st(k)0", sf_tAcc[0], Color.BLACK);
 			
-			sftPlot.registerLines("st(k) Ave1", sf_tAveAcc[1], Color.LIGHT_GRAY);
-			sftPlot.registerLines("st(k)1", sf_tAcc[1], Color.LIGHT_GRAY);
-			
-			sftPlot.registerLines("st(k) Ave2", sf_tAveAcc[2], Color.BLUE);
-			sftPlot.registerLines("st(k)2", sf_tAcc[2], Color.BLUE);
-			
-			sftPlot.registerLines("st(k) Ave3", sf_tAveAcc[3], Color.CYAN);
-			sftPlot.registerLines("st(k)3", sf_tAcc[3], Color.CYAN);
-			
-			sftPlot.registerLines("st(k) Ave4", sf_tAveAcc[4], Color.GREEN);
-			sftPlot.registerLines("st(k)4", sf_tAcc[4], Color.GREEN);
-			
-			sftPlot.registerLines("st(k) Ave5", sf_tAveAcc[5], Color.RED);
-			sftPlot.registerLines("st(k)5", sf_tAcc[5], Color.RED);
+			for (int i = 0; i < accNo; i ++){
+				StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
+				float colorChunk = (float)i/(float)accNo;
+				Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
+				sftPlot.registerLines(sb.toString(), sf_tAveAcc[i], col);
+				sb = new StringBuffer();sb.append("s(t) "); sb.append(i);
+				sftPlot.registerLines(sb.toString(), sf_tAcc[i], col);
+			}
 			
 		}else if (averages == "S_t_SC1D"){
 			sftPlot.registerLines("st(k) Ave", sf_tAveAcc[0], Color.BLACK);
