@@ -37,8 +37,8 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	Accumulator [] sf_tAveAcc = new Accumulator [accNo];
 	Accumulator [] sf_tAcc = new Accumulator [accNo];
 	int [] sfLabel = new int [accNo];
-	Accumulator sf_kTheoryAcc, sf_kTheory2Acc, sf_tTheoryAcc, sf_tTheory2Acc;
-
+	boolean init1D;	
+	
 	public static void main(String[] args) {
 		new Control(new MonteCarloStripesClumpsStApp(), "Monte Carlo");
 	}
@@ -48,7 +48,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		c.frame(grid);
 		c.frame(sftPlot);
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
-		params.addm("init", new ChoiceValue( "Random", "Read From File"));
+		params.addm("init", new ChoiceValue( "Use 1D Soln", "Init Stripes from random"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
 		params.add("R", 50);//1<<6);
@@ -74,9 +74,11 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
 		for (int i = 0; i < accNo; i ++){
 			StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
-			sftPlot.registerLines(sb.toString(), sf_tAveAcc[i], Color.getColor("fill", i*2));
+			float colorChunk = (float)i/(float)accNo;
+			Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
+			sftPlot.registerLines(sb.toString(), sf_tAveAcc[i], col);
 			sb = new StringBuffer();sb.append("s(t) "); sb.append(i);
-			sftPlot.registerLines(sb.toString(), sf_tAcc[i], Color.getColor("fill", i*2+1));
+			//sftPlot.registerLines(sb.toString(), sf_tAcc[i], col);
 		}
 		//sftPlot.registerLines("Blah", sf_tAcc[0], Color.BLACK);
 		
@@ -94,8 +96,8 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		double step = 0.10;
 		double initTime = 15.0;
 		boolean init1D = true;
-		double maxTime = 15.0;//max time after quench time
-		double quenchH = 0.9;
+		double maxTime = params.fget("maxTime");//max time after quench time
+		//double quenchH = 0.9;
 		int repNo = 0;
 		int sfLabel = findBestkR();
 
@@ -109,7 +111,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 			if(sFactor[sfLabel]>sFactor[sfLabel*sim.L/dx])vertStripes = true;
 			else vertStripes = false;
 			sim.restartClock();
-			params.set("h", quenchH);
+			//params.set("h", quenchH);
 			int recordInt = 0;
 			int recordStep = 0;
 			step = 0.25;
@@ -192,7 +194,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	
 	private void writeStSCtoFile(int sfInt, double initializeTime){
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D3/k0";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D3/m0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			System.out.println("start " + i);
