@@ -380,7 +380,7 @@ public class testLinearApp extends Simulation{
 		double kxValue;
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j <= i; j++){
-				M[i][j]=M[j][i]=(-ising.T*f_k[(i-j+Lp)%Lp]/Lp);
+				M[i][j]=M[j][i]=ising.mobility*(-ising.T*f_k[(i-j+Lp)%Lp]/Lp);
 			}
 		}
 		for (int i = 0; i < Lp; i++){
@@ -389,9 +389,9 @@ public class testLinearApp extends Simulation{
 			else
 				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
 			if(ising.circleInteraction)
-				M[i][i]-=ising.findVkCircle(Math.sqrt(kxValue*kxValue + kyValue*kyValue));
+				M[i][i]-=ising.mobility*ising.findVkCircle(Math.sqrt(kxValue*kxValue + kyValue*kyValue));
 			else
-				M[i][i]-=ising.findVkSquare(kxValue, kyValue);
+				M[i][i]-=ising.mobility*ising.findVkSquare(kxValue, kyValue);
 		}
 	}
 
