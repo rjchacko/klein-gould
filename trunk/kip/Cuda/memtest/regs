@@ -1,0 +1,2 @@
+nvcc memtest.cu -I../../common/inc -O3 -cubin
+
