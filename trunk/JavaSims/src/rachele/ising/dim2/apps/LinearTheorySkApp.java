@@ -126,7 +126,7 @@ public class LinearTheorySkApp extends Simulation{
 		sb.append(", rep no = ");
 		sb.append(reps);
 		String message2 = sb.toString();
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare3/f";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svkCompare4/f";
 		FileUtil.initFile(fileName, params, message1, message2);
 		FileUtil.printAccumToFile(fileName, sfAcc);
 		System.out.println("file written for rep " + reps);
