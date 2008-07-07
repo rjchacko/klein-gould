@@ -143,25 +143,27 @@ public class FileUtil {
 	}
 	
 	static public void initFile(String fileName, Parameters params){
+		deleteFile(fileName);
 		try{
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			String [] keys = params.keys();
 			for (int i = 0; i < keys.length; i++)
-				pw.println(keys[i] + " " + params.sget(keys[i]));
+				pw.println("# " + keys[i] + " " + params.sget(keys[i]));
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
 	}
 
 	static public void initFile(String fileName, Parameters params, String message1){
+		deleteFile(fileName);
 		try{
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.println(message1);
 			String [] keys = params.keys();
 			for (int i = 0; i < keys.length; i++)
-				pw.println(keys[i] + " " + params.sget(keys[i]));
+				pw.println("# " + keys[i] + " " + params.sget(keys[i]));
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}

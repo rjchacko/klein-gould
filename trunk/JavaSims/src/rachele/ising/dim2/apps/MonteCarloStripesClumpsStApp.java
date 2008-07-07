@@ -77,7 +77,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 			float colorChunk = (float)i/(float)accNo;
 			Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
 			sftPlot.registerLines(sb.toString(), sf_tAveAcc[i], col);
-			sb = new StringBuffer();sb.append("s(t) "); sb.append(i);
+			//sb = new StringBuffer();sb.append("s(t) "); sb.append(i);
 			//sftPlot.registerLines(sb.toString(), sf_tAcc[i], col);
 		}
 		//sftPlot.registerLines("Blah", sf_tAcc[0], Color.BLACK);
@@ -194,7 +194,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	
 	private void writeStSCtoFile(int sfInt, double initializeTime){
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D3/m0";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D3/n0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			System.out.println("start " + i);
