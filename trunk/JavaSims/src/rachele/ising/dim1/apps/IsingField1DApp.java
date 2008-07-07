@@ -71,13 +71,14 @@ public class IsingField1DApp extends Simulation{
 		params.add("Time");
 		params.add("DENSITY");
 		params.add("Lp");
+		params.add("Free Energy");
 		
 		flags.add("Write Config");
 	}
 	
 	public void animate() {
 		params.set("Time", format(ising.t));
-		//params.set("F", format(ising.freeEnergyDensity));
+		params.set("Free Energy", format(ising.freeEnergyDensity));
 		ising.readParams(params);
 		//fieldPlot.setAutoScale(true);
 		//fieldPlot.set

@@ -227,7 +227,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	
 	private void writeStSCtoFile(int sfInt, double initializeTime, double [] kRvalues){
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D6/o0";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D6/p0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			System.out.println("start " + i);
