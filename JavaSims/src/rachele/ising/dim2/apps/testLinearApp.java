@@ -122,17 +122,17 @@ public class testLinearApp extends Simulation{
 		params.addm("T", 0.04);
 		params.addm("H", 0.80);
 		params.addm("dT", 0.001);
-		params.addm("tolerance", 0.0001);
+		params.addm("tolerance", 0.01);
 		//params.addm("dt", 0.01);
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
-		params.add("L/R", 3.0);
-		params.add("R/dx", 43.0);
+		params.add("L/R", 2.560);
+		params.add("R/dx", 50.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
-		params.addm("dt", 0.01);
+		params.addm("dt", 0.001);
 		params.add("dt new");
 		params.add("Time");
 		params.add("Mean Phi");
@@ -306,7 +306,7 @@ public class testLinearApp extends Simulation{
 			for (int i = 0; i < Lp*Lp; i++)
 				eta[i] = ising.phi[i] - phi0[i%Lp];
 			//etaK = fft.calculate2DFT(eta);			
-			etaK = fft.calculate2DSF(eta, false, true);
+			etaK = fft.find2DSF(eta, ising.L);
 			if(accEtaValues){
 				
 				for (int i = 0; i < Lp*Lp; i++)
@@ -375,11 +375,12 @@ public class testLinearApp extends Simulation{
 	* (unmodified) Ising dynamics.
 	*/
 	private void findMatrix() {
+		//double mobility = 1.0/ising.T;
 		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
 		double kxValue;
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j <= i; j++){
-				M[i][j]=M[j][i]=-ising.T*f_k[(i-j+Lp)%Lp]/Lp;
+				M[i][j]=M[j][i]=(-ising.T*f_k[(i-j+Lp)%Lp]/Lp);
 			}
 		}
 		for (int i = 0; i < Lp; i++){

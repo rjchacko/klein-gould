@@ -100,6 +100,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		//double quenchH = 0.9;
 		int repNo = 0;
 		int sfLabel = findBestkR();
+		System.out.println(sfLabel);
 
 		while (true) {
 			for (int i = 0; i < accNo; i ++)
@@ -127,7 +128,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 			}	
 			repNo += 1;
 			params.set("Reps", repNo);
-			writeStSCtoFile(sfLabel, initTime);
+			writeStSCtoFile(sfLabel, initTime, kRvalues(vertStripes, sfLabel));
 		}
 	}
 
@@ -141,10 +142,42 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 				sfLabel[i] = sfLabelHor + i*sim.L/dx;
 		}
 		for (int i = 0; i < accNo; i ++){
+			//int kx = sfLabel[i]%sim.L/dx; int ky = sfLabel[i]/sim.L/dx;
+			//double kxR = 2*PI*kx*sim.R/sim.L;double kyR = 2*PI*ky*sim.R/sim.L;
+			//System.out.println("kxR = " + kxR + " kyR =  " + kyR);
 			sf_tAveAcc[i].accum(sim.time(),sFactor[sfLabel[i]]);			
 			sf_tAcc[i].accum(sim.time(),sFactor[sfLabel[i]]);
 		}
 	}
+	
+	private double [] kRvalues(boolean vertStripes, int sfLabelHor){
+		double [] kRvalue = new double [accNo*2];
+		int [] kRCoord = kRLabels(vertStripes, sfLabelHor);
+		for (int i = 0; i < accNo; i++){
+			kRvalue[2*i] = 2*PI*kRCoord[2*i]*sim.R/(sim.L);
+			kRvalue[2*i+1] = 2*PI*kRCoord[2*i+1]*sim.R/(sim.L); 
+		}	
+		return kRvalue;
+	}
+		
+		private int [] kRLabels(boolean vertStripes, int sfLabelHor){
+			int [] kRCoord = new int [2*accNo];
+			int sfLabelVert = sfLabelHor*sim.L/dx;
+			if(vertStripes){
+				for (int i = 0; i < accNo; i ++){
+					int label = sfLabelVert + i;
+					kRCoord[i*2] = label %sim.L/dx;
+					kRCoord[i*2+1] = label /(sim.L/dx);
+				}
+			}else{
+				for (int i = 0; i < accNo; i ++){
+					int label = sfLabelHor + i*sim.L/dx;
+					kRCoord[i*2] = label %sim.L/dx;
+					kRCoord[i*2+1] = label /(sim.L/dx);					
+				}
+			}
+			return kRCoord;
+		}
 	
 	private void initializeStripes(boolean init1D, double initTime){
 		if(init1D){
@@ -192,16 +225,16 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	}
 
 	
-	private void writeStSCtoFile(int sfInt, double initializeTime){
+	private void writeStSCtoFile(int sfInt, double initializeTime, double [] kRvalues){
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D3/n0";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D6/o0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			System.out.println("start " + i);
 			StringBuffer mb = new StringBuffer();
-			mb.append("# init time = "); mb.append(initializeTime); mb.append(", sf label = ");	mb.append(sfInt+i); mb.append(" kR value = ");
-			double krvalue = 2*sim.R*Math.PI*(sfInt+i)/sim.L;
-			mb.append(krvalue);			
+			mb.append("# init time = "); mb.append(initializeTime); mb.append(", kx value = ");	mb.append(kRvalues[2*i]); mb.append(" ky value = ");
+			//double krvalue = 2*sim.R*Math.PI*(sfInt+i)/sim.L;
+			mb.append(kRvalues[2*i+1]);			
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(i); fileName = fileBuffer.toString();
 			String message2 = mb.toString();
 			FileUtil.initFile(fileName, params, message1, message2);		

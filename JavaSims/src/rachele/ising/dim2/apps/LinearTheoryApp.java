@@ -53,7 +53,7 @@ public class LinearTheoryApp extends Simulation{
 		params.addm("T", 0.05);
 		params.addm("H", 0.0);
 		params.add("Magnetization", 0.0);
-		params.addm("dt", 0.01);
+		params.addm("dt", 0.001);
 		params.addm("J", -1.0);
 		params.addm("R", 10000.0);
 		params.add("L/R", 2.66666666666);
