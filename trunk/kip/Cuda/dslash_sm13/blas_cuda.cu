@@ -4,8 +4,8 @@
 #include "qcd.h"
 
 
-#define REDUCE_DOUBLE_PRECISION
-
+//#define REDUCE_PRECISION float
+#define REDUCE_PRECISION double
 #define REDUCE_THREADS 128
 #define REDUCE_MAX_BLOCKS 128
 
