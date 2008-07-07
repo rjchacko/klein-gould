@@ -263,7 +263,7 @@ public class testLinearApp extends Simulation{
 		initialize();
 		ky = params.iget("ky");
 		etaK = new double[Lp*Lp];
-		double recordStep = 1;	
+		double recordStep = 0.0001;	
 		
 		for (int i = 0; i < Lp*Lp; i++)
 			etaLT[i] = ising.phi[i] - phi0[i%Lp];
@@ -293,8 +293,8 @@ public class testLinearApp extends Simulation{
         		}
         	}else{
         		ising.readParams(params);
-        		//ising.simulateUnstable();
-        		ising.simulate();
+        		//ising.simulate();
+        		ising.simulateSimple();
         		params.set("dt new", ising.dt);
        			if(accEtaValues){	
        				rhs2D = simulateLinear(etaLT);	
@@ -342,7 +342,7 @@ public class testLinearApp extends Simulation{
     		if(writeToFile){
     			if(ising.time() >= recordStep){
     				recordSfDataToFile(etaK);
-    				recordStep += .1;
+    				recordStep += .01;
     			}
     		}
 		}	
@@ -649,12 +649,12 @@ public class testLinearApp extends Simulation{
 		String file4 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf4";
 		String file5 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf5";
 		if (clearFile){
-			FileUtil.deleteFile(file0);
-			FileUtil.deleteFile(file1);
-			FileUtil.deleteFile(file2);
-			FileUtil.deleteFile(file3);
-			FileUtil.deleteFile(file4);
-			FileUtil.deleteFile(file5);
+			FileUtil.initFile(file0, params);
+			FileUtil.initFile(file1, params);
+			FileUtil.initFile(file2, params);
+			FileUtil.initFile(file3, params);
+			FileUtil.initFile(file4, params);
+			FileUtil.initFile(file5, params);
 			clearFile = false;
 		}
 		FileUtil.printlnToFile(file0, ising.time(), data[ky*Lp]*data[ky*Lp]);

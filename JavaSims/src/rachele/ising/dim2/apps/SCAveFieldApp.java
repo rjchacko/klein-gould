@@ -82,7 +82,7 @@ public class SCAveFieldApp extends Simulation{
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
 		params.addm("T", 0.04);
-		params.addm("H", 0.90);
+		params.addm("H", 0.80);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.0001);
 		params.addm("J", -1.0);
@@ -116,10 +116,12 @@ public class SCAveFieldApp extends Simulation{
 		vSlice.setAutoScale(true);
 		
 		for (int i = 0; i < accNo; i ++){
+			float colorChunk = (float)i/(float)accNo;
+			Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
 			StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
-			etaVsTimeSim.registerLines(sb.toString(), etaAccAve[i], Color.BLACK);
-			sb = new StringBuffer();sb.append("s(t) "); sb.append(i);
-			etaVsTimeSim.registerLines(sb.toString(), etaAcc[i], Color.BLUE);
+			etaVsTimeSim.registerLines(sb.toString(), etaAccAve[i], col);
+			StringBuffer sb2 = new StringBuffer();sb2.append("s(t) "); sb2.append(i);
+			etaVsTimeSim.registerLines(sb2.toString(), etaAcc[i], col);
 		}
 
 		double horizontalSlice = params.fget("Horizontal Slice");
@@ -157,15 +159,14 @@ public class SCAveFieldApp extends Simulation{
 	}
  
 	public void run() {
+		
 		if (flags.contains("Write 1D Config")){
 			write1Dconfig();
 			flags.clear();
 		}
 		clearFile = true;
 		ky = params.iget("ky");
-		initialize();
-		double recordStep = .0001;	
-		
+		initialize();		
 //		for (int i = 0; i < Lp*Lp; i++)
 //			etaLT[i] = ising.phi[i] - sc.phi0[i%Lp];
 //		double [] etaLT_k = new double [Lp*Lp];
@@ -181,8 +182,9 @@ public class SCAveFieldApp extends Simulation{
 		int repNo = 0;
 		
 		while (true) {
-			ising = new IsingField2D(params);
+			double recordStep = .0001;	
 			if(params.sget("Init Conditions")=="Read 1D Soln") ising.set1DConfig(sc.phi0);	
+			ising.restartClock();
 			for (int i = 0; i < accNo; i ++)
 				etaAcc[i].clear();
 			double maxTime = 5.0;
@@ -190,24 +192,24 @@ public class SCAveFieldApp extends Simulation{
 				ising.readParams(params);
 				//ising.simulateUnstable();
 				ising.simulateSimple();
-				params.set("dt new", ising.dt);
+				//params.set("dt new", ising.dt);
 				if(ising.time() >= recordStep){
 					for (int i = 0; i < Lp*Lp; i++)
 						eta[i] = ising.phi[i] - sc.phi0[i%Lp];
 					etaK = fft.find2DSF(eta, ising.L);
 					for (int i = 0; i < accNo; i++){
 						etaAcc[i].accum(ising.time(), etaK[sfLabel[i]]);
-						etaAcc[i].accum(ising.time(), etaK[sfLabel[i]+Lp-i]);
+						//etaAcc[i].accum(ising.time(), etaK[sfLabel[i]+Lp-2*i]);
 						etaAccAve[i].accum(ising.time(), etaK[sfLabel[i]]);
-						etaAccAve[i].accum(ising.time(), etaK[sfLabel[i]+Lp-i]);
+						//etaAccAve[i].accum(ising.time(), etaK[sfLabel[i]+Lp-2*i]);
 					}
 	    			recordStep += .1;
 	    		}
 				Job.animate();
 			}
-			recordSfDataToFile(etaK);
 			repNo += 1;
 			params.set("Reps", repNo);
+			recordSfDataToFile();
 		}	
 	}
 	
@@ -217,10 +219,10 @@ public class SCAveFieldApp extends Simulation{
 		System.out.println("H spinodal for T = " + ising.T + " is " + hs);
 	}
 	
-	public void recordSfDataToFile(double [] data){
+	public void recordSfDataToFile(){
 		
 		String message1 = "#Field theory average of SF vs time for several values of k.  Stripe to clump. ";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D4/f0";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCf/f0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			System.out.println("start " + i);
