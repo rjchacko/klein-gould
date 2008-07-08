@@ -280,7 +280,6 @@ public class IsingField2D extends AbstractIsing2D{
 		//looks like its working
 		convolveWithRange(phi, phi_bar, R);	
 		for (int i = 0; i < Lp*Lp; i++){
-			
 			delPhi[i] = -dt*mobility*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H)+ noise()*sqrt(dt*2/(dx*dx));
 		}
 		for (int i = 0; i < Lp*Lp; i++) 

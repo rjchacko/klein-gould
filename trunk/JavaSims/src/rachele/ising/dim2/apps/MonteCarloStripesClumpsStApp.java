@@ -120,7 +120,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 				sim.step();
 				Job.animate();
 				if (sim.time() > recordStep){
-					sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
+					sFactor = fft.find2DSF(sim.getField(dx), sim.L);
 					collect(sFactor, vertStripes,sfLabel);
 					recordStep += step;
 					recordInt +=1;
@@ -227,7 +227,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	
 	private void writeStSCtoFile(int sfInt, double initializeTime, double [] kRvalues){
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D6/p0";
+		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D7/f0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			System.out.println("start " + i);

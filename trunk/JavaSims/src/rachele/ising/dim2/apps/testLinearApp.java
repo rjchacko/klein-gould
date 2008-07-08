@@ -10,6 +10,7 @@ import java.awt.Color;
 import rachele.util.FourierTransformer;
 import rachele.util.MathTools;
 import rachele.ising.dim2.IsingField2D;
+//import rachele.ising.dim2.StructureFactor;
 import rachele.util.FileUtil;
 import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;
@@ -46,6 +47,7 @@ import scikit.dataset.PointSet;
 public class testLinearApp extends Simulation{
     IsingField2D ising;
     FourierTransformer fft;
+    //StructureFactor sf;
     double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice, etaK; //right hand side
     double [] g_k, c, eigenvalue, etaLC;
     double [] phi0, phi0_bar; // Background stripe configuration and this configuration convoluted with potential.
@@ -261,6 +263,7 @@ public class testLinearApp extends Simulation{
 		}
 		clearFile = true;
 		initialize();
+		//sf = new StructureFactor(ising.Lp, ising.L, ising.R,1.0, ising.dt);
 		ky = params.iget("ky");
 		etaK = new double[Lp*Lp];
 		double recordStep = 0.0001;	
@@ -307,6 +310,10 @@ public class testLinearApp extends Simulation{
 				eta[i] = ising.phi[i] - phi0[i%Lp];
 			//etaK = fft.calculate2DFT(eta);			
 			etaK = fft.find2DSF(eta, ising.L);
+			//sf.takeFT(ising.phi);
+			//for (int i = 0; i < ising.Lp*ising.Lp; i++)
+				//etaK[i] = sf.sFactor[i];
+			
 			if(accEtaValues){
 				
 				for (int i = 0; i < Lp*Lp; i++)
