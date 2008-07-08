@@ -67,7 +67,7 @@ public class SCAveFieldApp extends Simulation{
 
     
 	public static void main(String[] args) {
-		new Control(new SCAveFieldApp(), "Ising Linear Test");
+		new Control(new SCAveFieldApp(), "Isin");
 	}
 	
 	public void load(Control c) {

@@ -39,7 +39,7 @@ public class StripeClumpFieldSim {
 		findPhi0andPhi0_bar();
 		findMatrix();
 		diagonalize();
-		findAndDiagonalizeLittleMatrix();
+		//findAndDiagonalizeLittleMatrix();
 	}
 
 	public void findPhi0andPhi0_bar(){
@@ -99,7 +99,7 @@ public class StripeClumpFieldSim {
 		double kxValue;
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j <= i; j++){
-				M[i][j]=M[j][i]=-ising.T*f_k[(i-j+Lp)%Lp]/Lp;
+				M[i][j] = M[j][i] = ising.mobility*(-ising.T*f_k[(i-j+Lp)%Lp]/Lp);
 			}
 		}
 		for (int i = 0; i < Lp; i++){
@@ -108,9 +108,9 @@ public class StripeClumpFieldSim {
 			else
 				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
 			if(ising.circleInteraction)
-				M[i][i]-=ising.findVkCircle(Math.sqrt(kxValue*kxValue + kyValue*kyValue));
+				M[i][i] -= ising.mobility*ising.findVkCircle(Math.sqrt(kxValue*kxValue + kyValue*kyValue));
 			else
-				M[i][i]-=ising.findVkSquare(kxValue, kyValue);
+				M[i][i] -= ising.mobility*ising.findVkSquare(kxValue, kyValue);
 		}
 	}
 
@@ -136,59 +136,10 @@ public class StripeClumpFieldSim {
 		
 		double [] eigenv = new double [s];
 		eigenv = Eigen.getRealEigenvalues();
-		
-
-//		for (int i = 0; i < Lp; i ++)
-//			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
-//		if(DoubleArray.max(eigenvalue)>0.0)
 		System.out.println("eigenvalue little max ="  +  DoubleArray.max(eigenv));
 		System.out.println("eigenvalue min ="  + DoubleArray.min(eigenv));
-
-//		for(int i = Lp-1; i > Lp-5; i--){
-//			for(int j = Lp-1; j > Lp-5;j--){
-//				System.out.println(i + " " + j + " " + M[i][j] + " " + MM[i][j]);
-//			}
-//		}
-	    
-		
 	}
 	
-//	public double [] simulateLinearK(){
-//		double [] linearTheoryGrowth = new double[Lp*Lp];
-//				
-//		for (int i = 0; i < Lp; i++){
-//			for (int j = 0; j < Lp; j++){
-//				linearTheoryGrowth [i] += ising.dt*M[i][j]*etaLT_k_slice[j];
-//			}
-//		}
-// 
-//		return linearTheoryGrowth;
-//	}
-
-//	public double [] simulateLinearKbar(){
-//		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
-//		double [] linearTheoryGrowth = new double[Lp*Lp];
-//		double kxValue;
-//		double [] f_bar = new double [Lp];
-//		f_bar = fft.backConvolve1D(f_k, etaLT_k_slice);
-//		convolve.registerLines("convolvution", new PointSet(1,1, f_bar), Color.green);
-//		for (int i = 0; i < Lp; i++){
-//			
-//			if(i >= Lp/2)
-//				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
-//			else
-//				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
-//				
-//			linearTheoryGrowth[i] = ising.dt*(-ising.findVkSquare(kxValue, kyValue)*etaLT_k_slice[i]);
-//			linearTheoryGrowth [i] -= ising.dt*(ising.T*f_bar[i]);
-//		}
-//		etaLTkAcc.accum(ising.time(),Math.pow(etaLT_k_slice[0],2));		
-//   		etaLTkAcc2.accum(ising.time(), Math.pow(etaLT_k_slice[1],2));
-//   		etaLTkAcc3.accum(ising.time(),Math.pow(etaLT_k_slice[2],2));
-//   		etaLTkAcc4.accum(ising.time(), Math.pow(etaLT_k_slice[3],2)); 
-//		return linearTheoryGrowth;
-//	}
-
 	/**
 	* Diagonalizes the matrix M.
 	* Also some code that can be used to check for
@@ -222,44 +173,8 @@ public class StripeClumpFieldSim {
 					System.out.println("dot prod orth = " + orthogCheck);			
 			}
 		}
-
-		//find coeffieicnts
-		//normalize the current eta slice
-//		double [] normedEta = MathTools.normalize(etaLT_k_slice);
-//		double normCheck = 0;
-//		for (int i = 0; i < Lp; i ++){
-//			c[i] = MathTools.dot(normedEta, VV[i]);
-//			normCheck += c[i]*c[i];
-//		}
-//		
-//		double sum = 0;
-//		int testInt=1;
-//	    for(int i = 0; i < Lp; i++){
-//	    		sum += M[testInt][i]*VV[testInt][i];
-//	    } 
-//	    double lambda = sum/VV[testInt][testInt];
-//	    System.out.println("ev = " + eigenvalue[testInt] + " lambda = " + lambda);
 	    
 	}
-	public double [] simulateLinearMod_kSpace(int ky){
-		double [] change = new double [Lp*Lp];
-
-//		for (int ky = -Lp/2; ky < Lp/2; ky++){
-//		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
-			for(int kx = -Lp/2; kx < Lp/2; kx++){	
-				//int i = Lp*((ky+Lp)%Lp) + (kx+Lp)%Lp;
-				double sum = 0;				
-				for (int kxx = -Lp/2; kxx < Lp/2; kxx++){
-					//double kxxValue = 2.0*Math.PI*ising.R*kxx/ising.L;
-					//int eta_k_int = Lp*((ky+Lp)%Lp) + (kxx+Lp)%Lp;
-					sum += M[(kx+Lp)%Lp][(kxx+Lp)%Lp]*etaLT_k_slice[(kxx+Lp)%Lp];				
-				}
-				change[(kx+Lp)%Lp] = sum/Lp;
-			}
-	//	}
-		return change;
-	}
-	
 	
 	public double [] simulateLinear(double [] etaLinear){
 		double [] linearTheoryGrowth = new double[Lp*Lp];
@@ -282,45 +197,4 @@ public class StripeClumpFieldSim {
 		return linearTheoryGrowth;
 	}
 	
-	
-//	/**
-//	* Evaluates the matrix, M, of the linear theory for the stable 
-//	* (modified) Ising dynamics.  Not working at present.
-//	*/
-//	public void findModMatrix(){
-////		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
-////		double kxValue;
-////		for (int i = 0; i < Lp; i++){
-////			for (int j = 0; j <= i; j++){
-////				M[i][j]=M[j][i]=-ising.T*f_k[(i-j+Lp)%Lp]/Lp;
-////			}
-////		}
-////		for (int i = 0; i < Lp; i++){
-////			if(i >= Lp/2)
-////				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
-////			else
-////				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
-////			M[i][i]-=ising.findVkSquare(kxValue, kyValue);
-////		}
-////		
-//		for (int i = 0; i < Lp; i++){
-//			double alpha_x = 1.0-Math.pow(phi0[i],2);
-//			G[i] = -alpha_x*alpha_x;
-//			F[i] = alpha_x*(-ising.T-4*phi0[i]*(-phi0_bar[i]-ising.T*scikit.numerics.Math2.atanh(phi0[i]) + ising.H));				
-//		}
-////		g_k = fft.calculate1DFT(g);
-////		f_k = fft.calculate1DFT(f);
-////
-////		//for (int ky = -Lp/2; ky < Lp/2; ky++){
-////		//double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
-////		for(int kx = -Lp/2; kx < Lp/2; kx++){	
-////			//int i = Lp*((ky+Lp)%Lp) + (kx+Lp)%Lp;
-////			//double sum = 0;				
-////			for (int kxx = -Lp/2; kxx < Lp/2; kxx++){
-////				double kxxValue = 2.0*Math.PI*ising.R*kxx/ising.L;
-////				//int eta_k_int = Lp*((ky+Lp)%Lp) + (kxx+Lp)%Lp;
-////				M[(kx+Lp)%Lp][(kxx+Lp)%Lp] += (g_k [(kxx-kx+Lp)%Lp] * ising.findVkSquare(kxxValue,kyValue) + f_k[(kxx-kx+Lp)%Lp]);				
-////			}
-////		}
-//	}	
 }
