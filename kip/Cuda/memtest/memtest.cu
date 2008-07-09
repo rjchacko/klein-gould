@@ -4,16 +4,13 @@
 
 
 #define SHARED_BYTES (0)
-
 #define ARRAY_BYTES (1<<29)
 #define ARRAY_FLOATS (ARRAY_BYTES / sizeof(float))
 #define BLOCK_DIM 128
 #define GRID_DIM 128
 
-#define THREADS (BLOCK_DIM*GRID_DIM)
-#define LOOPS (ARRAY_FLOATS/(8*THREADS))
 
-
+texture<float, 1, cudaReadModeElementType> tex1;
 texture<float2, 1, cudaReadModeElementType> tex2;
 texture<float4, 1, cudaReadModeElementType> tex4;
 
@@ -23,136 +20,158 @@ extern __shared__ float4 s_data4[];
 
 
 __global__ void testKernel1(float *data) {
-    const int bid = blockIdx.x;
-    const int tid = threadIdx.x;
-    const int sid = BLOCK_DIM*bid + tid;
-    int sp_idx = sid;
+    int tid = threadIdx.x;
+    int i = blockIdx.x*BLOCK_DIM + tid;
     
-    float acc = 0;
-    for (int i = 0; i < ARRAY_FLOATS/(2*THREADS); i++) {
-        acc += data[sp_idx]; sp_idx += THREADS;
-        acc += data[sp_idx]; sp_idx += THREADS;
+    while (i < ARRAY_FLOATS) {
+        s_data1[tid] = data[i];
+        i += GRID_DIM*BLOCK_DIM;
     }
-    s_data1[tid] = acc;
 }
-
 
 __global__ void testKernel1b (float *data) {
-    unsigned int tid = threadIdx.x;
-    unsigned int bid = blockIdx.x;
-    unsigned int gridSize = GRID_DIM*(2*BLOCK_DIM);
-    unsigned int i = bid*(2*BLOCK_DIM) + tid;
-    
-    float acc = 0;
-    while (i < ARRAY_FLOATS) {
-        acc += data[i] + data[BLOCK_DIM+i];
-        i += gridSize;
-    }
-    
-    s_data1[tid] = acc;
-}
-
-
-__global__ void
-testKernel2(float2 *data) {
-    const int bid = blockIdx.x;
-    const int tid = threadIdx.x;
-    const int sid = BLOCK_DIM*bid + tid;
-    int sp_idx = sid;
-    
-    for (int i = 0; i < LOOPS; i++) {
-        s_data2[tid] = data[sp_idx]; sp_idx += THREADS;
-        s_data2[tid] = data[sp_idx]; sp_idx += THREADS;
-        s_data2[tid] = data[sp_idx]; sp_idx += THREADS;
-        s_data2[tid] = data[sp_idx]; sp_idx += THREADS;
-    }
-}
-
-__global__ void
-testKernel2T() {
-    const int bid = blockIdx.x;
     int tid = threadIdx.x;
-    const int sid = BLOCK_DIM*bid + tid;
-    int sp_idx = sid;
+    int i = blockIdx.x*(2*BLOCK_DIM) + tid;
     
-    for (int i = 0; i < LOOPS; i++) {
-        s_data2[tid] = tex1Dfetch(tex2, sp_idx+=THREADS);
-        s_data2[tid] = tex1Dfetch(tex2, sp_idx+=THREADS);
-        s_data2[tid] = tex1Dfetch(tex2, sp_idx+=THREADS);
-        s_data2[tid] = tex1Dfetch(tex2, sp_idx+=THREADS);
+    while (i < ARRAY_FLOATS) {
+        s_data1[tid] = data[i+0*BLOCK_DIM];
+        s_data1[tid] = data[i+1*BLOCK_DIM];
+        i += 2*GRID_DIM*BLOCK_DIM;
+    }
+}
+
+__global__ void testKernel1T() {
+    int tid = threadIdx.x;
+    int i = blockIdx.x*BLOCK_DIM + tid;
+    
+    while (i < ARRAY_FLOATS) {
+        s_data1[tid] = tex1Dfetch(tex1, i);
+        i += GRID_DIM*BLOCK_DIM;
+    }
+}
+
+__global__ void testKernel2(float2 *data) {
+    int tid = threadIdx.x;
+    int i = blockIdx.x*BLOCK_DIM + tid;
+
+    while (i < ARRAY_FLOATS/2) {
+        s_data2[tid] = data[i];
+        i += GRID_DIM*BLOCK_DIM;
+    }
+}
+
+__global__ void testKernel2T() {
+    int tid = threadIdx.x;
+    int i = blockIdx.x*BLOCK_DIM + tid;
+    
+    while (i < ARRAY_FLOATS/2) {
+        s_data2[tid] = tex1Dfetch(tex2, i);
+        i += GRID_DIM*BLOCK_DIM;
+    }
+}
+
+__global__ void testKernel4T() {
+    int tid = threadIdx.x;
+    int i = blockIdx.x*BLOCK_DIM + tid;
+    
+    while (i < ARRAY_FLOATS/4) {
+        s_data4[tid] = tex1Dfetch(tex4, i);
+        i += GRID_DIM*BLOCK_DIM;
     }
 }
 
 __global__ void
-testKernel4T() {
-    const int bid = blockIdx.x;
-    const int tid = threadIdx.x;
-    const int sid = BLOCK_DIM*bid + tid;
-    int sp_idx = sid;
+testKernel4Tb() {
+    int tid = threadIdx.x;
+    int i = blockIdx.x*(2*BLOCK_DIM) + tid;
     
-    for (int i = 0; i < LOOPS/2; i++) {
-        s_data4[tid] = tex1Dfetch(tex4, sp_idx+=THREADS);
-        s_data4[tid] = tex1Dfetch(tex4, sp_idx+=THREADS);
-        s_data4[tid] = tex1Dfetch(tex4, sp_idx+=THREADS);
-        s_data4[tid] = tex1Dfetch(tex4, sp_idx+=THREADS);
+    while (i < ARRAY_FLOATS/4) {
+        s_data4[tid] = tex1Dfetch(tex4, i+0*BLOCK_DIM);
+        s_data4[tid] = tex1Dfetch(tex4, i+1*BLOCK_DIM);
+        i += 2*GRID_DIM*BLOCK_DIM;
     }
 }
 
+void printKernel(int kernel) {
+    int flts = kernel / 10;
+    int tex = (kernel % 10) / 2;
+    int reorder = kernel % 2;
+    printf("Read float%d, ", flts);
+    printf(tex ? "texture" : "array");
+    if (reorder)
+        printf(", reordered ");
+    printf("\n");
+}
 
-int main(int argc, char** argv) {
+double benchmark(int kernel, void *d_idata) {
     int nIters = 100;
-    double MiB = (double)ARRAY_BYTES / (1<<20);
-    double GiB = (double)ARRAY_BYTES / (1<<30);
-
-    CUT_DEVICE_INIT(argc, argv);
-    // CUDA_SAFE_CALL( cudaSetDevice(1) );
-
-    void *d_idata;
-    CUDA_SAFE_CALL( cudaMalloc(&d_idata, ARRAY_BYTES) );
-    CUDA_SAFE_CALL( cudaBindTexture(0 /*offset*/, tex2, d_idata, ARRAY_BYTES) ); 
-    CUDA_SAFE_CALL( cudaBindTexture(0 /*offset*/, tex4, d_idata, ARRAY_BYTES) ); 
-
-    printf("Global MiB: %f\n", MiB);
-    printf("Shared kb: %fkB\n", SHARED_BYTES/1024.);
-    
     dim3 threads(BLOCK_DIM, 1, 1);
     dim3 grid(GRID_DIM, 1, 1);
     
     cudaEvent_t start, end;
-    CUDA_SAFE_CALL( cudaEventCreate(&start) );
-    CUDA_SAFE_CALL( cudaEventCreate(&end) );
-    CUDA_SAFE_CALL( cudaEventRecord(start, 0) );
+    cudaEventCreate(&start);
+    cudaEventCreate(&end);
+    cudaEventRecord(start, 0);
     for (int i=0; i < nIters; ++i) {
-        switch (-2) {
-        case -2:
-            if (i == 0) printf("Reduction float\n");
-            testKernel1b<<< grid, threads, SHARED_BYTES >>>((float*)d_idata);
-            break;
-        case -1:
-            if (i == 0) printf("Straight float\n");
+        switch (kernel) {
+        case 10:
             testKernel1<<< grid, threads, SHARED_BYTES >>>((float*)d_idata);
             break;
-        case 0:
-            if (i == 0) printf("Straight float2\n");
+        case 11:
+            testKernel1b<<< grid, threads, SHARED_BYTES >>>((float*)d_idata);
+            break;
+        case 12:
+            testKernel1T<<< grid, threads, SHARED_BYTES >>>();
+            break;
+            
+        case 20:
             testKernel2<<< grid, threads, SHARED_BYTES >>>((float2*)d_idata);
             break;
-        case 1:
-            if (i == 0) printf("Texture float2\n");
+        case 22:
             testKernel2T<<< grid, threads, SHARED_BYTES >>>();
             break;
-        case 2:
-            if (i == 0) printf("Texture float4\n");
+            
+        case 42:
             testKernel4T<<< grid, threads, SHARED_BYTES >>>();
             break;
+        case 43:
+            testKernel4Tb<<< grid, threads, SHARED_BYTES >>>();
+            break;
+        
+        default:
+            printf("Undefined kernel %d\n", kernel);
+            exit(1);
         }
     }
-    CUDA_SAFE_CALL( cudaEventRecord(end, 0) );
-    CUDA_SAFE_CALL( cudaEventSynchronize(end) );
-
+    cudaEventRecord(end, 0);
+    cudaEventSynchronize(end);
     float runTime;
-    CUDA_SAFE_CALL( cudaEventElapsedTime(&runTime, start, end) );
+    cudaEventElapsedTime(&runTime, start, end);
     double secs = runTime / 1000.;
+    return secs / nIters;
+}
+
+
+int main(int argc, char** argv) {
+    double MiB = (double)ARRAY_BYTES / (1<<20);
+    double GiB = (double)ARRAY_BYTES / (1<<30);
+
+    CUT_DEVICE_INIT(argc, argv);
+
+    void *d_idata;
+    cudaMalloc(&d_idata, ARRAY_BYTES);
+    cudaBindTexture(0 /*offset*/, tex1, d_idata, ARRAY_BYTES); 
+    cudaBindTexture(0 /*offset*/, tex2, d_idata, ARRAY_BYTES); 
+    cudaBindTexture(0 /*offset*/, tex4, d_idata, ARRAY_BYTES); 
+
+    printf("Block dim = %d, Grid dim = %d\n", BLOCK_DIM, GRID_DIM);
+    printf("Array size = %f MiB\n\n", MiB);
     
-    printf("Average time: %f ms\n", runTime);
-    printf("Bandwidth:    %f GiB/s\n\n", GiB*nIters / secs);
+    int kernels[] = {10, 11, 12, 20, 22, 42, 43};
+    for (int i = 0; i < 7; i++) {
+        printKernel(kernels[i]);
+        double secs = benchmark(kernels[i], d_idata);
+        printf("Average time: %f s\n", secs);
+        printf("Bandwidth:    %f GiB/s\n\n", GiB / secs);
+    }
 }
