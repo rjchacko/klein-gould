@@ -1,15 +1,7 @@
-package chris.ofc.apps;
+package chris.ofc.apps.old;
 
 
-/*
- * 
- * 	THERE IS A PROBLEM WITH THE WRITE DATA METHOD
- * 	NOW THERE ARE TWO DATA FILES TO WRITE!!!!
- * 
- * 	CHECK THIS BEFORE USE!!!!!!
- * 
- */
-
+import java.io.File;
 
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -19,15 +11,15 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.NfailDamage2D;
+import chris.ofc.old.NfailDamage2D;
 
-public class continueTapp2 extends Simulation {
+public class startTapp extends Simulation {
 
 	Grid grid1 = new Grid ("Stress Lattice");
 	Grid grid2 = new Grid ("Failed Sites");
 
 	NfailDamage2D model;
-	double ScMax, rgyr;
+	double ScMax, rgyr, tMAX;
 	
 	ColorPalette palette1;
 	ColorGradient smooth;
@@ -36,12 +28,11 @@ public class continueTapp2 extends Simulation {
 	
 
 	public static void main(String[] args) {
-		new Control(new continueTapp2(), "OFC Model");
+		new Control(new startTapp(), "OFC Model");
 	}
 	
 	public void load(Control c) {
 		
-		params.add("Input Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
 		params.add("Random Seed",0);
 		params.add("Animation", new ChoiceValue("On","Off"));
@@ -50,6 +41,7 @@ public class continueTapp2 extends Simulation {
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
+		params.add("T_max",1000000.);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
 		params.add("Critical Stress (\u03C3_c)",4.0);
 		params.add("\u03C3_c Noise", new ChoiceValue("Off","On"));	
@@ -119,7 +111,9 @@ public class continueTapp2 extends Simulation {
 			model.ShowGrid=false;
 		}
 		
-		model.Initialize(params);
+		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
+		
+		model.Initialize("Flat");
 		
 		ScMax=model.GetMax(model.Sc);		
 
@@ -135,15 +129,22 @@ public class continueTapp2 extends Simulation {
 			palette1.setColor(i,smooth.getColor(i, 0, max));
 		}
 				
-		//model.WriteDataHeader(model.outfile1);
+		model.WriteDataHeader();
 		
 		
-		while(!(model.crack)) {
+		tMAX = params.fget("T_max");
+		
+		while(!(model.crack) && model.time <= tMAX) {
 			
 			model.Avalanche();
 
-			model.TakeData(model.outfile1,model.outfile2);
+			model.TakeData();
 			
+		}
+		
+		if (model.time > tMAX) {
+			model.CloneSim(params);
+			System.out.println("t_max reached.");
 		}
 		
 	}

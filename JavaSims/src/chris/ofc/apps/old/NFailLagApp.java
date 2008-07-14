@@ -1,8 +1,8 @@
-package chris.ofc.apps;
+package chris.ofc.apps.old;
 
 
+import java.awt.Color;
 import java.io.File;
-
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -11,15 +11,16 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.NfailDamage2D;
+import chris.ofc.old.NfailDamage2D;
+import chris.ofc.old.NfailDamageLag2D;
 
-public class startTapp extends Simulation {
+public class NFailLagApp extends Simulation {
 
 	Grid grid1 = new Grid ("Stress Lattice");
 	Grid grid2 = new Grid ("Failed Sites");
 
-	NfailDamage2D model;
-	double ScMax, rgyr, tMAX;
+	NfailDamageLag2D model;
+	double ScMax, rgyr;
 	
 	ColorPalette palette1;
 	ColorGradient smooth;
@@ -28,20 +29,18 @@ public class startTapp extends Simulation {
 	
 
 	public static void main(String[] args) {
-		new Control(new startTapp(), "OFC Model");
+		new Control(new NFailLagApp(), "OFC Model");
 	}
 	
 	public void load(Control c) {
 		
-		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
+		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Random Seed",0);
 		params.add("Animation", new ChoiceValue("On","Off"));
-		//params.addm("Auto Scale", new ChoiceValue("Yes", "No"));
 		params.add("Lattice Size",1<<9);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
-		params.add("T_max",1000000.);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
 		params.add("Critical Stress (\u03C3_c)",4.0);
 		params.add("\u03C3_c Noise", new ChoiceValue("Off","On"));	
@@ -49,13 +48,14 @@ public class startTapp extends Simulation {
 		params.add("Residual Stress (\u03C3_r)",2.0);
 		params.add("\u03C3_r Noise", new ChoiceValue("Off","On"));
 		params.add("\u03C3_r width",Math.sqrt(Math.sqrt(2)));
-		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond"));
+		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
 		params.add("Interaction Radius (R)",(int)(50));
 		params.add("Minimum Interaction Radius (r)",0);
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.2,0,1));
 		params.add("\u03B1 Noise", new ChoiceValue("On","Off"));
 		params.add("\u03B1 Width", 0.05);
 		params.addm("Record", new ChoiceValue("Off","On"));
+		params.add("Lag Time", (int) 100000);
 		params.add("Number of Resets");
 		params.add("Number of Showers");
 			
@@ -68,7 +68,7 @@ public class startTapp extends Simulation {
 		params.set("Number of Resets",model.time);
 		params.set("Number of Showers",model.showernumber);
 		
-		if (model.showering && model.ShowGrid){
+		if (model.ShowGrid){
 		
 			int[] foo = new int[model.N];
 	
@@ -82,7 +82,7 @@ public class startTapp extends Simulation {
 			grid1.registerData(model.L,model.L,model.stress);
 			grid2.registerData(model.L, model.L, foo);
 				
-			if (params.sget("Record").equals("On") && model.ShowGrid){
+			if (params.sget("Record").equals("On")){
 				model.TakePicture(grid1);
 				model.TakePicture(grid2);
 				
@@ -100,7 +100,9 @@ public class startTapp extends Simulation {
 
 	public void run() {
 		
-		model = new NfailDamage2D(params);
+		// Initialize Model
+		
+		model = new NfailDamageLag2D(params);
 		
 		String anmt = params.sget("Animation");
 		
@@ -110,9 +112,7 @@ public class startTapp extends Simulation {
 		else{
 			model.ShowGrid=false;
 		}
-		
-		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
-		
+				
 		model.Initialize("Flat");
 		
 		ScMax=model.GetMax(model.Sc);		
@@ -121,30 +121,40 @@ public class startTapp extends Simulation {
 		
 		palette1 = new ColorPalette();
 		smooth   = new ColorGradient();
-		grid2.setColors(palette1);
 		
 		int max = model.GetMax(model.alive);
 
-		for (int i = 0 ; i <= max ; i++){
-			palette1.setColor(i,smooth.getColor(i, 0, max));
+		Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};
+		
+		palette1.setColor(0,Color.BLACK);
+		for (int i = 1 ; i <= max ; i++){
+			palette1.setColor(i,Carray[i%5]);
 		}
-				
+		
+		grid2.setColors(palette1);
+		
+		
+		// Set up file
+		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		model.WriteDataHeader();
 		
+		int lagtime = params.iget("Lag Time");
 		
-		tMAX = params.fget("T_max");
+		while(model.pretime < lagtime){
+			model.Calibrate();
+			params.set("Number of Resets",model.pretime - lagtime);
+		}
 		
-		while(!(model.crack) && model.time <= tMAX) {
+		model.Transition();
+		
+		while(!(model.crack)) {
 			
 			model.Avalanche();
 
 			model.TakeData();
 			
-		}
-		
-		if (model.time > tMAX) {
-			model.CloneSim(params);
-			System.out.println("t_max reached.");
+			//if (model.time%500 == 0) model.WriteStressBand();
+			
 		}
 		
 	}

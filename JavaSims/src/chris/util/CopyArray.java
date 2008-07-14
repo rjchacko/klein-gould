@@ -26,4 +26,20 @@ public class CopyArray {
 		
 	}
 	
+	public static int[] copyArray(int array, int length){
+		
+		int[] ret = {array};
+		
+		return ret; 
+	}
+	
+	public static double[] copyArray(double array, int length){
+		
+		double[] ret = {array};
+		
+		return ret; 
+		
+	}
+	
+	
 }

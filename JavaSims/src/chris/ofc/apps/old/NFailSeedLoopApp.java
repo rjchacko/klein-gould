@@ -1,4 +1,4 @@
-package chris.ofc.apps;
+package chris.ofc.apps.old;
 
 
 import java.io.File;
@@ -12,7 +12,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.NfailDamage2D;
+import chris.ofc.old.NfailDamage2D;
 
 public class NFailSeedLoopApp extends Simulation {
 

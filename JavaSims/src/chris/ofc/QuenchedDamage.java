@@ -6,42 +6,51 @@ public class QuenchedDamage extends Damage2D {
 	
 	// Quench params
 	
-	private double SrQ0, SrQ[];
+	private double SrQW, SrQ[], tSr0, tSrW;
 	private boolean SrQB;
-
-	public QuenchedDamage(Parameters params) {
-		super(params);
 	
+	
+	public QuenchedDamage(Parameters params) {
+		
+		super(params);
 		Qconstructor(params);
 		
 	}
 
 	public void Qconstructor(Parameters params){
 		
-		// set up Q noise
-		if(params.fget("\u03C3_r Q-width") == 0){
-			SrQ0 = 0;
-			SrQB = false;
+		// set up boolean and read-in parameters		
+		SrQB = !((SrQW = params.fget("\u03C3_r Q-width")) == 0);
+		tSr0 = getSr0();
+		tSrW = getSrW();
+		
+		return;
+	}
+	
+	public void Initialize(){
+		
+		super.Initialize();
+		
+		// set up SrQ
+		SrQ = new double[getN()];
+		
+		if(SrQB){	// if quenched noise = true, set it up, else, do nothing
+			for (int jj = 0 ; jj < getN() ; jj++){
+				SrQ[jj] = tSr0 + SrQW*(rand.nextDouble() - 0.5);
+			}
 		}
 		else{
-			SrQ0 = params.fget("\u03C3_r Q-width");
-			SrQB = true;
+			for (int jj = 0 ; jj < getN() ; jj++){
+				SrQ[jj] = tSr0;
+			}
 		}
 		
 		return;
 	}
 	
-	public void foo(){
-		System.out.println(SrQ0);
-		if(SrQB){
-			SrQ = null;
-		}
-		else{
-			SrQ = new double[] {0.0 , 1.0 , 2.0 , 3.0};
-		}
-		System.out.println(SrQ);
-
-		return;
+	protected double nextSr(int site){
+		
+		return (SrQ[site] + tSrW*(rand.nextDouble()-0.5));
 	}
 	
 	

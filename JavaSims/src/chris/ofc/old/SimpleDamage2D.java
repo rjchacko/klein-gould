@@ -1,4 +1,4 @@
-package chris.ofc;
+package chris.ofc.old;
 
 import java.util.Random;
 
@@ -13,11 +13,11 @@ public class SimpleDamage2D {
 	
 	// Grid Parameters
 	public int L, N;
-	LatticeNeighbors neighbors;
+	public LatticeNeighbors neighbors;
 	public Boolean crack;
 	
 	// Stress Parameters
-	int imax;
+	public int imax;
 	public int alive[], dead[];
 	public double alpha, Sc, Sr, release, stressMax;
 	public double stress[];

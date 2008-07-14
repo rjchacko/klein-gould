@@ -13,11 +13,11 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.Damage2D;
+import chris.ofc.QuenchedDamage;
 
-public class DamageApp extends Simulation{
+public class QuenchedDamageApp extends Simulation{
 
-	Damage2D model;
+	QuenchedDamage model;
 	
 	Grid gridS = new Grid ("Stress");
 	Grid gridL = new Grid ("Lives");
@@ -31,7 +31,7 @@ public class DamageApp extends Simulation{
 	Boolean pretime;
 	
 	public static void main(String[] args) {
-		new Control(new DamageApp(), "OFC Parameters");
+		new Control(new QuenchedDamageApp(), "OFC Parameters");
 	}
 	
 public void load(Control c) {
@@ -51,6 +51,7 @@ public void load(Control c) {
 		params.add("\u03C3_f width",(double)(0));
 		params.add("Residual Stress (\u03C3_r)",1.25);
 		params.add("\u03C3_r width",0.5);
+		params.add("\u03C3_r Q-width",0.0);
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.01,0,1));
 		params.add("\u03B1 Width", (double)(0));
 		params.add("Animation", new ChoiceValue("Off","On"));
@@ -106,7 +107,7 @@ public void load(Control c) {
 		
 		
 		// Setup model
-		model = new Damage2D(params);
+		model = new QuenchedDamage(params);
 		model.Initialize();
 		
 		// Setup color scheme
@@ -125,7 +126,7 @@ public void load(Control c) {
 		}
 		
 		// Setup output files
-		Damage2D.PrintParams(model.getOutdir()+File.separator+"Params.txt",params);	
+		QuenchedDamage.PrintParams(model.getOutdir()+File.separator+"Params.txt",params);	
 		model.WriteDataHeaders();
 		
 		// Run the simulation

@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Random;
-
 import javax.imageio.ImageIO;
-
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.params.Parameters;
 import chris.util.CopyArray;
@@ -15,35 +13,21 @@ import chris.util.LatticeNeighbors;
 import chris.util.PrintUtil;
 
 
-
-/*
- * 
- * 
- * Make EQ an option and thus merge, for example
- * Avalanche and AvalancheEQ, or what is more important
- * maybe, ResetPlate so one change changes everything?
- * 
- * 
- */
-
-
 public class Damage2D {
 
 	// OFC Parameters
 	
-	private int imax, alive[], Nrichter;
-	private double L, N, alpha0, alphaW, Sf0, Sr0, Sf[], Sr[], SfW, SrW, stress[], R, t1,
-				   t2, dt, pt, pt2, Scum[], Scum2[], Omega, Omega2, tMAX, Omega3;
-	/*
-	 * 
-	 * Add a SrQnch[]
-	 * 
-	 */
+	private int alive[], Nrichter;
+	protected int seeds[];
+	private double L, N, alpha0, alphaW, Sf0, Sr0;
+	protected double Sf[];
+	private double 	Sr[], SfW, SrW, stress[], R, t1, t2,
+					dt, pt, Scum[], Omega, tMAX;
 	
 	private String shape, bc;
 	private boolean alphaN, SfN, SrN, killed[];
 	
-	private Random rand;
+	protected Random rand;
 	private LatticeNeighbors neighbors;
 	
 	private int nbs0, nbs[];
@@ -52,8 +36,8 @@ public class Damage2D {
 
 	private int Nlives0, LivesLeft[];
 	private double NlivesW;
-	private boolean NlivesN, crack;
-	private String LifeStyle, Mode;
+	private boolean NlivesN, crack, EQmode;
+	private String LifeStyle;
 	
 	// I/O Parameters
 	
@@ -71,7 +55,7 @@ public class Damage2D {
 
 	public void Constructor(Parameters params){
 		int seed;
-		String animate;
+		String animate, Mode;
 		
 		outdir    = params.sget("Data Directory");
 		Mode      = params.sget("Mode");
@@ -91,55 +75,22 @@ public class Damage2D {
 		alpha0    = params.fget("Dissipation (\u03B1)");
 		alphaW    = params.fget("\u03B1 Width");
 		animate   = params.sget("Animation");
-		
+
 		N = L*L;
 		
 		rand  = new Random(seed);
 		
 		outfile1 = outdir + File.separator+"DamageData.txt";
 		outfile2 = outdir + File.separator+"DamageLives.txt";
-		//outfileOmega = outdir + File.separator+"Omega.txt";
 		PicDir   = outdir + "/Pics/";
 		DirUtil.MkDir(PicDir);
 		
-		if(SfW == 0){
-			SfN = false;
-		}
-		else{
-			SfN = true;
-		}
-		
-		if(SrW == 0){
-			SrN = false;
-		}
-		else{
-			SrN = true;
-		}
-		
-		if(alphaW == 0){
-			alphaN = false;
-		}
-		else{
-			alphaN = true;
-		}
-		if(Mode.equals("Damage")){
-			if(LifeStyle.equals("Constant")){
-				NlivesN = false;
-			}
-			else if(LifeStyle.equals("Gaussian")){
-				NlivesN = true;
-			}
-			else{
-				NlivesN = true;
-			}
-		}
-		
-		if(animate.equals("On")){
-			showGrid = true;
-		}
-		else{
-			showGrid = false;
-		}
+		EQmode   = (Mode.equals("Earthquake"));
+		SfN      = (!(SfW == 0));
+		SrN      = (!(SrW == 0));
+		alphaN   = (!(alphaW == 0));
+		NlivesN  = (!(EQmode) && !(LifeStyle.equals("Constant")));
+		showGrid = (animate.equals("On"));
 
 		return;
 		
@@ -156,7 +107,6 @@ public class Damage2D {
 		Sr     = new double[(int) N];
 		stress = new double[(int) N];
 		Scum   = new double[(int) N];
-		Scum2  = new double[(int) N];
 		killed = new boolean[(int) N];
 				
 		// Set up Lattice Neighbors
@@ -166,7 +116,7 @@ public class Damage2D {
 		InitArrays();
 
 		// Set up N_lives Left
-		LivesLeft = SetupNlives(Mode);
+		LivesLeft = SetupNlives(EQmode);
 		
 		// Set up First Failure
 		if(pt <= 0){
@@ -174,13 +124,13 @@ public class Damage2D {
 			pt = 0;
 		}
 		else{
-			ForceFailureEQ();
+			EQmode = true;
+			ForceFailure();
 		}
 		
 		// start clocks
 		t1  = 0;
 		t2  = 0;
-		pt2 = 0;
 		pt  = -pt;
 		
 	}
@@ -217,7 +167,7 @@ public class Damage2D {
 		return neighbors.get(nbs0);
 	}
 	
-	private void InitArrays(){
+	protected void InitArrays(){
 				
 		for (int jj = 0 ; jj < N ; jj++){
 			
@@ -229,21 +179,20 @@ public class Damage2D {
 				alive[jj] = Nlives0;
 			}
 			else{
-				alive[jj] = (int) Math.round(Nlives0 + NlivesW*rand.nextGaussian());
+				alive[jj] = (int) Math.round(Nlives0 + NlivesW*(rand.nextDouble()-0.5));
 			}
 			
 			if(!SfN){	// no noise in the critical stress
 				Sf[jj] = Sf0;
 			}
 			else{
-				Sf[jj] = Sf0 + SfW*rand.nextGaussian();
+				Sf[jj] = Sf0 + SfW*(rand.nextDouble()-0.5);
 			}
 			
 			if(!SrN){	// no noise in the residual stress
 				Sr[jj] = Sr0;
 			}
 			else{
-				// Sr[jj] = Sr0 + SrW*rand.nextGaussian();
 				Sr[jj] = Sr0 + SrW*(rand.nextDouble()-0.5);
 			}
 			
@@ -252,10 +201,10 @@ public class Damage2D {
 		return;
 	}
 	
-	private int[] SetupNlives(String md){
+	private int[] SetupNlives(boolean md){
 		
 		
-		if (md.equals("Damage")){
+		if (!(EQmode)){
 			
 			int ret[];
 			int max = alive[0];
@@ -284,20 +233,14 @@ public class Damage2D {
 		
 	}
 	
-	public boolean Avalanche(){
-			
-			
-		//System.out.println(rand.nextDouble());
-		
-		t1++;
-		t2+=dt;
+	public boolean Equilibrate(){
+
+		pt++;
 		
 		Nrichter = 1; // the forced failure
 		
-		int[] orig = {imax};
-		
-		int[] avlnch = DistributeStress(orig);
-		ResetPlate(orig);
+		int[] avlnch = DistributeStress(seeds);
+		ResetPlate(seeds);
 		CascadeSites(avlnch);
 	
 		while(avlnch.length > 0){
@@ -307,60 +250,90 @@ public class Damage2D {
 			CascadeSites(avlnch);
 
 		}
+				 
+		ForceFailure();
+				
+		return (pt < 0);
+	}
+	
+	public boolean Avalanche(){
+					
+		t1++;
+		t2+=dt;
+		
+		Nrichter = seeds.length; // the forced failure(s)
+		
+		int[] avlnch = DistributeStress(seeds);
+		ResetPlate(seeds);
+		CascadeSites(avlnch);
+	
+		while(avlnch.length > 0){
+			int[] copy = avlnch;
+			avlnch = DistributeStress(avlnch);
+			ResetPlate(copy);
+			CascadeSites(avlnch);
+		}
 		
 		Omega = StressMetric();
 		
 		ForceFailure();
 				
-		return (!crack);
+		return (EQmode) ? (t1 < tMAX) : (!crack);
 	}
 	
-	private void ForceFailure(){
+	
+	protected void ForceFailure(){
 
 		double stressMax;
-		imax = 0;
-		
-		/*
-		 * replace this with
-		 * minimizing the difference
-		 * between the stress on a 
-		 * site and that site's 
-		 * failure stress 
-		 * 
-		 */		
-		
+		int imax = 0;
+
 		for (int jj = 0 ; jj < N ; jj++){
-			if(stress[jj] > stress[imax]){ 
-				imax = jj;
-				killed[jj] = false;
-			}
+			if((Sf[jj] - stress[jj]) < (Sf[imax] - stress[imax])) imax = jj;
+			killed[jj] = false;
 		}
-
-		
-
-		
-		if(alive[imax] <= 0){
-			System.out.println("All Sites Failed!");
-			crack=true;
-			return;
-		}
-				
-		LivesLeft[alive[imax]]--;
-		LivesLeft[alive[imax]-1]++;
-		
-		alive[imax]--;
-		alive[imax+(int)N]=0;
-
 
 		stressMax = stress[imax];		
 		for (int jj = 0; jj<N; jj++){
 			stress[jj] += Sf[imax]-stressMax;
 		}
 		dt = Sf[imax] - stressMax;
-
+		
+		seeds = CopyArray.copyArray(imax,1);
+		
+		ManageLives(seeds);
+		
 		return;
 	}
 		
+	protected void ManageLives(int[] sites){
+		
+		for (int jj = 0 ; jj < sites.length ; jj++){
+		
+			int imax = sites[jj];
+
+			// do only if equilibration is done and running in damage mode
+			if(!(EQmode) && !(pt < 0)){	
+
+				if(alive[imax] <= 0){
+					System.out.println("All Sites Failed!");
+					crack=true;
+					return;
+				}
+
+				LivesLeft[alive[imax]]--;
+				LivesLeft[alive[imax]-1]++;
+
+				alive[imax]--;
+			}	
+			// do independent of time and mode
+
+			alive[imax+(int)N]=0;
+		
+		}
+		
+		return;
+	}
+	
 	private int[] DistributeStress(int[] ds){
 		
 		int length = ds.length;
@@ -485,35 +458,50 @@ public class Damage2D {
 		return CopyArray.copyArray(toKill, toKillindex);
 	}
 	
-	private void ResetPlate(int[] ds){
+	protected void ResetPlate(int[] ds){
 		
 		int length = ds.length;
 		
-		
-		if(SrN){	
-			for (int jj = 0 ; jj < length; jj++){
-				if(alive[ds[jj]] > 0){
+		if(EQmode){
+			if(SrN){	// annealed noise on Sr
+				for (int jj = 0 ; jj < length; jj++){
 					stress[ds[jj]] = Sr[ds[jj]];
-					Sr[ds[jj]] = Sr0 + SrW*(rand.nextDouble()-0.5); 
+					Sr[ds[jj]] = nextSr(ds[jj]);
 					alive[ds[jj]+(int)N] = 1;
 				}
-				else{
-					stress[ds[jj]] = -2;
-				}
 			}
-		}
-		else{
-			for (int jj = 0 ; jj < length; jj++){
-				if(alive[ds[jj]] > 0){
+			else{
+				for (int jj = 0 ; jj < length; jj++){
 					stress[ds[jj]] = Sr[ds[jj]];
 					alive[ds[jj]+(int)N] = 1;
 				}
-				else{
-					stress[ds[jj]] = -2;
+			}
+		}
+		else{	// damage mode
+			if(SrN){	// annealed noise on Sr
+				for (int jj = 0 ; jj < length; jj++){
+					if(alive[ds[jj]] > 0){
+						stress[ds[jj]] = Sr[ds[jj]];
+						Sr[ds[jj]] = nextSr(ds[jj]);
+						alive[ds[jj]+(int)N] = 1;
+					}
+					else{
+						stress[ds[jj]] = -2;
+					}
+				}
+			}
+			else{
+				for (int jj = 0 ; jj < length; jj++){
+					if(alive[ds[jj]] > 0){
+						stress[ds[jj]] = Sr[ds[jj]];
+						alive[ds[jj]+(int)N] = 1;
+					}
+					else{
+						stress[ds[jj]] = -2;
+					}
 				}
 			}
 		}
-		
 		
 		
 		return;
@@ -525,157 +513,30 @@ public class Damage2D {
 		
 		int length = ds.length;
 		
-		for (int jj = 0 ; jj < length ; jj++){
-			alive[ds[jj]+(int)N] = 0;
-			LivesLeft[alive[ds[jj]]]--;
-			if(alive[ds[jj]] > 0) LivesLeft[alive[ds[jj]]-1]++;
-			alive[ds[jj]]--;
-			killed[ds[jj]] = false;
-		}
-		
-		Nrichter+=length;
-	
-	}
-	
-	public boolean Equilibrate(){
-		
-		
-		/*
-		 * replace this with
-		 * minimizing the difference
-		 * between the stress on a 
-		 * site and that site's 
-		 * failure stress 
-		 * 
-		 */
-		
-		pt++;
-		pt2 += dt; 
-		
-		Nrichter = 1; // the forced failure
-		
-		int[] orig = {imax};
-		
-		int[] avlnch = DistributeStress(orig);
-		ResetPlateEQ(orig);
-		CascadeSitesEQ(avlnch);
-	
-		while(avlnch.length > 0){
-			int[] copy = avlnch;
-			avlnch = DistributeStress(avlnch);
-			ResetPlateEQ(copy);
-			CascadeSitesEQ(avlnch);
-
-		}
-		
-		Omega = StressMetric();
-		
-		ForceFailureEQ();
-				
-		return (pt < 0);
-	}
-	
-	public boolean AvalancheEQ(){
-		
-		
-		/*
-		 * replace this with
-		 * minimizing the difference
-		 * between the stress on a 
-		 * site and that site's 
-		 * failure stress 
-		 * 
-		 */
-
-		t1++;
-		t2+=dt;
-		pt2+=dt;
-				 
-		Nrichter = 1; // the forced failure
-		
-		int[] orig = {imax};
-		
-		int[] avlnch = DistributeStress(orig);
-		ResetPlateEQ(orig);
-		CascadeSitesEQ(avlnch);
-	
-		while(avlnch.length > 0){
-			int[] copy = avlnch;
-			avlnch = DistributeStress(avlnch);
-			ResetPlateEQ(copy);
-			CascadeSitesEQ(avlnch);
-
-		}
-		
-		Omega  = StressMetric();
-		Omega2 = StressMetricV2();
-		
-		ForceFailureEQ();
-				
-		return (t1 < tMAX);
-	}
-	
-	private void ForceFailureEQ(){
-		double stressMax;
-		imax = 0;
-		
-		
-		for (int jj = 0 ; jj < N ; jj++){
-			if(stress[jj] > stress[imax]){ 
-				imax = jj;
-				killed[jj] = false;
-			}
-		}
-
-		alive[imax+(int)N]=0;
-
-		stressMax = stress[imax];		
-		for (int jj = 0; jj<N; jj++){
-			stress[jj] += Sf[imax]-stressMax;
-		}
-		
-		dt = Sf[imax] - stressMax;
-
-		return;
-	}
-	
-	
-	
-	private void ResetPlateEQ(int[] ds){
-		int length = ds.length;
-		
-		
-		if(SrN){	
-			for (int jj = 0 ; jj < length; jj++){
-				stress[ds[jj]] = Sr[ds[jj]];
-				Sr[ds[jj]] = Sr0 + SrW*(rand.nextDouble()-0.5); 
-				alive[ds[jj]+(int)N] = 1;
+		if(EQmode){
+			for (int jj = 0 ; jj < length ; jj++){
+				alive[ds[jj]+(int)N] = 0;
+				killed[ds[jj]] = false;
 			}
 		}
 		else{
-			for (int jj = 0 ; jj < length; jj++){
-				stress[ds[jj]] = Sr[ds[jj]];
-				alive[ds[jj]+(int)N] = 1;
+			for (int jj = 0 ; jj < length ; jj++){
+				alive[ds[jj]+(int)N] = 0;
+				LivesLeft[alive[ds[jj]]]--;
+				if(alive[ds[jj]] > 0) LivesLeft[alive[ds[jj]]-1]++;
+				alive[ds[jj]]--;
+				killed[ds[jj]] = false;
 			}
 		}
 		
-		
-		
-		
+		Nrichter+=length;
 		return;
+		
 	}
 	
-	private void CascadeSitesEQ(int[] ds){
-		if(ds == null) return;
+	protected double nextSr(int site){
 		
-		int length = ds.length;
-		
-		for (int jj = 0 ; jj < length ; jj++){
-			alive[ds[jj]+(int)N] = 0;
-			killed[ds[jj]] = false;
-		}
-		
-		Nrichter+=length;
+		return (Sr0 + SrW*(rand.nextDouble()-0.5));
 	}
 	
 	private double StressMetric(){
@@ -698,14 +559,18 @@ public class Damage2D {
 				Omega += (Scum[jj] - Sbar)*(Scum[jj] - Sbar);
 			}
 
+			Omega = Omega/(t2*t2*((int)N - LivesLeft[0]));
 			
-			Omega3 = Omega/(t2*t2*((int)N - LivesLeft[0]));
 			
-			Omega = Omega/(pt2*pt2*((int)N - LivesLeft[0]));
+			//PrintUtil.printlnToFile(outfile2,t2,Sbar/t2,Scum[1]/t2,Scum[(int)(getN()/2)]/t2);	// FOR TESTING ONLY!!!!!!
 			
-			//Sbar = Sbar/t2;
-			
-			//PrintUtil.printlnToFile(outfileOmega,t2,stress[(1+getL())*getL()/2],Scum[(1+getL())*getL()/2]/t2,Sbar,Omega);
+			/*
+			 * 
+			 * NB	For ForceSf this LviesLeft[0] is probably not a denominator 
+			 * 		since sites that fail once are, in principle, dead. Maybe run in 
+			 * 		damage mode with Nlives = 1?
+			 * 
+			 */
 			
 			return Omega;
 			
@@ -714,50 +579,15 @@ public class Damage2D {
 		return -1;
 	}
 	
-	private double StressMetricV2(){
-		
-		if(N > LivesLeft[0]){
-			double Sbar = 0;
-
-			for (int jj = 0 ; jj < N ; jj++){
-				Scum2[jj] += alive[jj+(int)N]*stress[jj]*dt;
-			}
-
-			for (int jj = 0 ; jj < N ; jj++){
-				Sbar += Scum2[jj];
-			}
-
-			Sbar = Sbar/((int)N - LivesLeft[0]); // all the sites save the dead ones
-
-			Omega2 = 0;
-			for (int jj = 0 ; jj < N ; jj++){
-				Omega2 += (Scum2[jj] - Sbar)*(Scum2[jj] - Sbar);
-			}
-
-			Omega2 = Omega2/(t2*t2*((int)N - LivesLeft[0]));
-			
-			//Sbar = Sbar/t2;
-			
-			//PrintUtil.printlnToFile(outfileOmega,t2,stress[(1+getL())*getL()/2],Scum[(1+getL())*getL()/2]/t2,Sbar,Omega);
-			
-			return Omega2;
-			
-		}
-		
-		return -1;
-	}
-	
 	public void WriteDataHeaders(){
 		
-		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","pt","N_sts/avl","Omega","Omega2","Omega3");
+		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","N_sts/avl","Omega");
 		PrintUtil.printlnToFile(outfile2,"Sweeps","t_vel","N_lvs=0","N_lvs=1",". . . ","N_lvs=N_max");
-		//PrintUtil.printlnToFile(outfileOmega,"t_vel","sigma_cntr","sigma(t)_cntr","sigma(t)--bar","Omega");
 		
 	}
 	
 	public void TakeDate(){
-		PrintUtil.printlnToFile(outfile1,t1,t2,pt2,Nrichter,Omega,Omega2,Omega3);
-		//PrintUtil.print2TimeAndVectorToFile(outfile2,t1,t2,LivesLeft);
+		PrintUtil.printlnToFile(outfile1,t1,t2,Nrichter,Omega);
 	}
 	
 	public static void PrintParams(String fout, Parameters prms){
@@ -854,5 +684,54 @@ public class Damage2D {
 		
 		return ret/getN();
 	}
+	
+	public void resetMode(Parameters params){
+		
+		EQmode = (params.sget("Mode").equals("Earthquake"));		
+		
+		return;
+	}
+	
+	public boolean getEQmode(){
+		
+		return EQmode;
+	}
+	
+	public double getSr0(){
+		
+		return Sr0;
+	}
+	
+	public double getSrW(){
+		
+		return SrW;
+	}
+	
+	public double getSf0(){
+		
+		return Sf0;
+	}
+	
+	public double getStress(int site){
+		
+		return (site < N) ? stress[site] : Integer.MIN_VALUE; 
+		
+	}
+	
+	protected void setT1T2(){
+		
+		t2 = t1;
+		dt = 1;
+	}
+	
+	protected void setStress(int site, double str){
+		
+		if(site < N){
+			stress[site] = str;
+		}
+		
+		return;
+	}
+
 	
 }
