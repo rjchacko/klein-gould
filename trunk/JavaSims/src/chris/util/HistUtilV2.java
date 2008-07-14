@@ -17,7 +17,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.FileValue;
 
-public class HistUtil extends Simulation{
+public class HistUtilV2 extends Simulation{
 
 	Histogram histGLOB;
 	Plot grid = new Plot("Histogram");

@@ -1,4 +1,4 @@
-package chris.ofc.apps;
+package chris.ofc.apps.old;
 
 
 import java.awt.Color;
@@ -11,15 +11,14 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.NfailDamage2D;
-import chris.ofc.NfailDamageLag2D;
+import chris.ofc.old.NfailDamage2D;
 
-public class NFailLagApp extends Simulation {
+public class NFailApp extends Simulation {
 
 	Grid grid1 = new Grid ("Stress Lattice");
 	Grid grid2 = new Grid ("Failed Sites");
 
-	NfailDamageLag2D model;
+	NfailDamage2D model;
 	double ScMax, rgyr;
 	
 	ColorPalette palette1;
@@ -29,7 +28,7 @@ public class NFailLagApp extends Simulation {
 	
 
 	public static void main(String[] args) {
-		new Control(new NFailLagApp(), "OFC Model");
+		new Control(new NFailApp(), "OFC Model");
 	}
 	
 	public void load(Control c) {
@@ -55,7 +54,6 @@ public class NFailLagApp extends Simulation {
 		params.add("\u03B1 Noise", new ChoiceValue("On","Off"));
 		params.add("\u03B1 Width", 0.05);
 		params.addm("Record", new ChoiceValue("Off","On"));
-		params.add("Lag Time", (int) 100000);
 		params.add("Number of Resets");
 		params.add("Number of Showers");
 			
@@ -102,7 +100,7 @@ public class NFailLagApp extends Simulation {
 		
 		// Initialize Model
 		
-		model = new NfailDamageLag2D(params);
+		model = new NfailDamage2D(params);
 		
 		String anmt = params.sget("Animation");
 		
@@ -138,22 +136,12 @@ public class NFailLagApp extends Simulation {
 		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
 		model.WriteDataHeader();
 		
-		int lagtime = params.iget("Lag Time");
-		
-		while(model.pretime < lagtime){
-			model.Calibrate();
-			params.set("Number of Resets",model.pretime - lagtime);
-		}
-		
-		model.Transition();
 		
 		while(!(model.crack)) {
 			
 			model.Avalanche();
 
 			model.TakeData();
-			
-			//if (model.time%500 == 0) model.WriteStressBand();
 			
 		}
 		

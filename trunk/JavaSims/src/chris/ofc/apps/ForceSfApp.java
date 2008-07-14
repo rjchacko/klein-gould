@@ -13,11 +13,12 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.Damage2D;
+import chris.ofc.ForceSf;
+import chris.ofc.QuenchedDamage;
 
-public class DamageApp extends Simulation{
+public class ForceSfApp extends Simulation{
 
-	Damage2D model;
+	ForceSf model;
 	
 	Grid gridS = new Grid ("Stress");
 	Grid gridL = new Grid ("Lives");
@@ -31,7 +32,7 @@ public class DamageApp extends Simulation{
 	Boolean pretime;
 	
 	public static void main(String[] args) {
-		new Control(new DamageApp(), "OFC Parameters");
+		new Control(new ForceSfApp(), "OFC Parameters");
 	}
 	
 public void load(Control c) {
@@ -43,19 +44,20 @@ public void load(Control c) {
 		params.add("Interaction Radius (R)",(int)(30));
 		params.add("Lattice Size",1<<8);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
-		params.add("Equilibrate Time",(int)100000);
+		params.add("Equilibrate Time",(int)0);
 		params.add("Number of Lives",2000000);
 		params.add("Life Distribution", new ChoiceValue("Constant","Gaussian", "Step Down"));
 		params.add("LD Width",0.0);
 		params.add("Failure Stress (\u03C3_f)",2.0);
 		params.add("\u03C3_f width",(double)(0));
-		params.add("Residual Stress (\u03C3_r)",1.25);
-		params.add("\u03C3_r width",0.5);
+		params.add("d\u03C3_f",0.0001);
+		params.add("Residual Stress (\u03C3_r)",1);
+		params.add("\u03C3_r width",0.);
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.01,0,1));
 		params.add("\u03B1 Width", (double)(0));
 		params.add("Animation", new ChoiceValue("Off","On"));
 		params.addm("Record", new ChoiceValue("Off","On"));
-		params.add("Number of Plate Updates");
+		params.add("\u03C3_f (t)");
 		params.add("Last Avalanche Size");
 		params.add("<Lives Left>");
 		
@@ -66,11 +68,11 @@ public void load(Control c) {
 	public void animate() {
 
 		if(pretime){
-			params.set("Number of Plate Updates",model.getTime(-1));
+			params.set("\u03C3_f (t)",model.getTime(-1));
 			params.set("Last Avalanche Size",model.getAS());
 		}
 		else{
-			params.set("Number of Plate Updates",model.getTime(1));
+			params.set("\u03C3_f (t)",model.getSfofT());
 			params.set("Last Avalanche Size",model.getAS());
 			if(!(model.getEQmode())) params.set("<Lives Left>",fmt.format(model.getAveLL()));
 		}
@@ -86,7 +88,7 @@ public void load(Control c) {
 			double[] copyStress = model.getStress();
 			
 			for (int jj=0 ; jj < N ; jj++){
-				cGradient.getColor(copyStress[jj],-2,ScMax);
+				cGradient.getColor(copyStress[jj],-2,model.getSf0());
 			}
 
 			gridS.setColors(cGradient);
@@ -106,7 +108,7 @@ public void load(Control c) {
 		
 		
 		// Setup model
-		model = new Damage2D(params);
+		model = new ForceSf(params);
 		model.Initialize();
 		
 		// Setup color scheme
@@ -125,7 +127,7 @@ public void load(Control c) {
 		}
 		
 		// Setup output files
-		Damage2D.PrintParams(model.getOutdir()+File.separator+"Params.txt",params);	
+		QuenchedDamage.PrintParams(model.getOutdir()+File.separator+"Params.txt",params);	
 		model.WriteDataHeaders();
 		
 		// Run the simulation

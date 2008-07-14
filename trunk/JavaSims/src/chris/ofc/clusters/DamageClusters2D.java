@@ -1,10 +1,11 @@
-package chris.ofc;
+package chris.ofc.clusters;
 
 
 import java.io.File;
 
 import scikit.jobs.Job;
 import scikit.jobs.params.Parameters;
+import chris.ofc.old.NfailDamage2D;
 import chris.util.PrintUtil;
 
 public class DamageClusters2D extends NfailDamage2D{

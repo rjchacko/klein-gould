@@ -17,7 +17,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.SimpleDamage2D;
+import chris.ofc.old.SimpleDamage2D;
 
 
 public class SimpleAnimationOFCApp extends Simulation{

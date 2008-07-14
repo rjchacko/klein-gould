@@ -1,8 +1,16 @@
-package chris.ofc.apps;
+package chris.ofc.apps.old;
 
 
-import java.awt.Color;
-import java.io.File;
+/*
+ * 
+ * 	THERE IS A PROBLEM WITH THE WRITE DATA METHOD
+ * 	NOW THERE ARE TWO DATA FILES TO WRITE!!!!
+ * 
+ * 	CHECK THIS BEFORE USE!!!!!!
+ * 
+ */
+
+
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -11,9 +19,9 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.NfailDamage2D;
+import chris.ofc.old.NfailDamage2D;
 
-public class NFailApp extends Simulation {
+public class continueTapp2 extends Simulation {
 
 	Grid grid1 = new Grid ("Stress Lattice");
 	Grid grid2 = new Grid ("Failed Sites");
@@ -28,14 +36,16 @@ public class NFailApp extends Simulation {
 	
 
 	public static void main(String[] args) {
-		new Control(new NFailApp(), "OFC Model");
+		new Control(new continueTapp2(), "OFC Model");
 	}
 	
 	public void load(Control c) {
 		
-		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
+		params.add("Input Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
+		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/Research/Data/"));
 		params.add("Random Seed",0);
 		params.add("Animation", new ChoiceValue("On","Off"));
+		//params.addm("Auto Scale", new ChoiceValue("Yes", "No"));
 		params.add("Lattice Size",1<<9);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
@@ -47,7 +57,7 @@ public class NFailApp extends Simulation {
 		params.add("Residual Stress (\u03C3_r)",2.0);
 		params.add("\u03C3_r Noise", new ChoiceValue("Off","On"));
 		params.add("\u03C3_r width",Math.sqrt(Math.sqrt(2)));
-		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
+		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond"));
 		params.add("Interaction Radius (R)",(int)(50));
 		params.add("Minimum Interaction Radius (r)",0);
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.2,0,1));
@@ -66,7 +76,7 @@ public class NFailApp extends Simulation {
 		params.set("Number of Resets",model.time);
 		params.set("Number of Showers",model.showernumber);
 		
-		if (model.ShowGrid){
+		if (model.showering && model.ShowGrid){
 		
 			int[] foo = new int[model.N];
 	
@@ -80,7 +90,7 @@ public class NFailApp extends Simulation {
 			grid1.registerData(model.L,model.L,model.stress);
 			grid2.registerData(model.L, model.L, foo);
 				
-			if (params.sget("Record").equals("On")){
+			if (params.sget("Record").equals("On") && model.ShowGrid){
 				model.TakePicture(grid1);
 				model.TakePicture(grid2);
 				
@@ -98,8 +108,6 @@ public class NFailApp extends Simulation {
 
 	public void run() {
 		
-		// Initialize Model
-		
 		model = new NfailDamage2D(params);
 		
 		String anmt = params.sget("Animation");
@@ -110,8 +118,8 @@ public class NFailApp extends Simulation {
 		else{
 			model.ShowGrid=false;
 		}
-				
-		model.Initialize("Flat");
+		
+		model.Initialize(params);
 		
 		ScMax=model.GetMax(model.Sc);		
 
@@ -119,29 +127,22 @@ public class NFailApp extends Simulation {
 		
 		palette1 = new ColorPalette();
 		smooth   = new ColorGradient();
+		grid2.setColors(palette1);
 		
 		int max = model.GetMax(model.alive);
 
-		Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};
-		
-		palette1.setColor(0,Color.BLACK);
-		for (int i = 1 ; i <= max ; i++){
-			palette1.setColor(i,Carray[i%5]);
+		for (int i = 0 ; i <= max ; i++){
+			palette1.setColor(i,smooth.getColor(i, 0, max));
 		}
-		
-		grid2.setColors(palette1);
-		
-		
-		// Set up file
-		NfailDamage2D.PrintParams(model.outdir+File.separator+"Params.txt", params);	
-		model.WriteDataHeader();
+				
+		//model.WriteDataHeader(model.outfile1);
 		
 		
 		while(!(model.crack)) {
 			
 			model.Avalanche();
 
-			model.TakeData();
+			model.TakeData(model.outfile1,model.outfile2);
 			
 		}
 		

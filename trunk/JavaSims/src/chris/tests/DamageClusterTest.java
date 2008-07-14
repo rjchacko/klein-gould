@@ -12,8 +12,8 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.DamageClusters2D;
-import chris.ofc.NfailDamage2D;
+import chris.ofc.clusters.DamageClusters2D;
+import chris.ofc.old.NfailDamage2D;
 
 public class DamageClusterTest extends Simulation {
 

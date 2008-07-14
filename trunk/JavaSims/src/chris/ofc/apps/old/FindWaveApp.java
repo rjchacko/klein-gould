@@ -11,7 +11,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.NfailDamage2D;
+import chris.ofc.old.NfailDamage2D;
 
 public class FindWaveApp extends Simulation {
 

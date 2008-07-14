@@ -5,7 +5,7 @@
  * <http://www.opensourcephysics.org/>
  */
 
-package chris.ofc;
+package chris.ofc.clusters;
 
 
 /**
