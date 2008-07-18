@@ -12,7 +12,7 @@ public class TestApp extends Simulation {
 
 	double t;
 
-	public TestApp() {
+	public void load(Control c) {
 		params.add("Number", 0.1);
 	}
 

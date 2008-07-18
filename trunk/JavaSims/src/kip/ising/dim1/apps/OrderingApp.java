@@ -1,17 +1,21 @@
 package kip.ising.dim1.apps;
 
+import static java.lang.Math.PI;
+import static java.lang.Math.exp;
+import static java.lang.Math.sin;
+import static scikit.util.Utilities.format;
+
 import java.awt.Color;
 
-import static scikit.util.Utilities.format;
-import static scikit.util.Utilities.frame;
-import scikit.graphics.dim2.Plot;
-import scikit.dataset.*;
-import scikit.jobs.*;
-import scikit.jobs.params.ChoiceValue;
 import kip.ising.dim1.AbstractIsing;
 import kip.ising.dim1.FieldIsing;
 import kip.ising.dim1.Ising;
-import static java.lang.Math.*;
+import scikit.dataset.Accumulator;
+import scikit.graphics.dim2.Plot;
+import scikit.jobs.Control;
+import scikit.jobs.Job;
+import scikit.jobs.Simulation;
+import scikit.jobs.params.ChoiceValue;
 
 
 // TODO redundant
@@ -106,8 +110,8 @@ public class OrderingApp extends Simulation {
 		new Control(new OrderingApp(), "Growth for Ising Droplets");
 	}
 
-	public OrderingApp() {
-		frame(structurePlot);
+	public void load(Control c) {
+		c.frame(structurePlot);
 		params.add("Dynamics", new ChoiceValue("Ising Glauber", "Ising Metropolis", "Kawasaki Glauber", "Kawasaki Metropolis"));
 		params.add("Simulation type", new ChoiceValue("Ising", "Langevin"));
 		params.add("kR maximum", 20.0);

@@ -1,6 +1,7 @@
 package kip.md.apps.shaker;
 
-import static scikit.util.Utilities.*;
+import static scikit.util.Utilities.asList;
+import static scikit.util.Utilities.format;
 
 import java.util.ArrayList;
 
@@ -25,8 +26,8 @@ public class AnimateApp extends Simulation {
 		new Control(new AnimateApp(), "Particle Animation").getJob().throttleAnimation(true);
 	}
 	
-	public AnimateApp() {
-		frame(canvas);
+	public void load(Control c) {
+		c.frame(canvas);
 		params.add("Input file or directory", new FileValue("/Users/kbarros/Desktop/_c001s000100tracks.gdf"));
 		params.add("Data type", new ChoiceValue("Experiment", "Simulation"));
 		params.add("t start", 4000.0);

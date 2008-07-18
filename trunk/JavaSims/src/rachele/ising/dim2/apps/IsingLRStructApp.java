@@ -1,15 +1,17 @@
 package rachele.ising.dim2.apps;
 
-import rachele.ising.dim2.StructureFactor;
+import static scikit.util.Utilities.format;
+
+import java.awt.Color;
+
 import rachele.ising.dim2.IsingLR;
+import rachele.ising.dim2.StructureFactor;
 import scikit.graphics.dim2.Grid;
+import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import scikit.graphics.dim2.Plot;
-import java.awt.Color;
-import static scikit.util.Utilities.*;
 
 public class IsingLRStructApp extends Simulation {
 	public static void main(String[] args) {
@@ -28,8 +30,8 @@ public class IsingLRStructApp extends Simulation {
 	StructureFactor structure;
 	IsingLR sim;
 	
-	public IsingLRStructApp() {
-		frameTogether("Plots", fieldDisplay, structureDisplayH, structureDisplayV, circleStructureDisplay);
+	public void load(Control c) {
+		c.frameTogether("Plots", fieldDisplay, structureDisplayH, structureDisplayV, circleStructureDisplay);
 		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Kawasaki Metropolis", "Ising Glauber", "Ising Metropolis"));
 		params.addm("Scale colors", new ChoiceValue("False", "True"));
 		//params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());

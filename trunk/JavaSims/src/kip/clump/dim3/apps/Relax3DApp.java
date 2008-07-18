@@ -4,7 +4,6 @@ import static java.lang.Math.cos;
 import static java.lang.Math.exp;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.sqr;
-import static scikit.util.Utilities.frame;
 
 import java.awt.Color;
 
@@ -31,8 +30,8 @@ public class Relax3DApp extends Simulation {
 		new Control(new Relax3DApp(), "Clump Model");
 	}
 	
-	public Relax3DApp() {
-		frame(plot, maxplot, grid);
+	public void load(Control c) {
+		c.frame(plot, maxplot, grid);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("T", 0.105);
 		params.addm("dt", 1.0);

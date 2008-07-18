@@ -6,7 +6,6 @@ import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.j0;
 import static scikit.util.Utilities.format;
-import static scikit.util.Utilities.frame;
 
 import java.awt.Color;
 
@@ -28,8 +27,8 @@ public class ClumpRadialApp extends Simulation {
 	
 	// dim 2: T = 0.133
 	// dim 3: T = 0.0865
-	public ClumpRadialApp() {
-		frame(plot);
+	public void load(Control c) {
+		c.frame(plot);
 		params.addm("Saddle", new ChoiceValue("Yes", "No"));
 		params.add("Dimension", new ChoiceValue("3", "2"));
 		params.addm("T", 0.0865);

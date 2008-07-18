@@ -1,9 +1,12 @@
 package kip.fun;
 
+import static java.lang.Math.exp;
+import static java.lang.Math.min;
+import static java.lang.Math.random;
 import scikit.graphics.dim2.Grid;
-import scikit.jobs.*;
-import static java.lang.Math.*;
-import static scikit.util.Utilities.frame;
+import scikit.jobs.Control;
+import scikit.jobs.Job;
+import scikit.jobs.Simulation;
 
 
 public class SpinodalApp extends Simulation {
@@ -16,8 +19,8 @@ public class SpinodalApp extends Simulation {
 		new Control(new SpinodalApp(), "Spinodal Model");
 	}
     
-    public SpinodalApp() {
-		frame(grid);
+	public void load(Control c) {
+		c.frame(grid);
         params.add("Size", 128);
         params.addm("Temperature", 2.0);
         params.addm("Interaction", 0.5);

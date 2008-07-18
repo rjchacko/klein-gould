@@ -1,7 +1,5 @@
 package kip.clump.dim3.apps;
 
-import static scikit.util.Utilities.frame;
-
 import java.awt.Color;
 
 import kip.clump.dim3.AbstractClump3D;
@@ -28,8 +26,8 @@ public class Clump3DApp extends Simulation {
 		new Control(new Clump3DApp(), "Clump Model");
 	}
 	
-	public Clump3DApp() {
-		frame(plot, grid);
+	public void load(Control c) {
+		c.frame(plot, grid);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("T", 0.09);
 		params.addm("dt", 1.0);

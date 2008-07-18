@@ -6,7 +6,6 @@ import static java.lang.Math.exp;
 import static java.lang.Math.sinh;
 import static java.lang.Math.tanh;
 import static scikit.util.Utilities.format;
-import static scikit.util.Utilities.frame;
 
 import java.awt.Color;
 
@@ -35,8 +34,8 @@ public class RelaxationApp extends Simulation {
 		new Control(new RelaxationApp(), "Ising Magnetization Relaxation");
 	}
 
-	public RelaxationApp() {
-		frame(magnetPlot, derivPlot);
+	public void load(Control c) {
+		c.frame(magnetPlot, derivPlot);
 		params.add("Dynamics", new ChoiceValue("Ising Glauber", "Ising Metropolis"));
 		params.add("Simulation type", new ChoiceValue("Ising", "Langevin"));
 		params.add("Random seed", 0);

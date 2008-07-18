@@ -1,13 +1,12 @@
 package kip.ising.dim2.apps;
 
+import static scikit.util.Utilities.format;
 import kip.ising.dim2.IsingLR;
+import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import scikit.graphics.dim2.Grid;
-import static scikit.util.Utilities.format;
-import static scikit.util.Utilities.frame;
 
 
 public class IsingLRApp extends Simulation {
@@ -19,8 +18,8 @@ public class IsingLRApp extends Simulation {
 	int dx;
 	IsingLR sim;
 	
-	public IsingLRApp() {
-		frame(grid);
+	public void load(Control c) {
+		c.frame(grid);
 		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Kawasaki Metropolis", "Ising Glauber", "Ising Metropolis"));
 		params.addm("Scale colors", new ChoiceValue("False", "True"));
 		params.add("Random seed", 0);

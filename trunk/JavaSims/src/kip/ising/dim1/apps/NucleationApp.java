@@ -36,8 +36,8 @@ public class NucleationApp extends Simulation {
 		new Control(new NucleationApp(), "Nucleation");
 	}
 	
-	public NucleationApp() {
-		frame(fieldPlot, profilePlot, nucTimes);
+	public void load(Control c) {
+		c.frame(fieldPlot, profilePlot, nucTimes);
 		params.add("Memory time", 20.0);
         params.add("Profile type", new ChoiceValue("None", "Early", "Late"));
 		params.add("Data path", "");

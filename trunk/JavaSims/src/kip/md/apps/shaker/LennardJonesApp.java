@@ -29,8 +29,8 @@ public class LennardJonesApp extends Simulation {
 		new Control(new LennardJonesApp(), "Lennard Jones Simulation");
 	}
 	
-	public LennardJonesApp() {
-		frame(canvas);
+	public void load(Control c) {
+		c.frame(canvas);
 		params.add("Output directory", new DirectoryValue(""));
 		params.add("Write files", new ChoiceValue("Yes", "No"));
 		params.add("Topology", new ChoiceValue("Disk", "Torus"));
