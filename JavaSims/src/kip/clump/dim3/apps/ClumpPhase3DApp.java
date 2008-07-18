@@ -4,7 +4,6 @@ import static scikit.numerics.Math2.max;
 import static scikit.numerics.Math2.min;
 import static scikit.numerics.Math2.sqr;
 import static scikit.util.Utilities.format;
-import static scikit.util.Utilities.frame;
 
 import java.awt.Color;
 
@@ -30,8 +29,8 @@ public class ClumpPhase3DApp extends Simulation {
 		new Control(new ClumpPhase3DApp(), "Clump Model Stable Phase");
 	}
 	
-	public ClumpPhase3DApp() {
-		frame(grid, feplot, relplot);
+	public void load(Control c) {
+		c.frame(grid, feplot, relplot);
 		params.add("dt", 0.1);
 		params.add("R", 1300.0);
 		params.add("L", 2000.0);

@@ -1,14 +1,15 @@
 package kip.md.apps.shaker;
 
-import static java.lang.Math.*;
-import static scikit.util.Utilities.frame;
+import static java.lang.Math.PI;
+import static java.lang.Math.exp;
+import static java.lang.Math.sqrt;
 
 import java.awt.Color;
 
 import kip.md.Particle;
 import kip.md.ParticleContext;
-import scikit.dataset.Histogram;
 import scikit.dataset.Function;
+import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
@@ -25,8 +26,8 @@ public class VanHoveApp extends Simulation {
 		new Control(new VanHoveApp(), "Van Hove Analysis");
 	}
 
-	public VanHoveApp() {
-		frame(dist);
+	public void load(Control c) {
+		c.frame(dist);
 		params.add("Input directory", new DirectoryValue("/Users/kbarros/Desktop/data/binary/A=0.8 B=0.1 more"));
 		params.add("Diffusion coef.", 0.1);
 		params.add("t*", 5);

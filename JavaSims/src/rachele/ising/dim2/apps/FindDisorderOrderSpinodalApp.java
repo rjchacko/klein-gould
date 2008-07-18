@@ -21,7 +21,7 @@ public class FindDisorderOrderSpinodalApp  extends Simulation{
 		new Control(new FindDisorderOrderSpinodalApp(), "Ising Field");
 	}
 
-	public FindDisorderOrderSpinodalApp() {
+	public void load(Control c) {
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Circle", "Square"));
 		params.addm("Noise", new ChoiceValue("Off","On"));

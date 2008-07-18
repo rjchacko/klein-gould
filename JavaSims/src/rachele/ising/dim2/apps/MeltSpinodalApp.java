@@ -1,26 +1,28 @@
 package rachele.ising.dim2.apps;
 
 import static java.lang.Math.PI;
+import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.j1;
-import static scikit.util.Utilities.frame;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+
 import rachele.ising.dim2.IsingField2D;
 import rachele.ising.dim2.StructureFactor;
 import rachele.util.FileUtil;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
+import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
-import scikit.jobs.Simulation;
-import static java.lang.Math.*;
-//import rachele.util.FileUtil;
 
 public class MeltSpinodalApp extends Simulation{
     Grid grid = new Grid("Phi(x)");
@@ -34,9 +36,9 @@ public class MeltSpinodalApp extends Simulation{
 		new Control(new MeltSpinodalApp(), "Ising Field");
 	}
 	
-	public MeltSpinodalApp() {
+	public void load(Control c) {
 		
-		frame(grid);
+		c.frame(grid);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue( "Circle","Square"));
 		params.addm("Noise", new ChoiceValue("Off","On"));

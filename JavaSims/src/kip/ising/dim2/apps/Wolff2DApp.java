@@ -1,16 +1,14 @@
 package kip.ising.dim2.apps;
 
-import static scikit.util.Utilities.frameTogether;
-
 import java.awt.Color;
 
+import kip.util.Complex;
+import scikit.graphics.ColorPalette;
+import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DoubleValue;
-import scikit.graphics.ColorPalette;
-import scikit.graphics.dim2.Grid;
-import kip.util.Complex;
 
 class Ising {
 	public static final double Tc = 2.0/Math.log(1.0+Math.sqrt(2.0));
@@ -90,8 +88,8 @@ public class Wolff2DApp extends Simulation {
 		new Control(new Wolff2DApp(), "Clump Model");
 	}
 
-	public Wolff2DApp() {
-		frameTogether("Spins", grid, grid2);
+	public void load(Control c) {
+		c.frameTogether("Spins", grid, grid2);
 		params.add("L", 512);
 		//params.addm("T", Ising.Tc);
 		params.addm("T", new DoubleValue(Ising.Tc, Ising.Tc-0.2, Ising.Tc+0.2).withSlider());		

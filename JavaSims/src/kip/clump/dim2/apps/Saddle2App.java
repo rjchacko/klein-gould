@@ -9,7 +9,6 @@ import static scikit.numerics.Math2.hypot;
 import static scikit.numerics.Math2.j1;
 import static scikit.numerics.Math2.sqr;
 import static scikit.util.Utilities.format;
-import static scikit.util.Utilities.frame;
 import kip.util.Random;
 import scikit.graphics.GrayScale;
 import scikit.graphics.dim2.Grid;
@@ -46,8 +45,8 @@ public class Saddle2App extends Simulation {
 		new Control(new Saddle2App(), "Clump Optimizer");
 	}
 
-	public Saddle2App() {
-		frame(grid, plot);
+	public void load(Control c) {
+		c.frame(grid, plot);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("T", 0.14);
 		params.addm("dt", 0.1);

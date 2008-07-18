@@ -1,15 +1,17 @@
 package rachele.demos.apps;
 
+import static java.lang.Math.log;
+import static java.lang.Math.pow;
+import static scikit.util.Utilities.asList;
+
+import java.awt.Color;
+
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
-import static scikit.util.Utilities.*;
-//import static scikit.util.Bounds.*;
-import static java.lang.Math.*;
-import java.awt.Color;
 import scikit.util.DoubleArray;
 
 public class SpinodalDecomp extends Simulation{
@@ -27,8 +29,8 @@ public class SpinodalDecomp extends Simulation{
 		new Control(new SpinodalDecomp(), "Spinodal Decomposition");
 	}
 	
-	public SpinodalDecomp(){
-		frame(plot);
+	public void load(Control c) {
+		c.frame(plot);
 		freeEngAcc = new Accumulator(dc);
 		freeEnergy = new double[noReps];
 		plot.setAutoScale(true);

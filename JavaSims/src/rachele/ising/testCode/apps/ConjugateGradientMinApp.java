@@ -10,8 +10,6 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-//import static scikit.util.Utilities.asList;
-import static scikit.util.Utilities.frame;
 
 public class ConjugateGradientMinApp extends Simulation{
 	Grid function = new Grid ("Function");
@@ -20,8 +18,8 @@ public class ConjugateGradientMinApp extends Simulation{
 	public int size = 21;
 	public double conjGradOutput [] = new double [4];
 
-	public ConjugateGradientMinApp() {
-		frame(function);
+	public void load(Control c) {
+		c.frame(function);
 		params.addm("Minimization", new ChoiceValue("Conjugate Gradient", "SteepestDecent"));
 	}
 	

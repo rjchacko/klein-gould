@@ -1,7 +1,5 @@
 package kip.md.apps.shaker;
 
-import static scikit.util.Utilities.frame;
-
 import java.awt.Color;
 
 import kip.md.Particle;
@@ -28,8 +26,8 @@ public class AnalysisApp extends Simulation {
 		new Control(new AnalysisApp(), "Non-Gaussian Analysis");
 	}
 	
-	public AnalysisApp() {
-		frame(r2plot, alpha);		
+	public void load(Control c) {
+		c.frame(r2plot, alpha);		
 		params.add("Input directory", new DirectoryValue("/Users/kbarros/Desktop/data/binary/A=0.8 B=0.1 more"));
 		params.addm("Log scale", new ChoiceValue("True", "False"));
 		params.add("Particle ID", 1);

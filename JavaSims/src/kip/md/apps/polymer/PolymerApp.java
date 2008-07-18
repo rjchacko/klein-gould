@@ -31,8 +31,8 @@ public class PolymerApp extends Simulation {
 		new Control(new PolymerApp(), "Polymer Simulation");
 	}
 	
-	public PolymerApp() {
-		frame(canvas);
+	public void load(Control c) {
+		c.frame(canvas);
 		params.add("Output directory", new DirectoryValue());
 		params.add("Write files", new ChoiceValue("No", "Yes"));
 		params.add("Topology", new ChoiceValue("Disk", "Torus"));
