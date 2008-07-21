@@ -25,7 +25,7 @@ public class HistUtil extends Simulation{
 	boolean loglog;
 	
 	public static void main(String[] args) {
-		new Control(new HistUtilV2(), "Create 1D Histogram from TAB");
+		new Control(new HistUtil(), "Create 1D Histogram from TAB");
 	}
 	
 	public void load(Control c) {
