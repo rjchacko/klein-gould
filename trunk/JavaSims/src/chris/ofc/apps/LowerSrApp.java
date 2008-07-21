@@ -13,12 +13,12 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.ForceSf;
+import chris.ofc.LowerSr;
 import chris.ofc.QuenchedDamage;
 
-public class ForceSfApp extends Simulation{
+public class LowerSrApp extends Simulation{
 
-	ForceSf model;
+	LowerSr model;
 	
 	Grid gridS = new Grid ("Stress");
 	Grid gridL = new Grid ("Lives");
@@ -32,34 +32,47 @@ public class ForceSfApp extends Simulation{
 	Boolean pretime, broken;
 	
 	public static void main(String[] args) {
-		new Control(new ForceSfApp(), "OFC Parameters");
+		new Control(new LowerSrApp(), "OFC Parameters");
 	}
 	
 public void load(Control c) {
 		
+		/*
+		 * 
+		 * 
+		 * REMEMBER, we trick Damage@D into thinking we are running in EQ MODE !!!!!!!!
+		 * 
+		 */
+	
+	
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
-		params.add("Mode", new ChoiceValue("Earthquake","Damage"));
+		params.add("Mode");
 		params.add("Random Seed",0);
 		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
 		params.add("Interaction Radius (R)",(int)(30));
 		params.add("Lattice Size",1<<8);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
-		params.add("Equilibrate Time",(int)0);
-		params.add("Number of Lives",2000000);
+		params.add("Equilibrate Time");
+		params.add("Number of Lives");
 		params.add("Life Distribution", new ChoiceValue("Constant","Gaussian", "Step Down"));
 		params.add("LD Width",0.0);
 		params.add("Failure Stress (\u03C3_f)",2.0);
 		params.add("\u03C3_f width",(double)(0));
-		params.add("d\u03C3_f",0.0001);
 		params.add("Residual Stress (\u03C3_r)",1);
 		params.add("\u03C3_r width",0.);
+		params.add("d\u03C3_r",0.2);
+		params.add("d\u03C3_r width",0);
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.01,0,1));
 		params.add("\u03B1 Width", (double)(0));
 		params.add("Animation", new ChoiceValue("Off","On"));
 		params.addm("Record", new ChoiceValue("Off","On"));
-		params.add("\u03C3_f (t)");
 		params.add("Last Avalanche Size");
 		params.add("<Lives Left>");
+		
+		params.set("Mode", "Earthquake");
+		params.set("Equilibrate Time",0);
+		params.set("Number of Lives",1E7);
+
 		
 		c.frameTogether("OFC Model with Damage", gridS, gridL);
 		
@@ -69,16 +82,14 @@ public void load(Control c) {
 
 		double AS;
 		
-		broken = ((AS =  model.getAS()) <= 0);
+		AS = model.getAS();
 		
 		if(pretime){
-			params.set("\u03C3_f (t)",model.getTime(-1));
 			params.set("Last Avalanche Size",AS);
 		}
 		else{
-			params.set("\u03C3_f (t)",model.getSfofT());
 			params.set("Last Avalanche Size",AS);
-			if(!(model.getEQmode())) params.set("<Lives Left>",fmt.format(model.getAveLL()));
+			params.set("<Lives Left>",model.approxFL());
 		}
 		
 		if(model.draw()){
@@ -113,7 +124,7 @@ public void load(Control c) {
 		broken = false;
 		
 		// Setup model
-		model = new ForceSf(params);
+		model = new LowerSr(params);
 		model.Initialize();
 		
 		// Setup color scheme

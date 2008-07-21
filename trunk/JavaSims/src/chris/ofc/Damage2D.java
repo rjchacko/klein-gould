@@ -22,7 +22,7 @@ public class Damage2D {
 	private double L, N, alpha0, alphaW, Sf0, Sr0;
 	protected double Sf[];
 	private double 	Sr[], SfW, SrW, stress[], R, t1, t2,
-					dt, pt, Scum[], Omega, tMAX;
+					dt, pt, Scum[], Omega, tMAX, isites;
 	
 	private String shape, bc;
 	private boolean alphaN, SfN, SrN, killed[];
@@ -201,7 +201,7 @@ public class Damage2D {
 		return;
 	}
 	
-	private int[] SetupNlives(boolean md){
+	protected int[] SetupNlives(boolean md){
 		
 		
 		if (!(EQmode)){
@@ -237,7 +237,7 @@ public class Damage2D {
 
 		pt++;
 		
-		Nrichter = 1; // the forced failure
+		Nrichter = seeds.length; // the forced failure
 		
 		int[] avlnch = DistributeStress(seeds);
 		ResetPlate(seeds);
@@ -262,6 +262,7 @@ public class Damage2D {
 		t2+=dt;
 		
 		Nrichter = seeds.length; // the forced failure(s)
+		isites = Nrichter;
 		
 		int[] avlnch = DistributeStress(seeds);
 		ResetPlate(seeds);
@@ -277,6 +278,7 @@ public class Damage2D {
 		Omega = StressMetric();
 		
 		ForceFailure();
+		if(seeds == null) return false;
 				
 		return (EQmode) ? (t1 < tMAX) : (!crack);
 	}
@@ -301,12 +303,12 @@ public class Damage2D {
 		seeds = CopyArray.copyArray(imax,1);
 		
 		ManageLives(seeds);
-		
+
 		return;
 	}
 		
 	protected void ManageLives(int[] sites){
-		
+
 		for (int jj = 0 ; jj < sites.length ; jj++){
 		
 			int imax = sites[jj];
@@ -322,7 +324,6 @@ public class Damage2D {
 
 				LivesLeft[alive[imax]]--;
 				LivesLeft[alive[imax]-1]++;
-
 				alive[imax]--;
 			}	
 			// do independent of time and mode
@@ -474,6 +475,7 @@ public class Damage2D {
 				for (int jj = 0 ; jj < length; jj++){
 					stress[ds[jj]] = Sr[ds[jj]];
 					alive[ds[jj]+(int)N] = 1;
+	
 				}
 			}
 		}
@@ -510,6 +512,8 @@ public class Damage2D {
 	private void CascadeSites(int[] ds){
 		
 		if(ds == null) return;
+		
+		adjustNF(ds);
 		
 		int length = ds.length;
 		
@@ -566,7 +570,7 @@ public class Damage2D {
 			
 			/*
 			 * 
-			 * NB	For ForceSf this LviesLeft[0] is probably not a denominator 
+			 * NB	For ForceSf this LivesLeft[0] is probably not a denominator 
 			 * 		since sites that fail once are, in principle, dead. Maybe run in 
 			 * 		damage mode with Nlives = 1?
 			 * 
@@ -581,13 +585,15 @@ public class Damage2D {
 	
 	public void WriteDataHeaders(){
 		
-		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","N_sts/avl","Omega");
-		PrintUtil.printlnToFile(outfile2,"Sweeps","t_vel","N_lvs=0","N_lvs=1",". . . ","N_lvs=N_max");
+		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","N_sts/avl","Omega","Init Sites","N_dead");
+		PrintUtil.printlnToFile(outfile2,"Sweeps","t_vel","N_lvs=0","N_lvs=1","N_lvs=N_max/2","N_lvs=N_max-1","N_lvs=N_max");
+		;
 		
 	}
 	
 	public void TakeDate(){
-		PrintUtil.printlnToFile(outfile1,t1,t2,Nrichter,Omega);
+		PrintUtil.printlnToFile(outfile1,t1,t2,Nrichter,Omega,isites, LivesLeft[0]);
+		PrintUtil.printlnToFile(outfile2,t1,t2,LivesLeft[0],LivesLeft[1],LivesLeft[(int)(Nlives0/2)],LivesLeft[Nlives0-1],LivesLeft[Nlives0]);
 	}
 	
 	public static void PrintParams(String fout, Parameters prms){
@@ -718,6 +724,11 @@ public class Damage2D {
 		
 	}
 	
+	public double getSr(int site){
+		
+		return (site < N) ? Sr[site] : Integer.MIN_VALUE;
+	}
+	
 	protected void setT1T2(){
 		
 		t2 = t1;
@@ -732,6 +743,14 @@ public class Damage2D {
 		
 		return;
 	}
-
 	
+	protected void adjustNF(int[] sites){
+		return;
+	}
+	
+	protected void killSite(int site){
+		
+		if(site < N) alive[site] = 0;
+		return;
+	}
 }
