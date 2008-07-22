@@ -4,6 +4,8 @@ public class CopyArray {
 
 	public static int[] copyArray(int[] array, int length){
 		
+		if(length == 0) return null;
+		
 		int[] ret = new int[length];
 		
 		for (int jj = 0 ; jj < length; jj++){
@@ -15,6 +17,8 @@ public class CopyArray {
 	}
 	
 	public static double[] copyArray(double[] array, int length){
+		
+		if(length == 0) return null;
 		
 		double[] ret = new double[length];
 		
@@ -28,12 +32,16 @@ public class CopyArray {
 	
 	public static int[] copyArray(int array, int length){
 		
+		if(length == 0) return null;
+		
 		int[] ret = {array};
 		
 		return ret; 
 	}
 	
 	public static double[] copyArray(double array, int length){
+		
+		if(length == 0) return null;
 		
 		double[] ret = {array};
 		
