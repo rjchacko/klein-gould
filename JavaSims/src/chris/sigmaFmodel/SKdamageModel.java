@@ -19,7 +19,7 @@ public class SKdamageModel {
 	// Model Parameters
 	private double  R, L, N, Sr0, Sr[], SrW, dSr, dSrW, Sf0, Sf[], SfW, alpha0, alphaW,
 					stress[], Scum[][], t1, t2, t3, dt2, dt3, Nrichter, numFailures[],
-					globalFailures[], Omega1, Omega2, Omega3, sbarT, nfbar, dsRMS;
+					globalFailures[], Omega1, Omega2, Omega3, sbarT, nfbar, dsRMS, sT;
 
 	private boolean SrN, dSrN, SfN, alphaN, deadSite[], ks[];
 	private Random  rand;
@@ -362,7 +362,7 @@ public class SKdamageModel {
 	
 	public void writeDataHeaders(){
 		
-		PrintUtil.printlnToFile(datafile1,"t1","t2","t3","N_Sts/avlnch","<s-s_f>_rms","<s>(t)","<failures>");
+		PrintUtil.printlnToFile(datafile1,"t1","t2","t3","N_Sts/avlnch","<s-s_f>_rms","<s>(t)","<s(t)>","<failures>");
 		PrintUtil.printlnToFile(datafile2,"t1","t2","t3", "Omega1","Omega2","Omega3");
 		return;
 	}
@@ -373,7 +373,7 @@ public class SKdamageModel {
 		
 		if(Nrichter > 1) RMS = Math.sqrt(dsRMS/(Nrichter - 1));
 		
-		PrintUtil.printlnToFile(datafile1,t1, t2, t3, Nrichter, RMS, sbarT, nfbar);
+		PrintUtil.printlnToFile(datafile1,t1, t2, t3, Nrichter, RMS, sbarT, sT, nfbar);
 		PrintUtil.printlnToFile(datafile2,t1, t2, t3, Omega1, Omega2, Omega3);
 		return;
 	}
@@ -475,6 +475,7 @@ public class SKdamageModel {
 		Omega2 = Omegas[1];
 		Omega3 = Omegas[2];
 		
+		sT = Scum[0][(int)(N/3)]/aTime[0];
 		return (Sbar[0]/aTime[0]);
 	}
 	
