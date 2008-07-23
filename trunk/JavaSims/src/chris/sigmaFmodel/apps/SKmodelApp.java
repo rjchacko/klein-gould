@@ -2,6 +2,7 @@ package chris.sigmaFmodel.apps;
 
 import java.awt.Color;
 import java.io.File;
+import java.text.DecimalFormat;
 
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -18,6 +19,7 @@ public class SKmodelApp extends Simulation{
 	
 	SKdamageModel model;
 	
+	private DecimalFormat fmtD = new DecimalFormat("00000000");
 
 	Grid gridS = new Grid ("Stress");
 	Grid gridF = new Grid ("Failures");
@@ -41,18 +43,18 @@ public class SKmodelApp extends Simulation{
 		params.add("Interaction Radius (R)", (int)(30));
 		params.add("Lattice Size (L)", (int) 1<<8);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
-		params.add("Failure Stress (\u03C3_f)", (double) 2.0);
+		params.add("Failure Stress (\u03C3_f)", (double) 20.0);
 		params.add("\u03C3_f width", (double)(0));
-		params.add("Residual Stress (\u03C3_r)", (double) 1.0);
+		params.add("Residual Stress (\u03C3_r)", (double) 19.0);
 		params.add("\u03C3_r width", (double)0);
-		params.add("d(\u03C3_r)", (double) 0.2);
+		params.add("d(\u03C3_r)", (double) 0.5);
 		params.add("d(\u03C3_r) width", (double) 0);
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.01,0,1));
 		params.add("\u03B1 width", (double)(0));
 		params.add("Animation", new ChoiceValue("Off","On"));
 		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("Last Avalanche Size");
-		params.add("<Lives Left>");
+		params.add("<stress>");
 		
 		c.frameTogether("S-K Damage Model", gridS, gridF);
 		
@@ -61,6 +63,7 @@ public class SKmodelApp extends Simulation{
 
 	public void run() {
 
+		params.set("<stress>", "Initializing");
 		
 		model = new SKdamageModel(params);
 		
@@ -79,12 +82,14 @@ public class SKmodelApp extends Simulation{
 			Job.animate();
 		}
 		
+		params.set("<stress>", "Finished");
+		
 	}
 
 	public void animate() {
 		
-		params.set("<Lives Left>", model.getTime(1));
-		params.set("Last Avalanche Size", model.getAvlnchSize());
+		params.set("<stress>", model.getSbar());
+		params.set("Last Avalanche Size", fmtD.format(model.getAvlnchSize()));
 		
 		if(!draw) return;
 	
@@ -120,7 +125,7 @@ public class SKmodelApp extends Simulation{
 	
 		Color[] Carray = new Color[]{Color.YELLOW,Color.BLUE,Color.RED,Color.GREEN,Color.GRAY};		
 		palette1.setColor(0,Color.BLACK);
-		for (int jj = 1 ; jj < model.Nint() ; jj++){
+		for (int jj = 1 ; jj < model.intN() ; jj++){
 			palette1.setColor(jj,Carray[jj%5]);
 		}
 		palette1.setColor(0,Color.WHITE);

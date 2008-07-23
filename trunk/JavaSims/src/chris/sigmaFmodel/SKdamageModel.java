@@ -17,22 +17,20 @@ import chris.util.PrintUtil;
 public class SKdamageModel {	
 	
 	// Model Parameters
-	@SuppressWarnings("unused")
 	private double  R, L, N, Sr0, Sr[], SrW, dSr, dSrW, Sf0, Sf[], SfW, alpha0, alphaW,
-					stress[], Scum[][], t1, t2, t3, Nrichter, numFailures[], globalFailures[];
-	@SuppressWarnings("unused")
+					stress[], Scum[][], t1, t2, t3, dt2, dt3, Nrichter, numFailures[],
+					globalFailures[], Omega1, Omega2, Omega3, sbarT, nfbar, dsRMS;
+
 	private boolean SrN, dSrN, SfN, alphaN, deadSite[], ks[];
 	private Random  rand;
 	private String  shape, bc;
 	private int     alive[], seedsites[], nbs0, nbs[], liveSites[];
 	private LatticeNeighbors neighbors;
 	
-	// Data Collection Parmeters
-	@SuppressWarnings("unused")
-	private String outdir, datafile1;
+	// Data Collection Parameters
+	private String outdir, datafile1, datafile2, picdir;
 	
 	// I/O Parameters
-	private String picdir;
 	private DecimalFormat fmtI = new DecimalFormat("00000000");
 	
 	
@@ -71,9 +69,11 @@ public class SKdamageModel {
 		SrN    = (SrW > 0);
 		SfN    = (SfW > 0);
 		alphaN = (alphaW > 0);
-
+		sbarT  = 0;
+		
 		picdir    = outdir +"/GridPics/";
-		datafile1 = outdir + File.separator + "Data.txt"; 
+		datafile1 = outdir + File.separator + "StressData.txt"; 
+		datafile2 = outdir + File.separator + "MetricData.txt"; 
 		DirUtil.MkDir(picdir);
 	
 		InitializeArrays();
@@ -83,18 +83,18 @@ public class SKdamageModel {
 	
 	private void InitializeArrays(){
 		
-		Sr             = new double[Nint()];
-		Sf             = new double[Nint()];
-		stress         = new double[Nint()];
-		Scum           = new double[3][Nint()];
-		alive          = new int[Nint()];
-		numFailures    = new double[Nint()];
-		deadSite       = new boolean[Nint()];
-		ks             = new boolean[Nint()];
-		globalFailures = new double[Nint()];
-		liveSites	   = new int[Nint()];
+		Sr             = new double[intN()];
+		Sf             = new double[intN()];
+		stress         = new double[intN()];
+		Scum           = new double[3][intN()];
+		alive          = new int[intN()];
+		numFailures    = new double[intN()];
+		deadSite       = new boolean[intN()];
+		ks             = new boolean[intN()];
+		globalFailures = new double[intN()];
+		liveSites	   = new int[intN()];
 		
-		for (int jj = 0 ; jj < Nint() ; jj++){
+		for (int jj = 0 ; jj < intN() ; jj++){
 			
 			liveSites[jj]      = jj;
 			alive[jj]          = 1;
@@ -114,13 +114,13 @@ public class SKdamageModel {
 				
 			}
 			if(SrN){
-				Sr[jj] = Sr0 + SrW*rand.nextDouble();
+				Sr[jj] = Sr0 + SrW*(0.5 - rand.nextDouble());
 			}
 			else{
 				Sr[jj] = Sr0;
 			}
 			if(SfN){
-				Sf[jj] = Sf0 + SfW*rand.nextDouble();
+				Sf[jj] = Sf0 + SfW*(0.5 - rand.nextDouble());
 			}
 			else{
 				Sf[jj] = Sf0;
@@ -170,56 +170,71 @@ public class SKdamageModel {
 		Nrichter = 0;
 		
 		seedsites = forceFailure();
-		if (seedsites == null) return false;
+		if (sysFail()) return false;
 		
 		Nrichter++; // the forced failure
 		
 		while((seedsites = distributeStress(seedsites)) != null);
 		
+		sbarT = ergMetric();
+		
 		return true;
+	}
+	
+	private int[] forceFailure(){
+		
+		int trialsite;
+		int length;
+		double trialMove;
+		
+		dt2   = 0;
+		dt3   = 0;
+		dsRMS = 0;
+
+		if ((length = liveSites.length) == 0) return null;
+		
+	
+		while(true){
+			trialsite = liveSites[rand.nextInt(length)];
+			trialMove = Sf[trialsite] - (Sr[trialsite] + (Sf[trialsite] - Sr[trialsite])*rand.nextDouble());
+			dt3 += trialMove;
+			Sf[trialsite] -= trialMove;
+			dt2++;
+			if(stress[trialsite] > Sf[trialsite]) break;	
+		}
+		t1++;
+		t2 += dt2;
+		t3+= dt3;
+		
+		return CopyArray.copyArray(trialsite,1);
 	}
 	
 //	private int[] forceFailure(){
 //		
-//		int trialsite;
-//		int length;
-//		double dt3;
+//		int imax = 0;
 //		
-//		if ((length = liveSites.length) == 0) return null;
-//		
-//	
-//		while(true){
-//			trialsite = liveSites[rand.nextInt(length)];
-//			dt3 = Sf[trialsite] - (Sr[trialsite] + (Sf[trialsite] - Sr[trialsite])*rand.nextDouble());
-//			t3 += dt3;
-//			Sf[trialsite] -= dt3;
-//			t2++;
-//			if(stress[trialsite] > Sf[trialsite]) break;	
+//		for (int jj = 0 ; jj < Nint() ; jj++){
+//			if(stress[jj] > stress[imax]) imax = jj;
 //		}
+//		
+//		if(stress[imax] == 0) return null;
+//		
+//		double dsM = Sf[imax]-stress[imax];
+//		
+//		for (int jj = 0 ; jj < Nint() ; jj++){
+//			stress[jj] += dsM;
+//		}
+//		
+//		int[] ret = {imax};
+//		
 //		t1++;
 //		
-//		return CopyArray.copyArray(trialsite,1);
+//		return ret;
 //	}
 	
-	private int[] forceFailure(){
+	private boolean sysFail(){
 		
-		int imax = 0;
-		
-		for (int jj = 0 ; jj < Nint() ; jj++){
-			if(stress[jj] > stress[imax]) imax = jj;
-		}
-		
-		double dsM = Sf[imax]-stress[imax];
-		
-		for (int jj = 0 ; jj < Nint() ; jj++){
-			stress[jj] += dsM;
-		}
-		
-		int[] ret = {imax};
-		
-		t1++;
-		
-		return ret;
+		return (seedsites == null);
 	}
 	
 	private int[] distributeStress(int[] sites){
@@ -227,7 +242,7 @@ public class SKdamageModel {
 		int Nalive, dsnbs[], newlykilled[], counter;
 		double release;
 		
-		newlykilled = new int[Nint()];
+		newlykilled = new int[intN()];
 		counter     = 0;
 		
 		if (liveSites.length == 0) return null;
@@ -253,10 +268,7 @@ public class SKdamageModel {
 				if( !(ks[dsnbs[kk]]) && (alive[dsnbs[kk]]*stress[dsnbs[kk]] > Sf[dsnbs[kk]]) ){
 					ks[dsnbs[kk]] = true;
 					newlykilled[counter++] = dsnbs[kk];
-					/*
-					 * Print out sites and make sure no one ius failing multiple times per time step!!!
-					 * 
-					 */
+					dsRMS += (stress[dsnbs[kk]] - Sf[dsnbs[kk]])*(stress[dsnbs[kk]] - Sf[dsnbs[kk]]);
 				}
 			}
 		}
@@ -278,7 +290,7 @@ public class SKdamageModel {
 			}
 			else{
 				alive[st]  = 1;
-				Sf[st]     = nextSf(st);
+				Sf[st]     = nextSf(st); // ASK / THINK ABOUT ORDER
 				Sr[st]     = nextSr(st);
 				ks[st]     = false;
 				stress[st] = Sr[st];
@@ -305,34 +317,41 @@ public class SKdamageModel {
 		numFailures[site] = -1;
 		stress[site]      = 0;
 		
-		int[] foo = new int[liveSites.length - 1];
-		for (int jj = 0 ; jj < site ; jj++){
-			foo[jj] = liveSites[jj];
-		}
-		for (int jj = site+1 ; jj < Nint() ; jj++){
-			foo[jj] = liveSites[jj];
-		}
-		liveSites = foo;
+		int Nlength = liveSites.length - 1;
 		
+		int[] foo   = new int[Nlength];
+		int counter = 0;
+		
+		for (int jj = 0 ; jj < (Nlength + 1) ; jj++){
+			if(liveSites[jj] == site) continue;
+			foo[counter++] = liveSites[jj];
+		}
+
+		liveSites = foo;		
 		return;
 	}
 	
 	private double nextalpha(){
-		
-		return(alphaN) ? alpha0 + alphaW*rand.nextDouble() : alpha0;
+
+		return(alphaN) ? alpha0 + alphaW*(0.5 - rand.nextDouble()) : alpha0;
 	}
 	
 	private double nextSf(int site){
 		
-		return Sf0;
+		return (Sr[site] + (Sf[site] - Sr[site])*rand.nextDouble());
 	}
 	
 	private double nextSr(int site){
 		
-		return Sr0;
+		double val = Sr[site] - dSr;
+		
+		if(dSrN)     val += dSrW*(0.5 - rand.nextDouble());
+		if(val < 0) val = 0;	
+			
+		return val;
 	}
 	
-	public int Nint(){
+	public int intN(){
 		return (int) N;
 	}
 	
@@ -342,12 +361,20 @@ public class SKdamageModel {
 	}
 	
 	public void writeDataHeaders(){
-	
+		
+		PrintUtil.printlnToFile(datafile1,"t1","t2","t3","N_Sts/avlnch","<s-s_f>_rms","<s>(t)","<failures>");
+		PrintUtil.printlnToFile(datafile2,"t1","t2","t3", "Omega1","Omega2","Omega3");
 		return;
 	}
 	
 	public void takeData(){
 		
+		double RMS = -1;
+		
+		if(Nrichter > 1) RMS = Math.sqrt(dsRMS/(Nrichter - 1));
+		
+		PrintUtil.printlnToFile(datafile1,t1, t2, t3, Nrichter, RMS, sbarT, nfbar);
+		PrintUtil.printlnToFile(datafile2,t1, t2, t3, Omega1, Omega2, Omega3);
 		return;
 	}
 	
@@ -408,5 +435,52 @@ public class SKdamageModel {
 		return Nrichter;
 	}
 	
+	private double ergMetric(){
+		
+		double[] aTime = new double[]{t1, t2, t3};
+		double[] adt = new double[]{1, dt2, dt3};
+		double Sbar[] = new double[]{0, 0, 0};
+		double[] Omegas = new double[]{0, 0, 0};
+		
+		nfbar = 0;
+		
+		int aliveSites = liveSites.length;
+		
+		if(aliveSites == 0) return -1;
+		
+		for (int jj = 0 ; jj < intN() ; jj++){
+			for (int kk = 0 ; kk < 3 ; kk++){
+				Scum[kk][jj] += alive[jj]*stress[jj]*adt[kk];
+				Sbar[kk] += Scum[kk][jj];
+			}
+			nfbar += jj*globalFailures[jj];
+		}
+		nfbar = nfbar / N;
+		
+		for (int kk = 0 ; kk < 3 ; kk++){
+			Sbar[kk] = (Sbar[kk] / aliveSites);
+		}
+		
+		for (int jj = 0 ; jj < intN() ; jj++){
+			for (int kk = 0 ; kk < 3 ; kk++){
+				Omegas[kk] += (Scum[kk][jj] - Sbar[kk])*(Scum[kk][jj] - Sbar[kk]);
+			}
+		}
+		
+		for (int kk = 0 ; kk < 3 ; kk++){
+			Omegas[kk] = Omegas[kk] / (aTime[kk]*aTime[kk]*aliveSites);
+		}
+		
+		Omega1 = Omegas[0];
+		Omega2 = Omegas[1];
+		Omega3 = Omegas[2];
+		
+		return (Sbar[0]/aTime[0]);
+	}
+	
+	public double getSbar(){
+		
+		return sbarT;
+	}
 	
 }
