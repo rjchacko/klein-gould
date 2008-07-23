@@ -53,6 +53,8 @@ public class SKdamageModel {
 		R      = params.fget("Interaction Radius (R)");
 		L      = params.iget("Lattice Size (L)");
 		bc     = params.sget("Boundary Condtions");
+		Sf0    = params.fget("Failure Stress (\u03C3_f)");
+		SfW    = params.fget("\u03C3_f width");
 		Sr0    = params.fget("Residual Stress (\u03C3_r)");
 		SrW    = params.fget("\u03C3_r width");
 		dSr    = params.fget("d(\u03C3_r)");
@@ -171,34 +173,53 @@ public class SKdamageModel {
 		if (seedsites == null) return false;
 		
 		Nrichter++; // the forced failure
-
-		while((seedsites = distributeStress(seedsites)) != null){
-			System.out.println("stuck");
-		}
+		
+		while((seedsites = distributeStress(seedsites)) != null);
 		
 		return true;
 	}
 	
+//	private int[] forceFailure(){
+//		
+//		int trialsite;
+//		int length;
+//		double dt3;
+//		
+//		if ((length = liveSites.length) == 0) return null;
+//		
+//	
+//		while(true){
+//			trialsite = liveSites[rand.nextInt(length)];
+//			dt3 = Sf[trialsite] - (Sr[trialsite] + (Sf[trialsite] - Sr[trialsite])*rand.nextDouble());
+//			t3 += dt3;
+//			Sf[trialsite] -= dt3;
+//			t2++;
+//			if(stress[trialsite] > Sf[trialsite]) break;	
+//		}
+//		t1++;
+//		
+//		return CopyArray.copyArray(trialsite,1);
+//	}
+	
 	private int[] forceFailure(){
 		
-		int trialsite;
-		int length;
-		double dt3;
+		int imax = 0;
 		
-		if ((length = liveSites.length) == 0) return null;
-		
-	
-		while(true){
-			trialsite = liveSites[rand.nextInt(length)];
-			dt3 = Sf[trialsite] - (Sr[trialsite] + (Sf[trialsite] - Sr[trialsite])*rand.nextDouble());
-			t3 += dt3;
-			Sf[trialsite] -= dt3;
-			t2++;
-			if(stress[trialsite] > Sf[trialsite]) break;	
+		for (int jj = 0 ; jj < Nint() ; jj++){
+			if(stress[jj] > stress[imax]) imax = jj;
 		}
+		
+		double dsM = Sf[imax]-stress[imax];
+		
+		for (int jj = 0 ; jj < Nint() ; jj++){
+			stress[jj] += dsM;
+		}
+		
+		int[] ret = {imax};
+		
 		t1++;
 		
-		return CopyArray.copyArray(trialsite,1);
+		return ret;
 	}
 	
 	private int[] distributeStress(int[] sites){
@@ -213,7 +234,7 @@ public class SKdamageModel {
 		
 		failSites(sites);
 		
-		for (int jj = 1 ; jj < sites.length ; jj++){
+		for (int jj = 0 ; jj < sites.length ; jj++){
 		
 			int st = sites[jj]; 
 			Nalive = 0;
@@ -229,9 +250,13 @@ public class SKdamageModel {
 			for (int kk = 0 ; kk < dsnbs.length ; kk++){
 
 				stress[dsnbs[kk]] += alive[dsnbs[kk]]*release*(1-nextalpha());
-				if( !(ks[dsnbs[kk]]) && (alive[dsnbs[kk]]*stress[dsnbs[kk]] > Sr[dsnbs[kk]]) ){
+				if( !(ks[dsnbs[kk]]) && (alive[dsnbs[kk]]*stress[dsnbs[kk]] > Sf[dsnbs[kk]]) ){
 					ks[dsnbs[kk]] = true;
 					newlykilled[counter++] = dsnbs[kk];
+					/*
+					 * Print out sites and make sure no one ius failing multiple times per time step!!!
+					 * 
+					 */
 				}
 			}
 		}
@@ -252,10 +277,11 @@ public class SKdamageModel {
 				killSite(st);
 			}
 			else{
-				alive[st] = 1;
-				Sf[st]    = nextSf(st);
-				Sr[st]    = nextSr(st);
-				ks[st]    = false;
+				alive[st]  = 1;
+				Sf[st]     = nextSf(st);
+				Sr[st]     = nextSr(st);
+				ks[st]     = false;
+				stress[st] = Sr[st];
 			}
 		}
 		
@@ -375,6 +401,11 @@ public class SKdamageModel {
 			return -77;
 		}
 		
+	}
+	
+	public double getAvlnchSize(){
+		
+		return Nrichter;
 	}
 	
 	
