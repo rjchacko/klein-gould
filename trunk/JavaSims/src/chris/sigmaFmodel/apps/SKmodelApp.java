@@ -84,6 +84,7 @@ public class SKmodelApp extends Simulation{
 	public void animate() {
 		
 		params.set("<Lives Left>", model.getTime(1));
+		params.set("Last Avalanche Size", model.getAvlnchSize());
 		
 		if(!draw) return;
 	
@@ -117,7 +118,7 @@ public class SKmodelApp extends Simulation{
 		palette1  = new ColorPalette();
 		cGradient = new ColorGradient();
 	
-		Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};		
+		Color[] Carray = new Color[]{Color.YELLOW,Color.BLUE,Color.RED,Color.GREEN,Color.GRAY};		
 		palette1.setColor(0,Color.BLACK);
 		for (int jj = 1 ; jj < model.Nint() ; jj++){
 			palette1.setColor(jj,Carray[jj%5]);
