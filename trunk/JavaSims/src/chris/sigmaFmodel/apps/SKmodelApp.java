@@ -19,7 +19,7 @@ public class SKmodelApp extends Simulation{
 	
 	SKdamageModel model;
 	
-	private DecimalFormat fmtD = new DecimalFormat("00000000");
+	private DecimalFormat fmtD = new DecimalFormat("00.000");
 
 	Grid gridS = new Grid ("Stress");
 	Grid gridF = new Grid ("Failures");
@@ -88,8 +88,8 @@ public class SKmodelApp extends Simulation{
 
 	public void animate() {
 		
-		params.set("<stress>", model.getSbar());
-		params.set("Last Avalanche Size", fmtD.format(model.getAvlnchSize()));
+		params.set("<stress>", fmtD.format(model.getSbar()));
+		params.set("Last Avalanche Size", model.getAvlnchSize());
 		
 		if(!draw) return;
 	
