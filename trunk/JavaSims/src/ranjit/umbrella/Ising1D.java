@@ -1,11 +1,11 @@
-package ranjit.umbrella;
+/*package ranjit.umbrella;
 
 import java.awt.Color;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
-import ranjit.ising.spinblock.SpinBlocks2D;
+import ranjit.ising.spinblock.SpinBlocks1D;
 import scikit.dataset.Accumulator;
 import scikit.dataset.DataSet;
 import scikit.dataset.DatasetBuffer;
@@ -19,8 +19,8 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.util.FileUtil;
 
-public class Ising2D extends Simulation {
-	SpinBlocks2D spins;
+public class Ising1D extends Simulation {
+	SpinBlocks1D spins;
 	Grid grid = new Grid ("Ising Lattice");
 	Histogram mag[];
 	Plot magPlot = new Plot("Magnetizations");
@@ -34,7 +34,7 @@ public class Ising2D extends Simulation {
 	Random r=new Random();
 	int windowMin, windowMax, currentWindow;
 	int firstWindow, lastWindow;
-	public Ising2D() {
+	public Ising1D() {
 
 	}
 
@@ -61,8 +61,8 @@ public class Ising2D extends Simulation {
 		palette.setColor(1,Color.WHITE);
 
 		ColorGradient smooth = new ColorGradient();
-		int allSpins[]=spins.blocksAtScale(0);
-		for (int i=0 ; i<spins.N ; i++){
+		int allSpins[]=spins.getAll();
+		for (int i=0 ; i<allSpins.length ; i++){
 			smooth.getColor(allSpins[i],-1,1);
 		}
 		grid.setColors(smooth);
@@ -116,7 +116,7 @@ public class Ising2D extends Simulation {
 			mag[l]=new Histogram(1);
 		}
 		int init[]=new int[L*L];
-		spins = new SpinBlocks2D(L, R);
+		spins = new SpinBlocks1D(L, R);
 
 		do{
 			int z=r.nextInt(L*L);
@@ -124,7 +124,7 @@ public class Ising2D extends Simulation {
 			int y=z/L;
 			if(spins.get(x, y)==1)spins.flip(x, y);
 		}while(spins.netSum>L*L-windowSpacing);
-		init=spins.blocksAtScale(0).clone();
+		init=spins.getAll().clone();
 
 		for(int j=firstWindow;j<=lastWindow;j++){
 			params.set("current window", j);
@@ -146,7 +146,7 @@ public class Ising2D extends Simulation {
 					mag[currentWindow].accum(spins.netSum);
 
 					if(!randomic && spins.netSum<phi0 && !saved && mcs>100){
-						init=spins.blocksAtScale(0).clone();
+						init=spins.getAll().clone();
 						saved=true;
 					}
 					Job.animate();
@@ -172,7 +172,7 @@ public class Ising2D extends Simulation {
 		int phi0=L*L-(windowNumber+1)*windowSpacing;
 		windowMax=phi0+windowWidth;
 		windowMin=phi0-windowWidth;
-		spins = new SpinBlocks2D(L, R);
+		spins = new SpinBlocks1D(L, R, 1);
 
 		if(!randomic){
 			for(int i=0;i<init.length;i++){
@@ -225,12 +225,13 @@ public class Ising2D extends Simulation {
 		if(spins.netSum+dM<windowMin || spins.netSum+dM>windowMax) dE=Double.POSITIVE_INFINITY;
 		return dE;		
 	}
-	/**
+	*//**
 	 * @param args
-	 */
+	 *//*
 	public static void main(String[] args) {
 		new Control(new Ising2D(),"Ising 2D Umbrella Sampling");
 
 	}
 
 }
+*/
