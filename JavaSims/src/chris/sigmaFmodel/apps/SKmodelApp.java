@@ -55,6 +55,7 @@ public class SKmodelApp extends Simulation{
 		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("Last Avalanche Size");
 		params.add("<stress>");
+		params.add("N_dead");
 		
 		c.frameTogether("S-K Damage Model", gridS, gridF);
 		
@@ -90,6 +91,7 @@ public class SKmodelApp extends Simulation{
 		
 		params.set("<stress>", fmtD.format(model.getSbar()));
 		params.set("Last Avalanche Size", model.getAvlnchSize());
+		params.set("N_dead", model.getNdead());
 		
 		if(!draw) return;
 	

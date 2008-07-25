@@ -38,6 +38,11 @@ public class ForceSf extends Damage2D{
 			setStress(jj, (1+10E-2)*getSr0());	// ad hoc!!!!
 		}
 		
+		for (int jj = 0 ; jj < getN() ; jj++){
+			Sf[jj] = getSr0() + (SfNOW - getSr0())*rand.nextDouble();
+			setStress(jj, (1+10E-2)*getSr0());	// ad hoc!!!!
+		}
+		
 	}
 	
 	protected void ForceFailure(){
@@ -53,7 +58,7 @@ public class ForceSf extends Damage2D{
 		SfNOW -= dSfNOW;	
 		
 		for (int jj = 0 ; jj < getN() ; jj++){
-			Sf[jj] = getSr0() + (SfNOW - getSr0())*rand.nextDouble();
+			Sf[jj] = getSr0() + (Sf[jj] - getSr0())*rand.nextDouble();
 			if (getStress(jj) > Sf[jj]){
 				temp[tempC++] = jj;
 			}

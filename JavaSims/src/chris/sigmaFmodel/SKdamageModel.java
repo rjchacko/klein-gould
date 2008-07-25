@@ -19,7 +19,8 @@ public class SKdamageModel {
 	// Model Parameters
 	private double  R, L, N, Sr0, Sr[], SrW, dSr, dSrW, Sf0, Sf[], SfW, alpha0, alphaW,
 					stress[], Scum[][], t1, t2, t3, dt2, dt3, Nrichter, numFailures[],
-					globalFailures[], Omega1, Omega2, Omega3, sbarT, nfbar, dsRMS, sT;
+					globalFailures[], Omega1, Omega2, Omega3, sbarT, nfbar, dsRMS, sT,
+					nDS;
 
 	private boolean SrN, dSrN, SfN, alphaN, deadSite[], ks[];
 	private Random  rand;
@@ -70,6 +71,7 @@ public class SKdamageModel {
 		SfN    = (SfW > 0);
 		alphaN = (alphaW > 0);
 		sbarT  = 0;
+		nDS    = 0;
 		
 		picdir    = outdir +"/GridPics/";
 		datafile1 = outdir + File.separator + "StressData.txt"; 
@@ -209,29 +211,6 @@ public class SKdamageModel {
 		return CopyArray.copyArray(trialsite,1);
 	}
 	
-//	private int[] forceFailure(){
-//		
-//		int imax = 0;
-//		
-//		for (int jj = 0 ; jj < Nint() ; jj++){
-//			if(stress[jj] > stress[imax]) imax = jj;
-//		}
-//		
-//		if(stress[imax] == 0) return null;
-//		
-//		double dsM = Sf[imax]-stress[imax];
-//		
-//		for (int jj = 0 ; jj < Nint() ; jj++){
-//			stress[jj] += dsM;
-//		}
-//		
-//		int[] ret = {imax};
-//		
-//		t1++;
-//		
-//		return ret;
-//	}
-	
 	private boolean sysFail(){
 		
 		return (seedsites == null);
@@ -285,7 +264,7 @@ public class SKdamageModel {
 			int st = sites[jj];
 			globalFailures[(int) numFailures[st]++]--;	
 			globalFailures[(int) numFailures[st]]++;
-			if(Sr[st] == 0){
+			if(Sr[st] <= 0){
 				killSite(st);
 			}
 			else{
@@ -311,6 +290,8 @@ public class SKdamageModel {
 	
 	private void killSite(int site){
 		
+		
+		nDS++;
 		alive[site]       = 0;
 		ks[site]          = true;
 		deadSite[site]    = true;
@@ -338,7 +319,7 @@ public class SKdamageModel {
 	
 	private double nextSf(int site){
 		
-		return (Sr[site] + (Sf[site] - Sr[site])*rand.nextDouble());
+		return (Sr[site] + (Sf0 - Sr[site])*rand.nextDouble());
 	}
 	
 	private double nextSr(int site){
@@ -363,18 +344,14 @@ public class SKdamageModel {
 	public void writeDataHeaders(){
 		
 		PrintUtil.printlnToFile(datafile1,"t1","t2","t3","N_Sts/avlnch","<s-s_f>_rms","<s>(t)","<s(t)>","<failures>");
-		PrintUtil.printlnToFile(datafile2,"t1","t2","t3", "Omega1","Omega2","Omega3");
+		PrintUtil.printlnToFile(datafile2,"t1","t2","t3", "Omega1","Omega2","Omega3","N_dead");
 		return;
 	}
 	
 	public void takeData(){
 		
-		double RMS = -1;
-		
-		if(Nrichter > 1) RMS = Math.sqrt(dsRMS/(Nrichter - 1));
-		
-		PrintUtil.printlnToFile(datafile1,t1, t2, t3, Nrichter, RMS, sbarT, sT, nfbar);
-		PrintUtil.printlnToFile(datafile2,t1, t2, t3, Omega1, Omega2, Omega3);
+		PrintUtil.printlnToFile(datafile1,t1, t2, t3, Nrichter, Math.sqrt(dsRMS/(Nrichter - 1)), sbarT, sT, nfbar);
+		PrintUtil.printlnToFile(datafile2,t1, t2, t3, Omega1, Omega2, Omega3, nDS);
 		return;
 	}
 	
@@ -482,6 +459,11 @@ public class SKdamageModel {
 	public double getSbar(){
 		
 		return sbarT;
+	}
+	
+	public double getNdead(){
+		
+		return nDS;
 	}
 	
 }

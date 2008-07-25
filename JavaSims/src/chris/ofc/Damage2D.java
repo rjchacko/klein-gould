@@ -4,7 +4,9 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Random;
+
 import javax.imageio.ImageIO;
+
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.params.Parameters;
 import chris.util.CopyArray;
@@ -41,6 +43,7 @@ public class Damage2D {
 	
 	// I/O Parameters
 	
+	@SuppressWarnings("unused")
 	private String outdir, outfile1, outfile2, PicDir;
 	private boolean showGrid;
 	private DecimalFormat fmtT = new DecimalFormat("000000");
@@ -243,7 +246,7 @@ public class Damage2D {
 		ResetPlate(seeds);
 		CascadeSites(avlnch);
 	
-		while(avlnch.length > 0){
+		while(avlnch != null){
 			int[] copy = avlnch;
 			avlnch = DistributeStress(avlnch);
 			ResetPlate(copy);
@@ -268,7 +271,7 @@ public class Damage2D {
 		ResetPlate(seeds);
 		CascadeSites(avlnch);
 	
-		while(avlnch.length > 0){
+		while(avlnch != null){
 			int[] copy = avlnch;
 			avlnch = DistributeStress(avlnch);
 			ResetPlate(copy);
@@ -586,14 +589,14 @@ public class Damage2D {
 	public void WriteDataHeaders(){
 		
 		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","N_sts/avl","Omega","Init Sites","N_dead");
-		PrintUtil.printlnToFile(outfile2,"Sweeps","t_vel","N_lvs=0","N_lvs=1","N_lvs=N_max/2","N_lvs=N_max-1","N_lvs=N_max");
+		//PrintUtil.printlnToFile(outfile2,"Sweeps","t_vel","N_lvs=0","N_lvs=1","N_lvs=N_max/2","N_lvs=N_max-1","N_lvs=N_max");
 		;
 		
 	}
 	
 	public void TakeDate(){
 		PrintUtil.printlnToFile(outfile1,t1,t2,Nrichter,Omega,isites, LivesLeft[0]);
-		PrintUtil.printlnToFile(outfile2,t1,t2,LivesLeft[0],LivesLeft[1],LivesLeft[(int)(Nlives0/2)],LivesLeft[Nlives0-1],LivesLeft[Nlives0]);
+		//PrintUtil.printlnToFile(outfile2,t1,t2,LivesLeft[0],LivesLeft[1],LivesLeft[(int)(Nlives0/2)],LivesLeft[Nlives0-1],LivesLeft[Nlives0]);
 	}
 	
 	public static void PrintParams(String fout, Parameters prms){
