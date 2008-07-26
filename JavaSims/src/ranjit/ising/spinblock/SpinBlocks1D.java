@@ -5,7 +5,7 @@ public class SpinBlocks1D implements Cloneable {
 	SpinBlockIndexer indexer;
 	int[] indices;
 	int[][] blocks;
-	int netSum;
+	public int netSum;
 	public int L, R;
 	
 	
