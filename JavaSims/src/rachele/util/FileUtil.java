@@ -20,7 +20,7 @@ public class FileUtil {
 		File file = new File(fileName);
 		boolean success = file.delete();
 		if (success)
-			System.out.println("File deleted");
+			System.out.println("File " + fileName + " deleted");
 		else
 			System.out.println("File delete failed");			
 	}

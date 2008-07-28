@@ -8,13 +8,15 @@ import scikit.numerics.fft.managed.ComplexDouble2DFFT;
 public class FindCoefficients {
 	public double [] a;
 	public double [][] aa;
+	public double [] inputFunction, phiSlice;
 	public int Lp;
-	public String fileName = "../../../research/javaData/configs1d/config";
+	public String fileName;
 	ComplexDoubleFFT fft;
 	ComplexDouble2DFFT fft2D;
 	
 	
-	public FindCoefficients(int Lp){
+	public FindCoefficients(int Lp, String fileName){
+		this.fileName = fileName;
 		this.Lp = Lp;
 		a = new double [Lp];
 		aa = new double [Lp][Lp];
@@ -23,9 +25,9 @@ public class FindCoefficients {
 	}
 	
 	public void findCoefficientsFromFile(){
-		double [] phiSlice = new double [Lp];
+		phiSlice = new double [Lp];
 		phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
-		double [] inputFunction = new double [Lp];
+		inputFunction = new double [Lp];
 		double [] fftScratch = new double [2*Lp];
 		//System.out.println("find coeff from file");
 		for(int i = 0; i < Lp; i++)

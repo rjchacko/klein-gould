@@ -8,20 +8,25 @@ import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.FileValue;
 import scikit.numerics.Jama.EigenvalueDecomposition;
 import scikit.numerics.Jama.Matrix;
-import scikit.numerics.fft.FFT1D;
+//import scikit.numerics.fft.FFT1D;
+import scikit.numerics.fft.managed.ComplexDoubleFFT;
+import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
 import scikit.util.*;
 import rachele.ising.dim2.FindCoefficients;
 
 public class StripeClumpLinearTheory extends Simulation{
 	Plot sf = new Plot ("Structure Fuction");
+	Plot sfPhi = new Plot ("Phi0 SF Plot");
 	Plot plot = new Plot ("Input Plot");
+	Plot phiPlot = new Plot("Phi Plot");
     // 2D matrix has n x n dimensions
     // must have n = 2m+1 where m is positive integer
 	public int matrixDim, vDim, Lp;
-	public double T = 0.04;
-	public double [] phi, inputFunction, v, phiSF;
+	public double T;
+	public double [] phi, v, phiSF;
 	public int kyInt = 1;
 	public double dx, L, R, kChunk;
 	public EigenvalueDecomposition Eig;
@@ -33,15 +38,18 @@ public class StripeClumpLinearTheory extends Simulation{
 	}
 	
 	public void load(Control c) {
+		params.add("Input File", new FileValue("/home/erdomi/data/lraim/configs1d/phi0"));
 		params.addm("Center On", new ChoiceValue("low frequencies", "high frequencies"));
 		params.addm("Matrix Dim", 15);
+		params.addm("Temperature", 0.04);
 		params.addm("Lp", 128);
 		params.addm("R", 2000000);
 		params.addm("L/R", 3.0);
-		c.frameTogether("f(x) vs phi(x)", plot, sf);
+		c.frameTogether("f(x) vs phi(x)", plot, sf, phiPlot, sfPhi);
 	}
 	
 	public void calculate(){
+		T = params.fget("Temperature");
 		matrixDim = params.iget("Matrix Dim");
 		Lp = params.iget("Lp");
 		R = params.fget("R");
@@ -51,10 +59,10 @@ public class StripeClumpLinearTheory extends Simulation{
 		phi = new double [Lp];
 		phiSF = new double [Lp];
 	
-		inputFunction = new double [Lp];
 		vDim = 1+(matrixDim-1)/2;
 		v = new double [vDim];
-		coeff = new FindCoefficients(Lp);
+		String inputFile = params.sget("Input File");
+		coeff = new FindCoefficients(Lp, inputFile);
 		findVelements();
 		constructMatrix();
 		double maxEigenvalue = findMaxEigenvalue();
@@ -135,27 +143,40 @@ public class StripeClumpLinearTheory extends Simulation{
 	}
 	
 	public PointSet getInput(){
-		return new PointSet(0, 1, inputFunction);
+		return new PointSet(0, 1, coeff.inputFunction);
+	}
+
+	public PointSet getPhiSlice(){
+		return new PointSet(0, 1, coeff.phiSlice);
 	}
 	
 	public PointSet getPhiSF(){
-		FFT1D fft = new FFT1D(Lp);
-		fft.setLength(L);
-		fft.transform(phi, new FFT1D.MapFn() {
-			public void apply(double k, double re, double im) {
-				double kR = k*R;
-				int kRLatticePoint = (int)Math.abs(kR/kChunk);
-				phiSF[kRLatticePoint] = re;
-				//System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
-			}
-		});		
+		ComplexDoubleFFT fft = new ComplexDoubleFFT_Mixed(Lp);
+		double [] fftScratch = new double [2*Lp];
+		for (int i = 0; i < Lp; i++) {
+			fftScratch[2*i] = coeff.phiSlice[i];
+			fftScratch[2*i+1] = 0;
+		}
+		fft.transform(fftScratch);
+		for (int i = 0; i < Lp; i++) 
+			phiSF[i] = fftScratch[2*i];	
+		//		FFT1D fft = new FFT1D(Lp);
+//		fft.setLength(L);
+//		fft.transform(phi, new FFT1D.MapFn() {
+//			public void apply(double k, double re, double im) {
+//				double kR = k*R;
+//				int kRLatticePoint = (int)Math.abs(kR/kChunk);
+//				phiSF[kRLatticePoint] = re;
+//				//System.out.println("point " + kRLatticePoint + " " + a[kRLatticePoint]);
+//			}
+//		});		
 		return new PointSet(0, 1, phiSF);
 	}
 	
 	public void animate() {
-	//	plot.registerLines("Slice", coeff.getPhiSlice(), Color.RED);
+		phiPlot.registerLines("Slice", getPhiSlice(), Color.BLUE);
 		sf.registerLines("SF", getSF(), Color.BLACK);
-		sf.registerLines("Phi SF",getPhiSF(), Color.RED);
+		sfPhi.registerLines("Phi SF",getPhiSF(), Color.RED);
 		plot.registerLines("input", getInput(), Color.BLACK);
 	}
 

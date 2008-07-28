@@ -7,6 +7,7 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import scikit.graphics.dim2.Plot;
 import rachele.ising.dim1.FieldIsing1D;
@@ -56,6 +57,7 @@ public class IsingField1DApp extends Simulation{
 		
 //  Default params for clump model
 
+		params.add("Config Directory",new DirectoryValue("/home/erdomi/data/lraim/configs1d"));
 		params.addm("Noise", new ChoiceValue("On", "Off"));
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.04, 0, 0.2).withSlider());
@@ -104,8 +106,9 @@ public class IsingField1DApp extends Simulation{
 	
 	public void run(){
 		ising = new FieldIsing1D(params);
-		String inputFileName = "../../../research/javaData/configs1d/inputConfig";
-		String configFileName = "../../../research/javaData/configs1d/config";
+		String writeDir = params.sget("Config Directory");
+		String inputFileName = writeDir + File.separator + "inputConfig";
+		String configFileName = writeDir + File.separator + "config";
 	    int maxWriteCount = (int)(params.fget("max Write Time")/ising.dt);
 	    params.set("Time Allocation", maxWriteCount);
 	    double maxWriteTime = maxWriteCount*ising.dt;

@@ -119,7 +119,7 @@ public class IsingField2D extends AbstractIsing2D{
 			System.out.println("Random Gaussian");
 		}else if(init == "Read 1D Soln"){
 			System.out.println("Read in 1D solution");
-			String fileName = "../../../research/javaData/configs1d/config";
+			String fileName = params.sget("1D Input File");
 			double[] phiSlice = new double [Lp];
 			phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
 			for(int i = 0; i < Lp*Lp; i++)
@@ -129,7 +129,7 @@ public class IsingField2D extends AbstractIsing2D{
 			for (int i = 0; i < Lp*Lp; i ++)
 				phi[i] = DENSITY;
 		}else if(init == "Read From File"){
-			readInitialConfiguration();
+			readInitialConfiguration(params.sget("2D Input Dir") + File.separator + "inputConfig");
 			System.out.println("Read From File");
 		}else if(init == "Artificial Stripe 3"){
 			System.out.println("Artificial Stripe 3");
@@ -163,9 +163,9 @@ public class IsingField2D extends AbstractIsing2D{
 		for(int i = 0; i < Lp*Lp; i++)
 			phi[i]=phi0[i%Lp] + (random.nextGaussian())/100000;
 	}
-	public void readInitialConfiguration(){
+	public void readInitialConfiguration(String fileName){
 		try{
-			File myFile = new File("../../../research/javaData/configs/inputConfig");
+			File myFile = new File(fileName);
 			DataInputStream dis = new DataInputStream(new FileInputStream(myFile));
 			int spaceIndex;
 			double phiValue;
