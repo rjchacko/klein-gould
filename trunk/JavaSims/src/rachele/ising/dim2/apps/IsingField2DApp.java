@@ -18,7 +18,9 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
+import scikit.jobs.params.FileValue;
 import rachele.util.FileUtil;
 import static java.lang.Math.pow;
 
@@ -57,6 +59,7 @@ public class IsingField2DApp extends Simulation {
     public double [] inputSlice;
     public int lastClear;
     public int maxi=0;
+    public String writeDir;
     
 	public static void main(String[] args) {
 		new Control(new IsingField2DApp(), "Ising Field");
@@ -66,9 +69,12 @@ public class IsingField2DApp extends Simulation {
 		//uncomment next line
 		c.frameTogether("Grids", grid, delPhiGrid, sfGrid, freeEnergyPlot);
 		c.frameTogether("Slices", vSlice, hSlice, slicePlot1, slicePlot2);
-		c.frame(hSlice);
+		//c.frame(hSlice);
 		//structurePeakH, freeEnergyPlot, sfPeakBoth, sfHor, sfVert);
 		//c.frameTogether("SF", sfHor, sfVert);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/sfData"));
+		params.add("1D Input File",new FileValue("/home/erdomi/data/lraim/configs1d/config"));
+		params.add("2D Input Dir",new FileValue("/home/erdomi/data/lraim/configs"));		
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M","Conjugate Gradient Min", 
@@ -98,7 +104,7 @@ public class IsingField2DApp extends Simulation {
 		params.add("Mean Phi");
 		params.add("Lp");
 		params.add("Free Energy");
-		flags.add("Write Config");
+		flags.add("Write 2D Config");
 		flags.add("Write 1D Config");
 		flags.add("Clear");
 		//flags.add("SF");
@@ -243,7 +249,7 @@ public class IsingField2DApp extends Simulation {
 	
 	public void run() {
 		if(params.sget("Init Conditions") == "Read From File")
-			readInputParams("../../../research/javaData/configs/inputParams");
+			readInputParams(params.sget("2D Input Dir") + File.separator +"inputParams");
 		ising = new IsingField2D(params);
 		inputSlice = new double [ising.Lp];
 		double binWidth = params.fget("kR bin-width");
@@ -252,10 +258,11 @@ public class IsingField2DApp extends Simulation {
 		sf.setBounds(0.1, 14);
 		int recordSteps = 0;
 		maxi=sf.clumpsOrStripes(ising.phi);
+		writeDir = params.sget("Data Dir");
 		
         while (true) {
         	ising.readParams(params);
-        	if (flags.contains("Write Config"))	writeConfiguration();
+        	if (flags.contains("Write 2D Config"))	writeConfiguration();
 			params.set("Time", ising.time());
 			params.set("Mean Phi", ising.mean(ising.phi));
 			if(params.sget("Dynamics?") == "Conjugate Gradient Min"){
@@ -347,8 +354,8 @@ public class IsingField2DApp extends Simulation {
 	}
 	
 	public void writeConfiguration(){
-		String configFileName = "../../../research/javaData/configs/inputConfig";
-		String inputFileName = "../../../research/javaData/configs/inputParams";
+		String configFileName = "/home/erdomi/data/lraim/configs/inputConfig";
+		String inputFileName = "/home/erdomi/data/lraim/configs/inputParams";
 		FileUtil.deleteFile(configFileName);
 		FileUtil.deleteFile(inputFileName);
 		writeInputParams(inputFileName);	
@@ -418,8 +425,8 @@ public class IsingField2DApp extends Simulation {
 	
 	public void recordSFvTime(){
 		if (params.sget("Interaction")=="Square"){
-			String dataFileV = "../../../research/javaData/sfData/sfv";
-			String dataFileH = "../../../research/javaData/sfData/sfh";
+			String dataFileV = writeDir + File.separator + "sfv";
+			String dataFileH = writeDir + File.separator + "sfh";
 			if (initFile == false){
 				initSFvTimeFile(dataFileV);
 				initSFvTimeFile(dataFileH);
@@ -436,8 +443,8 @@ public class IsingField2DApp extends Simulation {
 	public void writeDataToFile(){
 		boolean SvH = true;
 		if (params.sget("Interaction")=="Square"){
-				String dataFileV = "../../../research/javaData/sfData/sV";
-				String dataFileH = "../../../research/javaData/sfData/sH";
+				String dataFileV = writeDir + File.separator + "sV";
+				String dataFileH = writeDir + File.separator + "sH";
 				if (initFile == false){
 					initFile(dataFileV, SvH);
 					initFile(dataFileH, SvH);
@@ -452,8 +459,11 @@ public class IsingField2DApp extends Simulation {
 				}			
 				System.out.println("Data written to file for time = " + ising.time());
 		}else if(params.sget("Interaction")== "Circle"){
-			String dataStripe = "../../../research/javaData/sfData/dataStripe";
-			String dataClump = "../../../research/javaData/sfData/dataClump";
+//			String dataStripe = "../../../research/javaData/sfData/dataStripe";
+			String dataStripe = "dataStripe";
+			String dataClump = "dataClump";
+//			String dataClump = "../../../research/javaData/sfData/dataClump";
+			
 			if (initFile == false){
 				initFile(dataStripe, SvH);
 				initFile(dataClump, SvH);
@@ -511,7 +521,7 @@ public class IsingField2DApp extends Simulation {
 	}
 	
 	private void write1Dconfig(){
-		String configFileName = "../../../research/javaData/configs1d/config";
+		String configFileName = params.sget("1D Input File");
 		FileUtil.deleteFile(configFileName);
 		double[] slice = new double [ising.Lp];
 		for (int i = 0; i < ising.Lp; i ++)

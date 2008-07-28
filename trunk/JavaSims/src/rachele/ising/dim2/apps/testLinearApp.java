@@ -19,7 +19,9 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
+//import scikit.jobs.params.FileValue;
 import scikit.numerics.Jama.*;
 import scikit.numerics.fn.Function1D;
 import scikit.numerics.fn.Function2D;
@@ -57,6 +59,7 @@ public class testLinearApp extends Simulation{
     int ky;
     double kRChunk; //=2piR/L
     boolean clearFile;
+    public String writeDir;
     
     //RUN OPTIONS
     boolean accEtaValues = false;
@@ -109,9 +112,10 @@ public class testLinearApp extends Simulation{
 	
 	public void load(Control c) {
 		if(accEtaValues) c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
-		c.frameTogether("Grids", phiGrid, etaDotSF);
-		c.frame(eVector);
-		c.frameTogether("Slices", vSlice, hSlice);
+		c.frameTogether("Grids", phiGrid, etaDotSF, eVector, vSlice, hSlice);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/kySlice"));
+		params.add("2D Input Dir", new DirectoryValue("/home/erdomi/data/lraim/configs"));
+		params.add("1D Input Dir", new DirectoryValue("/home/erdomi/data/lraim/configs1d"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -125,7 +129,6 @@ public class testLinearApp extends Simulation{
 		params.addm("H", 0.80);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.01);
-		//params.addm("dt", 0.01);
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
@@ -257,6 +260,7 @@ public class testLinearApp extends Simulation{
 	}
  
 	public void run() {
+		writeDir = params.sget("Data Directory");
 		if (flags.contains("Write 1D Config")){
 			write1Dconfig();
 			flags.clear();
@@ -570,7 +574,7 @@ public class testLinearApp extends Simulation{
 	}
 	
 	void findPhi0andPhi0_bar(){
-		String fileName = "../../../research/javaData/configs1d/config";
+		String fileName = params.sget("1D Input Dir") + File.separator + "phi0";
 		//need to make phi0 symmetric
 		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, Lp);
 		double minPhi0Value = 1.0;
@@ -650,12 +654,12 @@ public class testLinearApp extends Simulation{
 	}
 	
 	public void recordSfDataToFile(double [] data){
-		String file0 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf0";
-		String file1 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf1";
-		String file2 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf2";
-		String file3 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf3";
-		String file4 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf4";
-		String file5 = "../../../research/javaData/stripeToClumpInvestigation/kySlice/sf5";
+		String file0 = writeDir + File.separator +"sf0";
+		String file1 = writeDir + File.separator +"sf1";
+		String file2 = writeDir + File.separator +"sf2";
+		String file3 = writeDir + File.separator +"sf3";
+		String file4 = writeDir + File.separator +"sf4";
+		String file5 = writeDir + File.separator +"sf5";
 		if (clearFile){
 			FileUtil.initFile(file0, params);
 			FileUtil.initFile(file1, params);
@@ -708,7 +712,7 @@ public class testLinearApp extends Simulation{
 	
 	void initialize(){
 		if(params.sget("Init Conditions") == "Read From File")
-			readInputParams("../../../research/javaData/configs/inputParams");
+			readInputParams("/home/erdomi/data/lraim/configs/inputParams");
 		ising = new IsingField2D(params);
 		
 		etaAcc = new Accumulator(ising.dt);
@@ -757,7 +761,7 @@ public class testLinearApp extends Simulation{
 	}	
 
 	private void write1Dconfig(){
-		String configFileName = "../../../research/javaData/configs1d/config";
+		String configFileName = params.sget("1D Input File");
 		FileUtil.deleteFile(configFileName);
 		FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
 	}
