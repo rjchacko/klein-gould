@@ -15,6 +15,8 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DirectoryValue;
+import scikit.jobs.params.FileValue;
 import static scikit.util.Utilities.format;
 import rachele.util.*;
 import static java.lang.Math.*;
@@ -23,9 +25,9 @@ public class MonteCarloDataApp extends Simulation{
 
 	//Choose function of app
 	//String averages = "S_k_DO";//take s(k) averages for disorder to order case
-	//String averages = "S_t_DO";//take s(t) averages for disorder to order case
+	String averages = "S_t_DO";//take s(t) averages for disorder to order case
 	//String averages = "S_k_SC";//take s(k) averages for stripe to clump case
-	String averages = "S_t_SC";//take s(k) averages for stripe to clump case
+	//String averages = "S_t_SC";//take s(k) averages for stripe to clump case
 	//String averages = "S_t_SC1D";//take s(t) averages for stripe to clump case starting with 1D stripe solution
 	//String averages = "None";
 	
@@ -61,6 +63,8 @@ public class MonteCarloDataApp extends Simulation{
 			c.frame(sftPlot);
 		}
 		//if(averages == "S_t_SC1D") c.frame(plot1DIsing);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/DO_Svt/run1"));
+		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.add("Random seed", 0);

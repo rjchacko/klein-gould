@@ -20,6 +20,8 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DirectoryValue;
+import scikit.jobs.params.FileValue;
 
 
 //Monte Carlo Structure Factor vs time with 1D initialization
@@ -47,11 +49,13 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 
 		c.frame(grid);
 		c.frame(sftPlot);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/OO_Svt/run3"));
+		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Use 1D Soln", "Init Stripes from random"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
-		params.add("R", 50);//1<<6);
+		params.add("R", 48);//1<<6);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.04);
 		params.addm("J", -1.0);
@@ -181,7 +185,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	
 	private void initializeStripes(boolean init1D, double initTime){
 		if(init1D){
-			String fileName = "../../../research/javaData/configs1d/config";
+			String fileName = params.sget("Input 1D File");
 			//need to make phi0 symmetric
 			double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, sim.L);
 			double [] phi0 = new double [sim.L];
@@ -226,13 +230,14 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 
 	
 	private void writeStSCtoFile(int sfInt, double initializeTime, double [] kRvalues){
-		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench. Init H = 0.";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCinit1D7/f0";
+		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench.";
+		String fileName = params.sget("Data Dir") + File.separator + "f0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			System.out.println("start " + i);
 			StringBuffer mb = new StringBuffer();
-			mb.append("# init time = "); mb.append(initializeTime); mb.append(", kx value = ");	mb.append(kRvalues[2*i]); mb.append(" ky value = ");
+			//mb.append("# init time = "); mb.append(initializeTime);
+			mb.append("# kx value = ");	mb.append(kRvalues[2*i]); mb.append(" ky value = ");
 			//double krvalue = 2*sim.R*Math.PI*(sfInt+i)/sim.L;
 			mb.append(kRvalues[2*i+1]);			
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(i); fileName = fileBuffer.toString();

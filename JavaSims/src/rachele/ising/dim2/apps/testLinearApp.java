@@ -21,6 +21,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
+import scikit.jobs.params.FileValue;
 //import scikit.jobs.params.FileValue;
 import scikit.numerics.Jama.*;
 import scikit.numerics.fn.Function1D;
@@ -114,8 +115,9 @@ public class testLinearApp extends Simulation{
 		if(accEtaValues) c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
 		c.frameTogether("Grids", phiGrid, etaDotSF, eVector, vSlice, hSlice);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/kySlice"));
-		params.add("2D Input Dir", new DirectoryValue("/home/erdomi/data/lraim/configs"));
-		params.add("1D Input Dir", new DirectoryValue("/home/erdomi/data/lraim/configs1d"));
+		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
+		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
+		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/phi0"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -249,18 +251,18 @@ public class testLinearApp extends Simulation{
 	}
 
 	public void clear() {
-		etaAcc.clear();
-		etaLTAcc.clear();
-		etaAcc2.clear();
-		etaLTAcc2.clear();
-		etaAcc3.clear();
-		etaLTAcc3.clear();
-		etaAcc4.clear();
-		etaLTAcc4.clear();
+//		etaAcc.clear();
+//		etaLTAcc.clear();
+//		etaAcc2.clear();
+//		etaLTAcc2.clear();
+//		etaAcc3.clear();
+//		etaLTAcc3.clear();
+//		etaAcc4.clear();
+//		etaLTAcc4.clear();
 	}
  
 	public void run() {
-		writeDir = params.sget("Data Directory");
+		writeDir = params.sget("Data Dir");
 		if (flags.contains("Write 1D Config")){
 			write1Dconfig();
 			flags.clear();
@@ -300,8 +302,8 @@ public class testLinearApp extends Simulation{
         		}
         	}else{
         		ising.readParams(params);
-        		//ising.simulate();
-        		ising.simulateSimple();
+        		ising.simulate();
+        		//ising.simulateSimple();
         		params.set("dt new", ising.dt);
        			if(accEtaValues){	
        				rhs2D = simulateLinear(etaLT);	
@@ -573,24 +575,47 @@ public class testLinearApp extends Simulation{
 	    
 	}
 	
-	void findPhi0andPhi0_bar(){
-		String fileName = params.sget("1D Input Dir") + File.separator + "phi0";
-		//need to make phi0 symmetric
-		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, Lp);
+	double [] getSymmetricSlice(String file){
+		double [] slice = new double [Lp];
+		double [] temp= FileUtil.readConfigFromFile(file, Lp);
 		double minPhi0Value = 1.0;
 		int minPhi0Location = -1;
 		for (int i = 0; i < Lp; i++){
-			if (tempPhi0[i] < minPhi0Value){
+			if (temp[i] < minPhi0Value){
 				minPhi0Location = i;
-				minPhi0Value = tempPhi0[i];
-				System.out.println(tempPhi0[i] + " " + i);
+				minPhi0Value = temp[i];
+				System.out.println(temp[i] + " " + i);
 			}
 		}	
-		System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
+		System.out.println(temp[minPhi0Location] + " " + minPhi0Location);
 		for (int i = 0; i < Lp; i++){
-			phi0[i] = tempPhi0[(minPhi0Location+i)%Lp];
-			System.out.println("phi0 " + i + " = " + phi0[i]);
+			slice[i] = temp[(minPhi0Location+i)%Lp];
+			//System.out.println("phi0 " + i + " = " + phi0[i]);
 		}
+		return slice;
+	}
+	
+	void findPhi0andPhi0_bar(){
+		
+		String fileName = params.sget("1D phi0 File");
+		//need to make phi0 symmetric
+		phi0 = getSymmetricSlice(fileName);
+//		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, Lp);
+//		double minPhi0Value = 1.0;
+//		int minPhi0Location = -1;
+//		for (int i = 0; i < Lp; i++){
+//			if (tempPhi0[i] < minPhi0Value){
+//				minPhi0Location = i;
+//				minPhi0Value = tempPhi0[i];
+//				System.out.println(tempPhi0[i] + " " + i);
+//			}
+//		}	
+//		System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
+//		for (int i = 0; i < Lp; i++){
+//			phi0[i] = tempPhi0[(minPhi0Location+i)%Lp];
+//			System.out.println("phi0 " + i + " = " + phi0[i]);
+//		}
+		
 		phi0_bar = fft.backConvolve1DwithFunction(phi0, new Function1D(){
 			public double eval(double k1) {
 				double kRx = 2*Math.PI*ising.R*k1/ising.L;
@@ -712,7 +737,8 @@ public class testLinearApp extends Simulation{
 	
 	void initialize(){
 		if(params.sget("Init Conditions") == "Read From File")
-			readInputParams("/home/erdomi/data/lraim/configs/inputParams");
+			readInputParams(params.sget("2D Input File"));
+
 		ising = new IsingField2D(params);
 		
 		etaAcc = new Accumulator(ising.dt);
@@ -757,7 +783,11 @@ public class testLinearApp extends Simulation{
 		eigenvalue = new double[Lp];
 		VV = new double [Lp][Lp];
 		findPhi0andPhi0_bar();
-		if(params.sget("Init Conditions")=="Read 1D Soln") ising.set1DConfig(phi0);
+		if(params.sget("Init Conditions")=="Read 1D Soln"){
+			String inputFile = params.sget("1D Input File");
+			double [] inputSlice = getSymmetricSlice(inputFile);
+			ising.set1DConfig(inputSlice);
+		}
 	}	
 
 	private void write1Dconfig(){

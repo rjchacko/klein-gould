@@ -1,6 +1,4 @@
 package rachele.ising.dim2.apps;
-//import static java.lang.Math.PI;
-//import static java.lang.Math.sin;
 
 import java.awt.Color;
 import scikit.dataset.PointSet;
@@ -11,7 +9,6 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.FileValue;
 import scikit.numerics.Jama.EigenvalueDecomposition;
 import scikit.numerics.Jama.Matrix;
-//import scikit.numerics.fft.FFT1D;
 import scikit.numerics.fft.managed.ComplexDoubleFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
 import scikit.util.*;
