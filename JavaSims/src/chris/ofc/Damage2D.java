@@ -24,7 +24,7 @@ public class Damage2D {
 	private double L, N, alpha0, alphaW, Sf0, Sr0;
 	protected double Sf[];
 	private double 	Sr[], SfW, SrW, stress[], R, t1, t2,
-					dt, pt, Scum[], Omega, tMAX, isites;
+					dt, pt, Scum[], Lcum[], Omega, OmegaL, tMAX, isites;
 	
 	private String shape, bc;
 	private boolean alphaN, SfN, SrN, killed[];
@@ -111,7 +111,7 @@ public class Damage2D {
 		stress = new double[(int) N];
 		Scum   = new double[(int) N];
 		killed = new boolean[(int) N];
-				
+		Lcum   = new double[(int) N];	
 		// Set up Lattice Neighbors
 		nbs = SetUpNbs();
 	
@@ -176,6 +176,7 @@ public class Damage2D {
 			
 			stress[jj] = Sr0+(Sf0-Sr0)*rand.nextDouble();
 			Scum[jj] = 0;
+			Lcum[jj] = 0;
 			
 			alive[jj+(int)N] = 1;
 			if(!NlivesN){ // no noise in the number of lives
@@ -251,7 +252,7 @@ public class Damage2D {
 			avlnch = DistributeStress(avlnch);
 			ResetPlate(copy);
 			CascadeSites(avlnch);
-
+			//Job.animate();
 		}
 				 
 		ForceFailure();
@@ -276,6 +277,7 @@ public class Damage2D {
 			avlnch = DistributeStress(avlnch);
 			ResetPlate(copy);
 			CascadeSites(avlnch);
+			//Job.animate();
 		}
 		
 		Omega = StressMetric();
@@ -586,16 +588,56 @@ public class Damage2D {
 		return -1;
 	}
 	
+	public void LifeMetric(){
+		
+		OmegaL = 0;
+		double Lbar = 0;
+		
+		if(N > LivesLeft[0]){
+
+			for (int jj = 0 ; jj < N ; jj++){
+				Lcum[jj] += alive[jj]*dt;
+				Lbar += Lcum[jj];
+			}
+
+	
+
+			Lbar = Lbar/((int)N - LivesLeft[0]); // all the sites save the dead ones
+
+
+			for (int jj = 0 ; jj < N ; jj++){
+				OmegaL += (Lcum[jj] - Lbar)*(Lcum[jj] - Lbar);
+			}
+
+			OmegaL = OmegaL/(t2*t2*((int)N - LivesLeft[0]));
+			
+			
+			//PrintUtil.printlnToFile(outfile2,t2,Sbar/t2,Scum[1]/t2,Scum[(int)(getN()/2)]/t2);	// FOR TESTING ONLY!!!!!!
+			
+			/*
+			 * 
+			 * NB	For ForceSf this LivesLeft[0] is probably not a denominator 
+			 * 		since sites that fail once are, in principle, dead. Maybe run in 
+			 * 		damage mode with Nlives = 1?
+			 * 
+			 */
+		}
+		
+			return;
+		
+		
+	}
+	
 	public void WriteDataHeaders(){
 		
-		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","N_sts/avl","Omega","Init Sites","N_dead");
+		PrintUtil.printlnToFile(outfile1,"Sweeps","t_vel","N_sts/avl","Omega","Omega_L","Init Sites","N_dead");
 		//PrintUtil.printlnToFile(outfile2,"Sweeps","t_vel","N_lvs=0","N_lvs=1","N_lvs=N_max/2","N_lvs=N_max-1","N_lvs=N_max");
 		;
 		
 	}
 	
 	public void TakeDate(){
-		PrintUtil.printlnToFile(outfile1,t1,t2,Nrichter,Omega,isites, LivesLeft[0]);
+		PrintUtil.printlnToFile(outfile1,t1,t2,Nrichter,Omega,OmegaL,isites, LivesLeft[0]);
 		//PrintUtil.printlnToFile(outfile2,t1,t2,LivesLeft[0],LivesLeft[1],LivesLeft[(int)(Nlives0/2)],LivesLeft[Nlives0-1],LivesLeft[Nlives0]);
 	}
 	
@@ -747,6 +789,16 @@ public class Damage2D {
 		return;
 	}
 	
+	
+	public void setSf(int site, double val){
+		
+		if(site < N){
+			Sf[site] = val;
+		}
+		
+		return;
+	}
+	
 	protected void adjustNF(int[] sites){
 		return;
 	}
@@ -754,6 +806,13 @@ public class Damage2D {
 	protected void killSite(int site){
 		
 		if(site < N) alive[site] = 0;
+		return;
+	}
+	
+	public void setOutfile(String str){
+		
+		outfile1 = outdir + File.separator + str + ".txt";
+		
 		return;
 	}
 }
