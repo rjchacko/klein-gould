@@ -40,10 +40,11 @@ public class MonteCarloDataApp extends Simulation{
 	public FourierTransformer fft;
 	double [] sFactor;
 	Accumulator sf_kAcc; 
-	Accumulator [] sf_tAveAcc;
-	Accumulator [] sf_tAcc;
+
 	int [] sfLabel;
 	int accNo = 6;
+	Accumulator [] sf_tAveAcc = new Accumulator [accNo];
+	Accumulator [] sf_tAcc = new Accumulator [accNo];
 	Accumulator sf_kTheoryAcc, sf_kTheory2Acc, sf_tTheoryAcc, sf_tTheory2Acc;
     boolean clearFile;
    	double [] sfTimeArray;
@@ -135,9 +136,15 @@ public class MonteCarloDataApp extends Simulation{
 		sFactor = new double [sim.L/dx*sim.L/dx];
 		double step = 0.10;
 		if(averages == "S_t_DO"){
+
 			double maxTime = params.fget("maxTime");
+			for (int i = 0; i < accNo; i++){
+				sf_tAcc[i] = new Accumulator(); 
+				sf_tAveAcc[i] = new Accumulator(); sf_tAveAcc[i].enableErrorBars(true);
+			}
 			int sfLabel = sf_t_theory(maxTime);
 			int repNo = 0;
+
 			while (true) {
 				sf_tAcc[0].clear();
 				if(params.sget("init") == "Read From File") readInitialConfiguration();

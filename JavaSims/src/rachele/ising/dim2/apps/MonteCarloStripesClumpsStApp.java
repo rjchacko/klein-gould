@@ -49,19 +49,19 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 
 		c.frame(grid);
 		c.frame(sftPlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/OO_Svt/run3"));
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/OO_Svt/r100"));
 		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Use 1D Soln", "Init Stripes from random"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
-		params.add("R", 48);//1<<6);
+		params.add("R", 46);//1<<6);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.04);
 		params.addm("J", -1.0);
 		params.addm("h", 0.8);
 		params.addm("dt", 1/(double)(1<<3));
-		params.addm("maxTime", 5.0);
+		params.addm("maxTime", 10.0);
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -97,7 +97,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		initialize();
 		fft = new FourierTransformer((int)(sim.L/dx));
 		sFactor = new double [sim.L/dx*sim.L/dx];
-		double step = 0.10;
+		double step = 0.20;
 		double initTime = 15.0;
 		boolean init1D = true;
 		double maxTime = params.fget("maxTime");//max time after quench time
@@ -234,7 +234,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		String fileName = params.sget("Data Dir") + File.separator + "f0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
-			System.out.println("start " + i);
+			//System.out.println("start " + i);
 			StringBuffer mb = new StringBuffer();
 			//mb.append("# init time = "); mb.append(initializeTime);
 			mb.append("# kx value = ");	mb.append(kRvalues[2*i]); mb.append(" ky value = ");
