@@ -73,11 +73,11 @@ public class MonteCarloDataApp extends Simulation{
 		//params.add("N", 1<<8);
 		params.add("R", 50);//1<<6);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.04);
+		params.addm("T", 0.096548444);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
 		params.addm("dt", 1/(double)(1<<3));
-		params.addm("maxTime", 15.0);
+		params.addm("maxTime", 5.0);
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -330,7 +330,10 @@ public class MonteCarloDataApp extends Simulation{
 		sb.append("# k value = ");
 		sb.append(kRValue);
 		String message2 = sb.toString();
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svt1/smc";
+		StringBuffer fileBuf = new StringBuffer();
+		fileBuf.append(params.sget("Data Dir")); fileBuf.append(File.separator);
+		fileBuf.append("R");fileBuf.append(sim.R);
+		String fileName = fileBuf.toString();
 		FileUtil.initFile(fileName, params, message1, message2);
 		FileUtil.printAccumToFile(fileName, sf_tAveAcc[0]);
 		System.out.println("file written for rep no: " + reps);

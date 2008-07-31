@@ -112,6 +112,7 @@ public class IsingField2D extends AbstractIsing2D{
 		fftScratch = new double[2*Lp*Lp];
 		fft = new ComplexDouble2DFFT(Lp, Lp);
 		
+	
 		//String init = "Random Gaussian";
 		String init = params.sget("Init Conditions");
 		if(init == "Random Gaussian"){
