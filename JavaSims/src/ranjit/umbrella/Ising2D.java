@@ -151,14 +151,12 @@ public class Ising2D extends Simulation {
 					}
 					Job.animate();
 				}
-				params.set("mcs", mcs);	
-				// TODO: check - kip
-				DatasetBuffer data=mag[currentWindow].copyData();
-				for(int i=0;i<data.size();i++){
-					freeEnergy[currentWindow].accum(data.x(i), -T*Math.log(data.y(i)));
-				}
+				params.set("mcs", mcs);			
 			}
-
+			DatasetBuffer data=mag[currentWindow].copyData();
+			for(int i=0;i<data.size();i++){
+				freeEnergy[currentWindow].accum(data.x(i), -T*Math.log(data.y(i)));
+			}
 			saveDataset(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
 			saveDataset(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
 		}

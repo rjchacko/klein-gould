@@ -10,6 +10,9 @@ import scikit.dataset.Accumulator;
 import scikit.dataset.DataSet;
 import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
+import scikit.graphics.ColorGradient;
+import scikit.graphics.ColorPalette;
+import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
@@ -18,6 +21,7 @@ import scikit.util.FileUtil;
 
 public class Ising1D extends Simulation {
 	SpinBlocks1D spins;
+	Grid grid = new Grid ("Ising Lattice");
 	Histogram mag[];
 	Plot magPlot = new Plot("Magnetizations");
 	Accumulator freeEnergy[];
@@ -36,22 +40,33 @@ public class Ising1D extends Simulation {
 
 	public void load(Control c){		
 		params.add("T",1.0);
-		params.add("h",-0.4);
-		params.add("L",256);
+		params.add("h",0.);
+		params.add("L",4096);
 		params.add("R",1);
-		params.add("number of windows", 32768);
+		params.add("number of windows", 1024);
 		params.add("first window",0);
-		params.add("last window", 100);
-		params.add("window width",4);
-		params.add("MCS per window", 1000);
+		params.add("last window", 1023);
+		params.add("window width",8);
+		params.add("MCS per window", 200);
 		params.add("mcs");
 		params.add("current window");
 		params.add("phi0");
 		params.add("prefix","/Users/rjchacko/Desktop/data/");
-		c.frame(magPlot,freeEnergyPlot);
+		c.frame(grid,magPlot,freeEnergyPlot);
 	}
 
 	public void animate() {
+		ColorPalette palette = new ColorPalette();
+		palette.setColor(0,Color.BLACK);
+		palette.setColor(1,Color.WHITE);
+
+		ColorGradient smooth = new ColorGradient();
+		int allSpins[]=spins.getAll();
+		for (int i=0 ; i<allSpins.length ; i++){
+			smooth.getColor(allSpins[i],-1,1);
+		}
+		grid.setColors(smooth);
+		grid.registerData(L,1,allSpins);
 		if(currentWindow%2==0)magPlot.registerPoints("Magnetizations"+ currentWindow, mag[currentWindow], Color.RED);
 		else magPlot.registerPoints("Magnetizations"+ currentWindow, mag[currentWindow], Color.BLUE);
 		if(currentWindow%2==0)freeEnergyPlot.registerPoints("Free Energy"+currentWindow,freeEnergy[currentWindow],Color.RED);
@@ -60,6 +75,7 @@ public class Ising1D extends Simulation {
 
 
 	public void clear() {
+		grid.clear();
 		magPlot.clear();
 		freeEnergyPlot.clear();
 	}
@@ -93,30 +109,22 @@ public class Ising1D extends Simulation {
 		else J=1;
 		freeEnergy=new Accumulator[numberOfWindows];
 		for(int l=0;l<numberOfWindows;l++){
-			freeEnergy[l]=new Accumulator(1);
+			freeEnergy[l]=new Accumulator();
 		}
 		mag=new Histogram[numberOfWindows];
 		for(int l=0;l<numberOfWindows;l++){
 			mag[l]=new Histogram(1);
 		}
-		int init[]=new int[L];
-		spins = new SpinBlocks1D(L, R, 1);
-
-		do{
-			int x=r.nextInt(L);
-			if(spins.get(x)==1)spins.flip(x);
-		}while(spins.netSum>L-windowSpacing);
 		
-		init=spins.getAll().clone();
+		spins = new SpinBlocks1D(L, R, 1);
 
 		for(int j=firstWindow;j<=lastWindow;j++){
 			params.set("current window", j);
-			initializeWindow(windowSpacing,windowWidth, j, init);
+			initializeWindow(windowSpacing,windowWidth, j);
 
 			int phi0=L-(j+1)*windowSpacing;
 			params.set("phi0", phi0);
 			Job.animate();
-			boolean saved=false;
 			for(int mcs=0;mcs<mcsPerWindow;mcs++){
 				for(int k=0;k<L;k++){
 					int nextSpin=r.nextInt(L);
@@ -125,47 +133,35 @@ public class Ising1D extends Simulation {
 					boolean acceptThermal=r.nextDouble()<Math.exp(-dE/T);
 					if( decreaseEnergy || acceptThermal)spins.flip(nextSpin);
 					mag[currentWindow].accum(spins.netSum);
-
-					if(!randomic && spins.netSum<phi0 && !saved && mcs>100){
-						init=spins.getAll().clone();
-						saved=true;
-					}
 					Job.animate();
 				}
 				params.set("mcs", mcs);	
-				DatasetBuffer data=mag[currentWindow].copyData();
-				for(int i=0;i<data.size();i++){
-					freeEnergy[currentWindow].accum(data.x(i), -T*Math.log(data.y(i)));
-				}
+				
 			}
-
+			DatasetBuffer data=mag[currentWindow].copyData();
+			for(int i=0;i<data.size();i++){
+				freeEnergy[currentWindow].accum(data.x(i), -T*Math.log(data.y(i)));
+			}
 			saveDataset(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
 			saveDataset(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
 		}
 
 	}
 
-	public void initializeWindow(int windowSpacing, int windowWidth, int windowNumber,int init[]){
+	public void initializeWindow(int windowSpacing, int windowWidth, int windowNumber){
 		double dE;
 		currentWindow=windowNumber;
 		int phi0=L-(windowNumber+1)*windowSpacing;
 		windowMax=phi0+windowWidth;
 		windowMin=phi0-windowWidth;
 		spins = new SpinBlocks1D(L, R, 1);
-
-		if(!randomic){
-			for(int i=0;i<init.length;i++){
-				if(init[i]==-1)spins.flip(i);
-			}
+		
+		while(spins.netSum>phi0){
+			int spin=r.nextInt(L);
+			if(spins.get(spin)==1) spins.flip(spin);
 		}
-		else{
-			while(spins.netSum>phi0){
-				int spin=r.nextInt(L);
-				if(spins.get(spin)==1) spins.flip(spin);
-			}
-		}
-
-		for(int cnt=0; cnt<100; cnt++){
+		
+		for(int cnt=0; cnt<200; cnt++){
 			for(int i=0;i<L;i++){
 				int nextSpin=r.nextInt(L);
 				dE=isingDE(nextSpin)+umbrellaDE(nextSpin);
