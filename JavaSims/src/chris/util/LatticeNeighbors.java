@@ -17,7 +17,7 @@ public class LatticeNeighbors {
 	 */
 	public static enum Type {BORDERED, PERIODIC};
 	
-	public static enum Shape {Circle, Square, Diamond, Ellipse};
+	public static enum Shape {Circle, Square, Diamond, Ellipse, All};
 
 	public LatticeNeighbors(int Nx, int Ny, double r_lo, double r_hi, Type type, Shape shape) {
 		this.Nx = Nx;
@@ -84,6 +84,9 @@ public class LatticeNeighbors {
 		int dx = i%Nx - i0%Nx;
 		int dy = (int)(i/Ny) - (int)(i0/Ny);
 		
+		if(shape == LatticeNeighbors.Shape.All){
+			return nbs0;
+		}
 		
 		switch (type) {
 		
@@ -138,32 +141,6 @@ public class LatticeNeighbors {
 		}
 		
 	}
-		
-
-//
-//		int[] nbsZero = neighbors.get(0);
-//		int NumNbs = nbsZero.length;
-//		NbrArray[0][0] = NumNbs;
-//		int zX[] = new int[NumNbs];
-//		int zY[] = new int[NumNbs];
-//		for (int i = 1 ; i <= NumNbs; i++){
-//			NbrArray[0][i] = nbsZero[i-1];
-//			zX[i-1] = nbsZero[i-1]%L;
-//			zY[i-1] = (int)(nbsZero[i-1]/L);
-//		}
-//		for (int jj = 1 ; jj < N ; jj++){
-//			if(jj%((int)(N/10)) == 0 ) System.out.println(jj/N);
-//			NbrArray[jj][0] = NumNbs;
-//			int ix = jj%L;
-//			int iy = (int)(jj/L);
-//			for (int kk = 1 ; kk <= NumNbs ; kk++){
-//				NbrArray[jj][kk] = (zX[kk-1] + ix)%L + ((zY[kk-1] + iy)%L)*L;
-//			}	
-//		}
-//		
-		
-
-	
 
 	/**
 	 * Returns a static neighbor list array, terminated by index -1.
@@ -345,6 +322,14 @@ public class LatticeNeighbors {
 				}
 				
 				break;
+			}
+			
+			break;
+			
+		case All:
+
+			for (int jj = 0 ; jj < Nx*Ny ; jj++){
+				list[num++] = jj;
 			}
 			
 			break;

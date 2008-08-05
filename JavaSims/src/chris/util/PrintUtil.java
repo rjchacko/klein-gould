@@ -231,18 +231,18 @@ public class PrintUtil {
 			
 			
 			// print info here
-			pw.println("m by n array");
-			pw.println("printing:");
-			pw.println("i = 0, 1, 2, . . . m-1 ");
-			pw.println("i = m, m+1 , . . . ");
-			pw.println("    .");
-			pw.println("    .");
-			pw.println("    .");
-			pw.println("    n, n+1, . . . n+m");
-			pw.print("m = ");
-			pw.println(m);
-			pw.print("n = ");
-			pw.println(n);
+//			pw.println("m by n array");
+//			pw.println("printing:");
+//			pw.println("i = 0, 1, 2, . . . m-1 ");
+//			pw.println("i = m, m+1 , . . . ");
+//			pw.println("    .");
+//			pw.println("    .");
+//			pw.println("    .");
+//			pw.println("    n, n+1, . . . n+m");
+//			pw.print("m = ");
+//			pw.println(m);
+//			pw.print("n = ");
+//			pw.println(n);
 			for (int ii = 0 ; ii < m*n ; ii++){
 				pw.print(array[ii]);
 				if ( (ii + 1)%n == 0){

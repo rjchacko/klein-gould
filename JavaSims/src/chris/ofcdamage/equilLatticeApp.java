@@ -15,7 +15,7 @@ import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.ofc.Damage2D;
 
-public class varApp extends Simulation{
+public class equilLatticeApp extends Simulation{
 
 	varLives model;
 	
@@ -25,7 +25,8 @@ public class varApp extends Simulation{
 	ColorPalette palette1;
 	ColorGradient cGradient;
 	
-	DecimalFormat fmt = new DecimalFormat("0000.00");
+	DecimalFormat fmt  = new DecimalFormat("0000.00");
+	DecimalFormat ifmt = new DecimalFormat("000");
 	
 	private double ScMax;
 	private Boolean pretime;
@@ -33,7 +34,7 @@ public class varApp extends Simulation{
 	private boolean draw;
 	
 	public static void main(String[] args) {
-		new Control(new varApp(), "OFC Parameters");
+		new Control(new equilLatticeApp(), "OFC Parameters");
 	}
 	
 public void load(Control c) {
@@ -54,7 +55,7 @@ public void load(Control c) {
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.01,0,1));
 		params.add("\u03B1 width", (double)(0));
 		params.add("Equil Time", 100000);
-		params.add("Trend Time", 100000);
+		params.add("Number to Store", 100000);
 		params.add("Animation", new ChoiceValue("Off","On"));
 		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("Number of Plate Updates");
@@ -81,11 +82,9 @@ public void load(Control c) {
 		
 		// Equilibrate
 		equil();
-		// Simulate w/o Damage for Data
-		ideal();
-		// Simulate w/ Damage for Data
-		damage();
-		
+		// Save equilibrated lattices to file 
+		createEquil();
+
 		// Fin!
 		params.set("N_dead","Finished");
 		Job.animate();
@@ -119,40 +118,27 @@ public void load(Control c) {
 		return;
 	}
 	
-	private void ideal(){
+	private void createEquil(){
 		
 		// Simulate w/o Damage for Data
-		params.set("N_dead","Est. Equilib");
+		int elcounter = 0;
+		params.set("N_dead","Storing Lattice(s)");
 		model.setEquil(true);
 		model.runClocks(true);		
 		int pt0 = 0;
-		ptmax = params.iget("Trend Time"); 
-		pt    = params.iget("Trend Time");
+		ptmax = 500*params.iget("Number to Store"); 
+		pt    = 500*params.iget("Number to Store");
 		while(pt0 < ptmax){
 			model.avalanche();
-			model.takeData();
 			pt++;
+			if((pt0 % 500) == 0){
+				// print all data to file
+				model.printStress(model.getOutdir()+File.separator+"Stress_"+ ifmt.format(elcounter) +".txt");
+				model.printSr(model.getOutdir()+File.separator+"Sr"+ ifmt.format(elcounter) +".txt");
+				elcounter++;
+			}
 			pt0++;
 			Job.animate();
-		}
-		
-		return;
-	}
-	
-	private void damage(){
-		
-		Job.animate();
-		pretime = false;
-		model.setEquil(false);
-		model.runClocks(true);
-		while(model.avalanche()){
-			model.takeData();
-			Job.animate();
-			if (params.sget("Record").equals("On")){
-				// FIX ME!!!!!!!!!!!!
-				model.takePicture(gridS, true);
-				model.takePicture(gridL, true);
-			}
 		}
 		
 		return;
