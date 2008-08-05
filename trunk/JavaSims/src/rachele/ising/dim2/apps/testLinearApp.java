@@ -92,6 +92,7 @@ public class testLinearApp extends Simulation{
     Grid eta_k_LTGrid = new Grid("rhs");
     Grid phiGrid = new Grid("phi field");
     Grid etaDotSF = new Grid("sf phi field");
+    Grid testetaK = new Grid("test eta k");
     Plot etakPlot = new Plot("eta(k)");
     Grid phi0Grid = new Grid("phi_0");
     Grid phi0SliceGrid = new Grid("phi_0 slice");
@@ -114,7 +115,8 @@ public class testLinearApp extends Simulation{
 	public void load(Control c) {
 		if(accEtaValues) c.frameTogether("accs", etaVsTimeSim, etaVsTimeLinear, etaVsTimeLinearK, etaVsTimeLC);
 		c.frameTogether("Grids", phiGrid, etaDotSF, eVector, vSlice, hSlice);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/kySlice"));
+		c.frame(testetaK);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
 		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/phi0"));
@@ -134,7 +136,7 @@ public class testLinearApp extends Simulation{
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
-		params.add("L/R", 2.560);
+		params.add("L/R", 2.7826087);
 		params.add("R/dx", 50.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
@@ -196,6 +198,7 @@ public class testLinearApp extends Simulation{
 		//double [] phi0 = FileUtil.readConfigFromFile(fileName, ising.Lp);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
+		testetaK.registerData(Lp,Lp, etaK);
 		
 //		double [] eigenVect = new double [Lp];
 //		int i = Lp-1;
@@ -271,7 +274,7 @@ public class testLinearApp extends Simulation{
 		initialize();
 		//sf = new StructureFactor(ising.Lp, ising.L, ising.R,1.0, ising.dt);
 		ky = params.iget("ky");
-		etaK = new double[Lp*Lp];
+
 		double recordStep = 0.0001;	
 		
 		for (int i = 0; i < Lp*Lp; i++)
@@ -314,8 +317,15 @@ public class testLinearApp extends Simulation{
         	}
 			for (int i = 0; i < Lp*Lp; i++)
 				eta[i] = ising.phi[i] - phi0[i%Lp];
+//				System.out.println("eta = " + eta[i]);
+
 			//etaK = fft.calculate2DFT(eta);			
 			etaK = fft.find2DSF(eta, ising.L);
+			System.out.println("eta 0 " + etaK[Lp]);
+			System.out.println("eta 1 " + etaK[Lp+1]);
+			System.out.println("eta 2 " + etaK[Lp+2]);
+//			for (int i = 0; i < ising.Lp; i++)
+//				System.out.println("etak = " + etaK[i]);
 			//sf.takeFT(ising.phi);
 			//for (int i = 0; i < ising.Lp*ising.Lp; i++)
 				//etaK[i] = sf.sFactor[i];
@@ -350,14 +360,17 @@ public class testLinearApp extends Simulation{
 				etaLCAcc3.accum(ising.time(),Math.pow(etaLC[2],2));
 				etaLCAcc4.accum(ising.time(), Math.pow(etaLC[3],2)); 					
 			}
-   		
-    		Job.animate();
+
     		if(writeToFile){
     			if(ising.time() >= recordStep){
+    				//System.out.println("write at time " + ising.time());
+    				//double [] newData = fft.find2DSF(eta, ising.L);
     				recordSfDataToFile(etaK);
     				recordStep += .01;
     			}
     		}
+    		Job.animate();
+
 		}	
 	}
 	
@@ -700,7 +713,7 @@ public class testLinearApp extends Simulation{
 		FileUtil.printlnToFile(file3, ising.time(), data[ky*Lp+3]*data[ky*Lp+3]);
 		FileUtil.printlnToFile(file4, ising.time(), data[ky*Lp+4]*data[ky*Lp+4]);
 		FileUtil.printlnToFile(file5, ising.time(), data[ky*Lp+5]*data[ky*Lp+5]);
-		//System.out.println("data written for time = " + ising.time());
+		System.out.println("data written for time = " + ising.time());
 	}	
 	
 	public void readInputParams(String FileName){
@@ -767,6 +780,7 @@ public class testLinearApp extends Simulation{
 		rhs = new double[Lp];
 		rhs2D = new double[Lp*Lp];
 		eta = new double[Lp*Lp];
+		etaK = new double[Lp*Lp];
 		etaLT = new double[Lp*Lp];
 		//etaLT_k = new double[Lp*Lp];
 		etaLT_k_slice = new double [Lp];

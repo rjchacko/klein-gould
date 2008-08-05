@@ -121,7 +121,7 @@ public class IsingField2D extends AbstractIsing2D{
 		}else if(init == "Read 1D Soln"){
 			System.out.println("Read in 1D solution");
 			String fileName = params.sget("1D Input File");
-			double[] phiSlice = new double [Lp];
+			double[] phiSlice = new double [Lp];  
 			phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
 			for(int i = 0; i < Lp*Lp; i++)
 				phi[i]=phiSlice[i%Lp] + (random.nextGaussian())/1000000;
