@@ -151,7 +151,9 @@ public class Ising2D extends Simulation {
 					}
 					Job.animate();
 				}
-				params.set("mcs", mcs);			
+				params.set("mcs", mcs);	
+
+				
 			}
 			DatasetBuffer data=mag[currentWindow].copyData();
 			for(int i=0;i<data.size();i++){
