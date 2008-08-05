@@ -4,9 +4,7 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Random;
-
 import javax.imageio.ImageIO;
-
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.params.Parameters;
 import chris.util.CopyArray;
@@ -20,7 +18,7 @@ public class varLives {
 	private double  R, L, N, Sr0, Sr[], SrW, Sf0, Sf[], SfW, alpha0, alphaW,
 					stress[], Scum[], t1, t2, dt2, Nrichter,
 					Omega, sbarT, dsRMS, sT, nDS;
-	private boolean SrN, SfN, alphaN, deadSite[], ks[], equil;
+	private boolean SrN, SfN, alphaN, deadSite[], ks[], equil, clocks, randSi;
 	private Random  rand;
 	private String  shape, bc;
 	private int     alive[], nbs0, nbs[], nlMin, nlMax, numLives[];
@@ -45,10 +43,10 @@ public class varLives {
 		int seed;
 		
 		outdir = params.sget("Data Directory");
-		seed   = params.iget("Seed");
+		seed   = params.iget("Random Seed");
 		shape  = params.sget("Interaction Shape");
 		R      = params.fget("Interaction Radius (R)");
-		L      = params.iget("Lattice Size (L)");
+		L      = params.iget("Lattice Size");
 		nlMin  = params.iget("Min Lives");	
 		nlMax  = params.iget("Max Lives");	
 		bc     = params.sget("Boundary Condtions");
@@ -58,7 +56,9 @@ public class varLives {
 		SrW    = params.fget("\u03C3_r width");
 		alpha0 = params.fget("Dissipation (\u03B1)");
 		alphaW = params.fget("\u03B1 width");
+		randSi = params.sget("Intitial Stess").equals("Random");
 
+		
 		rand = new Random(seed);
 
 		t1     = 0;
@@ -70,6 +70,7 @@ public class varLives {
 		sbarT  = 0;
 		nDS    = 0;
 		equil  = true;
+		clocks = false;
 		
 		picdir    = outdir +"/GridPics/";
 		datafile1 = outdir + File.separator + "StressData.txt"; 
@@ -98,7 +99,7 @@ public class varLives {
 			ks[jj]             = false;
 			numLives[jj]       = nlMin + rand.nextInt(nlMax - nlMin + 1);
 			
-			if(true){
+			if(randSi){
 				stress[jj] = Sr0 + (Sf0 - Sr0)*rand.nextDouble();
 			}
 			else{
@@ -127,7 +128,10 @@ public class varLives {
 	
 	private int[] setupNBS(){
 		
-		if(shape.equals("All Sites")) return null;
+		if(shape.equals("All Sites")){
+			neighbors = new LatticeNeighbors((int) L,(int) L,0,N/2,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.All);
+			return neighbors.get(nbs0);	
+		}
 		
 		if (bc.equals("Bordered")){
 			nbs0 = (int)((1 + L)*(L/2));
@@ -204,10 +208,11 @@ public class varLives {
 			stress[jj] += Sf[imax]-stressMax;
 		}
 		
-		dt2 = Sf[imax] - stressMax;
-		
-		t1++;
-		t2 += dt2;
+		if(clocks){	
+			dt2 = Sf[imax] - stressMax;
+			t1++;
+			t2 += dt2;
+		}
 
 		return CopyArray.copyArray(imax,1);
 	}
@@ -274,7 +279,7 @@ public class varLives {
 			
 			}
 			else{
-				if(numLives[st] == 0){
+				if(numLives[st] == 1){
 					killSite(st);
 				}
 				else{
@@ -303,6 +308,7 @@ public class varLives {
 	private void killSite(int site){
 				
 		nDS++;
+		numLives[site]--;
 		alive[site]       = 0;
 		ks[site]          = true;
 		deadSite[site]    = true;
@@ -399,24 +405,27 @@ public class varLives {
 	private void ergMetric(){
 		
 		double Sbar = 0;
+		int count = 0;
 		
 		if(nDS < N){
 			
 			for (int jj = 0 ; jj < N ; jj++){
 				Scum[jj] += alive[jj]*stress[jj]*dt2;
-				Sbar += Scum[jj];
+				count += alive[jj];
+				Sbar += alive[jj]*Scum[jj];
 			}
 			
-			Sbar = Sbar/(N - nDS); 
+			Sbar = Sbar/count;
 
 			Omega = 0;
 			for (int jj = 0 ; jj < N ; jj++){
-				Omega += (Scum[jj] - Sbar)*(Scum[jj] - Sbar);
+				Omega += alive[jj]*(Scum[jj] - Sbar)*(Scum[jj] - Sbar);
+//				PrintUtil.printlnToFile("/Users/cserino/Desktop/debug.txt",jj,alive[jj],Scum[jj],Sbar);
 			}
 	
-			Omega = Omega/(t2*t2*(N- nDS));
+			Omega = Omega/(t2*t2*count);
 			sbarT = Sbar / t2;
-			sT    = Scum[(int)(N/3)]; 
+			sT    = Scum[(int)(N/3)] / t2; 
 			
 		}
 			
@@ -447,6 +456,20 @@ public class varLives {
 	public int[] getLives(){
 		
 		return numLives;
+	}
+	
+	public void runClocks(boolean bool){
+		clocks = bool;
+	}
+	
+	public void printStress(String fn){
+		PrintUtil.printArrayToFile(fn, stress, (int) L, (int) L);
+		return;
+	}
+	
+	public void printSr(String fn){
+		PrintUtil.printArrayToFile(fn, Sr, (int) L, 1);
+		return;
 	}
 	
 }
