@@ -69,7 +69,7 @@ class FrameAnimator {
 					try {
 						String fname = Utilities.formatI4(timerFrame);
 						String imgName = imageDir+File.separator+fname+".png";
-						ImageIO.write(seq.plot.getImage(), "png", new File(imgName));
+						ImageIO.write(seq.plot.getImage(320, 320), "png", new File(imgName));
 					} catch (IOException e) {
 						term.println(e.getMessage());
 					}
