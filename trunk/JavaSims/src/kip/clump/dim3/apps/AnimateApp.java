@@ -70,7 +70,7 @@ public class AnimateApp extends Simulation {
 			Job.animate();
 			try {
 				String imgName = outdir+File.separator+fmt.format(time)+".png";
-				ImageIO.write(grid.getImage(), "png", new File(imgName));
+				ImageIO.write(grid.getImage(320, 320), "png", new File(imgName));
 			} catch (IOException e) {
 				System.err.println(e.getMessage());
 			}
