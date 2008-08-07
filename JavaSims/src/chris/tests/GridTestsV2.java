@@ -13,9 +13,9 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.clusters.ClustersV4;
-import chris.ofc.old.NfailDamage2D;
-import chris.ofc.old.NfailDamage2DV2;
+import chris.foo.ofc.clusters.ClustersV4;
+import chris.foo.ofc.old.NfailDamage2D;
+import chris.foo.ofc.old.NfailDamage2DV2;
 import chris.util.LatticeNeighbors;
 
 
