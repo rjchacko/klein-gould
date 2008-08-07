@@ -1,4 +1,4 @@
-package chris.ofcdamage;
+package chris.ofcdamage.apps;
 
 import java.awt.Color;
 import java.io.File;
@@ -14,10 +14,11 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.foo.ofc.Damage2D;
+import chris.ofcdamage.damage;
 
-public class varApp extends Simulation{
+public class basicApp extends Simulation{
 
-	varLives model;
+	damage model;
 	
 	Grid gridS = new Grid ("Stress");
 	Grid gridL = new Grid ("Lives");
@@ -33,7 +34,7 @@ public class varApp extends Simulation{
 	private boolean draw;
 	
 	public static void main(String[] args) {
-		new Control(new varApp(), "OFC Parameters");
+		new Control(new basicApp(), "OFC Parameters");
 	}
 	
 public void load(Control c) {
@@ -69,7 +70,7 @@ public void load(Control c) {
 		
 		// Setup model
 		params.set("N_dead","Initializing");
-		model = new varLives(params);
+		model = new damage(params);
 		
 		// Setup display
 		setupDisplays();
