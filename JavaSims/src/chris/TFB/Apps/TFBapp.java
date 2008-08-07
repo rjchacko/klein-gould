@@ -3,8 +3,6 @@ package chris.TFB.Apps;
 import java.awt.Color;
 import java.text.DecimalFormat;
 
-import chris.TFB.TFBmodel;
-
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -12,7 +10,7 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
-import scikit.jobs.params.DoubleValue;
+import chris.TFB.TFBmodel;
 
 public class TFBapp extends Simulation{
 	
@@ -40,7 +38,8 @@ public class TFBapp extends Simulation{
 		params.add("Failure Stress",5.0);
 		params.add("\u03C3_f width",(double) 0);
 		params.add("Kappa", (double) 1);
-		params.addm("Temperature", new DoubleValue(1, 0, 5000).withSlider());
+		params.add("D", (double) 1);
+		params.add("Temperature", (double) 1);
 		params.add("Animation", new ChoiceValue("Off","On"));
 		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("MC Time Step");
@@ -58,6 +57,7 @@ public class TFBapp extends Simulation{
 		setupColors();
 		
 		// Run the simulation
+		Job.animate();
 		while(model.nextLattice()){
 			model.takeData();
 			Job.animate();
