@@ -14,12 +14,12 @@ import scikit.jobs.params.Parameters;
 
 public class TFBmodel {
 
-	@SuppressWarnings("unused")
-	private double stress, L, N, Stot, beta, kappa, Sf[], Sf0, SfW, t, sCum[], Omega, energy;
-	private int state[], Nalive;
-	private String dir, of;
+	private double 	stress, L, N, Stot, beta, kappa, Sf[], Sf0, SfW, t, sCum[], 
+					Omega, energy, D, Z, probF, probH;
+	private int 	state[], Nalive;
+	private String 	dir, of;
 	private boolean draw;
-	private Random rand;
+	private Random 	rand;
 	
 	private DecimalFormat fmt = new DecimalFormat("0000000");
 	
@@ -38,6 +38,7 @@ public class TFBmodel {
 		Stot   = N*stress;
 		beta   = 1/(params.fget("Temperature"));
 		kappa  = params.fget("Kappa");
+		D      = params.fget("D");
 		rand   = new Random(params.iget("Random Seed"));
 		Sf     = new double[(int) N];
 		state  = new int[(int) N];
@@ -49,6 +50,7 @@ public class TFBmodel {
 		dir    = params.sget("Data Directory");
 		t      = 0;
 		of     = dir + File.separator + "TFBdata.txt";		
+		Z      = calcZ();
 		
 		initArrays();
 	}
@@ -57,7 +59,7 @@ public class TFBmodel {
 		
 		for (int jj = 0 ; jj < N ; jj++){
 			Sf[jj]    = Sf0 + SfW*(0.5 - rand.nextDouble());
-			state[jj] = 2;
+			state[jj] = 1;
 			sCum[jj]  = 0;
 		}
 		
@@ -68,6 +70,9 @@ public class TFBmodel {
 		
 		t++;
 		int deltaN = 0;
+		
+		probF = pFail();
+		probH = pHeal();
 		
 		for(int jj = 0 ; jj < N ; jj++){
 			if(nextState(jj)){
@@ -85,23 +90,50 @@ public class TFBmodel {
 	private boolean nextState(int st){
 		
 		if(state[st] == 1){
-			// try to fail it	
-			
-			/*
-			 *	If site passes failure requirement, return TRUE   
-			 */
+			// If site passes failure requirement, return TRUE   
+			if(rand.nextDouble() < probF) return true;
+			return false;
 		}
-		
 		else{
-			// try to heal it 
-			
-			/*
-			 *	If site passes healing requirement, return TRUE   
-			 */
+			// If site passes healing requirement, return TRUE   
+			if(rand.nextDouble() < probH) return true;
+			return false;
 		}
+	}
+	
+	private double pFail(){
 		
+		return (1 - (Math.exp(-beta*hamiltonian(Nalive/N)) / Z));
+	}
+	
+	private double pHeal(){
 		
-		return false;
+		return (Math.exp(-beta*hamiltonian(Nalive/N)) / Z);
+	}
+	
+	public double hamiltonian(double phi){
+		
+		return (0.5*Stot*Stot/(kappa*phi) - D*phi);
+	}
+	
+	public double calcZ(){
+		
+		double phi;
+		double tempZ = 0;
+		
+		for(int jj = 0 ; jj < (N+1) ; jj++){
+			phi = jj/N;
+			tempZ += getg(phi)*Math.exp(-beta*hamiltonian(phi));
+		}
+			
+		return tempZ;
+	}
+	
+	public double getg(double phi){
+		
+		if(phi == 1 || phi == 0) return 1;
+		
+		return Math.exp(-N*(phi*Math.log(phi)+(1-phi)*Math.log(1-phi)));
 	}
 	
 	public static void printParams(String fout, Parameters prms){
