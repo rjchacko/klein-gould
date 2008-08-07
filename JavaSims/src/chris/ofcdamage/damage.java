@@ -12,7 +12,7 @@ import chris.util.DirUtil;
 import chris.util.LatticeNeighbors;
 import chris.util.PrintUtil;
 
-public class varLives {	
+public class damage {	
 	
 	// Model Parameters
 	private double  R, L, N, Sr0, Sr[], SrW, Sf0, Sf[], SfW, alpha0, alphaW,
@@ -32,7 +32,7 @@ public class varLives {
 	
 	
 	
-	public varLives(Parameters params){
+	public damage(Parameters params){
 	
 		SKdamageConstr(params);
 		return;
