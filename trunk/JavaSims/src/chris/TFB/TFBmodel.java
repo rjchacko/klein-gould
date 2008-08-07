@@ -7,16 +7,17 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
+import chris.util.PrintUtil;
+
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.params.Parameters;
 
 public class TFBmodel {
 
 	@SuppressWarnings("unused")
-	private double stress, L, N, Stot, beta, kappa, Sf[], Sf0, SfW, t, metric, sCum[];
+	private double stress, L, N, Stot, beta, kappa, Sf[], Sf0, SfW, t, sCum[], Omega, energy;
 	private int state[], Nalive;
-	private String dir;
-	@SuppressWarnings("unused")
+	private String dir, of;
 	private boolean draw;
 	private Random rand;
 	
@@ -47,6 +48,7 @@ public class TFBmodel {
 		draw   = (params.sget("Animation").equals("On"));
 		dir    = params.sget("Data Directory");
 		t      = 0;
+		of     = dir + File.separator + "TFBdata.txt";		
 		
 		initArrays();
 	}
@@ -75,6 +77,7 @@ public class TFBmodel {
 		}
 		
 		Nalive += deltaN;
+		ergMetric();
 		
 		return (Nalive > 0);
 	}
@@ -91,6 +94,7 @@ public class TFBmodel {
 		
 		else{
 			// try to heal it 
+			
 			/*
 			 *	If site passes healing requirement, return TRUE   
 			 */
@@ -99,13 +103,29 @@ public class TFBmodel {
 		
 		return false;
 	}
+	
+	public static void printParams(String fout, Parameters prms){
+		
+		PrintUtil.printlnToFile(fout, prms.toString());
+		return;
+	}
+	
+	public void writeHeader(){
+		
+		PrintUtil.printlnToFile(of, "Time", "Phi", "Energy", "Omega");
+		return;
+	}
+	
 	public void takeData(){
 		
+		PrintUtil.printlnToFile(of, t, Nalive/N, energy, Omega);
 		return;
 	}
 	
 	public void takePicture(Grid grid){
 
+		if(!draw) return;
+		
 		String SaveAs = dir + File.separator + grid.getTitle()+fmt.format(t)+".png";
 		try {
 			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
@@ -116,11 +136,48 @@ public class TFBmodel {
 		return;
 	}
 	
-	@SuppressWarnings("unused")
 	private void ergMetric(){
 		
+		double sbar = 0;
+		
+		if(Nalive > 0){
+			
+			for (int jj = 0 ; jj < N ; jj++){
+				sCum[jj] += state[jj];
+				sbar += sCum[jj];
+			}
+			
+			sbar = sbar/Nalive;		
+			Omega = 0;
+			
+			for (int jj = 0 ; jj < N ; jj++){
+				Omega += (sCum[jj] - sbar)*(sCum[jj] - sbar);
+			}
+			
+			Omega = Omega/(t*t*Nalive);
+		}
 		
 		return;
+	}
+	
+	public double getTime(){
+		
+		return t;
+	}
+	
+	public double getPhi(){
+		
+		return Nalive/N;
+	}
+	
+	public int[] getState(){
+		
+		return state;
+	}
+	
+	public int getL(){
+		
+		return (int) L;
 	}
 	
 }

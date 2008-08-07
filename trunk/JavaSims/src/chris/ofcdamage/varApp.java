@@ -13,7 +13,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.ofc.Damage2D;
+import chris.foo.ofc.Damage2D;
 
 public class varApp extends Simulation{
 
