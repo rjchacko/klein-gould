@@ -1,7 +1,9 @@
-package chris.TFB;
+package chris.TFB.Apps;
 
 import java.awt.Color;
 import java.text.DecimalFormat;
+
+import chris.TFB.TFBmodel;
 
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
