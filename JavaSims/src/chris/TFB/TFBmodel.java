@@ -1,5 +1,6 @@
 package chris.TFB;
 
+import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -9,13 +10,15 @@ import javax.imageio.ImageIO;
 
 import chris.util.PrintUtil;
 
+import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
+import scikit.graphics.dim2.Plot;
 import scikit.jobs.params.Parameters;
 
 public class TFBmodel {
 
 	private double 	stress, L, N, Stot, beta, kappa, Sf[], Sf0, SfW, t, sCum[], 
-					Omega, energy, D, Z, probF, probH;
+					Omega, energy, D, probF, probH;
 	private int 	state[], Nalive;
 	private String 	dir, of;
 	private boolean draw;
@@ -50,7 +53,6 @@ public class TFBmodel {
 		dir    = params.sget("Data Directory");
 		t      = 0;
 		of     = dir + File.separator + "TFBdata.txt";		
-		Z      = calcZ();
 		
 		initArrays();
 	}
@@ -71,8 +73,8 @@ public class TFBmodel {
 		t++;
 		int deltaN = 0;
 		
-		probF = pFail();
-		probH = pHeal();
+		probF = pFail(Nalive/N);
+		probH = pHeal(Nalive/N);
 		
 		for(int jj = 0 ; jj < N ; jj++){
 			if(nextState(jj)){
@@ -88,7 +90,7 @@ public class TFBmodel {
 	}
 	
 	private boolean nextState(int st){
-		
+			
 		if(state[st] == 1){
 			// If site passes failure requirement, return TRUE   
 			if(rand.nextDouble() < probF) return true;
@@ -101,14 +103,32 @@ public class TFBmodel {
 		}
 	}
 	
-	private double pFail(){
+	private double pFail(double phiold){
 		
-		return (1 - (Math.exp(-beta*hamiltonian(Nalive/N)) / Z));
+		double phinew = (N*phiold-1)/N;
+		
+		double dg = -0.5*(Stot*Stot/kappa)*(1/phinew - 1/phiold) - D*(phinew - phiold) +
+					(1/beta)*(phinew*Math.log(phinew) - phiold*Math.log(phiold) + 
+					(1 - phinew)*Math.log(1 - phinew) - (1 - phiold)*Math.log(1 - phiold));
+		
+		return Math.exp(-beta*dg);
 	}
 	
-	private double pHeal(){
+	public double gEnergy(double phi){
 		
-		return (Math.exp(-beta*hamiltonian(Nalive/N)) / Z);
+		return -0.5*(Stot*Stot/kappa)*(1/phi) - D*phi +
+		(1/beta)*(phi*Math.log(phi) + (1 - phi)*Math.log(1 - phi));
+	}
+	
+	private double pHeal(double phiold){
+		
+		double phinew = (N*phiold+1)/N;
+		
+		double dg = -0.5*(Stot*Stot/kappa)*(1/phinew - 1/phiold) - D*(phinew - phiold) +
+					(1/beta)*(phinew*Math.log(phinew) - phiold*Math.log(phiold) + 
+					(1 - phinew)*Math.log(1 - phinew) - (1 - phiold)*Math.log(1 - phiold));
+		
+		return Math.exp(-beta*dg);
 	}
 	
 	public double hamiltonian(double phi){
@@ -116,30 +136,30 @@ public class TFBmodel {
 		return (0.5*Stot*Stot/(kappa*phi) - D*phi);
 	}
 	
-	public double calcZ(){
-		
-		double phi;
-		double tempZ = 0;
-		
-		for(int jj = 0 ; jj < (N+1) ; jj++){
-			phi = jj/N;
-			tempZ += getg(phi)*Math.exp(-beta*hamiltonian(phi));
-		}
-			
-		return tempZ;
-	}
-	
-	public double getg(double phi){
-		
-		if(phi == 1 || phi == 0) return 1;
-		
-		return Math.exp(-N*(phi*Math.log(phi)+(1-phi)*Math.log(1-phi)));
-	}
-	
 	public static void printParams(String fout, Parameters prms){
 		
 		PrintUtil.printlnToFile(fout, prms.toString());
 		return;
+	}
+
+	public void plotGlandscape(){
+		
+		Plot plot = new Plot("Free Energy");
+		Accumulator plotdata = new Accumulator(1/N);
+		
+		for(int jj = 0 ; jj < N+1 ; jj++){
+			plotdata.accum(jj,gEnergy(jj/N));
+		}
+		
+		plot.registerLines("Free Energy",plotdata, Color.BLACK);
+		
+		String SaveAs = dir + File.separator + plot.getTitle() + ".png";
+		try {
+			ImageIO.write(plot.getImage(), "png", new File(SaveAs));
+		} catch (IOException e) {
+			System.err.println("Error in Writing File" + SaveAs);
+		}
+		
 	}
 	
 	public void writeHeader(){
