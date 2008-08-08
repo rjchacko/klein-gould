@@ -19,7 +19,9 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
+import scikit.jobs.params.FileValue;
 
 /**
 * Compares the Ising simulations for square interaction to the linear theory
@@ -67,11 +69,13 @@ public class SCAveFieldApp extends Simulation{
 
     
 	public static void main(String[] args) {
-		new Control(new SCAveFieldApp(), "Isin");
+		new Control(new SCAveFieldApp(), "SC Ising Field");
 	}
 	
 	public void load(Control c) {
 		c.frameTogether("Everything", phiGrid, etaDotSF, vSlice, hSlice, etaVsTimeSim);
+		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L128R46T0-04h0-8"));
+		params.add("Data Dir", new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/SCAveFieldApp"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -83,17 +87,17 @@ public class SCAveFieldApp extends Simulation{
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
 		params.addm("T", 0.04);
 		params.addm("H", 0.80);
-		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.0001);
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
-		params.add("L/R", 2.56);
+		params.add("L/R", 2.7826087);
 		params.add("R/dx", 50.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
-		params.addm("dt", 0.001);
+		params.addm("Max Time", 5.0);
+		params.addm("dt", 0.0005);
 		params.add("dt new");
 		params.add("Time");
 		params.add("Mean Phi");
@@ -180,6 +184,7 @@ public class SCAveFieldApp extends Simulation{
 		calcHspinodal();
 		Job.animate();
 		int repNo = 0;
+		double maxtime = params.fget("Max Time");
 		
 		while (true) {
 			double recordStep = .0001;	
@@ -187,11 +192,12 @@ public class SCAveFieldApp extends Simulation{
 			ising.restartClock();
 			for (int i = 0; i < accNo; i ++)
 				etaAcc[i].clear();
-			double maxTime = 5.0;
-			while (ising.time() < maxTime){
+			//double maxTime = 5.0;
+			while (ising.time() < maxtime){
 				ising.readParams(params);
 				//ising.simulateUnstable();
 				ising.simulateSimple();
+				//ising.simulate();
 				//params.set("dt new", ising.dt);
 				if(ising.time() >= recordStep){
 					for (int i = 0; i < Lp*Lp; i++)
@@ -203,8 +209,10 @@ public class SCAveFieldApp extends Simulation{
 						etaAccAve[i].accum(ising.time(), etaK[sfLabel[i]]);
 						//etaAccAve[i].accum(ising.time(), etaK[sfLabel[i]+Lp-2*i]);
 					}
+
 	    			recordStep += .1;
 	    		}
+				//System.out.println("dx = " + ising.dx);
 				Job.animate();
 			}
 			repNo += 1;
@@ -222,7 +230,7 @@ public class SCAveFieldApp extends Simulation{
 	public void recordSfDataToFile(){
 		
 		String message1 = "#Field theory average of SF vs time for several values of k.  Stripe to clump. ";
-		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/squareResults/svtSCf/f0";
+		String fileName = params.sget("Data Dir") + File.separator + "f0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			System.out.println("start " + i);
@@ -273,7 +281,7 @@ public class SCAveFieldApp extends Simulation{
 		if(params.sget("Init Conditions") == "Read From File")
 			readInputParams("../../../research/javaData/configs/inputParams");
 		ising = new IsingField2D(params);
-		sc = new StripeClumpFieldSim(ising, ky);
+		sc = new StripeClumpFieldSim(ising, ky, params.sget("1D Input File"),params.sget("Data Dir"));
 		
 		for (int i = 0; i < accNo; i++){
 			etaAcc[i] = new Accumulator();
@@ -287,6 +295,7 @@ public class SCAveFieldApp extends Simulation{
 		if(params.sget("Init Conditions")=="Read 1D Soln") ising.set1DConfig(sc.phi0);
 	}	
 
+	
 	private void write1Dconfig(){
 		String configFileName = "../../../research/javaData/configs1d/config";
 		FileUtil.deleteFile(configFileName);

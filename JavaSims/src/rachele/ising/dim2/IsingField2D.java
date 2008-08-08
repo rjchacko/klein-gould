@@ -64,7 +64,8 @@ public class IsingField2D extends AbstractIsing2D{
 		R = params.fget("R");
 		L = R*params.fget("L/R");
 		T = params.fget("T");
-		mobility = 1.0/T;
+		//mobility = 1.0/T;
+		mobility = 1.0;
 		dx = R/params.fget("R/dx");
 		dt = params.fget("dt");
 		H = params.fget("H");
@@ -122,9 +123,8 @@ public class IsingField2D extends AbstractIsing2D{
 			System.out.println("Read in 1D solution");
 			String fileName = params.sget("1D Input File");
 			double[] phiSlice = new double [Lp];  
-			phiSlice = FileUtil.readConfigFromFile(fileName, Lp);
-			for(int i = 0; i < Lp*Lp; i++)
-				phi[i]=phiSlice[i%Lp] + (random.nextGaussian())/1000000;
+			phiSlice = getSymmetricSlice(fileName);
+			set1DConfig(phiSlice);
 		}else if (init == "Constant"){
 			System.out.println("Constant");
 			for (int i = 0; i < Lp*Lp; i ++)
@@ -159,11 +159,33 @@ public class IsingField2D extends AbstractIsing2D{
 				phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
 		}
 	}
-	
-	public void set1DConfig(double [] phi0){
+	public void set1DConfig(double [] config){
 		for(int i = 0; i < Lp*Lp; i++)
-			phi[i]=phi0[i%Lp] + (random.nextGaussian()*noiseParameter);
+//			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter/1000000000000.0;		
+			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter*sqrt(1-pow(config[i%Lp],2))/(dx*dx);		
 	}
+	
+	public double [] getSymmetricSlice(String file){
+		double [] slice = new double [Lp];
+		double [] temp= FileUtil.readConfigFromFile(file, Lp);
+		double minPhi0Value = 1.0;
+		int minPhi0Location = -1;
+		for (int i = 0; i < Lp; i++){
+			if (temp[i] < minPhi0Value){
+				minPhi0Location = i;
+				minPhi0Value = temp[i];
+				System.out.println(temp[i] + " " + i);
+			}
+		}	
+		System.out.println(temp[minPhi0Location] + " " + minPhi0Location);
+		for (int i = 0; i < Lp; i++){
+			slice[i] = temp[(minPhi0Location+i)%Lp];
+			//System.out.println("phi0 " + i + " = " + phi0[i]);
+		}
+		return slice;
+	}
+	
+
 	public void readInitialConfiguration(String fileName){
 		try{
 			File myFile = new File(fileName);
