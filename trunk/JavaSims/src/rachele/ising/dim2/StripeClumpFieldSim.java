@@ -1,5 +1,9 @@
 package rachele.ising.dim2;
 
+//import java.io.File;
+
+import java.io.File;
+
 import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import rachele.util.MathTools;
@@ -9,6 +13,9 @@ import scikit.numerics.fn.Function1D;
 import scikit.numerics.fn.Function2D;
 import scikit.util.DoubleArray;
 
+/**
+* Calculates matrix, eigenvectors, eigenvalues....
+*/
 public class StripeClumpFieldSim {
 	int Lp;
 	IsingField2D ising;
@@ -19,8 +26,10 @@ public class StripeClumpFieldSim {
 	public double [] phi0;
     double [][] M;// Main matrix 
     public double [][] VV;// Eigenvalue matrix
-	
-	public StripeClumpFieldSim(IsingField2D ising, int ky){
+	String phi0file;
+    
+	public StripeClumpFieldSim(IsingField2D ising, int ky, String phi0file, String outDir){
+		this.phi0file = phi0file;
 		this.ky = ky;
 		this.ising = ising;
 		Lp = ising.Lp;
@@ -39,13 +48,26 @@ public class StripeClumpFieldSim {
 		findPhi0andPhi0_bar();
 		findMatrix();
 		diagonalize();
+		String outFile = outDir + File.separator + "matrixCalcs";
+		writeMatrixResultsToFile(outFile);
 		//findAndDiagonalizeLittleMatrix();
 	}
 
+	public void writeMatrixResultsToFile(String fileName){
+		
+		FileUtil.printlnToFile(fileName, "Results of StripeClumpFieldSim calculations ");
+		FileUtil.printlnToFile(fileName, "inputFile = " + phi0file);
+
+		for (int i=0; i < Lp; i ++){
+			System.out.println("start " + i);
+			FileUtil.printlnToFile(fileName, i, eigenvalue[i]);
+		}
+	}
+	
 	public void findPhi0andPhi0_bar(){
-		String fileName = "../../../research/javaData/configs1d/config";
+		//String fileName = "../../../research/javaData/configs1d/config";
 		//need to make phi0 symmetric
-		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, Lp);
+		double [] tempPhi0 = FileUtil.readConfigFromFile(phi0file, Lp);
 		double minPhi0Value = 1.0;
 		int minPhi0Location = -1;
 		for (int i = 0; i < Lp; i++){

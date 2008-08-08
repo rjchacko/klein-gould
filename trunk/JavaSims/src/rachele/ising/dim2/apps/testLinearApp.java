@@ -588,31 +588,13 @@ public class testLinearApp extends Simulation{
 	    
 	}
 	
-	double [] getSymmetricSlice(String file){
-		double [] slice = new double [Lp];
-		double [] temp= FileUtil.readConfigFromFile(file, Lp);
-		double minPhi0Value = 1.0;
-		int minPhi0Location = -1;
-		for (int i = 0; i < Lp; i++){
-			if (temp[i] < minPhi0Value){
-				minPhi0Location = i;
-				minPhi0Value = temp[i];
-				System.out.println(temp[i] + " " + i);
-			}
-		}	
-		System.out.println(temp[minPhi0Location] + " " + minPhi0Location);
-		for (int i = 0; i < Lp; i++){
-			slice[i] = temp[(minPhi0Location+i)%Lp];
-			//System.out.println("phi0 " + i + " = " + phi0[i]);
-		}
-		return slice;
-	}
+
 	
 	void findPhi0andPhi0_bar(){
 		
 		String fileName = params.sget("1D phi0 File");
 		//need to make phi0 symmetric
-		phi0 = getSymmetricSlice(fileName);
+		phi0 = ising.getSymmetricSlice(fileName);
 //		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, Lp);
 //		double minPhi0Value = 1.0;
 //		int minPhi0Location = -1;
@@ -797,11 +779,11 @@ public class testLinearApp extends Simulation{
 		eigenvalue = new double[Lp];
 		VV = new double [Lp][Lp];
 		findPhi0andPhi0_bar();
-		if(params.sget("Init Conditions")=="Read 1D Soln"){
-			String inputFile = params.sget("1D Input File");
-			double [] inputSlice = getSymmetricSlice(inputFile);
-			ising.set1DConfig(inputSlice);
-		}
+//		if(params.sget("Init Conditions")=="Read 1D Soln"){
+//			String inputFile = params.sget("1D Input File");
+//			double [] inputSlice = getSymmetricSlice(inputFile);
+//			ising.set1DConfig(inputSlice);
+//		}
 	}	
 
 	private void write1Dconfig(){
