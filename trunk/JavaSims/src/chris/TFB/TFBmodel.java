@@ -155,7 +155,7 @@ public class TFBmodel {
 		
 		String SaveAs = dir + File.separator + plot.getTitle() + ".png";
 		try {
-			ImageIO.write(plot.getImage(), "png", new File(SaveAs));
+			ImageIO.write(plot.getImage(300, 300), "png", new File(SaveAs));
 		} catch (IOException e) {
 			System.err.println("Error in Writing File" + SaveAs);
 		}
