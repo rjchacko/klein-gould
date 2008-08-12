@@ -30,7 +30,7 @@ public class svtFieldApp extends Simulation{
 	double [] phi0, phi0_bar; // Background stripe configuration and this configuration convoluted with potential.
 	int ky;
 	double kRChunk; //=2piR/L
-	boolean clearFile;
+	//boolean clearFile;
 	public String writeDir;
 
 	//RUN OPTIONS
@@ -63,11 +63,11 @@ public class svtFieldApp extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("Grids", phiGrid, vSlice, hSlice);
+		c.frameTogether("Grids", phiGrid, vSlice, hSlice, SFvTime);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
-		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L128R46T0-04h0-8"));
-		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/L128R46T0-04h0-8"));
+		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
+		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -85,11 +85,11 @@ public class svtFieldApp extends Simulation{
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
 		params.add("L/R", 2.7826087);
-		params.add("R/dx", 50.0);
+		params.add("R/dx", 40.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
-		params.addm("dt", 0.001);
+		params.addm("dt", 0.005);
 		params.add("Time");
 		//params.add("Mean Phi");
 		params.add("Lp");
@@ -140,12 +140,13 @@ public class svtFieldApp extends Simulation{
 	}
 
 	public void run() {
+		clear();
 		writeDir = params.sget("Data Dir");
 		if (flags.contains("Write 1D Config")){
 			write1Dconfig();
 			flags.clear();
 		}
-		clearFile = true;
+		//clearFile = true;
 		initialize();
 		System.out.println("init");
 		ky = params.iget("ky");
@@ -174,7 +175,7 @@ public class svtFieldApp extends Simulation{
 					sfAcc[i].accum(ising.time(), sf[sfLabel[i]]);					
 				}
 				recordSfDataToFile(etaK, sf);
-				recordStep += .0001;
+				recordStep += 0.001;
 			}
 
 			Job.animate();
@@ -259,8 +260,8 @@ public class svtFieldApp extends Simulation{
 	}
 
 	void initialize(){
-		if(params.sget("Init Conditions") == "Read From File")
-			readInputParams(params.sget("2D Input File"));
+//		if(params.sget("Init Conditions") == "Read From File")
+//			readInputParams(params.sget("2D Input File"));
 		ising = new IsingField2D(params);
 		for (int i = 0; i < accNo; i++){
 			etaAcc[i] = new Accumulator();

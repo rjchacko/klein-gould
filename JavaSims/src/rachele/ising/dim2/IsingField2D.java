@@ -59,7 +59,7 @@ public class IsingField2D extends AbstractIsing2D{
 
 	
 	public IsingField2D(Parameters params) {
-		random.setSeed(params.iget("Random seed", 0));
+		random.setSeed(params.iget("Random seed", 1));
 		J = params.fget("J");
 		R = params.fget("R");
 		L = R*params.fget("L/R");
@@ -162,7 +162,8 @@ public class IsingField2D extends AbstractIsing2D{
 	public void set1DConfig(double [] config){
 		for(int i = 0; i < Lp*Lp; i++)
 //			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter/1000000000000.0;		
-			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter*sqrt(1-pow(config[i%Lp],2))/(dx*dx);		
+			phi[i]=config[i%Lp];// + (random.nextGaussian())*noiseParameter*sqrt(1-pow(config[i%Lp],2))/(dx*dx);
+	
 	}
 	
 	public double [] getSymmetricSlice(String file){
@@ -230,7 +231,8 @@ public class IsingField2D extends AbstractIsing2D{
 		dx = L / Lp;
 		H = params.fget("H");
 		T = params.fget("T");
-		mobility = 1.0/T;
+		//mobility = 1.0/T;
+		mobility=1.0;
 		//double backgroundH = params.fget("H");
 		//double stripeH = params.fget("H Stripe");
 		//setExternalField(backgroundH, stripeH);

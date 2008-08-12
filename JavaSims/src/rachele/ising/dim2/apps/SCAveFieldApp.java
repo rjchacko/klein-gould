@@ -24,12 +24,20 @@ import scikit.jobs.params.DoubleValue;
 import scikit.jobs.params.FileValue;
 
 /**
+* 
 * Compares the Ising simulations for square interaction to the linear theory
-* following a quench in external field.
+* following a quench in external field (or not following a quench depending 
+* on initial conditions).
+* 
+* Plots and averages Structure factor vs time for some max time after the quench.
+* Use with svtFieldApp to find good parameters.
 * 
 * This works for the square shaped interaction shape.  
 * Use TestLinearOptApp.java with flexible length scales 
-* for circle shape interaction.
+* for circle shape interaction. (Probably not working right now.)
+* 
+* Seems to be a problem: doesn't work for first run.  Have to reset and restart.  
+* Do not know why this is.
 * 
 * The linear theory is:
 * \eta(x,y) = -\int dx' V(x-x',y-y') \eta(x',y')
@@ -40,6 +48,8 @@ import scikit.jobs.params.FileValue;
 * where \etaVec is a vector of length Lp; each dimension
 * represents an allowed value of kx.
 */
+
+
 public class SCAveFieldApp extends Simulation{
     IsingField2D ising;
     StripeClumpFieldSim sc;
@@ -74,7 +84,7 @@ public class SCAveFieldApp extends Simulation{
 	
 	public void load(Control c) {
 		c.frameTogether("Everything", phiGrid, etaDotSF, vSlice, hSlice, etaVsTimeSim);
-		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L128R46T0-04h0-8"));
+		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
 		params.add("Data Dir", new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/SCAveFieldApp"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
@@ -92,12 +102,12 @@ public class SCAveFieldApp extends Simulation{
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
 		params.add("L/R", 2.7826087);
-		params.add("R/dx", 50.0);
+		params.add("R/dx", 40.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
-		params.addm("Max Time", 5.0);
-		params.addm("dt", 0.0005);
+		params.addm("Max Time", 100.0);
+		params.addm("dt", 0.005);
 		params.add("dt new");
 		params.add("Time");
 		params.add("Mean Phi");
@@ -210,7 +220,7 @@ public class SCAveFieldApp extends Simulation{
 						//etaAccAve[i].accum(ising.time(), etaK[sfLabel[i]+Lp-2*i]);
 					}
 
-	    			recordStep += .1;
+	    			recordStep += 1.0;
 	    		}
 				//System.out.println("dx = " + ising.dx);
 				Job.animate();
