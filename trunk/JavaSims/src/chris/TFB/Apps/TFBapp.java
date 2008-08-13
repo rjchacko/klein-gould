@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
+import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
@@ -23,6 +24,8 @@ public class TFBapp extends Simulation{
 	
 	private DecimalFormat fmt = new DecimalFormat("0.000");
 	
+	private Plot gplot = new Plot("Free Energy");
+	
 	/////////////////////////////////////////////////////////
 	
 	public static void main(String[] args) {
@@ -34,18 +37,18 @@ public class TFBapp extends Simulation{
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Random Seed",0);
 		params.add("Lattice Size",1<<8);
-		params.add("Stress / site",1.0);		
+		params.add("Stress / site", 0.1);		
 		params.add("Failure Stress",5.0);
 		params.add("\u03C3_f width",(double) 0);
-		params.add("Kappa", (double) 1);
-		params.add("D", (double) 1);
-		params.add("Temperature", (double) 1);
+		params.add("Kappa", (double) 0.5);
+		params.add("D", (double) 0.5);
+		params.add("Temperature", (double) 0.2);
 		params.add("Animation", new ChoiceValue("Off","On"));
 		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("MC Time Step");
 		params.add("Phi");
 		
-		c.frame(grid);
+		c.frameTogether("TFB",grid,gplot);
 	}
 	
 	public void run() {
@@ -67,6 +70,7 @@ public class TFBapp extends Simulation{
 	
 	public void setupColors(){
 		
+		model.writeHeader();
 		L = model.getL();
 		draw = (params.sget("Animation").equals("On"));
 		palette1  = new ColorPalette();
@@ -85,6 +89,8 @@ public class TFBapp extends Simulation{
 		if(!draw) return;
 		
 		grid.registerData(L,L,model.getState());
+		gplot.registerLines("Free Energy",model.getGplot(), Color.BLACK);
+
 		if(params.sget("Record").equals("On")) model.takePicture(grid);
 
 	}

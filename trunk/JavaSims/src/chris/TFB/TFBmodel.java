@@ -1,6 +1,5 @@
 package chris.TFB;
 
-import java.awt.Color;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
@@ -8,12 +7,10 @@ import java.util.Random;
 
 import javax.imageio.ImageIO;
 
-import chris.util.PrintUtil;
-
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
-import scikit.graphics.dim2.Plot;
 import scikit.jobs.params.Parameters;
+import chris.util.PrintUtil;
 
 public class TFBmodel {
 
@@ -23,6 +20,8 @@ public class TFBmodel {
 	private String 	dir, of;
 	private boolean draw;
 	private Random 	rand;
+	
+	private Accumulator gplotdata = new Accumulator(1/N);
 	
 	private DecimalFormat fmt = new DecimalFormat("0000000");
 	
@@ -65,6 +64,8 @@ public class TFBmodel {
 			sCum[jj]  = 0;
 		}
 		
+		plotGlandscape();
+		
 		return;
 	}
 	
@@ -76,12 +77,19 @@ public class TFBmodel {
 		probF = pFail(Nalive/N);
 		probH = pHeal(Nalive/N);
 		
-		for(int jj = 0 ; jj < N ; jj++){
-			if(nextState(jj)){
-				state[jj] = 1-state[jj];	// state = 0 --> 1 // state = 1 --> 0 
-				deltaN += 2*state[jj] - 1;  // state = 0 --> -1 // state = 1 --> +1
-			}
-		}
+//		for(int jj = 0 ; jj < N ; jj++){
+//			if(nextState(jj)){
+//				state[jj] = 1-state[jj];	// state = 0 --> 1 // state = 1 --> 0 
+//				deltaN += 2*state[jj] - 1;  // state = 0 --> -1 // state = 1 --> +1
+//			}
+//		}
+		
+		int testsite = rand.nextInt((int) N);
+		if(nextState(testsite)){
+			state[testsite] = 1-state[testsite];	// state = 0 --> 1 // state = 1 --> 0 
+			deltaN += 2*state[testsite] - 1;  // state = 0 --> -1 // state = 1 --> +1
+		}	
+		
 		
 		Nalive += deltaN;
 		ergMetric();
@@ -107,6 +115,27 @@ public class TFBmodel {
 		
 		double phinew = (N*phiold-1)/N;
 		
+		if(phinew==0) return Double.MAX_VALUE;
+		
+		if(phiold==1) return Math.exp(-beta*(-0.5*(Stot*Stot/kappa)*(1/phinew - 1/phiold) - D*(phinew - phiold) +
+		(1/beta)*(phinew*Math.log(phinew)  + (1 - phinew)*Math.log(1 - phinew) )));
+		
+		double dg = -0.5*(Stot*Stot/kappa)*(1/phinew - 1/phiold) - D*(phinew - phiold) +
+					(1/beta)*(phinew*Math.log(phinew) - phiold*Math.log(phiold) + 
+					(1 - phinew)*Math.log(1 - phinew) - (1 - phiold)*Math.log(1 - phiold));
+		
+		return Math.exp(-beta*dg);
+	}
+	
+	private double pHeal(double phiold){
+		
+		double phinew = (N*phiold+1)/N;
+		
+		if (phiold==0) return 0;
+		
+		if(phinew==1) return Math.exp(-beta*(-0.5*(Stot*Stot/kappa)*(1/phinew - 1/phiold) - D*(phinew - phiold) +
+							(-1/beta)*(phiold*Math.log(phiold) + (1 - phiold)*Math.log(1 - phiold))));
+		
 		double dg = -0.5*(Stot*Stot/kappa)*(1/phinew - 1/phiold) - D*(phinew - phiold) +
 					(1/beta)*(phinew*Math.log(phinew) - phiold*Math.log(phiold) + 
 					(1 - phinew)*Math.log(1 - phinew) - (1 - phiold)*Math.log(1 - phiold));
@@ -116,19 +145,11 @@ public class TFBmodel {
 	
 	public double gEnergy(double phi){
 		
+		if(phi==0) return (-1)*Double.MAX_VALUE;
+		if(phi==1) return -0.5*(Stot*Stot/kappa);
+		
 		return -0.5*(Stot*Stot/kappa)*(1/phi) - D*phi +
-		(1/beta)*(phi*Math.log(phi) + (1 - phi)*Math.log(1 - phi));
-	}
-	
-	private double pHeal(double phiold){
-		
-		double phinew = (N*phiold+1)/N;
-		
-		double dg = -0.5*(Stot*Stot/kappa)*(1/phinew - 1/phiold) - D*(phinew - phiold) +
-					(1/beta)*(phinew*Math.log(phinew) - phiold*Math.log(phiold) + 
-					(1 - phinew)*Math.log(1 - phinew) - (1 - phiold)*Math.log(1 - phiold));
-		
-		return Math.exp(-beta*dg);
+				(1/beta)*(phi*Math.log(phi) + (1 - phi)*Math.log(1 - phi));
 	}
 	
 	public double hamiltonian(double phi){
@@ -144,21 +165,14 @@ public class TFBmodel {
 
 	public void plotGlandscape(){
 		
-		Plot plot = new Plot("Free Energy");
-		Accumulator plotdata = new Accumulator(1/N);
+		double tmp[] = new double[(int)N + 1];
 		
 		for(int jj = 0 ; jj < N+1 ; jj++){
-			plotdata.accum(jj,gEnergy(jj/N));
+			gplotdata.accum(jj,gEnergy(jj/N));
+			tmp[jj] = gEnergy(jj/N);
 		}
 		
-		plot.registerLines("Free Energy",plotdata, Color.BLACK);
-		
-		String SaveAs = dir + File.separator + plot.getTitle() + ".png";
-		try {
-			ImageIO.write(plot.getImage(300, 300), "png", new File(SaveAs));
-		} catch (IOException e) {
-			System.err.println("Error in Writing File" + SaveAs);
-		}
+		PrintUtil.printArrayToFile(dir+File.separator+"FEdata.txt",tmp,(int)N+1,1);
 		
 	}
 	
@@ -230,6 +244,16 @@ public class TFBmodel {
 	public int getL(){
 		
 		return (int) L;
+	}
+	
+	public Accumulator getGplot(){
+		
+		return gplotdata;
+	}
+	
+	public int getN(){
+		
+		return (int) N;
 	}
 	
 }
