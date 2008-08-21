@@ -31,6 +31,8 @@ import scikit.jobs.params.FileValue;
 * This has code to characterize if the stripes are hor or vertical and
 * collects only the dominant direction data.
 * 
+* For 1D input, use MCStripesClumpsSt1DsolnApp
+* 
 */
 
 public class MonteCarloStripesClumpsStApp extends Simulation{
@@ -107,9 +109,8 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		sFactor = new double [sim.L/dx*sim.L/dx];
 		double step = 0.20;
 		double initTime = 15.0;
-		boolean init1D = true;
 		double maxTime = params.fget("maxTime");//max time after quench time
-		//double quenchH = 0.9;
+		double quenchH = params.fget("h");// ext field after quench (initialized at h=0)
 		int repNo = 0;
 		int sfLabel = findBestkR();
 		System.out.println(sfLabel);
@@ -117,14 +118,13 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		while (true) {
 			for (int i = 0; i < accNo; i ++)
 				sf_tAcc[i].clear();
-			initializeStripes(init1D, initTime);
+			initializeStripes(initTime, quenchH);
 			sim.restartClock();
 			sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 			boolean vertStripes;
 			if(sFactor[sfLabel]>sFactor[sfLabel*sim.L/dx])vertStripes = true;
 			else vertStripes = false;
 			sim.restartClock();
-			//params.set("h", quenchH);
 			int recordInt = 0;
 			int recordStep = 0;
 			step = 0.25;
@@ -191,39 +191,13 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 			return kRCoord;
 		}
 	
-	private void initializeStripes(boolean init1D, double initTime){
-		if(init1D){
-			String fileName = params.sget("Input 1D File");
-			//need to make phi0 symmetric
-			double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, sim.L);
-			double [] phi0 = new double [sim.L];
-			double minPhi0Value = 1.0;
-			int minPhi0Location = -1;
-			for (int i = 0; i < sim.L; i++){
-				if (tempPhi0[i] < minPhi0Value){
-					minPhi0Location = i;
-					minPhi0Value = tempPhi0[i];
-					//System.out.println(tempPhi0[i] + " " + i);
-				}
-			}	
-			//System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
-			for (int i = 0; i < sim.L; i++){
-				phi0[i] = tempPhi0[(minPhi0Location+i)%sim.L];
-				//System.out.println("phi0 " + i + " = " + phi0[i]);
-			}		
-			//now load the Ising lattice with the proper probability
-			for (int i = 0; i < sim.L*sim.L; i++){
-				double prob = (phi0[i%sim.L]+1.0)/2.0;
-				if(random.nextDouble()>prob) sim.spins.set(i%sim.L, i/sim.L, -1);
-				else sim.spins.set(i%sim.L, i/sim.L, 1);
-			}
-		}else{
-			params.set("h", 0.0);
-			while(sim.time() < initTime){ 
-				sim.step();
-				Job.animate();
-			}			
+	private void initializeStripes(double initTime, double finalH){
+		params.set("h", 0.0);
+		while(sim.time() < initTime){ 
+			sim.step();
+			Job.animate();		
 		}
+		params.set("h", finalH);
 	}
 	
 	public int findBestkR(){

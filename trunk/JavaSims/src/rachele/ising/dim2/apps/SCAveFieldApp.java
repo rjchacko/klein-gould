@@ -113,8 +113,6 @@ public class SCAveFieldApp extends Simulation{
 		params.add("Mean Phi");
 		params.add("Lp");
 		params.add("Reps");
-		flags.add("Clear");
-		flags.add("Write 1D Config");
 	}
 
 	public void animate() {
