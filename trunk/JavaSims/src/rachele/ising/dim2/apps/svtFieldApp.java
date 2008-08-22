@@ -55,7 +55,7 @@ public class svtFieldApp extends Simulation{
 	Accumulator [] etaAcc = new Accumulator [accNo];
 	Accumulator [] sfAcc = new Accumulator [accNo];
 
-    int [] sfLabel = new int [accNo];
+    int [][][] sfLabel = new int [2][4][accNo];
 	
 	public int Lp;
 	Grid etaDot = new Grid("ising delta phi");
@@ -105,6 +105,7 @@ public class svtFieldApp extends Simulation{
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
+		params.addm("dkx", 1);
 		params.addm("dt", 0.005);
 		params.add("Time");
 		params.add("Lp");
@@ -189,11 +190,11 @@ public class svtFieldApp extends Simulation{
 				sf = fft.find2DSF(ising.phi, ising.L);
 				if(accumsOn){
 					for (int i = 0; i < accNo; i++){
-						etaAcc[i].accum(ising.time(), etaK[sfLabel[i]]);
-						sfAcc[i].accum(ising.time(), sf[sfLabel[i]]);					
+						etaAcc[i].accum(ising.time(), etaK[sfLabel[0][0][i]]);
+						sfAcc[i].accum(ising.time(), sf[sfLabel[1][0][i]]);					
 					}
 				}
-				recordSfDataToFile(etaK, sf);
+				recordSfDataToFile(etaK);
 				recordStep += 0.001;
 			}
 
@@ -208,22 +209,29 @@ public class svtFieldApp extends Simulation{
 		System.out.println("H spinodal for T = " + ising.T + " is " + hs);
 	}
 
-	private void recordSfDataToFile(double [] data1, double [] data2){
+	private void recordSfDataToFile(double [] data1){
 		
 		String fileName = params.sget("Data Dir") + File.separator + "e0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
-			
 			StringBuffer mb = new StringBuffer();
-			mb.append("# sf label = ");	mb.append(sfLabel[i]); mb.append(" kR value = ");
-			double krvalue = 2*ising.R*Math.PI*(sfLabel[i])/ising.L;
+			mb.append("# sf label = ");	mb.append(sfLabel[0][0][i]); mb.append(" kR value = ");
+			double krvalue = 2*ising.R*Math.PI*(sfLabel[0][0][i])/ising.L;
 			mb.append(krvalue);			
-			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.deleteCharAt(fileBuffer.length()-1);
-			fileBuffer.append("e");fileBuffer.append(i); fileName = fileBuffer.toString();
-			FileUtil.printlnToFile(fileName, ising.time(), data1[sfLabel[i]]);	
-			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.deleteCharAt(fileBuffer.length()-1);
-			fileBuffer.append("s");fileBuffer.append(i); fileName = fileBuffer.toString();
-			FileUtil.printlnToFile(fileName, ising.time(), data2[sfLabel[i]]);			
+			fileBuffer.deleteCharAt(fileBuffer.length()-1);
+			fileBuffer.deleteCharAt(fileBuffer.length()-1);
+			fileBuffer.append("h");fileBuffer.append(i); fileName = fileBuffer.toString();
+			double sum = 0;
+			for (int j=0; j<4; j++) sum += data1[sfLabel[0][j][i]]; 
+			sum /=4;
+			FileUtil.printlnToFile(fileName, ising.time(), sum);	
+			fileBuffer.deleteCharAt(fileBuffer.length()-1);
+			fileBuffer.deleteCharAt(fileBuffer.length()-1);
+			fileBuffer.append("v");fileBuffer.append(i); fileName = fileBuffer.toString();
+			sum = 0;
+			for (int j=0; j<4; j++) sum += data1[sfLabel[1][j][i]]; 
+			sum /=4;
+			FileUtil.printlnToFile(fileName, ising.time(), sum);			
 		}
 	}	
 
@@ -242,8 +250,8 @@ public class svtFieldApp extends Simulation{
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			StringBuffer mb = new StringBuffer();
-			mb.append("# sf label = ");	mb.append(sfLabel[i]); mb.append(" kR value = ");
-			double krvalue = 2*ising.R*Math.PI*(sfLabel[i])/ising.L;
+			mb.append("# sf label = ");	mb.append(sfLabel[0][0][i]); mb.append(" kR value = ");
+			double krvalue = 2*ising.R*Math.PI*(sfLabel[0][0][i])/ising.L;
 			mb.append(krvalue);			
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.deleteCharAt(fileBuffer.length()-1);
 			fileBuffer.append("e");fileBuffer.append(i); fileName = fileBuffer.toString();
@@ -273,7 +281,30 @@ public class svtFieldApp extends Simulation{
 				etaAcc[i] = new Accumulator();
 				sfAcc[i] = new Accumulator();
 			}
-			sfLabel[i] = ky*Lp+i;
+			int index, x, y;
+			int dkx = params.iget("dkx");
+			int kx = i*dkx;
+			//Horizontal labels
+			int size = ising.Lp*ising.Lp;
+			y = ky; x = kx;//Up, right
+			index = ising.Lp*y+x; 
+			sfLabel[0][0][i] = index;
+			x = ising.Lp - kx;//Up, left	
+			index = ising.Lp*y+x; sfLabel[0][1][i] = index%size;
+			y = ising.Lp-ky; x = kx;//Down, right
+			index = ising.Lp*y+x; sfLabel[0][2][i] = index%size;
+			x = ising.Lp - kx;//Up, left	
+			index = ising.Lp*y+x; sfLabel[0][3][i] = index%size;
+			//Vertical labels
+			x = ky; y = kx;//Right, Up
+			index = ising.Lp*y+x; sfLabel[1][0][i] = index%size;
+			y = ising.Lp - kx;//Right, Down	
+			index = ising.Lp*y+x; sfLabel[1][1][i] = index%size;
+			x = ising.Lp-ky; y = kx;//Left, Up
+			index = ising.Lp*y+x; sfLabel[1][2][i] = index%size;
+			y = ising.Lp - kx;//Left, Down
+			index = ising.Lp*y+x; sfLabel[1][3][i] = index%size;
+
 		}
 		this.Lp = ising.Lp;
 		fft = new FourierTransformer(Lp);
