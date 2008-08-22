@@ -2,10 +2,7 @@ package rachele.ising.dim2.apps;
 
 import static scikit.util.Utilities.asList;
 import java.awt.Color;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import rachele.ising.dim2.IsingField2D;
 import rachele.ising.dim2.StripeClumpFieldSim;
 import rachele.util.FileUtil;
@@ -25,7 +22,8 @@ import scikit.jobs.params.FileValue;
 
 /**
 * 
-* Compares the Ising simulations for square interaction to the linear theory
+* Compares the Ising simulations for square interaction to the stripe to 
+* clump linear theory
 * following a quench in external field (or not following a quench depending 
 * on initial conditions).
 * 
@@ -49,21 +47,13 @@ import scikit.jobs.params.FileValue;
 * represents an allowed value of kx.
 */
 
-
 public class SCAveFieldApp extends Simulation{
     IsingField2D ising;
     StripeClumpFieldSim sc;
     FourierTransformer fft;
-    //double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice, etaK; //right hand side
     double [] eta, etaK;
     int ky;
     double kRChunk; //=2piR/L
-    boolean clearFile;
-    
-    //RUN OPTIONS
-    boolean accEtaValues = true;
-    boolean writeToFile = true;
-    
     int accNo = 6;
     Accumulator [] etaAcc = new Accumulator [accNo];
     Accumulator [] etaAccAve = new Accumulator [accNo];
@@ -71,9 +61,7 @@ public class SCAveFieldApp extends Simulation{
     public int Lp;
     Grid phiGrid = new Grid("phi field");
     Grid etaDotSF = new Grid("sf phi field");
-    Plot etakPlot = new Plot("eta(k)");
     Plot etaVsTimeSim = new Plot("eta v t");
-    Plot etakSimPlot = new Plot("eta k sim");
     Plot hSlice = new Plot("Horizontal Slice");
 	Plot vSlice = new Plot("Vertical Slice"); 
 
@@ -90,7 +78,7 @@ public class SCAveFieldApp extends Simulation{
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
 		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian"));
-		params.addm("Approx", new ChoiceValue("Slow", "HalfStep", "TimeAdjust", "Phi4","Phi4HalfStep"));
+		params.addm("Approx", new ChoiceValue("None", "Modified Dynamics"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
@@ -172,22 +160,9 @@ public class SCAveFieldApp extends Simulation{
  
 	public void run() {
 		
-		if (flags.contains("Write 1D Config")){
-			write1Dconfig();
-			flags.clear();
-		}
-		clearFile = true;
 		ky = params.iget("ky");
-		initialize();		
-//		for (int i = 0; i < Lp*Lp; i++)
-//			etaLT[i] = ising.phi[i] - sc.phi0[i%Lp];
-//		double [] etaLT_k = new double [Lp*Lp];
-//		etaLT_k = fft.calculate2DFT(etaLT);
-//		for (int i = ky*Lp; i < Lp*(ky+1); i++)
-//			etaLT_k_slice[i-ky*Lp] = etaLT_k[i]; 
-//		for (int i = 0; i < Lp*Lp; i++)
-//			eta[i] = ising.phi[i] - sc.phi0[i%Lp];
-
+		initialize();	
+		String approx = params.sget("Approx");
 		System.out.println("ky = " + ky);
 		calcHspinodal();
 		Job.animate();
@@ -200,27 +175,20 @@ public class SCAveFieldApp extends Simulation{
 			ising.restartClock();
 			for (int i = 0; i < accNo; i ++)
 				etaAcc[i].clear();
-			//double maxTime = 5.0;
 			while (ising.time() < maxtime){
 				ising.readParams(params);
-				//ising.simulateUnstable();
-				ising.simulateSimple();
-				//ising.simulate();
-				//params.set("dt new", ising.dt);
+				if (approx == "None") ising.simulateSimple();
+				else if (approx == "Modified Dynamics")ising.simulate();
 				if(ising.time() >= recordStep){
 					for (int i = 0; i < Lp*Lp; i++)
 						eta[i] = ising.phi[i] - sc.phi0[i%Lp];
 					etaK = fft.find2DSF(eta, ising.L);
 					for (int i = 0; i < accNo; i++){
 						etaAcc[i].accum(ising.time(), etaK[sfLabel[i]]);
-						//etaAcc[i].accum(ising.time(), etaK[sfLabel[i]+Lp-2*i]);
 						etaAccAve[i].accum(ising.time(), etaK[sfLabel[i]]);
-						//etaAccAve[i].accum(ising.time(), etaK[sfLabel[i]+Lp-2*i]);
 					}
-
 	    			recordStep += 1.0;
 	    		}
-				//System.out.println("dx = " + ising.dx);
 				Job.animate();
 			}
 			repNo += 1;
@@ -235,7 +203,7 @@ public class SCAveFieldApp extends Simulation{
 		System.out.println("H spinodal for T = " + ising.T + " is " + hs);
 	}
 	
-	public void recordSfDataToFile(){
+	private void recordSfDataToFile(){
 		
 		String message1 = "#Field theory average of SF vs time for several values of k.  Stripe to clump. ";
 		String fileName = params.sget("Data Dir") + File.separator + "f0";
@@ -253,41 +221,7 @@ public class SCAveFieldApp extends Simulation{
 		}
 	}	
 	
-	public void readInputParams(String FileName){
-		try {
-			File inputFile = new File(FileName);
-			DataInputStream dis = new DataInputStream(new FileInputStream(inputFile));
-			double readData;
-			
-			readData = dis.readDouble();
-			System.out.println(readData);
-			params.set("J", readData);
-			dis.readChar();				
-			
-			readData = dis.readDouble();
-			System.out.println(readData);
-			params.set("R", readData);
-			dis.readChar();	
-			
-			readData = dis.readDouble();
-			System.out.println(readData);
-			params.set("L/R", readData);
-			dis.readChar();
-			
-			readData = dis.readDouble();
-			System.out.println(readData);
-			params.set("R/dx", readData);
-			dis.readChar();	
-			
-			System.out.println("input read");
-		}catch(IOException ex){
-			ex.printStackTrace();
-		}
-	}
-	
-	void initialize(){
-		if(params.sget("Init Conditions") == "Read From File")
-			readInputParams("../../../research/javaData/configs/inputParams");
+	private void initialize(){
 		ising = new IsingField2D(params);
 		sc = new StripeClumpFieldSim(ising, ky, params.sget("1D Input File"),params.sget("Data Dir"));
 		
@@ -302,11 +236,4 @@ public class SCAveFieldApp extends Simulation{
 		etaK = new double [Lp*Lp];
 		if(params.sget("Init Conditions")=="Read 1D Soln") ising.set1DConfig(sc.phi0);
 	}	
-
-	
-	private void write1Dconfig(){
-		String configFileName = "../../../research/javaData/configs1d/config";
-		FileUtil.deleteFile(configFileName);
-		FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
-	}
 }

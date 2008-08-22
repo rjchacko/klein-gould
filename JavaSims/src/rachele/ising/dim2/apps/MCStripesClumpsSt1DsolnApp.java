@@ -21,16 +21,12 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.FileValue;
 
-
-
 /**
 * 
 * Monte Carlo Simulation to produce structure factor vs time averages.
 * This should take an average of horizontal and vertical structure factor info.
 * 
 */
-
-
 public class MCStripesClumpsSt1DsolnApp extends Simulation{
 
 	Grid grid = new Grid("Long Range Ising Model");
