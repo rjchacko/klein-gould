@@ -44,12 +44,12 @@ public class svtFieldApp extends Simulation{
 	double [] phi0, phi0_bar; // Background stripe configuration and this configuration convoluted with potential.
 	int ky;
 	double kRChunk; //=2piR/L
-	boolean accumsOn = false;
 	public String writeDir;
 
 	//RUN OPTIONS
 	boolean writeToFile = true;
-	
+	boolean accumsOn = false;
+	boolean calcContribs = true;
 	int accNo = 6;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
@@ -159,7 +159,8 @@ public class svtFieldApp extends Simulation{
 		clear();
 		writeDir = params.sget("Data Dir");
 		initialize();
-		System.out.println("init");
+		System.out.println("init55");
+		System.out.println("go2");
 		ky = params.iget("ky");
 		String approx = params.sget("Approx");
 		double recordStep = 0.00001;	
@@ -174,8 +175,16 @@ public class svtFieldApp extends Simulation{
 				
 		while (true) {
 			ising.readParams(params);
-			if (approx == "None") ising.simulateSimple();
-			else if (approx == "Modified Dynamics")ising.simulate();
+			System.out.println("go");
+			if(calcContribs){ 
+
+				ising.simModCalcContrib();
+				recordContribToFile();
+			}
+			else{
+				if (approx == "None") ising.simulateSimple();
+				else if (approx == "Modified Dynamics")ising.simulate();
+			}
 			if(ising.time() >= recordStep){
 				for (int i = 0; i < Lp*Lp; i++)
 					eta[i] = ising.phi[i] - phi0[i%Lp];
@@ -202,7 +211,7 @@ public class svtFieldApp extends Simulation{
 		System.out.println("H spinodal for T = " + ising.T + " is " + hs);
 	}
 
-	public void recordSfDataToFile(double [] data1, double [] data2){
+	private void recordSfDataToFile(double [] data1, double [] data2){
 		
 		String fileName = params.sget("Data Dir") + File.separator + "e0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
@@ -221,6 +230,15 @@ public class svtFieldApp extends Simulation{
 		}
 	}	
 
+	private void recordContribToFile(){
+		String fileName = params.sget("Data Dir") + File.separator + "n";
+		double noiseC = ising.noiseContrib;
+		double driftC = 1.0-noiseC;
+		FileUtil.printlnToFile(fileName, ising.time(), noiseC);
+		fileName = params.sget("Data Dir") + File.separator + "d";
+		FileUtil.printlnToFile(fileName, ising.time(), driftC);
+	}
+	
 	private void initFiles(){
 		String message1 = "#Field theory of SF vs time for several values of k.  Stripe to clump. ";
 		String fileName = params.sget("Data Dir") + File.separator + "e0";
@@ -236,14 +254,23 @@ public class svtFieldApp extends Simulation{
 			FileUtil.initFile(fileName, params, message1, message2);
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.deleteCharAt(fileBuffer.length()-1);
 			fileBuffer.append("s");fileBuffer.append(i); fileName = fileBuffer.toString();
-			FileUtil.initFile(fileName, params, message1, message2);		
+			FileUtil.initFile(fileName, params, message1, message2);
+
+		}
+		if(calcContribs){
+			String mes1 = "Noise contribution to dynamics";
+			String noiseFile =  params.sget("Data Dir") + File.separator + "n";
+			FileUtil.initFile(noiseFile, params, mes1);			
+			String mes2 = "Drift contribution to dynamics";
+			String driftFile =  params.sget("Data Dir") + File.separator + "d";
+			FileUtil.initFile(driftFile, params, mes2);			
 		}
 	}
 
 	private void initialize(){
+		System.out.println("go2");
 		ising = new IsingField2D(params);
 		sc = new StripeClumpFieldSim(ising, ky, params.sget("1D Input File"),params.sget("Data Dir"));
-
 		for (int i = 0; i < accNo; i++){
 			if(accumsOn){
 				etaAcc[i] = new Accumulator();

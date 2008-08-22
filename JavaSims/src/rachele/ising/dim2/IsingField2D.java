@@ -41,22 +41,18 @@ public class IsingField2D extends AbstractIsing2D{
 	public double [] h;
 	public double f_p;
 	public double fret;
+	public double noiseContrib, driftContrib;
 	
 	Accumulator accClumpFreeEnergy;
 	Accumulator accStripeFreeEnergy;
 	Accumulator accEitherFreeEnergy;
 	public Accumulator accFreeEnergy;
-			
-	//boolean noiselessDynamics = false;
 	double noiseParameter, stripeStrength;
 	public boolean circleInteraction = false;
 	boolean magConservation = false;
 	int slowPower = 0;
 	String theory;
-	
 	Random random = new Random();
-	
-
 	
 	public IsingField2D(Parameters params) {
 		random.setSeed(params.iget("Random seed", 1));
@@ -365,7 +361,33 @@ public class IsingField2D extends AbstractIsing2D{
 	}
 	
 	public void restartClock(){t=0.0;}
-		
+
+	/**
+	* This purpose of this method is to simulate with modified
+	* dynamics and calculate the average percent contribution 
+	* from the drift term (dF/dphi term) and the noise term.
+	* Then should be able to test with zero init noise which
+	* term "drives" the dynamics and where does it switch from one 
+	* term to another. The main reason for doing this is to 
+	* investigate the disorder->clump->stripe transition.
+	*/
+	public void simModCalcContrib() {
+			convolveWithRange(phi, phi_bar, R);
+			driftContrib = 0.0;
+		for (int i = 0; i < Lp*Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = mobility*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
+			Lambda[i] = sqr(1 - phi[i]*phi[i]);		
+			double driftTerm = - dt*Lambda[i]*dF_dPhi;
+			double noiseTerm = sqrt(Lambda[i]*(dt*2*T*mobility)/dx)*noise();
+			delPhi[i] = driftTerm + noiseTerm;
+			driftContrib += driftTerm/delPhi[i];
+			phiVector[i] = delPhi[i];
+		}		
+		driftContrib /= (Lp*Lp);
+		t += dt;
+	}
+	
 	public void simulate() {
 		freeEnergy = 0;  //free energy is calculated for previous time step
 		double potAccum = 0;
