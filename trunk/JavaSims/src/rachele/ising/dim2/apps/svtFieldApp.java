@@ -3,11 +3,9 @@ package rachele.ising.dim2.apps;
 import static scikit.util.Utilities.asList;
 
 import java.awt.Color;
-import java.io.DataInputStream;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
 import rachele.ising.dim2.IsingField2D;
+import rachele.ising.dim2.StripeClumpFieldSim;
 import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
@@ -22,23 +20,41 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import scikit.jobs.params.FileValue;
+
+/**
+* 
+* Something is screwed up with the first run of this program.  
+* I don't know why, but you can avoid the problems for some reason
+* by starting the program, reseting and starting over.
+* Then it seems to be fine.
+* 
+* This program is just for testing (it has no max time.)  Disable the 
+* accumulators to look at long times.
+* 
+*  Records the structure factors vs time for indefinite time for
+*  several k values.
+*
+*/
 public class svtFieldApp extends Simulation{
 
 	IsingField2D ising;
 	FourierTransformer fft;
+    StripeClumpFieldSim sc;
 	double [] eta, etaK, sf; //right hand side
 	double [] phi0, phi0_bar; // Background stripe configuration and this configuration convoluted with potential.
 	int ky;
 	double kRChunk; //=2piR/L
-	//boolean clearFile;
+	boolean accumsOn = false;
 	public String writeDir;
 
 	//RUN OPTIONS
 	boolean writeToFile = true;
 	
 	int accNo = 6;
-    Accumulator [] etaAcc = new Accumulator [accNo];
-    Accumulator [] sfAcc = new Accumulator [accNo];
+	
+	Accumulator [] etaAcc = new Accumulator [accNo];
+	Accumulator [] sfAcc = new Accumulator [accNo];
+
     int [] sfLabel = new int [accNo];
 	
 	public int Lp;
@@ -59,12 +75,12 @@ public class svtFieldApp extends Simulation{
 
 
 	public static void main(String[] args) {
-		new Control(new svtFieldApp(), "Ising Linear Test");
+		new Control(new svtFieldApp(), "Svt Ising Field");
 	}
 
 	public void load(Control c) {
 		c.frameTogether("Grids", phiGrid, vSlice, hSlice, SFvTime);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp"));
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
 		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
@@ -72,7 +88,7 @@ public class svtFieldApp extends Simulation{
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
 		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian"));
-		params.addm("Approx", new ChoiceValue("Slow", "HalfStep", "TimeAdjust", "Phi4","Phi4HalfStep"));
+		params.addm("Approx", new ChoiceValue("None", "Modified Dynamics"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
@@ -91,7 +107,6 @@ public class svtFieldApp extends Simulation{
 		params.addm("ky", 2);
 		params.addm("dt", 0.005);
 		params.add("Time");
-		//params.add("Mean Phi");
 		params.add("Lp");
 		flags.add("Clear");
 		flags.add("Write 1D Config");
@@ -121,15 +136,16 @@ public class svtFieldApp extends Simulation{
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
-		for (int i = 0; i < accNo; i ++){
-			float colorChunk = (float)i/(float)accNo;
-			Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
-			StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
-			EtavTime.registerLines(sb.toString(), etaAcc[i], col);
-			StringBuffer sb2 = new StringBuffer();sb2.append("s(t) "); sb2.append(i);
-			SFvTime.registerLines(sb2.toString(), sfAcc[i], col);
+		if(accumsOn){
+			for (int i = 0; i < accNo; i ++){
+				float colorChunk = (float)i/(float)accNo;
+				Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
+				StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
+				EtavTime.registerLines(sb.toString(), etaAcc[i], col);
+				StringBuffer sb2 = new StringBuffer();sb2.append("s(t) "); sb2.append(i);
+				SFvTime.registerLines(sb2.toString(), sfAcc[i], col);
+			}
 		}
-		
 		if(flags.contains("Clear")){
 			flags.clear();			
 		}
@@ -142,15 +158,10 @@ public class svtFieldApp extends Simulation{
 	public void run() {
 		clear();
 		writeDir = params.sget("Data Dir");
-		if (flags.contains("Write 1D Config")){
-			write1Dconfig();
-			flags.clear();
-		}
-		//clearFile = true;
 		initialize();
 		System.out.println("init");
 		ky = params.iget("ky");
-
+		String approx = params.sget("Approx");
 		double recordStep = 0.00001;	
 
 		for (int i = 0; i < Lp*Lp; i++)
@@ -163,16 +174,18 @@ public class svtFieldApp extends Simulation{
 				
 		while (true) {
 			ising.readParams(params);
-			//ising.simulate();
-			ising.simulateSimple();
+			if (approx == "None") ising.simulateSimple();
+			else if (approx == "Modified Dynamics")ising.simulate();
 			if(ising.time() >= recordStep){
 				for (int i = 0; i < Lp*Lp; i++)
 					eta[i] = ising.phi[i] - phi0[i%Lp];
 				etaK = fft.find2DSF(eta, ising.L);
 				sf = fft.find2DSF(ising.phi, ising.L);
-				for (int i = 0; i < accNo; i++){
-					etaAcc[i].accum(ising.time(), etaK[sfLabel[i]]);
-					sfAcc[i].accum(ising.time(), sf[sfLabel[i]]);					
+				if(accumsOn){
+					for (int i = 0; i < accNo; i++){
+						etaAcc[i].accum(ising.time(), etaK[sfLabel[i]]);
+						sfAcc[i].accum(ising.time(), sf[sfLabel[i]]);					
+					}
 				}
 				recordSfDataToFile(etaK, sf);
 				recordStep += 0.001;
@@ -226,46 +239,16 @@ public class svtFieldApp extends Simulation{
 			FileUtil.initFile(fileName, params, message1, message2);		
 		}
 	}
-	
-	public void readInputParams(String FileName){
-		try {
-			File inputFile = new File(FileName);
-			DataInputStream dis = new DataInputStream(new FileInputStream(inputFile));
-			double readData;
 
-			readData = dis.readDouble();
-			System.out.println(readData);
-			params.set("J", readData);
-			dis.readChar();				
-
-			readData = dis.readDouble();
-			System.out.println(readData);
-			params.set("R", readData);
-			dis.readChar();	
-
-			readData = dis.readDouble();
-			System.out.println(readData);
-			params.set("L/R", readData);
-			dis.readChar();
-
-			readData = dis.readDouble();
-			System.out.println(readData);
-			params.set("R/dx", readData);
-			dis.readChar();	
-
-			System.out.println("input read");
-		}catch(IOException ex){
-			ex.printStackTrace();
-		}
-	}
-
-	void initialize(){
-//		if(params.sget("Init Conditions") == "Read From File")
-//			readInputParams(params.sget("2D Input File"));
+	private void initialize(){
 		ising = new IsingField2D(params);
+		sc = new StripeClumpFieldSim(ising, ky, params.sget("1D Input File"),params.sget("Data Dir"));
+
 		for (int i = 0; i < accNo; i++){
-			etaAcc[i] = new Accumulator();
-			sfAcc[i] = new Accumulator();
+			if(accumsOn){
+				etaAcc[i] = new Accumulator();
+				sfAcc[i] = new Accumulator();
+			}
 			sfLabel[i] = ky*Lp+i;
 		}
 		this.Lp = ising.Lp;
@@ -277,9 +260,4 @@ public class svtFieldApp extends Simulation{
 		phi0 = ising.getSymmetricSlice(fileName);
 	}	
 
-	private void write1Dconfig(){
-		String configFileName = params.sget("1D Input File");
-		FileUtil.deleteFile(configFileName);
-		FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
-	}
 }

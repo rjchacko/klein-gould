@@ -16,6 +16,15 @@ import scikit.jobs.params.DoubleValue;
 import static java.lang.Math.exp;
 //import static java.lang.Math.floor;
 
+
+/**
+* 
+* Langevin field theory application.  Plots average of Svt and varience of the
+* order parameter for max time given by the user.
+* Also plots predicted value of linear theory.
+* (I think the theory is for critical quench only.)
+* 
+*/
 public class LinearTheoryApp extends Simulation{
     Grid grid = new Grid("Phi(x)");
 	Plot structurePeak = new Plot("S v t");

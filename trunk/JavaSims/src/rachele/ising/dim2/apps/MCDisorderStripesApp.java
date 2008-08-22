@@ -1,20 +1,27 @@
 package rachele.ising.dim2.apps;
 
 import static java.lang.Math.PI;
-import static scikit.util.Utilities.format;
+//import static scikit.util.Utilities.format;
 import java.awt.Color;
 import java.io.File;
 import rachele.ising.dim2.IsingLR;
-import rachele.util.FileUtil;
-import rachele.util.FourierTransformer;
-import scikit.dataset.Accumulator;
-import scikit.graphics.dim2.Grid;
+//import rachele.util.FileUtil;
+//import rachele.util.FourierTransformer;
+//import scikit.dataset.Accumulator;
+//import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import scikit.jobs.params.DirectoryValue;
+//import scikit.jobs.params.DirectoryValue;
+
+/**
+* 
+* Monte Carlo Simulation to produce structure factor vs time averages.
+* Seperates data into dominant and non-dominant directions for several k values
+* to investigate disorder -> clump -> stripe transition.
+*/
 
 public class MCDisorderStripesApp extends Simulation{
 	Grid grid = new Grid("Long Range Ising Model");

@@ -54,7 +54,7 @@ public class StripeClumpFieldSim {
 	}
 
 	public void writeMatrixResultsToFile(String fileName){
-		
+		FileUtil.deleteFile(fileName);
 		FileUtil.printlnToFile(fileName, "Results of StripeClumpFieldSim calculations ");
 		FileUtil.printlnToFile(fileName, "inputFile = " + phi0file);
 
