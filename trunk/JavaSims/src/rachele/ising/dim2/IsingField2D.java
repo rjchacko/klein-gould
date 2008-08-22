@@ -41,7 +41,7 @@ public class IsingField2D extends AbstractIsing2D{
 	public double [] h;
 	public double f_p;
 	public double fret;
-	public double noiseContrib, driftContrib;
+	public double driftContrib;
 	
 	Accumulator accClumpFreeEnergy;
 	Accumulator accStripeFreeEnergy;
@@ -381,9 +381,12 @@ public class IsingField2D extends AbstractIsing2D{
 			double driftTerm = - dt*Lambda[i]*dF_dPhi;
 			double noiseTerm = sqrt(Lambda[i]*(dt*2*T*mobility)/dx)*noise();
 			delPhi[i] = driftTerm + noiseTerm;
-			driftContrib += driftTerm/delPhi[i];
+			//System.out.println(noiseTerm + " " + driftTerm + " " + delPhi[i]);
+			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
 			phiVector[i] = delPhi[i];
-		}		
+		}
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += delPhi[i];	
 		driftContrib /= (Lp*Lp);
 		t += dt;
 	}

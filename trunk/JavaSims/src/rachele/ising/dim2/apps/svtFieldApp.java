@@ -159,8 +159,7 @@ public class svtFieldApp extends Simulation{
 		clear();
 		writeDir = params.sget("Data Dir");
 		initialize();
-		System.out.println("init55");
-		System.out.println("go2");
+		System.out.println("init");
 		ky = params.iget("ky");
 		String approx = params.sget("Approx");
 		double recordStep = 0.00001;	
@@ -175,9 +174,7 @@ public class svtFieldApp extends Simulation{
 				
 		while (true) {
 			ising.readParams(params);
-			System.out.println("go");
 			if(calcContribs){ 
-
 				ising.simModCalcContrib();
 				recordContribToFile();
 			}
@@ -232,8 +229,8 @@ public class svtFieldApp extends Simulation{
 
 	private void recordContribToFile(){
 		String fileName = params.sget("Data Dir") + File.separator + "n";
-		double noiseC = ising.noiseContrib;
-		double driftC = 1.0-noiseC;
+		double driftC = ising.driftContrib;
+		double noiseC = 1.0-driftC;
 		FileUtil.printlnToFile(fileName, ising.time(), noiseC);
 		fileName = params.sget("Data Dir") + File.separator + "d";
 		FileUtil.printlnToFile(fileName, ising.time(), driftC);
@@ -258,10 +255,10 @@ public class svtFieldApp extends Simulation{
 
 		}
 		if(calcContribs){
-			String mes1 = "Noise contribution to dynamics";
+			String mes1 = "# Noise contribution to dynamics";
 			String noiseFile =  params.sget("Data Dir") + File.separator + "n";
 			FileUtil.initFile(noiseFile, params, mes1);			
-			String mes2 = "Drift contribution to dynamics";
+			String mes2 = "# Drift contribution to dynamics";
 			String driftFile =  params.sget("Data Dir") + File.separator + "d";
 			FileUtil.initFile(driftFile, params, mes2);			
 		}
