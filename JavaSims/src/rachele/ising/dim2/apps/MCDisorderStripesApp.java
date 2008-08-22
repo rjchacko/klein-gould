@@ -29,7 +29,7 @@ public class MCDisorderStripesApp extends Simulation{
 	Grid sfGrid = new Grid("SF");
 	Plot sfkPlot = new Plot("sf_k plot");
 	Plot sftPlot = new Plot("sf_t plot"); 
-	int dx;
+	int dx; 
 	IsingLR sim;
 	public FourierTransformer fft;
 	double [] sFactor;
