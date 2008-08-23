@@ -62,6 +62,9 @@ public class StripeClumpFieldSim {
 			System.out.println("start " + i);
 			FileUtil.printlnToFile(fileName, i, eigenvalue[i]);
 		}
+
+		double ratio = eigenvalue[Lp-1]/eigenvalue[Lp-2];
+		FileUtil.printlnToFile(fileName, "Ratio of highest 2 eigenvalues = " + ratio);
 	}
 	
 	public void findPhi0andPhi0_bar(){
