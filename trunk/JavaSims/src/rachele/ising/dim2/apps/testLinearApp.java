@@ -118,8 +118,8 @@ public class testLinearApp extends Simulation{
 		c.frame(testetaK);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
-		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
-		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/phi0"));
+		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L128R46T0-04h0-8"));
+		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/L128R46T0-04h0-8"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));

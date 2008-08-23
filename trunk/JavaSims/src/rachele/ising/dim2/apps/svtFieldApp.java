@@ -49,7 +49,7 @@ public class svtFieldApp extends Simulation{
 	//RUN OPTIONS
 	boolean writeToFile = true;
 	boolean accumsOn = false;
-	boolean calcContribs = true;
+	boolean calcContribs = false;
 	int accNo = 6;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
@@ -142,7 +142,7 @@ public class svtFieldApp extends Simulation{
 				float colorChunk = (float)i/(float)accNo;
 				Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
 				StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
-				EtavTime.registerLines(sb.toString(), etaAcc[i], col);
+				SFvTime.registerLines(sb.toString(), etaAcc[i], col);
 				StringBuffer sb2 = new StringBuffer();sb2.append("s(t) "); sb2.append(i);
 				SFvTime.registerLines(sb2.toString(), sfAcc[i], col);
 			}
@@ -190,11 +190,11 @@ public class svtFieldApp extends Simulation{
 				sf = fft.find2DSF(ising.phi, ising.L);
 				if(accumsOn){
 					for (int i = 0; i < accNo; i++){
-						etaAcc[i].accum(ising.time(), etaK[sfLabel[0][0][i]]);
+						etaAcc[i].accum(ising.time(), etaK[sfLabel[0][3][i]]);
 						sfAcc[i].accum(ising.time(), sf[sfLabel[1][0][i]]);					
 					}
 				}
-				recordSfDataToFile(etaK);
+				recordSfDataToFile(sf);
 				recordStep += 0.001;
 			}
 
@@ -254,11 +254,11 @@ public class svtFieldApp extends Simulation{
 			double krvalue = 2*ising.R*Math.PI*(sfLabel[0][0][i])/ising.L;
 			mb.append(krvalue);			
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.deleteCharAt(fileBuffer.length()-1);
-			fileBuffer.append("e");fileBuffer.append(i); fileName = fileBuffer.toString();
+			fileBuffer.append("h");fileBuffer.append(i); fileName = fileBuffer.toString();
 			String message2 = mb.toString();
 			FileUtil.initFile(fileName, params, message1, message2);
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.deleteCharAt(fileBuffer.length()-1);
-			fileBuffer.append("s");fileBuffer.append(i); fileName = fileBuffer.toString();
+			fileBuffer.append("v");fileBuffer.append(i); fileName = fileBuffer.toString();
 			FileUtil.initFile(fileName, params, message1, message2);
 
 		}
@@ -273,8 +273,9 @@ public class svtFieldApp extends Simulation{
 	}
 
 	private void initialize(){
-		System.out.println("go2");
+
 		ising = new IsingField2D(params);
+		this.Lp=ising.Lp;
 		sc = new StripeClumpFieldSim(ising, ky, params.sget("1D Input File"),params.sget("Data Dir"));
 		for (int i = 0; i < accNo; i++){
 			if(accumsOn){
@@ -285,28 +286,28 @@ public class svtFieldApp extends Simulation{
 			int dkx = params.iget("dkx");
 			int kx = i*dkx;
 			//Horizontal labels
-			int size = ising.Lp*ising.Lp;
+			int size = Lp*Lp;
 			y = ky; x = kx;//Up, right
-			index = ising.Lp*y+x; 
+			index = Lp * y+x; 
 			sfLabel[0][0][i] = index;
-			x = ising.Lp - kx;//Up, left	
-			index = ising.Lp*y+x; sfLabel[0][1][i] = index%size;
-			y = ising.Lp-ky; x = kx;//Down, right
-			index = ising.Lp*y+x; sfLabel[0][2][i] = index%size;
-			x = ising.Lp - kx;//Up, left	
-			index = ising.Lp*y+x; sfLabel[0][3][i] = index%size;
+			x = (Lp - kx) % Lp;//Up, left	
+			index = Lp * y+x; sfLabel[0][1][i] = index%size;
+			y = (Lp - ky) % Lp; x = kx;//Down, right
+			index = Lp*y+x; sfLabel[0][2][i] = index%size;
+			x = (Lp - kx) % Lp;//Up, left	
+			index = Lp * y + x; sfLabel[0][3][i] = index%size;
 			//Vertical labels
 			x = ky; y = kx;//Right, Up
-			index = ising.Lp*y+x; sfLabel[1][0][i] = index%size;
-			y = ising.Lp - kx;//Right, Down	
-			index = ising.Lp*y+x; sfLabel[1][1][i] = index%size;
-			x = ising.Lp-ky; y = kx;//Left, Up
-			index = ising.Lp*y+x; sfLabel[1][2][i] = index%size;
-			y = ising.Lp - kx;//Left, Down
-			index = ising.Lp*y+x; sfLabel[1][3][i] = index%size;
+			index = Lp * y + x; sfLabel[1][0][i] = index%size;
+			y = (Lp - kx)%Lp;//Right, Down	
+			index = Lp * y + x; sfLabel[1][1][i] = index%size;
+			x = (Lp - ky ) % Lp; y = kx;//Left, Up
+			index = Lp * y + x; sfLabel[1][2][i] = index%size;
+			y = (Lp - kx) % Lp;//Left, Down
+			index = Lp * y + x; sfLabel[1][3][i] = index%size;
 
 		}
-		this.Lp = ising.Lp;
+
 		fft = new FourierTransformer(Lp);
 		eta = new double[Lp*Lp];
 		etaK = new double[Lp*Lp];
