@@ -28,7 +28,7 @@ public class IsingLRApp extends Simulation {
 		params.add("Initial magnetization", 0.6);
 		params.addm("T", 0.11);
 		params.addm("J", -1.0);
-		params.addm("h", 0);
+		params.addm("h", 0.0);
 		params.addm("dt", 0.1);
 		params.add("time");
 		params.add("magnetization");
