@@ -64,12 +64,15 @@ int flipSpin(int s, int m) {
 // Bits128
 //
 
+// Bits128 should be thought of as a "128 bit unsigned int". the highest (127th) bit
+// is the highest (31st) bit of a3, which explains why a3 appears on the left.
 typedef struct {
     unsigned int a3, a2, a1, a0;
 } Bits128;
 
 
-unsigned int expand8(unsigned int x) {
+// expand 8 low bits to be equally spaced among the 32 bits of an int
+unsigned int expandFF(unsigned int x) {
     return
         x&1 |
         ((x>>1)&1)<<4 |
@@ -81,16 +84,19 @@ unsigned int expand8(unsigned int x) {
         ((x>>7)&1)<<28;
 }
 
+// expand 32 bits of an int to be equally spaced among 128 bits of a Bits128
+// structure. i.e., each input bit gets 4 bits of spacing in the return value.
 Bits128 bitsExpand(int a) {
     Bits128 ret = {
-        expand8((a>>24) & 0xFF),
-        expand8((a>>16) & 0xFF),
-        expand8((a>>8) & 0xFF),
-        expand8((a>>0) & 0xFF)
+        expandFF((a>>24) & 0xFF),
+        expandFF((a>>16) & 0xFF),
+        expandFF((a>>8) & 0xFF),
+        expandFF((a>>0) & 0xFF)
     };
     return ret;
 }
 
+// add two Bits128 structs. note: overflow between 32 components not supported
 Bits128 bitsAdd(Bits128 x, Bits128 y) {
     Bits128 ret = {
         x.a3+y.a3, x.a2+y.a2, x.a1+y.a1, x.a0+y.a0
@@ -98,6 +104,11 @@ Bits128 bitsAdd(Bits128 x, Bits128 y) {
     return ret;
 }
 
+// shift input 'n' bits to the left, and then apply a 'mask'. specifically:
+//  ret = (x << n) & (A B A B ... A B)
+//
+// where A and B represent strings of 'n' 1 and 0 bits, respectively
+//
 Bits128 bitsMaskShiftL(Bits128 x, int n) {
     Bits128 ret;
     unsigned int m;
@@ -134,6 +145,11 @@ Bits128 bitsMaskShiftL(Bits128 x, int n) {
     return ret;
 }
 
+// shift input 'n' bits to the right, and then apply a 'mask'. specifically:
+//  ret = (x >> n) & (B A B A ... B A)
+//
+// where A and B represent strings of 'n' 1 and 0 bits, respectively
+//
 Bits128 bitsMaskShiftR(Bits128 x, int n) {
     Bits128 ret;
     unsigned int m;
@@ -171,6 +187,9 @@ Bits128 bitsMaskShiftR(Bits128 x, int n) {
 
 }
 
+// shift input 'n' bits to the right, and then pick the low 4 bits. specifically,
+//  ret = (x >> n) & 0xf
+//
 int bitsPick4(Bits128 x, int n) {
     assert(n >= 0 && n < 32);
     int rshift = 4 * (n%8);
@@ -323,7 +342,8 @@ Ising2 createIsing2(int len, int dim) {
     return ret;
 }
 
-
+// given index 'i' into the full lattice, return compressed index 'ip'
+// and bit index 'delta'.
 void index2(Ising2 self, int i, int *ip, int *delta) {
     int len = self.len;
     int len_d = 1;
@@ -345,7 +365,8 @@ void index2(Ising2 self, int i, int *ip, int *delta) {
     }
 }
 
-
+// given compressed index 'ip' and bit index 'delta', return index 'i' into the
+// full lattice
 int reverseIndex2(Ising2 self, int ip, int delta) {
     int len = self.len;
     int len_d = 1;
