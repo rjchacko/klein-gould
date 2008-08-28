@@ -3,19 +3,12 @@
 #include <assert.h>
 #include <math.h>
 
+#include "ising.h"
+
 
 // ------------------------------------------------------------------------------------------
 // Utilities
 //
-
-int pow(int x, int n) {
-    int ret = 1;
-    for (int i = 0; i < n; i++) {
-        ret *= x;
-    }
-    return ret;
-}
-
 
 int min(int a, int b) {
     return (a < b) ? a : b;
@@ -33,20 +26,20 @@ int bitCount(unsigned int v) {
     return c;
 }
 
-int pentacubeOdd[32];
+int pentacubeParity[32];
 
-void initPentacubeOdd() {
-    pentacubeOdd[0] = 0;
+void initPentacubeParity() {
+    pentacubeParity[0] = 0;
     int m = 1;
     for (int i = 1; i < 32; i++) {
         if (i == 2*m)
             m = i;
-        pentacubeOdd[i] = 1 - pentacubeOdd[i-m];
+        pentacubeParity[i] = 1 - pentacubeParity[i-m];
     }
 }
 
 
-double T = 1;
+double T = 0;
 double h = 0.1;
 
 int flipSpin(int s, int m) {
@@ -54,8 +47,8 @@ int flipSpin(int s, int m) {
     if (dE < 0)
         return 1;
     else {
-        float r = 0.3; // rand() / (float)RAND_MAX;
-        return exp(- dE / T) < r;
+        float r = 0.5; // rand() / (float)RAND_MAX;
+        return exp(- dE / T) > r;
     }
 }
 
@@ -221,7 +214,7 @@ Ising1 createIsing1(int len, int dim) {
     
     ret.len = len;
     ret.dim = dim;
-    ret.n = pow(len, dim);
+    ret.n = (int)powl(len, dim);
     ret.spins = (int *)malloc(ret.n*sizeof(int));
     ret.sum = (int *)malloc(ret.n*sizeof(int));
     
@@ -288,7 +281,7 @@ void completeNeighborSum1(Ising1 self) {
 }
 
 
-int isOdd1(Ising1 self, int i) {
+int indexParity1(Ising1 self, int i) {
     int acc = 0;
     int len = self.len;
     int len_d = 1;
@@ -301,9 +294,10 @@ int isOdd1(Ising1 self, int i) {
 }
 
 
-void update1(Ising1 self) {
+// update even or odd sites if parityTarget is 0 or 1.
+void update1(Ising1 self, int parityTarget) {
     for (int i = 0; i < self.n; i++) {
-        if (isOdd1(self, i)) {
+        if (indexParity1(self, i) == parityTarget) {
             int m = 2 * (neighborSum1(self, i) - self.dim);
             int s = 2 * get1(self, i) - 1;
             if (flipSpin(s, m)) {
@@ -319,8 +313,10 @@ void update1(Ising1 self) {
 
 
 typedef struct {
+    // a lattice containing (n = len^dim) spins
     int len, dim, n;
-    int *spins; // n/32 elements
+    // stored in groups of 32 bits
+    unsigned int *spins; // n/32 elements
     int *sum;
 } Ising2;
 
@@ -330,8 +326,8 @@ Ising2 createIsing2(int len, int dim) {
     
     ret.len = len;
     ret.dim = dim;
-    ret.n = pow(len, dim);
-    ret.spins = (int *)malloc((ret.n/32)*sizeof(int));
+    ret.n = (int)powl(len, dim);
+    ret.spins = (unsigned int *)malloc((ret.n/32)*sizeof(unsigned int));
     ret.sum = (int *)malloc(ret.n*sizeof(int));
     
     for (int ip = 0; ip < ret.n/32; ip++)
@@ -454,7 +450,7 @@ void completeNeighborSum2(Ising2 self) {
             lenp_d *= lenp;
         }
         
-        int deltaMax = min(32, pow(2, self.dim));
+        int deltaMax = min(32, (int)powl(2, self.dim));
         for (int delta = 0; delta < deltaMax; delta++) {
             int i = reverseIndex2(self, ip, delta);
             self.sum[i] = bitsPick4(acc, delta);
@@ -464,7 +460,7 @@ void completeNeighborSum2(Ising2 self) {
 
 
 
-void update2(Ising2 self) {
+void update2(Ising2 self, int parityTarget) {
     for (int ip = 0; ip < self.n/32; ip++) {
         int parity = 0;
         Bits128 acc = {0, 0, 0, 0};
@@ -494,10 +490,10 @@ void update2(Ising2 self) {
             lenp_d *= lenp;
         }
         
-        int deltaMax = min(32, pow(2, self.dim));
+        int deltaMax = min(32, (int)powl(2, self.dim));
         int cube = self.spins[ip];
         for (int delta = 0; delta < deltaMax; delta++) {
-            if ((parity + pentacubeOdd[delta]) % 2 == 1) {
+            if ((parity + pentacubeParity[delta]) % 2 == parityTarget) {
                 int m = 2*(bitsPick4(acc, delta) - self.dim);
                 int s = 2*((cube >> delta) & 1) - 1;
                 if (flipSpin(s, m)) {
@@ -529,21 +525,23 @@ void isingEqual(Ising1 ising1, Ising2 ising2) {
 
 
 int main (int argc, char * const argv[]) {
-    initPentacubeOdd();
+    initPentacubeParity();
     
-    Ising1 ising1 = createIsing1(8, 6);
+    Ising1 ising1 = createIsing1(8, 7);
     init1(ising1);
 //    srand(0);
-    update1(ising1);
+    update1(ising1, 0);
+    update1(ising1, 1);
     print1(ising1);
     
 //    completeNeighborSum1(ising1);
 //    printNeighbors1(ising1);
 
-    Ising2 ising2 = createIsing2(8, 6);
+    Ising2 ising2 = createIsing2(8, 7);
     init2(ising2);
 //    srand(0);
-    update2(ising2);
+    update2(ising2, 0);
+    update2(ising2, 1);
     print2(ising2);
     
 //    completeNeighborSum2(ising2);
