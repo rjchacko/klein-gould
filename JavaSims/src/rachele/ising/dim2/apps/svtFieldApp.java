@@ -82,8 +82,9 @@ public class svtFieldApp extends Simulation{
 		c.frameTogether("Grids", phiGrid, vSlice, hSlice, SFvTime);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
-		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
-		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
+		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
+		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
+		params.add("Dynamics", new ChoiceValue( "Glauber", "Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -101,12 +102,12 @@ public class svtFieldApp extends Simulation{
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
 		params.add("L/R", 2.7826087);
-		params.add("R/dx", 40.0);
+		params.add("R/dx", 50.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
 		params.addm("dkx", 1);
-		params.addm("dt", 0.005);
+		params.addm("dt", 0.01);
 		params.add("Time");
 		params.add("Lp");
 		flags.add("Clear");
@@ -161,17 +162,16 @@ public class svtFieldApp extends Simulation{
 		writeDir = params.sget("Data Dir");
 		initialize();
 		System.out.println("init");
-		ky = params.iget("ky");
 		String approx = params.sget("Approx");
 		double recordStep = 0.00001;	
 
 		for (int i = 0; i < Lp*Lp; i++)
 			eta[i] = ising.phi[i] - phi0[i%Lp];
 
-		System.out.println("ky = " + ky);
 		calcHspinodal();
 		Job.animate();
 		initFiles();
+		String dynamics = params.sget("Dynamics");
 				
 		while (true) {
 			ising.readParams(params);
@@ -180,8 +180,11 @@ public class svtFieldApp extends Simulation{
 				recordContribToFile();
 			}
 			else{
-				if (approx == "None") ising.simulateSimple();
-				else if (approx == "Modified Dynamics")ising.simulate();
+				if (dynamics == "Langevin"){
+					if (approx == "None") ising.simulateSimple();
+					else if (approx == "Modified Dynamics")ising.simulate();
+				}else if (dynamics == "Glauber")
+					ising.simulateGlauber();
 			}
 			if(ising.time() >= recordStep){
 				for (int i = 0; i < Lp*Lp; i++)
@@ -209,15 +212,10 @@ public class svtFieldApp extends Simulation{
 		System.out.println("H spinodal for T = " + ising.T + " is " + hs);
 	}
 
-	private void recordSfDataToFile(double [] data1){
-		
+	private void recordSfDataToFile(double [] data1){		
 		String fileName = params.sget("Data Dir") + File.separator + "e0";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
-		for (int i=0; i < accNo; i ++){
-			StringBuffer mb = new StringBuffer();
-			mb.append("# sf label = ");	mb.append(sfLabel[0][0][i]); mb.append(" kR value = ");
-			double krvalue = 2*ising.R*Math.PI*(sfLabel[0][0][i])/ising.L;
-			mb.append(krvalue);			
+		for (int i=0; i < accNo; i ++){	
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);
 			fileBuffer.append("h");fileBuffer.append(i); fileName = fileBuffer.toString();
@@ -250,9 +248,12 @@ public class svtFieldApp extends Simulation{
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			StringBuffer mb = new StringBuffer();
-			mb.append("# sf label = ");	mb.append(sfLabel[0][0][i]); mb.append(" kR value = ");
-			double krvalue = 2*ising.R*Math.PI*(sfLabel[0][0][i])/ising.L;
-			mb.append(krvalue);			
+			int label = params.iget("dkx")*i;
+			mb.append("#kR line value is ");
+			double kRLine = 2*ising.R*Math.PI*(params.iget("ky"))/ising.L; mb.append(kRLine);
+			mb.append(" sf label is ");	mb.append(label); mb.append(" kR value = ");
+			double krvalue = 2*ising.R*Math.PI*(label)/ising.L;
+			mb.append(krvalue);	
 			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.deleteCharAt(fileBuffer.length()-1);
 			fileBuffer.append("h");fileBuffer.append(i); fileName = fileBuffer.toString();
 			String message2 = mb.toString();
@@ -276,20 +277,22 @@ public class svtFieldApp extends Simulation{
 
 		ising = new IsingField2D(params);
 		this.Lp=ising.Lp;
-		sc = new StripeClumpFieldSim(ising, ky, params.sget("1D Input File"),params.sget("Data Dir"));
-		for (int i = 0; i < accNo; i++){
+		//sc = new StripeClumpFieldSim(ising, params);
+		for (int i = 0; i < accNo; i++){ 
 			if(accumsOn){
 				etaAcc[i] = new Accumulator();
 				sfAcc[i] = new Accumulator();
 			}
 			int index, x, y;
 			int dkx = params.iget("dkx");
+			ky = params.iget("ky");
 			int kx = i*dkx;
 			//Horizontal labels
 			int size = Lp*Lp;
 			y = ky; x = kx;//Up, right
 			index = Lp * y+x; 
 			sfLabel[0][0][i] = index;
+//			System.out.println("kx= "+kx+" ky= "+ky+" Lp = "+Lp+" index = "+index);
 			x = (Lp - kx) % Lp;//Up, left	
 			index = Lp * y+x; sfLabel[0][1][i] = index%size;
 			y = (Lp - ky) % Lp; x = kx;//Down, right

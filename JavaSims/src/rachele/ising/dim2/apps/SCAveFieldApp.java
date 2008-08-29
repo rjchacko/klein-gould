@@ -73,7 +73,7 @@ public class SCAveFieldApp extends Simulation{
 	public void load(Control c) {
 		c.frameTogether("Everything", phiGrid, etaDotSF, vSlice, hSlice, etaVsTimeSim);
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
-		params.add("Data Dir", new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/SCAveFieldApp"));
+		params.add("Data Dir", new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/SCAveFieldApp/testRuns"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
@@ -223,7 +223,7 @@ public class SCAveFieldApp extends Simulation{
 	
 	private void initialize(){
 		ising = new IsingField2D(params);
-		sc = new StripeClumpFieldSim(ising, ky, params.sget("1D Input File"),params.sget("Data Dir"));
+		sc = new StripeClumpFieldSim(ising, params);
 		
 		for (int i = 0; i < accNo; i++){
 			etaAcc[i] = new Accumulator();

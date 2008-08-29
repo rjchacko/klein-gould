@@ -57,7 +57,7 @@ public class IsingField1DApp extends Simulation{
 		
 //  Default params for clump model
 
-		params.add("Config Directory",new DirectoryValue("/home/erdomi/data/lraim/configs1d"));
+		params.add("Config Directory",new DirectoryValue("/home/erdomi/data/lraim/configs1dAutoName"));
 		params.addm("Noise", new ChoiceValue("On", "Off"));
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.04, 0, 0.2).withSlider());
@@ -107,9 +107,13 @@ public class IsingField1DApp extends Simulation{
 	public void run(){
 		ising = new FieldIsing1D(params);
 		String writeDir = params.sget("Config Directory");
-		String inputFileName = writeDir + File.separator + "inputConfig";
-		String configFileName = writeDir + File.separator + "config";
-	    int maxWriteCount = (int)(params.fget("max Write Time")/ising.dt);
+		StringBuffer sb = new StringBuffer();
+		sb.append(writeDir); sb.append(File.separator); sb.append("L"); sb.append(ising.Lp);
+		int range = (int)(ising.Lp/params.fget("L/R")); sb.append("R"); sb.append(range);
+		sb.append("T"); sb.append(ising.T); sb.append("h"); sb.append(ising.H);
+		String configFileName = sb.toString();
+	    sb.append("params"); String paramsFile = sb.toString();
+		int maxWriteCount = (int)(params.fget("max Write Time")/ising.dt);
 	    params.set("Time Allocation", maxWriteCount);
 	    double maxWriteTime = maxWriteCount*ising.dt;
 	    params.set("max Write Time", maxWriteTime);
@@ -125,8 +129,7 @@ public class IsingField1DApp extends Simulation{
 			if (flags.contains("Write")) {
 				timeCount = 0;
 				FileUtil.deleteFile(configFileName);
-				FileUtil.deleteFile(inputFileName);
-				writeInputParams(inputFileName);
+				FileUtil.initFile(paramsFile, params);
 				while (timeCount <= maxWriteCount){
 					ising.simulate();			
 					writeConfigToFileWithTime(configFileName);				
@@ -136,6 +139,7 @@ public class IsingField1DApp extends Simulation{
 				}
 				flags.clear();
 			}else if(flags.contains("Write Config")){
+				FileUtil.initFile(paramsFile, params);
 				FileUtil.deleteFile(configFileName);
 				FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
 			}

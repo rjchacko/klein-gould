@@ -3,10 +3,12 @@ package rachele.ising.dim2;
 //import java.io.File;
 
 import java.io.File;
+//import java.security.Policy.Parameters;
 
 import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import rachele.util.MathTools;
+import scikit.jobs.params.Parameters;
 import scikit.numerics.Jama.EigenvalueDecomposition;
 import scikit.numerics.Jama.Matrix;
 import scikit.numerics.fn.Function1D;
@@ -22,15 +24,15 @@ public class StripeClumpFieldSim {
 	FourierTransformer fft;
 	int ky;
     double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice, etaK; //right hand side
-    double [] g_k, f_k, f_x, phi0_bar, c, eigenvalue;
-	public double [] phi0;
+    double [] g_k, f_x, phi0_bar, c;
+	public double [] phi0, f_k, eigenvalue;
     double [][] M;// Main matrix 
     public double [][] VV;// Eigenvalue matrix
 	String phi0file;
     
-	public StripeClumpFieldSim(IsingField2D ising, int ky, String phi0file, String outDir){
-		this.phi0file = phi0file;
-		this.ky = ky;
+	public StripeClumpFieldSim(IsingField2D ising, Parameters params){
+		phi0file = params.sget("1D Input File");
+		ky = params.iget("ky");
 		this.ising = ising;
 		Lp = ising.Lp;
 		fft = new FourierTransformer(Lp);
@@ -48,23 +50,53 @@ public class StripeClumpFieldSim {
 		findPhi0andPhi0_bar();
 		findMatrix();
 		diagonalize();
-		String outFile = outDir + File.separator + "matrixCalcs";
-		writeMatrixResultsToFile(outFile);
+		for (int i=0; i < Lp; i ++){
+			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
+		}
+		
+		
+		writeMatrixResultsToFile(params);
+
 		//findAndDiagonalizeLittleMatrix();
 	}
 
-	public void writeMatrixResultsToFile(String fileName){
-		FileUtil.deleteFile(fileName);
-		FileUtil.printlnToFile(fileName, "Results of StripeClumpFieldSim calculations ");
-		FileUtil.printlnToFile(fileName, "inputFile = " + phi0file);
-
+	public void writeMatrixResultsToFile(Parameters params){
+		String outDir = params.sget("Data Dir");
+		StringBuffer sb = new StringBuffer();
+		sb.append(outDir);	sb.append(File.separator); sb.append("L"); sb.append(ising.Lp);
+		int range = (int)(ising.Lp/params.fget("L/R")); sb.append("R"); sb.append(range);
+		sb.append("T"); sb.append(ising.T); sb.append("h"); sb.append(ising.H);
+		String outFilePreamble = sb.toString();
+		String evalueFile = outFilePreamble + "eValues";	
+		StringBuffer mb = new StringBuffer();
+		mb.append("# kR line value is ");
+		double kRLine = 2*ising.R*Math.PI*(params.iget("ky"))/ising.L; mb.append(kRLine);
+		FileUtil.initFile(evalueFile, params, mb.toString());
+		FileUtil.printlnToFile(evalueFile, "# Results of StripeClumpFieldSim calculations ");
+		FileUtil.printlnToFile(evalueFile, "inputFile = " + phi0file);
 		for (int i=0; i < Lp; i ++){
-			System.out.println("start " + i);
-			FileUtil.printlnToFile(fileName, i, eigenvalue[i]);
+			//System.out.println("start " + i);
+			FileUtil.printlnToFile(evalueFile, i, eigenvalue[i]);
 		}
 
 		double ratio = eigenvalue[Lp-1]/eigenvalue[Lp-2];
-		FileUtil.printlnToFile(fileName, "Ratio of highest 2 eigenvalues = " + ratio);
+		FileUtil.printlnToFile(evalueFile, "# Ratio of highest 2 eigenvalues = " + ratio);
+		int eVectorNo = 5;
+		for (int i = 0; i < eVectorNo; i++){
+			String evectorFile = outFilePreamble + "eVec" + i;
+			FileUtil.initFile(evectorFile, params);
+			int no = Lp-i-1;
+			FileUtil.printlnToFile(evectorFile, "# eigenvector no ", no);
+			for (int j = 0; j < Lp; j++)
+				FileUtil.printlnToFile(evectorFile, j, VV[no][j]);				
+			sb.deleteCharAt(sb.length()-1);
+		}
+		for (int i=0; i < Lp; i ++){
+			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
+		}
+		System.out.println("kR line = " + kRLine);
+
+
 	}
 	
 	public void findPhi0andPhi0_bar(){
@@ -77,13 +109,13 @@ public class StripeClumpFieldSim {
 			if (tempPhi0[i] < minPhi0Value){
 				minPhi0Location = i;
 				minPhi0Value = tempPhi0[i];
-				System.out.println(tempPhi0[i] + " " + i);
+				//System.out.println(tempPhi0[i] + " " + i);
 			}
 		}	
-		System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
+		//System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
 		for (int i = 0; i < Lp; i++){
 			phi0[i] = tempPhi0[(minPhi0Location+i)%Lp];
-			System.out.println("phi0 " + i + " = " + phi0[i]);
+			//System.out.println("phi0 " + i + " = " + phi0[i]);
 		}
 		phi0_bar = fft.backConvolve1DwithFunction(phi0, new Function1D(){
 			public double eval(double k1) {
@@ -182,7 +214,7 @@ public class StripeClumpFieldSim {
 		
 
 		for (int i = 0; i < Lp; i ++)
-			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
+			//System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
 		if(DoubleArray.max(eigenvalue)>0.0)System.out.println("eigenvalue max ="  +  DoubleArray.max(eigenvalue));
 		System.out.println("eigenvalue min ="  + DoubleArray.min(eigenvalue));
 		Matrix V = Eig.getV();
