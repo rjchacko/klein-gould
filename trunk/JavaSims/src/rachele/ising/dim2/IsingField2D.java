@@ -171,10 +171,10 @@ public class IsingField2D extends AbstractIsing2D{
 			if (temp[i] < minPhi0Value){
 				minPhi0Location = i;
 				minPhi0Value = temp[i];
-				System.out.println(temp[i] + " " + i);
+				//System.out.println(temp[i] + " " + i);
 			}
 		}	
-		System.out.println(temp[minPhi0Location] + " " + minPhi0Location);
+		//System.out.println(temp[minPhi0Location] + " " + minPhi0Location);
 		for (int i = 0; i < Lp; i++){
 			slice[i] = temp[(minPhi0Location+i)%Lp];
 			//System.out.println("phi0 " + i + " = " + phi0[i]);
@@ -306,6 +306,19 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int i = 0; i < Lp*Lp; i++) 
 			phi[i] += delPhi[i];			
 		t += dt;		
+	}
+	
+	public void simulateGlauber(){
+		convolveWithRange(phi, phi_bar, R);	
+		for (int i = 0; i < Lp*Lp; i++){
+			double arg = (-phi_bar[i] - H)/T;
+			double drift = Math.tanh(arg)-phi[i];
+			double noisePre = sqrt(2-pow(Math.tanh(arg),2)-pow(phi[i],2));
+			delPhi[i] = -dt*(drift)+ noisePre*noise()*sqrt(dt*2/(dx*dx));
+		}
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += delPhi[i];			
+		t += dt;	
 	}
 	
 	public boolean simulateUnstable(){
