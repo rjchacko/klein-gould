@@ -60,18 +60,3 @@ void Ising1::update(int parityTarget) {
         }
     }
 }
-
-/*
-
-void printNeighbors1(Ising1 self) {
-    for (int y = 0; y < self.len; y++) {
-        for (int x = 0; x < self.len; x++) {
-            printf("%d ", self.sum[y*self.len+x]);
-        }
-        printf("\n");
-    }
-    printf("\n");
-}
-
-
-*/

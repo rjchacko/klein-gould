@@ -2,9 +2,32 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <cuda_runtime.h>
 
 #include "ising.h"
 
+
+
+void initCuda(int argc, char *argv[]) {
+    int deviceCount;
+    cudaGetDeviceCount(&deviceCount);
+    if (deviceCount == 0) {
+        fprintf(stderr, "No devices supporting CUDA.\n");
+        exit(EXIT_FAILURE);
+    }
+    int dev = deviceCount - 1;
+    if (argc > 1) {
+        sscanf(argv[1], "%d", &dev);
+    }
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, dev);
+    if (deviceProp.major < 1) {
+        fprintf(stderr, "Device %d does not support CUDA.\n", dev);
+        exit(EXIT_FAILURE);
+    }
+    fprintf(stderr, "Using device %d: %s\n", dev, deviceProp.name);
+    cudaSetDevice(dev);
+}
 
 
 void testSum(Ising &ising1, Ising &ising2) {
@@ -46,9 +69,8 @@ void testUpdate(Ising &ising1, Ising &ising2) {
     ising1.compare(&ising2);
 }
 
-int main (int argc, char * const argv[]) {
-    initPentacubeParity();
-    
+
+void test1() {
     int len = 6;
     int dim = 7;
     float h = 0;
@@ -62,6 +84,33 @@ int main (int argc, char * const argv[]) {
     
     testSum(ising1, ising2);
     testUpdate(ising1, ising2);
+}
+
+
+void test2() {
+    int len = 6;
+    int dim = 7;
+    float h = 0;
+    float T = 0.2;
+    
+    Ising2 ising1 = Ising2(len, dim, h, T);
+    IsingCuda ising2 = IsingCuda(len, dim, h, T);
+    
+    ising1.randomizeSpins();
+    ising2.randomizeSpins();
+    
+    ising1.update(0);
+    ising2.update(1);
+    
+    ising1.compare(&ising2);
+}
+
+
+int main (int argc, char *argv[]) {
+    initCuda(argc, argv);
+    
+    test1();
+    //test2();
     
     return 0;
 }
