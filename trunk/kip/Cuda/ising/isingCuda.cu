@@ -16,6 +16,15 @@ typedef struct {
     float h, T; // external field and temperature
 } NVIsing;
 
+// include functions from "bits.cpp" as CUDA device functions
+#define CUDA_INCLUDE
+#include "bits.cpp"
+
+__global__ void foo() {
+    int a = 2;
+    expandFF(a);
+}
+
 
 // ----------------------------------------------------------------------------
 // Ising class interface
