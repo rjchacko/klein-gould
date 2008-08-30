@@ -51,7 +51,7 @@ void testSum(Ising &ising1, Ising &ising2) {
             return;
         }
     }
-    printf("All site sums match!\n\n");
+    printf("Neighbor sums are equal\n\n");
 }
 
 

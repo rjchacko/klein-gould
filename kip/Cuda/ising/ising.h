@@ -1,3 +1,25 @@
+#ifndef __ISING__
+#define __ISING__
+
+
+// ----------------------------------------------------------------------------
+// bits.cpp -- Utilities for manipulating bits
+//
+
+// Bits128 should be thought of as a "128 bit unsigned int". the highest (127th) bit
+// is the highest (31st) bit of a3, which explains why a3 appears on the left.
+typedef struct {
+    unsigned int a3, a2, a1, a0;
+} Bits128;
+
+int bitCount(unsigned int v);
+Bits128 bitsExpand(int a);
+Bits128 bitsAdd(Bits128 x, Bits128 y);
+Bits128 bitsMaskShiftL(Bits128 x, int n);
+Bits128 bitsMaskShiftR(Bits128 x, int n);
+int bitsPick4(Bits128 x, int n);
+
+
 
 // ----------------------------------------------------------------------------
 // Ising -- base class
@@ -109,3 +131,5 @@ private:
     void index(int i, int *ip, int *delta);
 };
 
+
+#endif // ifndef __ISING__
