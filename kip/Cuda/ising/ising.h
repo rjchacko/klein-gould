@@ -1,4 +1,5 @@
 #include <math.h>
+#include <stdlib.h>
 
 // ----------------------------------------------------------------------------
 // Ising (Abstract)
@@ -17,8 +18,10 @@ public:
     }
     
     void randomizeSpins() {
+        srand(0);
         for (int i = 0; i < n; i++) {
-            set(i, (i%5+i%4)%2);
+            //set(i, (i%5+i%4)%2);
+            set(i, rand()%2);
         }
     }
     
@@ -39,8 +42,18 @@ public:
         }
     }
     
+    void printLattice(int *a) {
+        for (int y = 0; y < ((dim==1)?1:len); y++) {
+            for (int x = 0; x < len; x++) {
+                printf("%d ", a[y*len+x]);
+            }
+            printf("\n");
+        }
+        printf("\n");
+    }
+    
     void print() {
-        for (int y = 0; y < len; y++) {
+        for (int y = 0; y < ((dim==1)?1:len); y++) {
             for (int x = 0; x < len; x++) {
                 printf("%d ", get(y*len+x));
             }
@@ -112,6 +125,7 @@ void initPentacubeParity();
 
 class Ising2 : virtual public Ising {
 public:
+    int nblocks;
     unsigned int *blocks; // n/32 blocks represents n spins
     
     Ising2(int len, int dim, float h, float T);
