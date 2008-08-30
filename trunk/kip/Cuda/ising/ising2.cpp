@@ -29,13 +29,8 @@ int bitCount(unsigned int v) {
 int pentacubeParity[32];
 
 void initPentacubeParity() {
-    pentacubeParity[0] = 0;
-    int m = 1;
-    for (int i = 1; i < 32; i++) {
-        if (i == 2*m)
-            m = i;
-        pentacubeParity[i] = 1 - pentacubeParity[i-m];
-    }
+    for (int i = 0; i < 32; i++)
+        pentacubeParity[i] = bitCount(i)%2;
 }
 
 
@@ -188,12 +183,15 @@ int bitsPick4(Bits128 x, int n) {
 //
 
 Ising2::Ising2(int len, int dim, float h, float T) : Ising(len, dim, h, T) {
+    assert(len % 2 == 0);
+    assert(dim <= 7);
     len = len;
     dim = dim;
     n = (int)powl(len, dim);
-    blocks = (unsigned int *)malloc((n/32)*sizeof(unsigned int));
+    nblocks = n >> min(5,dim);
+    blocks = (unsigned int *)malloc(nblocks*sizeof(unsigned int));
     
-    for (int i = 0; i < n/32; i++) {
+    for (int i = 0; i < nblocks; i++) {
         blocks[i] = 0;
     }
 }
@@ -223,6 +221,9 @@ void Ising2::index(int i, int *ip, int *delta) {
         len_d *= len;
         lenp_d *= lenp;
     }
+    
+    assert(*ip < nblocks);
+    assert(*delta < 32);
 }
 
 // given compressed index 'ip' and bit index 'delta', return index 'i' into the
@@ -241,6 +242,8 @@ int Ising2::reverseIndex(int ip, int delta) {
       len_d *= len;
       lenp_d *= lenp;
     }
+    
+    assert(i < n);
     return i;
 }
 
@@ -248,22 +251,20 @@ int Ising2::reverseIndex(int ip, int delta) {
 void Ising2::set(int i, int s) {
     int ip, delta;
     index(i, &ip, &delta);
+    assert(ip < nblocks);
     int mask = ~(1 << delta);
-    if (ip >= n/32) {
-        printf("exceeded limit %d %d\n", i, ip);
-        exit(1);
-    }
     blocks[ip] = (blocks[ip] & mask) | (s << delta);
 }
 
 int Ising2::get(int i) {
     int ip, delta;
     index(i, &ip, &delta);
+    assert(ip < nblocks);
     return (blocks[ip]>>delta) & 1;
 }
 
 void Ising2::completeNeighborSum(int *sum) {
-    for (int ip = 0; ip < n/32; ip++) {
+    for (int ip = 0; ip < nblocks; ip++) {
         Bits128 acc = {0, 0, 0, 0};
         int lenp_d = 1;
         Bits128 n1 = bitsExpand(blocks[ip]);
@@ -298,7 +299,7 @@ void Ising2::completeNeighborSum(int *sum) {
 }
 
 void Ising2::update(int parityTarget) {
-    for (int ip = 0; ip < n/32; ip++) {
+    for (int ip = 0; ip < nblocks; ip++) {
         int parity = 0;
         Bits128 acc = {0, 0, 0, 0};
         int lenp_d = 1;
