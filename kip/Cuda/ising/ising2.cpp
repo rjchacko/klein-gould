@@ -26,13 +26,6 @@ int bitCount(unsigned int v) {
     return c;
 }
 
-int pentacubeParity[32];
-
-void initPentacubeParity() {
-    for (int i = 0; i < 32; i++)
-        pentacubeParity[i] = bitCount(i)%2;
-}
-
 
 // ------------------------------------------------------------------------------------------
 // Bits128
@@ -330,7 +323,7 @@ void Ising2::update(int parityTarget) {
         int deltaMax = min(32, (int)powl(2, dim));
         int cube = blocks[ip];
         for (int delta = 0; delta < deltaMax; delta++) {
-            if ((parity + pentacubeParity[delta]) % 2 == parityTarget) {
+            if ((parity + bitCount(delta)) % 2 == parityTarget) {
                 int m = 2*(bitsPick4(acc, delta) - dim);
                 int s = 2*((cube >> delta) & 1) - 1;
                 if (shouldFlipSpin(s, m)) {
