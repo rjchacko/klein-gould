@@ -128,7 +128,7 @@ void Ising2::completeNeighborSum(int *sum) {
             lenp_d *= lenp;
         }
         
-        int deltaMax = min(32, (int)powl(2, dim));
+        int deltaMax = dim < 5 ? (1 << dim) : 32;
         for (int delta = 0; delta < deltaMax; delta++) {
             int i = reverseIndex(ip, delta);
             sum[i] = bitsPick4(acc, delta);
@@ -165,7 +165,7 @@ void Ising2::update(int parityTarget) {
             lenp_d *= lenp;
         }
         
-        int deltaMax = min(32, (int)powl(2, dim));
+        int deltaMax = dim < 5 ? (1 << dim) : 32;
         int cube = blocks[ip];
         for (int delta = 0; delta < deltaMax; delta++) {
             if ((parity + bitCount(delta)) % 2 == parityTarget) {

@@ -14,6 +14,7 @@ void Ising::randomizeSpins() {
     for (int i = 0; i < n; i++) {
         //set(i, (i%5+i%4)%2);
         set(i, rand()%2);
+        //set(i, 0);
     }
     transferHostToDevice();
 }

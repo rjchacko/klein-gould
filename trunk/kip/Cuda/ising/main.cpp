@@ -99,9 +99,17 @@ void test2() {
     ising1.randomizeSpins();
     ising2.randomizeSpins();
     
-    ising1.update(0);
-    ising2.update(1);
+    for (int i = 0; i < 2; i++) {
+        ising1.update(0);
+        ising2.update(0);
+        ising1.update(1);
+        ising2.update(1);
+    }
     
+    printf("Updated lattices\n");
+    ising1.print();
+    ising2.print();
+
     ising1.compare(&ising2);
 }
 
@@ -109,8 +117,8 @@ void test2() {
 int main (int argc, char *argv[]) {
     initCuda(argc, argv);
     
-    test1();
-    //test2();
+    //test1();
+    test2();
     
     return 0;
 }
