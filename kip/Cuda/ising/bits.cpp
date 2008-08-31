@@ -2,7 +2,7 @@
 
 
 // if CUDA_INCLUDE is defined, then compile the following routines for execution
-// on device
+// on cuda device
 
 #ifdef CUDA_INCLUDE
 #define PREFIX __device__
