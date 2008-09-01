@@ -109,6 +109,8 @@ private:
 // IsingCuda -- bits packed implementation on Cuda
 //
 
+struct Rand48;
+
 class IsingCuda : virtual public Ising {
 public:
     IsingCuda(int len, int dim, float h, float T);
@@ -121,6 +123,7 @@ protected:
     int nblocks; // nblocks = n/32 when dim >= 5
     unsigned int *blocks;
     unsigned int *d_blocks;
+    Rand48 *rng;
     
     void transferHostToDevice();
     void transferDeviceToHost();

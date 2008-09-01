@@ -10,10 +10,10 @@ Ising::Ising(int len, int dim, float h, float T)
 
 
 void Ising::randomizeSpins() {
-    srand(0);
+    // srand(0);
     for (int i = 0; i < n; i++) {
-        //set(i, (i%5+i%4)%2);
-        set(i, rand()%2);
+        set(i, (i%5+i%4)%2);
+        //set(i, rand()%2);
         //set(i, 0);
     }
     transferHostToDevice();
@@ -71,7 +71,7 @@ int Ising::shouldFlipSpin(int s, int m) {
     if (dE < 0)
         return 1;
     else {
-        float r = 0.5; // rand() / (float)RAND_MAX;
+        float r = 0.1; //  ((float)lrand48()+1f) / (1<<31);
         return exp(- dE / T) > r;
     }
 }

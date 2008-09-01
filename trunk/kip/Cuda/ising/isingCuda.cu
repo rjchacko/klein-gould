@@ -12,6 +12,11 @@
 #define GRID_DIM 128
 #define BLOCK_DIM 128
 
+#define CUDA_INCLUDE
+#include "bits.cpp" // include CUDA device functions
+#include "rand48.cu" // random numbers
+
+
 typedef struct {
     int len, dim, nblocks;
     unsigned int *blocks;
@@ -20,22 +25,17 @@ typedef struct {
 } IsingCudaParams;
 
 
-// include functions from "bits.cpp" as CUDA device functions
-#define CUDA_INCLUDE
-#include "bits.cpp"
-
-
-__device__ int shouldFlipSpin(IsingCudaParams p, int s, int m) {
+__device__ inline int shouldFlipSpin(IsingCudaParams p, Rand48 &rng, int s, int m) {
     float dE = 2*s*(m + p.h);
     if (dE < 0)
         return 1;
     else {
-        float r = 0.5; // rand() / (float)RAND_MAX;
+        float r = 0.1; // rand48_nextFloat(rng);
         return exp(- dE / p.T) > r;
     }
 }
 
-__device__ void isingCuda_updateSite(IsingCudaParams p, int ip) {
+__device__ inline void isingCuda_updateSite(IsingCudaParams p, Rand48 &rng, int ip) {
     int parity = 0;
     Bits128 acc = {0, 0, 0, 0};
     int lenp_d = 1;
@@ -71,7 +71,7 @@ __device__ void isingCuda_updateSite(IsingCudaParams p, int ip) {
             int m = 2*(bitsPick4(acc, delta) - p.dim);
             // s = spin at this site (+/- 1)
             int s = 2*((cube >> delta) & 1) - 1;
-            if (shouldFlipSpin(p, s, m)) {
+            if (shouldFlipSpin(p, rng, s, m)) {
                 cube ^= (1 << delta);
             }
         }
@@ -79,13 +79,17 @@ __device__ void isingCuda_updateSite(IsingCudaParams p, int ip) {
     p.blocks[ip] = cube;
 }
 
-__global__ void isingCuda_update(IsingCudaParams p) {
+__global__ void isingCuda_update(IsingCudaParams p, Rand48 rng) {
+    rand48_loadState(rng);
+
     unsigned int ip = blockIdx.x*(blockDim.x) + threadIdx.x;
     unsigned int gridSize = gridDim.x*blockDim.x;
     while (ip < p.nblocks) {
-        isingCuda_updateSite(p, ip);
+        isingCuda_updateSite(p, rng, ip);
         ip += gridSize;
     }
+    
+    rand48_storeState(rng);
 }
 
 
@@ -109,11 +113,16 @@ IsingCuda::IsingCuda(int len, int dim, float h, float T) : Ising(len, dim, h, T)
         blocks[i] = 0;
     }
     transferHostToDevice();
+    
+    rng = new Rand48();
+    rng->init(GRID_DIM*BLOCK_DIM, 0); // initialize random numbers
 }
 
 IsingCuda::~IsingCuda() {
     free(blocks);
     cudaFree(d_blocks);
+    rng->destroy();
+    delete rng;
 }
 
 
@@ -130,9 +139,10 @@ void IsingCuda::update(int parityTarget) {
     p.h = h;
     p.T = T;
     p.parityTarget = parityTarget;
-    
+
     int sharedBytes = 0;
-    isingCuda_update <<<GRID_DIM, BLOCK_DIM, sharedBytes>>> (p);
+    
+    isingCuda_update <<<GRID_DIM, BLOCK_DIM, sharedBytes>>> (p, *rng);
 }
 
 void IsingCuda::transferHostToDevice() {
