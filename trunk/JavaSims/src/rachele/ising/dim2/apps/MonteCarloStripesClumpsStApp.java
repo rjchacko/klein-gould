@@ -23,8 +23,6 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.FileValue;
 
-
-
 /**
 * 
 * Monte Carlo Simulation to produce structure factor vs time averages.
