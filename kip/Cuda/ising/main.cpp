@@ -74,7 +74,7 @@ void test1() {
     int len = 6;
     int dim = 7;
     float h = 0;
-    float T = 0.2;
+    float T = 2;
     
     Ising1 ising1 = Ising1(len, dim, h, T);
     Ising2 ising2 = Ising2(len, dim, h, T);
@@ -88,25 +88,34 @@ void test1() {
 
 
 void test2() {
-    int len = 6;
+    int len = 8;
     int dim = 7;
     float h = 0;
-    float T = 0.2;
+    float T = 2;
     
     Ising2 ising1 = Ising2(len, dim, h, T);
     IsingCuda ising2 = IsingCuda(len, dim, h, T);
-    
+
+    printf("Randomizing %d spins\n", ising1.n);
     ising1.randomizeSpins();
     ising2.randomizeSpins();
+
+    int iters = 2;
     
-    for (int i = 0; i < 2; i++) {
+    printf("Updating 1\n");
+    srand48(0);
+    for (int i = 0; i < iters; i++) {
         ising1.update(0);
-        ising2.update(0);
         ising1.update(1);
-        ising2.update(1);
     }
     
-    printf("Updated lattices\n");
+    printf("Updating 2\n");
+    for (int i = 0; i < iters; i++) {
+        ising2.update(0);
+        ising2.update(1);
+    }
+
+    printf("\nLattices\n");
     ising1.print();
     ising2.print();
 
