@@ -17,6 +17,9 @@ import scikit.util.DoubleArray;
 
 /**
 * Calculates matrix, eigenvectors, eigenvalues....
+* 
+* The simulation part of this simulation has not
+* 
 */
 public class StripeClumpFieldSim {
 	int Lp;
@@ -24,8 +27,8 @@ public class StripeClumpFieldSim {
 	FourierTransformer fft;
 	int ky;
     double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice, etaK; //right hand side
-    double [] g_k, f_x, phi0_bar, c;
-	public double [] phi0, f_k, eigenvalue;
+    double [] g_k, f_x, phi0_bar, c, f_G;
+	public double [] phi0, f_k, f_Gk, eigenvalue;
     double [][] M;// Main matrix 
     public double [][] VV;// Eigenvalue matrix
 	String phi0file;
@@ -38,6 +41,8 @@ public class StripeClumpFieldSim {
 		fft = new FourierTransformer(Lp);
 
 		g_k = new double[Lp];
+		f_Gk = new double[Lp];
+		f_G = new double[Lp];
 		f_k = new double[Lp];
 		f_x = new double [Lp];
 		phi0 = new double [Lp];
@@ -48,7 +53,14 @@ public class StripeClumpFieldSim {
 		VV = new double [Lp][Lp];
 		
 		findPhi0andPhi0_bar();
-		findMatrix();
+		if (params.sget("Dynamics")=="Glauber"){
+			calcXtraGlauberFunctions();
+			findGlauberMatrix();
+		}
+		else if (params.sget("Dynamics")=="Langevin"){
+			calcXtraFunctions();			
+			findMatrix();
+		}
 		diagonalize();
 		for (int i=0; i < Lp; i ++){
 			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
@@ -125,9 +137,23 @@ public class StripeClumpFieldSim {
 				else return ising.findVkSquare(kRx, kRy);
 			}
 		});
+		
+
+	}
+	
+	public void calcXtraFunctions(){
 		for(int i = 0; i < Lp; i++)
 			f_x[i] = 1.0 / (1.0 - Math.pow(phi0[i],2));
-		f_k = fft.calculate1DFT(f_x);
+		f_k = fft.calculate1DFT(f_x);		
+	}
+	
+	public void calcXtraGlauberFunctions(){
+		for(int i = 0; i < Lp; i++){
+			double tanhTerm = Math.tanh(phi0_bar[i]/ising.T+ising.H/ising.T);
+			f_G[i] = tanhTerm*tanhTerm;
+			System.out.println("tt " +tanhTerm);
+		}
+		f_Gk = fft.calculate1DFT(f_G);
 	}
 	
 	
@@ -171,6 +197,28 @@ public class StripeClumpFieldSim {
 		}
 	}
 
+	
+	public void findGlauberMatrix() {
+		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
+		double kxValue;
+		for (int i = 0; i < Lp; i++){
+			for (int j = 0; j <= i; j++){
+				if(i >= Lp/2)
+					kxValue = 2.0*Math.PI*ising.R*(j-Lp)/ising.L;
+				else
+					kxValue = 2.0*Math.PI*ising.R*j/ising.L;
+				M[i][j] = M[j][i] = ising.findVkSquare(kxValue, kyValue)*f_Gk[(i-j+Lp)%Lp]/(ising.T*ising.Lp);
+//				System.out.println(f_Gk[i]);
+			}
+		}
+		for (int i = 0; i < Lp; i++){
+			if(i >= Lp/2)
+				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
+			else
+				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
+			M[i][i] += -1 + ising.findVkSquare(kxValue, kyValue)/ising.T;
+		}
+	}
 
 	
 	public void findAndDiagonalizeLittleMatrix() {

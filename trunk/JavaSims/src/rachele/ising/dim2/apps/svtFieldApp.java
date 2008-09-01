@@ -49,7 +49,10 @@ public class svtFieldApp extends Simulation{
 	//RUN OPTIONS
 	boolean writeToFile = true;
 	boolean accumsOn = false;
-	boolean calcContribs = false;
+	/**
+	 * 
+	 */
+	boolean calcContribs = true;
 	int accNo = 6;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
@@ -83,7 +86,6 @@ public class svtFieldApp extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
-		params.add("1D phi0 File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
 		params.add("Dynamics", new ChoiceValue( "Glauber", "Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
@@ -176,8 +178,13 @@ public class svtFieldApp extends Simulation{
 		while (true) {
 			ising.readParams(params);
 			if(calcContribs){ 
-				ising.simModCalcContrib();
-				recordContribToFile();
+				if(dynamics == "Langevin"){
+					ising.simModCalcContrib();
+					recordContribToFile();
+				}else if(dynamics == "Glauber"){
+					ising.glauberCalcContrib();
+					recordContribToFile();
+				}
 			}
 			else{
 				if (dynamics == "Langevin"){
@@ -277,7 +284,7 @@ public class svtFieldApp extends Simulation{
 
 		ising = new IsingField2D(params);
 		this.Lp=ising.Lp;
-		//sc = new StripeClumpFieldSim(ising, params);
+		sc = new StripeClumpFieldSim(ising, params);
 		for (int i = 0; i < accNo; i++){ 
 			if(accumsOn){
 				etaAcc[i] = new Accumulator();
@@ -315,7 +322,7 @@ public class svtFieldApp extends Simulation{
 		eta = new double[Lp*Lp];
 		etaK = new double[Lp*Lp];
 		phi0 = new double [Lp];
-		String fileName = params.sget("1D phi0 File");
+		String fileName = params.sget("1D Input File");
 		phi0 = ising.getSymmetricSlice(fileName);
 	}	
 
