@@ -8,6 +8,7 @@ import scikit.numerics.fft.managed.ComplexDoubleFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
 import static java.lang.Math.PI;
 import static java.lang.Math.log;
+import static java.lang.Math.pow;
 import static java.lang.Math.rint;
 import static java.lang.Math.sin;
 import static java.lang.Math.sqrt;
@@ -153,6 +154,23 @@ public class FieldIsing1D{
 			phi[i] += del_phi[i];	
 		measureFreeEng();
 		t += dt;
+	}
+
+	public void simulateGlauber() {
+		
+		convolveWithRange(phi, phi_bar, R);	
+		for (int i = 0; i < Lp; i++){
+			double arg = (phi_bar[i]/T + H/T);
+			double tanh = Math.tanh(arg);
+			double driftTerm = dt*(tanh-phi[i]);
+			double noisePre = sqrt(2-pow(Math.tanh(arg),2)-pow(phi[i],2));
+			double noiseTerm = noisePre*random.nextGaussian()*sqrt(dt*2/(dx*dx));
+			del_phi[i] = driftTerm + noiseTerm;
+		}
+
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += del_phi[i];			
+		t += dt;	
 	}
 	
 	/**

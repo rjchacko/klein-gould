@@ -318,15 +318,7 @@ public class IsingField2D extends AbstractIsing2D{
 			double noiseTerm = noisePre*noise()*sqrt(dt*2/(dx*dx));
 			delPhi[i] = driftTerm + noiseTerm;
 		}
-//		
-//		for (int i = 0; i < Lp*Lp; i++){
-//			double arg = (phi_bar[i] + H)/T;
-//			double tanh = Math.tanh(arg);
-//			double drift = tanh-phi[i];
-////			System.out.println("tanh term = " + tanh + "phi = " + phi[i]);
-//			double noisePre = sqrt(2-pow(Math.tanh(arg),2)-pow(phi[i],2));
-//			delPhi[i] = dt*(drift)+ noisePre*noise()*sqrt(dt*2/(dx*dx));
-//		}
+
 		for (int i = 0; i < Lp*Lp; i++) 
 			phi[i] += delPhi[i];			
 		t += dt;	
@@ -343,6 +335,7 @@ public class IsingField2D extends AbstractIsing2D{
 			double noisePre = sqrt(2-pow(Math.tanh(arg),2)-pow(phi[i],2));
 			double noiseTerm = noisePre*noise()*sqrt(dt*2/(dx*dx));
 			delPhi[i] = driftTerm + noiseTerm;
+			//driftContrib += abs(tanh)/(abs(tanh)+abs(phi[i]));
 			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
 		}
 		for (int i = 0; i < Lp*Lp; i++) 
@@ -350,21 +343,6 @@ public class IsingField2D extends AbstractIsing2D{
 		driftContrib /= (Lp*Lp);
 		t += dt;
 		
-		for (int i = 0; i < Lp*Lp; i++) {
-			double dF_dPhi = 0;
-			dF_dPhi = mobility*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
-			Lambda[i] = sqr(1 - phi[i]*phi[i]);		
-			double driftTerm = - dt*Lambda[i]*dF_dPhi;
-			double noiseTerm = sqrt(Lambda[i]*(dt*2*T*mobility)/dx)*noise();
-			delPhi[i] = driftTerm + noiseTerm;
-			//System.out.println(noiseTerm + " " + driftTerm + " " + delPhi[i]);
-			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
-			phiVector[i] = delPhi[i];
-		}
-		for (int i = 0; i < Lp*Lp; i++) 
-			phi[i] += delPhi[i];	
-		driftContrib /= (Lp*Lp);
-		t += dt;
 	}
 	
 	public boolean simulateUnstable(){

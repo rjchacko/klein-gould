@@ -86,6 +86,7 @@ public class svtFieldApp extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
+		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
 		params.add("Dynamics", new ChoiceValue( "Glauber", "Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
@@ -103,13 +104,14 @@ public class svtFieldApp extends Simulation{
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
-		params.add("L/R", 2.7826087);
-		params.add("R/dx", 50.0);
+		params.add("L/R", 5.565217391);
+		params.add("R/dx", 40.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
-		params.addm("ky", 2);
+		params.addm("ky", 4);
 		params.addm("dkx", 1);
 		params.addm("dt", 0.01);
+		params.add("mean phi");
 		params.add("Time");
 		params.add("Lp");
 		flags.add("Clear");
@@ -119,6 +121,7 @@ public class svtFieldApp extends Simulation{
 	public void animate() {
 		params.set("Time", ising.time());
 		params.set("Lp", ising.Lp);
+		params.set("mean phi", ising.mean(ising.phi));
 		phiGrid.registerData(Lp, Lp, ising.phi);
 		etaDotSF.registerData(Lp, Lp, etaK);
 		etaVsTimeLC.setAutoScale(true);
@@ -150,6 +153,8 @@ public class svtFieldApp extends Simulation{
 				SFvTime.registerLines(sb2.toString(), sfAcc[i], col);
 			}
 		}
+		if(flags.contains("Write 1D Config"))
+			write1Dconfig();
 		if(flags.contains("Clear")){
 			flags.clear();			
 		}
@@ -326,4 +331,13 @@ public class svtFieldApp extends Simulation{
 		phi0 = ising.getSymmetricSlice(fileName);
 	}	
 
+    private void write1Dconfig(){
+        String configFileName = params.sget("New 1D Input File");
+        FileUtil.deleteFile(configFileName);
+        FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
+        System.out.println("Config written");
+        flags.clear();
+}
+
+	
 }

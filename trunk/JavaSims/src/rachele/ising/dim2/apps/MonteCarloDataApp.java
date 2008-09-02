@@ -123,7 +123,7 @@ public class MonteCarloDataApp extends Simulation{
 					public double eval(double kR) {
 						double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
 						double D = sim.J*pot/sim.T-1;
-						return  (exp(2*sim.dTime()*2*D)*(1 + 1/D)-1/D);	
+						return  (exp(2*sim.time()*D)*(1 + 1/D)-1/D);	
 					}
 				}, Color.BLACK);
 				

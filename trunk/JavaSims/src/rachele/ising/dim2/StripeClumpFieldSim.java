@@ -204,10 +204,10 @@ public class StripeClumpFieldSim {
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j <= i; j++){
 				if(i >= Lp/2)
-					kxValue = 2.0*Math.PI*ising.R*(j-Lp)/ising.L;
+					kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
 				else
-					kxValue = 2.0*Math.PI*ising.R*j/ising.L;
-				M[i][j] = M[j][i] = ising.findVkSquare(kxValue, kyValue)*f_Gk[(i-j+Lp)%Lp]/(ising.T*ising.Lp);
+					kxValue = 2.0*Math.PI*ising.R*i/ising.L;
+				M[i][j] = M[j][i] = -ising.findVkSquare(kxValue, kyValue)*f_Gk[(i-j+Lp)%Lp]/(ising.T*ising.Lp);
 //				System.out.println(f_Gk[i]);
 			}
 		}
