@@ -59,6 +59,7 @@ public class IsingField1DApp extends Simulation{
 
 		params.add("Config Directory",new DirectoryValue("/home/erdomi/data/lraim/configs1dAutoName"));
 		params.addm("Noise", new ChoiceValue("On", "Off"));
+		params.addm("Dynamics", new ChoiceValue("Langevin", "Glauber"));
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.04, 0, 0.2).withSlider());
 		params.addm("J", +1.0);
@@ -124,6 +125,12 @@ public class IsingField1DApp extends Simulation{
 		Job.animate();
 		
 		timeCount = maxWriteCount +1;
+		boolean glauber;
+		if(params.sget("Dynamics")=="Glauber")
+			 glauber = true;
+		else
+			glauber = false;
+		System.out.println("Galuber dynamics is " + glauber);
 		
 		while (true) {
 			if (flags.contains("Write")) {
@@ -131,7 +138,8 @@ public class IsingField1DApp extends Simulation{
 				FileUtil.deleteFile(configFileName);
 				FileUtil.initFile(paramsFile, params);
 				while (timeCount <= maxWriteCount){
-					ising.simulate();			
+					if (glauber) ising.simulateGlauber();
+					else ising.simulate();			
 					writeConfigToFileWithTime(configFileName);				
 					Job.animate();					
 					params.set("Time Count", timeCount);
