@@ -54,9 +54,12 @@ public class SCAveFieldApp extends Simulation{
     double [] eta, etaK;
     int ky;
     double kRChunk; //=2piR/L
+    boolean noiseContrib = true;
     int accNo = 6;
     Accumulator [] etaAcc = new Accumulator [accNo];
     Accumulator [] etaAccAve = new Accumulator [accNo];
+    Accumulator driftAcc = new Accumulator();
+    Accumulator noiseAcc = new Accumulator();
     int [] sfLabel = new int [accNo];
     public int Lp;
     Grid phiGrid = new Grid("phi field");
@@ -64,7 +67,7 @@ public class SCAveFieldApp extends Simulation{
     Plot etaVsTimeSim = new Plot("eta v t");
     Plot hSlice = new Plot("Horizontal Slice");
 	Plot vSlice = new Plot("Vertical Slice"); 
-
+	Plot noisePlot = new Plot("Noise Contrib");
     
 	public static void main(String[] args) {
 		new Control(new SCAveFieldApp(), "SC Ising Field");
@@ -72,6 +75,7 @@ public class SCAveFieldApp extends Simulation{
 	
 	public void load(Control c) {
 		c.frameTogether("Everything", phiGrid, etaDotSF, vSlice, hSlice, etaVsTimeSim);
+		if(noiseContrib) c.frame(noisePlot);
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/L64R23T0-04h0-8"));
 		params.add("Data Dir", new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/SCAveFieldApp/testRuns"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
@@ -79,6 +83,7 @@ public class SCAveFieldApp extends Simulation{
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
 		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian"));
 		params.addm("Approx", new ChoiceValue("None", "Modified Dynamics"));
+		params.addm("Dynamics", new ChoiceValue("Langevin", "Glauber"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
@@ -147,6 +152,12 @@ public class SCAveFieldApp extends Simulation{
 			if (sc.VV[Lp-1][i] < findMine) findMine = sc.VV[Lp-1][i];
 			if (sc.VV[Lp-1][i] > findMaxe) findMaxe = sc.VV[Lp-1][i];
 		}
+		
+		if(noiseContrib){
+			noisePlot.registerLines("Noise", noiseAcc, Color.BLUE);
+			noisePlot.registerLines("Drift", driftAcc, Color.BLACK);
+		}
+		
 		if(flags.contains("Clear")){
 			for ( int i = 0; i < accNo; i++)
 				etaAcc[i].clear();
@@ -190,6 +201,15 @@ public class SCAveFieldApp extends Simulation{
 	    			recordStep += 1.0;
 	    		}
 				Job.animate();
+			}
+			if (noiseContrib){
+				double [] driftCont = ising.simModCalcContribK(ky);
+				double [] driftContK = fft.calculate1DFT(driftCont);
+				for (int i = 0; i < Lp; i++){
+					double kRvalue = 2*Math.PI*i*ising.R/ising.L;
+					driftAcc.accum(kRvalue, driftContK[i]);
+					noiseAcc.accum(kRvalue, 1-driftContK[i]);
+				}
 			}
 			repNo += 1;
 			params.set("Reps", repNo);
