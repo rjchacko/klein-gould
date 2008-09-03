@@ -68,9 +68,9 @@ public class IsingField2D extends AbstractIsing2D{
 		//dT = params.fget("dT");
 		//double dT = params.fget("dT");
 		DENSITY = params.fget("Magnetization");
-		accStripeFreeEnergy = new Accumulator(0.0001);
-		accClumpFreeEnergy = new Accumulator(0.0001);
-		accEitherFreeEnergy = new Accumulator(0.0001);
+		accStripeFreeEnergy = new Accumulator();
+		accClumpFreeEnergy = new Accumulator();
+		accEitherFreeEnergy = new Accumulator();
 		accFreeEnergy = new Accumulator(dt);
 		
 		if(params.sget("Interaction") == "Circle")
@@ -341,9 +341,10 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int i = 0; i < Lp*Lp; i++) 
 			phi[i] += delPhi[i];			
 		driftContrib /= (Lp*Lp);
-		t += dt;
-		
+		t += dt;	
 	}
+	
+	
 	
 	public boolean simulateUnstable(){
 		boolean abortMode = true;
@@ -427,7 +428,30 @@ public class IsingField2D extends AbstractIsing2D{
 		driftContrib /= (Lp*Lp);
 		t += dt;
 	}
-	
+
+	public double [] simModCalcContribK(int kyValue) {
+		convolveWithRange(phi, phi_bar, R);
+		double [] driftProp = new double [Lp];
+		for (int i = 0; i < Lp*Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = mobility*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
+			Lambda[i] = sqr(1 - phi[i]*phi[i]);		
+			double driftTerm = - dt*Lambda[i]*dF_dPhi;
+			double noiseTerm = sqrt(Lambda[i]*(dt*2*T*mobility)/dx)*noise();
+			delPhi[i] = driftTerm + noiseTerm;
+			//System.out.println(noiseTerm + " " + driftTerm + " " + delPhi[i]);
+			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
+			phiVector[i] = delPhi[i];
+			if (i/Lp == kyValue) driftProp[i%Lp] = driftContrib;
+		}
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += delPhi[i];	
+		driftContrib /= (Lp*Lp);
+		t += dt;
+		return driftProp;
+		
+	}
+
 	public void simulate() {
 		freeEnergy = 0;  //free energy is calculated for previous time step
 		double potAccum = 0;
