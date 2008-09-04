@@ -16,6 +16,7 @@ import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
+import scikit.jobs.Movies;
 import scikit.jobs.Simulation;
 import scikit.util.FileUtil;
 
@@ -151,9 +152,7 @@ public class Ising2D extends Simulation {
 					}
 					Job.animate();
 				}
-				params.set("mcs", mcs);	
-
-				
+				params.set("mcs", mcs);			
 			}
 			DatasetBuffer data=mag[currentWindow].copyData();
 			for(int i=0;i<data.size();i++){
@@ -229,8 +228,8 @@ public class Ising2D extends Simulation {
 	 * @param args
 	 */
 	public static void main(String[] args) {
-		new Control(new Ising2D(),"Ising 2D Umbrella Sampling");
-
+		Control c=new Control(new Ising2D(),"Ising 2D Umbrella Sampling");
+		new Movies(c);
 	}
 
 }
