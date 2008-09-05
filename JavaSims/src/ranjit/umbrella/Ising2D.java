@@ -1,9 +1,12 @@
 package ranjit.umbrella;
 
 import java.awt.Color;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
+
+import javax.imageio.ImageIO;
 
 import ranjit.ising.spinblock.SpinBlocks2D;
 import scikit.dataset.Accumulator;
@@ -150,6 +153,7 @@ public class Ising2D extends Simulation {
 						init=spins.blocksAtScale(0).clone();
 						saved=true;
 					}
+					
 					Job.animate();
 				}
 				params.set("mcs", mcs);			
@@ -160,6 +164,10 @@ public class Ising2D extends Simulation {
 			}
 			saveDataset(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
 			saveDataset(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
+				
+			try {
+					ImageIO.write(grid.getImage(), "png", new File(prefix+currentWindow+".png"));
+			}catch (IOException e) {}
 		}
 
 	}
