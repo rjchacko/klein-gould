@@ -1,14 +1,9 @@
 package ranjit.ising2d;
 
 import java.awt.Color;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.util.Random;
 
 import ranjit.ising.spinblock.SpinBlocks2D;
-import scikit.dataset.Accumulator;
-import scikit.dataset.DataSet;
-import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -18,7 +13,6 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Movies;
 import scikit.jobs.Simulation;
-import scikit.util.FileUtil;
 
 public class Ising2D extends Simulation {
 	SpinBlocks2D spins;
