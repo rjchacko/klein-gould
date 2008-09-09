@@ -49,7 +49,7 @@ public class IsingField2D extends AbstractIsing2D{
 	public Accumulator accFreeEnergy;
 	double noiseParameter, stripeStrength;
 	public boolean circleInteraction = false;
-	boolean magConservation = false;
+	public boolean magConservation;
 	int slowPower = 0;
 	String theory;
 	Random random = new Random();
