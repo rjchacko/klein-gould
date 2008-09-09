@@ -193,3 +193,28 @@ int IsingCuda::get(int i) {
     assert(ip < nblocks);
     return (blocks[ip]>>delta) & 1;
 }
+
+// ----------------------------------------------------------------------------
+// Cuda utility methods
+//
+
+void initCuda(int argc, char *argv[]) {
+    int deviceCount;
+    cudaGetDeviceCount(&deviceCount);
+    if (deviceCount == 0) {
+        fprintf(stderr, "No devices supporting CUDA.\n");
+        exit(EXIT_FAILURE);
+    }
+    int dev = deviceCount - 1;
+    if (argc > 1) {
+        sscanf(argv[1], "%d", &dev);
+    }
+    cudaDeviceProp deviceProp;
+    cudaGetDeviceProperties(&deviceProp, dev);
+    if (deviceProp.major < 1) {
+        fprintf(stderr, "Device %d does not support CUDA.\n", dev);
+        exit(EXIT_FAILURE);
+    }
+    fprintf(stderr, "Using device %d: %s\n", dev, deviceProp.name);
+    cudaSetDevice(dev);
+}

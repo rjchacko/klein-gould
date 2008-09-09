@@ -1,0 +1,28 @@
+EXECUTABLE  := libising.so
+CUFILES     := isingCuda.cu
+CCFILES     := interface.cpp bits.cpp ising.cpp ising1.cpp ising2.cpp
+
+
+CUDA_INSTALL_PATH = /usr/local/cuda
+INCLUDES = -I. -I$(CUDA_INSTALL_PATH)/include
+LIB = -L$(CUDA_INSTALL_PATH)/lib -lcudart
+
+CC = g++
+NVCC = $(CUDA_INSTALL_PATH)/bin/nvcc 
+CFLAGS = -c $(INCLUDES) -DUNIX -O3
+NVCCFLAGS = -c $(INCLUDES) -DUNIX -O3 -arch sm_13
+LDFLAGS = -fPIC $(LIB)
+CCOBJECTS = $(CCFILES:.cpp=.o)
+CUOBJECTS = $(CUFILES:.cu=.o)
+
+$(EXECUTABLE): $(CCOBJECTS) $(CUOBJECTS)
+	$(CC) --shared $(LDFLAGS) $(CCOBJECTS) $(CUOBJECTS) -o $@
+
+clean:
+	rm $(CCOBJECTS) $(CUOBJECTS) $(EXECUTABLE)
+
+%.o: %.cpp
+	$(CC) $(CFLAGS) $< -o $@
+
+%.o: %.cu
+	$(NVCC) $(NVCCFLAGS) $< -o $@
