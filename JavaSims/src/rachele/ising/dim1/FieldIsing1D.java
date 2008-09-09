@@ -23,11 +23,11 @@ import static scikit.util.DoubleArray.*;
 public class FieldIsing1D{
 	public int Lp;
 	public double dt = 1;
-	public double t;
+	public double t, noiseParam;
 	public double[] phi, F;
 	double DENSITY;
 	double [] phi_bar, del_phi;
-	boolean noise;
+//	boolean noise;
 	
 	public double L, R, T, J, dx, H, ampFactor;
 	Random random = new Random();
@@ -56,7 +56,8 @@ public class FieldIsing1D{
 		params.set("R/dx", RoverDx);
 		params.set("Lp", Lp);
 		t = 0;
-
+		noiseParam = params.fget("Noise");
+		
 		phi = new double[Lp];
 		phi_bar = new double[Lp];
 		del_phi = new double[Lp];
@@ -67,7 +68,7 @@ public class FieldIsing1D{
 		freeEngAcc = new Accumulator(dt);
 		
 		for (int i = 0; i < Lp; i++)
-			phi[i] = DENSITY+ random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));;
+			phi[i] = DENSITY+ noiseParam*random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));;
 	}
 	
 	public void readParams(Parameters params) {
@@ -81,10 +82,11 @@ public class FieldIsing1D{
 		dx = L / Lp;
 		params.set("R/dx", R/dx);
 		params.set("DENSITY", mean(phi));
-		if (params.sget("Noise").equals("On"))
-			noise = true;
-		else
-			noise = false;		
+		noiseParam = params.fget("Noise");
+//		if (params.sget("Noise").equals("On"))
+//			noise = true;
+//		else
+//			noise = false;		
 	}
 	
 	public double time() {
@@ -147,8 +149,7 @@ public class FieldIsing1D{
 		for (int i = 0; i < Lp; i++) {
 			double Lambda = sqr(1 - phi[i]*phi[i]);	
 			del_phi[i] = - dt*Lambda*(phi_bar[i]-H+ T*atanh(phi[i]));
-			if(noise)
-				del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
+			del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian()*noiseParam;
 		}
 		for (int i = 0; i < Lp; i++)
 			phi[i] += del_phi[i];	
@@ -164,7 +165,7 @@ public class FieldIsing1D{
 			double tanh = Math.tanh(arg);
 			double driftTerm = dt*(tanh-phi[i]);
 			double noisePre = sqrt(2-pow(Math.tanh(arg),2)-pow(phi[i],2));
-			double noiseTerm = noisePre*random.nextGaussian()*sqrt(dt*2/(dx*dx));
+			double noiseTerm = noiseParam*noisePre*random.nextGaussian()*sqrt(dt*2/(dx*dx));
 			del_phi[i] = driftTerm + noiseTerm;
 		}
 
@@ -194,8 +195,7 @@ public class FieldIsing1D{
 		for (int i = 0; i < Lp; i++) {
 			double Lambda = sqr(1 - phi[i]*phi[i]);	
 			del_phi[i] = - dt*Lambda*(ampFactor*phi_bar[i]-H + T*atanh(phi[i]));
-			if(noise)
-				del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
+			del_phi[i] += noiseParam*sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
 		}
 		for (int i = 0; i < Lp; i++)
 			phi[i] += del_phi[i];	

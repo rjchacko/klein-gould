@@ -58,7 +58,7 @@ public class IsingField1DApp extends Simulation{
 //  Default params for clump model
 
 		params.add("Config Directory",new DirectoryValue("/home/erdomi/data/lraim/configs1dAutoName"));
-		params.addm("Noise", new ChoiceValue("On", "Off"));
+		params.addm("Noise", new DoubleValue(1.0, 0, 1.0).withSlider());
 		params.addm("Dynamics", new ChoiceValue("Langevin", "Glauber"));
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.04, 0, 0.2).withSlider());

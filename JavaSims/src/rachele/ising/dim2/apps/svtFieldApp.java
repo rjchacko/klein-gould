@@ -52,7 +52,7 @@ public class svtFieldApp extends Simulation{
 	/**
 	 * 
 	 */
-	boolean calcContribs = true;
+	boolean calcContribs = false;
 	int accNo = 6;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
@@ -90,8 +90,8 @@ public class svtFieldApp extends Simulation{
 		params.add("Dynamics", new ChoiceValue( "Glauber", "Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
-		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
-		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian"));
+		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
+		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian", "Constant"));
 		params.addm("Approx", new ChoiceValue("None", "Modified Dynamics"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
@@ -193,7 +193,7 @@ public class svtFieldApp extends Simulation{
 			}
 			else{
 				if (dynamics == "Langevin"){
-					if (approx == "None") ising.simulateSimple();
+					if (approx == "None") ising.simulate();// ising.simulateSimple();
 					else if (approx == "Modified Dynamics")ising.simulate();
 				}else if (dynamics == "Glauber")
 					ising.simulateGlauber();
@@ -214,6 +214,7 @@ public class svtFieldApp extends Simulation{
 			}
 
 			Job.animate();
+//			System.out.println("conserve " + ising.magConservation);
 
 		}	
 	}
