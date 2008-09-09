@@ -109,6 +109,8 @@ private:
 // IsingCuda -- bits packed implementation on Cuda
 //
 
+void initCuda(int argc, char *argv[]);
+
 struct Rand48;
 
 class IsingCuda : virtual public Ising {
