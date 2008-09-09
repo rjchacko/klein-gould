@@ -42,7 +42,7 @@ public class Ising2Dnps extends Simulation {
 
 	public void load(Control c){		
 		params.add("T",1.0);
-		params.add("h",0);
+		params.add("h",0.0);
 		params.add("L",128);
 		params.add("coarse grain length", 16);
 		params.add("R",1);
