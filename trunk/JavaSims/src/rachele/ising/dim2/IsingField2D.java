@@ -34,7 +34,7 @@ public class IsingField2D extends AbstractIsing2D{
 	//trying to achieve fractional accuracy for a minimum that happens to be
 	// exactly zero
 	static double sigma = .2;
-	public double mobility;
+	public double [] mobility;  //spatially dependent mobility in general
 	public double [] lineminDirection;
 	public double [] xi;
 	public double [] g;
@@ -60,8 +60,6 @@ public class IsingField2D extends AbstractIsing2D{
 		R = params.fget("R");
 		L = R*params.fget("L/R");
 		T = params.fget("T");
-		//mobility = 1.0/T;
-		mobility = 1.0;
 		dx = R/params.fget("R/dx");
 		dt = params.fget("dt");
 		H = params.fget("H");
@@ -101,6 +99,7 @@ public class IsingField2D extends AbstractIsing2D{
 		Lambda = new double [Lp*Lp];
 		phiVector = new double[Lp*Lp];
 		A = new double [Lp*Lp];
+		mobility = new double [Lp*Lp];
 		//HH = new double[Lp*Lp];
 		//double backgroundH = params.fget("H");
 		//double stripeH = params.fget("H Stripe");
@@ -114,6 +113,8 @@ public class IsingField2D extends AbstractIsing2D{
 		String init = params.sget("Init Conditions");
 		if(init == "Random Gaussian"){
 			randomizeField(DENSITY);
+			for (int i = 0; i < Lp*Lp; i++)
+				mobility[i] = (1.0 - DENSITY*DENSITY)/T;
 			System.out.println("Random Gaussian");
 		}else if(init == "Read 1D Soln"){
 			System.out.println("Read in 1D solution");
@@ -121,13 +122,20 @@ public class IsingField2D extends AbstractIsing2D{
 			double[] phiSlice = new double [Lp];  
 			phiSlice = getSymmetricSlice(fileName);
 			set1DConfig(phiSlice);
+			for (int i = 0; i < Lp*Lp; i++)
+				mobility[i] = 1;
+//				mobility[i] = (1 - phiSlice[i%Lp]*phiSlice[i%Lp]) / T;
 		}else if (init == "Constant"){
 			System.out.println("Constant");
 			for (int i = 0; i < Lp*Lp; i ++)
 				phi[i] = DENSITY;
+			for (int i = 0; i < Lp*Lp; i++)
+				mobility[i] = (1.0 - DENSITY*DENSITY)/T;
 		}else if(init == "Read From File"){
 			readInitialConfiguration(params.sget("2D Input Dir") + File.separator + "inputConfig");
 			System.out.println("Read From File");
+			for (int i = 0; i < Lp*Lp; i++)
+				mobility[i] = (1.0 - DENSITY*DENSITY)/T;			
 		}else if(init == "Artificial Stripe 3"){
 			System.out.println("Artificial Stripe 3");
 			int stripeLoc = (int)(Lp/3.0);
@@ -145,6 +153,8 @@ public class IsingField2D extends AbstractIsing2D{
 					System.out.println(i + " " + phi[i]);
 				}
 			}
+			for (int i = 0; i < Lp*Lp; i++)   //This is just filler.  Constant mobility in this situation doesn't mean much.
+				mobility[i] = (1.0 - DENSITY*DENSITY)/T;
 		}else if(init == "Artificial Stripe 2"){
 			System.out.println("Artificial Stripe 2");
 			randomizeField(DENSITY);
@@ -153,15 +163,16 @@ public class IsingField2D extends AbstractIsing2D{
 				phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
 			for (int i = Lp*Lp/2; i < Lp + Lp*Lp/2; i ++)
 				phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
+			for (int i = 0; i < Lp*Lp; i++)   //This is just filler.  Constant mobility in this situation doesn't mean much.
+				mobility[i] = (1.0 - DENSITY*DENSITY)/T;		
 		}
 	}
+
 	public void set1DConfig(double [] config){
 		for(int i = 0; i < Lp*Lp; i++)
-//			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter/1000000000000.0;		
 			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter*sqrt(1-pow(config[i%Lp],2))/(dx*dx);
-	
 	}
-	
+
 	public double [] getSymmetricSlice(String file){
 		double [] slice = new double [Lp];
 		double [] temp= FileUtil.readConfigFromFile(file, Lp);
@@ -171,17 +182,14 @@ public class IsingField2D extends AbstractIsing2D{
 			if (temp[i] < minPhi0Value){
 				minPhi0Location = i;
 				minPhi0Value = temp[i];
-				//System.out.println(temp[i] + " " + i);
 			}
 		}	
-		//System.out.println(temp[minPhi0Location] + " " + minPhi0Location);
 		for (int i = 0; i < Lp; i++){
 			slice[i] = temp[(minPhi0Location+i)%Lp];
-			//System.out.println("phi0 " + i + " = " + phi0[i]);
 		}
 		return slice;
 	}
-	
+
 
 	public void readInitialConfiguration(String fileName){
 		try{
@@ -227,26 +235,15 @@ public class IsingField2D extends AbstractIsing2D{
 		dx = L / Lp;
 		H = params.fget("H");
 		T = params.fget("T");
-		//mobility = 1.0/T;
-		mobility=1.0;
-		//double backgroundH = params.fget("H");
-		//double stripeH = params.fget("H Stripe");
-		//setExternalField(backgroundH, stripeH);
-		//dT = params.fget("dT");
 		params.set("R/dx", R/dx);
 		params.set("Lp", Lp);
-		//params.set("Free Energy", freeEnergy);
+	
+		if(params.sget("Interaction") == "Circle") circleInteraction = true;
+		else circleInteraction = false;
 		
-		if(params.sget("Interaction") == "Circle"){
-			circleInteraction = true;
-		}else{
-			circleInteraction = false;
-		}
 		noiseParameter = params.fget("Noise");
-		if(params.sget("Dynamics?") == "Langevin Conserve M")
-			magConservation = true;
-		else if(params.sget("Dynamics?") == "Langevin No M Conservation")
-			magConservation = false;
+		if(params.sget("Dynamics?") == "Langevin Conserve M") magConservation = true;
+		else if(params.sget("Dynamics?") == "Langevin No M Conservation") magConservation = false;
 		theory = params.sget("Approx");
 	}
 	
@@ -301,7 +298,7 @@ public class IsingField2D extends AbstractIsing2D{
 		//looks like its working
 		convolveWithRange(phi, phi_bar, R);	
 		for (int i = 0; i < Lp*Lp; i++){
-			delPhi[i] = -dt*mobility*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H)+ noise()*sqrt(dt*2/(dx*dx));
+			delPhi[i] = -dt*mobility[i]*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H)+ noise()*sqrt(dt*2/(dx*dx));
 		}
 		for (int i = 0; i < Lp*Lp; i++) 
 			phi[i] += delPhi[i];			
@@ -352,7 +349,7 @@ public class IsingField2D extends AbstractIsing2D{
 		convolveWithRange(phi, phi_bar, R);		
 		double dt0 = dt;
 		for (int i = 0; i < Lp*Lp; i++){
-			delPhi[i] = -dt0*mobility*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H)+ sqrt(dt0*2/(dx*dx))*noise();
+			delPhi[i] = -dt0*mobility[i]*(-phi_bar[i]+T* scikit.numerics.Math2.atanh(phi[i])- H)+ sqrt(dt0*2/(dx*dx))*noise();
 		}
 		double [] testPhi = new double [Lp*Lp];
 		if(abortMode){
@@ -414,10 +411,10 @@ public class IsingField2D extends AbstractIsing2D{
 			driftContrib = 0.0;
 		for (int i = 0; i < Lp*Lp; i++) {
 			double dF_dPhi = 0;
-			dF_dPhi = mobility*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
+			dF_dPhi = mobility[i]*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
 			Lambda[i] = sqr(1 - phi[i]*phi[i]);		
 			double driftTerm = - dt*Lambda[i]*dF_dPhi;
-			double noiseTerm = sqrt(Lambda[i]*(dt*2*T*mobility)/dx)*noise();
+			double noiseTerm = sqrt(Lambda[i]*(dt*2*T*mobility[i])/dx)*noise();
 			delPhi[i] = driftTerm + noiseTerm;
 			//System.out.println(noiseTerm + " " + driftTerm + " " + delPhi[i]);
 			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
@@ -434,10 +431,10 @@ public class IsingField2D extends AbstractIsing2D{
 		double [] driftProp = new double [Lp];
 		for (int i = 0; i < Lp*Lp; i++) {
 			double dF_dPhi = 0;
-			dF_dPhi = mobility*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
+			dF_dPhi = mobility[i]*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
 			Lambda[i] = sqr(1 - phi[i]*phi[i]);		
 			double driftTerm = - dt*Lambda[i]*dF_dPhi;
-			double noiseTerm = sqrt(Lambda[i]*(dt*2*T*mobility)/dx)*noise();
+			double noiseTerm = sqrt(Lambda[i]*(dt*2*T*mobility[i])/dx)*noise();
 			delPhi[i] = driftTerm + noiseTerm;
 			//System.out.println(noiseTerm + " " + driftTerm + " " + delPhi[i]);
 			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
@@ -466,10 +463,10 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int i = 0; i < Lp*Lp; i++) {
 			double dF_dPhi = 0, entropy = 0;
 			if (theory == "Phi4" || theory == "Phi4HalfStep"){
-				dF_dPhi = mobility*(-phi_bar[i]+T*(phi[i]+pow(phi[i],3)) - H);	
+				dF_dPhi = mobility[i]*(-phi_bar[i]+T*(phi[i]+pow(phi[i],3)) - H);	
 				Lambda[i] = 1;
 			}else{
-				dF_dPhi = mobility*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
+				dF_dPhi = mobility[i]*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
 				//dF_dPhi = -phi_bar[i]+T*(-log(1.0-phi[i])+log(1.0+phi[i]))/2.0 - H;
 				if(theory == "HalfStep"){
 					Lambda[i] = 1;
@@ -479,7 +476,7 @@ public class IsingField2D extends AbstractIsing2D{
 					entropy = -((1.0 + phi[i])*log(1.0 + phi[i]) +(1.0 - phi[i])*log(1.0 - phi[i]))/2.0;
 				}
 			}
-			delPhi[i] = - dt*Lambda[i]*dF_dPhi + sqrt(Lambda[i]*(dt*2*T*mobility)/dx)*noise();
+			delPhi[i] = - dt*Lambda[i]*dF_dPhi + sqrt(Lambda[i]*(dt*2*T*mobility[i])/dx)*noise();
 			phiVector[i] = delPhi[i];
 			meanLambda += Lambda[i];
 			double potential = -(phi[i]*phi_bar[i])/2.0;
