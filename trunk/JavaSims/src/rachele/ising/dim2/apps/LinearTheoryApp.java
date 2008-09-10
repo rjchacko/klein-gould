@@ -37,6 +37,8 @@ public class LinearTheoryApp extends Simulation{
     FourierTransformer ft;
 	IsingField2D ising;
     int kR1int,kR2int;
+    
+    double phi0;
 	Accumulator peak1AveAcc;
 	Accumulator peak1Acc;
     Accumulator varianceAcc;
@@ -51,17 +53,17 @@ public class LinearTheoryApp extends Simulation{
 		//c.frame(sfSlice);
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
-		params.addm("Dynamics?", new ChoiceValue("Langevin Conserve M", "Langevin No M Convervation"));
-		params.add("Init Conditions", new ChoiceValue("Random Gaussian", 
+		params.addm("Dynamics?", new ChoiceValue( "Langevin No M Convervation", "Langevin Conserve M"));
+		params.add("Init Conditions", new ChoiceValue( "Random Gaussian", 
 				"Artificial Stripe 3", "Read From File", "Constant" ));
-		params.addm("Approx", new ChoiceValue("Exact Stable",
-				"Avoid Boundaries", "Exact SemiStable", "Exact", "Linear",  "Phi4"));
+		params.addm("Approx", new ChoiceValue("Exact",
+				"Avoid Boundaries", "Exact SemiStable", "Exact Stable", "Linear",  "Phi4"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
-		params.addm("T", 0.05);
-		params.addm("H", 0.0);
-		params.add("Magnetization", 0.0);
+		params.addm("T", 0.04);
+		params.addm("H", 0.8);
+		params.add("Magnetization", 0.760138);
 		params.addm("dt", 0.001);
 		params.addm("J", -1.0);
 		params.addm("R", 10000.0);
@@ -69,7 +71,8 @@ public class LinearTheoryApp extends Simulation{
 		params.add("R/dx", 50.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Random seed", 0);
-		params.add("Max Time", 3.0);
+		params.add("Max Time", 20.0);
+//		params.add("phi0", 0.479126);
 		params.add("Time");
 		params.add("Reps");
 		params.add("Mean Phi");
@@ -89,20 +92,20 @@ public class LinearTheoryApp extends Simulation{
 			public double eval(double t) {
 				double kR = 2.0*Math.PI*kR1int*ising.R/ising.L;
 				double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
-				double D = -pot/ising.T-1;
+				double D = -pot-ising.T/(1.0-phi0*phi0);
 				return  (exp(2*t*D)*(1 + 1/D)-1/D);
 			}
 		}, Color.BLUE);
 		structurePeak.registerLines("Structure 2 theory", new Function(0, params.fget("Max Time")) {
 			public double eval(double t) {
-				double kR = 2.0*Math.PI*kR2int*ising.R/ising.L;
+				double kR = 2.0*Math.PI*kR1int*ising.R/ising.L;
 				double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
-				double D = -pot/ising.T-1;
-				return  (exp(2*t*D)*(1 + 1/D)-1/D);
+				double D = -pot-ising.T/(1.0-phi0*phi0);
+				return  (exp(2*t*D));
 			}
 		}, Color.GREEN);
 		structurePeak.registerLines("First Peak", peak1AveAcc, Color.BLACK);
-		structurePeak.registerLines("First Peak Instance", peak1Acc, Color.RED);
+		structurePeak.registerLines("First Peak Instance", peak1Acc, Color.BLUE);
 		variance.registerLines("Variance", varianceAcc, Color.BLACK);
 	}
 
@@ -110,20 +113,22 @@ public class LinearTheoryApp extends Simulation{
 	}
 
 	public void run() {
-
+		
 		peak1AveAcc = new Accumulator();
 		peak1Acc = new Accumulator();
 	    varianceAcc = new Accumulator();
 	    meanPhiAcc = new Accumulator();
-		ising = new IsingField2D(params);
 		varianceAcc.clear();
 		meanPhiAcc.clear();
+		double maxTime = params.fget("Max Time");
+		phi0 = params.fget("Magnetization");
+		
+		ising = new IsingField2D(params);
 		ft = new FourierTransformer(ising.Lp);
-		double density = 0;
 		kR1int = ising.findKRSquareInt(IsingField2D.KRsquare);
 		kR2int = ising.findKRSquareInt(IsingField2D.KRsquare2);
-		double maxTime = params.fget("Max Time");
-
+		double density = params.fget("Magnetization");
+		
 		int reps = 0;
 		double abortTimeSum = 0;
 		
