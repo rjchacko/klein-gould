@@ -52,7 +52,7 @@ public class svtFieldApp extends Simulation{
 	/**
 	 * 
 	 */
-	boolean calcContribs = false;
+	boolean calcContribs = true;
 	int accNo = 6;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
@@ -85,8 +85,8 @@ public class svtFieldApp extends Simulation{
 		c.frameTogether("Grids", phiGrid, vSlice, hSlice, SFvTime);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
-		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
-		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1d/config"));
+		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R23T0.04h0.8"));
+		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R23T0.04h0.8"));
 		params.add("Dynamics", new ChoiceValue( "Glauber", "Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
