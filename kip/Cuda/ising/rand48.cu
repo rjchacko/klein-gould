@@ -99,5 +99,9 @@ __device__ inline int rand48_nextInt(Rand48 &r) {
 
 // returns a float in the range (0, 1]
 __device__ inline int rand48_nextFloat(Rand48 &r) {
-    return ((float)rand48_nextInt(r)+1.0f) / (1<<31);
+    // use only upper 24 bits since floating point has 24 bit significand
+    // (ref: Java random documentation)
+    float res = r.state0.y / (float)(1<<24);
+    rand48_iterate(r);
+    return res;
 }
