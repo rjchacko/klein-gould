@@ -35,6 +35,7 @@ public:
     
     virtual void completeNeighborSum(int *sum) = 0;
     virtual void update(int parityTarget) = 0;
+    virtual double magnetization();
     
     void randomizeSpins();
     void setSpins(int *spins);
@@ -42,7 +43,7 @@ public:
     void printLattice(int *a);
     void print();
     void compare(Ising *that);
-
+    
 protected:
     virtual void transferHostToDevice() {}
     virtual void transferDeviceToHost() {}
@@ -120,7 +121,8 @@ public:
     
     void completeNeighborSum(int *sum);
     void update(int parityTarget);
-
+    double magnetization();
+    
 protected:
     int nblocks; // nblocks = n/32 when dim >= 5
     unsigned int *blocks;

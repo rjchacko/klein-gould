@@ -17,6 +17,72 @@
 #include "rand48.cu" // random numbers
 
 
+// ----------------------------------------------------------------------------
+// Cuda magnetization calculation
+
+#define REDUCE_THREADS 128
+#define REDUCE_MAX_BLOCKS 128
+
+__global__ void isingCuda_magnetizationKernel (unsigned int *g_idata, unsigned int *g_odata, unsigned int n) {
+    unsigned int tid = threadIdx.x;
+    unsigned int i = blockIdx.x*REDUCE_THREADS + threadIdx.x;
+    unsigned int gridSize = gridDim.x*REDUCE_THREADS;
+    
+    unsigned int acc = 0;
+    while (i < n) {
+        acc += (unsigned int) bitCount(g_idata[i]);
+        i += gridSize;
+    }
+
+    extern __shared__ unsigned int s[];
+    s[tid] = acc;
+    __syncthreads();
+    
+    // do reduction in shared mem
+    if (REDUCE_THREADS >= 256) { if (tid < 128) { s[tid] += s[128+tid]; } __syncthreads(); }
+    if (REDUCE_THREADS >= 128) { if (tid <  64) { s[tid] += s[ 64+tid]; } __syncthreads(); }
+    if (tid < 32) {
+        s[tid] += s[32+tid];
+        s[tid] += s[16+tid];
+        s[tid] += s[ 8+tid];
+        s[tid] += s[ 4+tid];
+        s[tid] += s[ 2+tid];
+        s[tid] += s[ 1+tid];
+    }
+    if (tid == 0) g_odata[blockIdx.x] = s[tid];
+}
+
+int divideCeil(int x, int y) {
+    return (x + y - 1) / y;
+}
+
+double isingCuda_bitCount(unsigned int *d_idata, int n) {
+    // allocate arrays on device and host to store one float for each block
+    int blocks = min(REDUCE_MAX_BLOCKS, divideCeil(n, REDUCE_THREADS));
+    unsigned int h_odata[REDUCE_MAX_BLOCKS];
+    unsigned int *d_odata;
+    cudaMalloc((void**) &d_odata, blocks*sizeof(unsigned int));
+    
+    // partial reduction; each block generates one number
+    dim3 dimBlock(REDUCE_THREADS, 1, 1);
+    dim3 dimGrid(blocks, 1, 1);
+    int smemSize = REDUCE_THREADS * sizeof(unsigned int);
+    isingCuda_magnetizationKernel<<< blocks, REDUCE_THREADS, smemSize >>>(d_idata, d_odata, n);
+    
+    // copy result from device to host, and perform final reduction on CPU
+    cudaMemcpy(h_odata, d_odata, blocks*sizeof(unsigned int), cudaMemcpyDeviceToHost);
+    double gpu_result = 0;
+    for (int i = 0; i < blocks; i++)  {
+        gpu_result += h_odata[i];
+    }
+    cudaFree(d_odata);    
+    return gpu_result;
+}
+
+
+// ----------------------------------------------------------------------------
+// Cuda update implementation
+
 typedef struct {
     int len, dim, nblocks;
     unsigned int *blocks;
@@ -143,6 +209,10 @@ void IsingCuda::update(int parityTarget) {
     int sharedBytes = 0;
     
     isingCuda_update <<<GRID_DIM, BLOCK_DIM, sharedBytes>>> (p, *rng);
+}
+
+double IsingCuda::magnetization() {
+    return 2.0*isingCuda_bitCount(d_blocks, nblocks) - n;
 }
 
 void IsingCuda::transferHostToDevice() {
