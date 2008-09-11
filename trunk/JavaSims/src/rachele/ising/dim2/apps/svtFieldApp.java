@@ -61,20 +61,21 @@ public class svtFieldApp extends Simulation{
     int [][][] sfLabel = new int [2][4][accNo];
 	
 	public int Lp;
-	Grid etaDot = new Grid("ising delta phi");
+//	Grid etaDot = new Grid("ising delta phi");
 	Grid phiGrid = new Grid("phi field");
-	Grid etaDotSF = new Grid("sf phi field");
+//	Grid etaDotSF = new Grid("sf phi field");
 	Plot SFvTime = new Plot("svt");
-	Plot EtavTime = new Plot("etavt");
-	Grid phi0Grid = new Grid("phi_0");
-	Grid phi0SliceGrid = new Grid("phi_0 slice");
-	Plot etaVsTimeLC = new Plot("eta v t LC");
-	Plot fkPlot = new Plot ("f(k)");
-	Plot etakSimPlot = new Plot("eta k sim");
-	Plot convolve = new Plot("convolve");
+//	Plot EtavTime = new Plot("etavt");
+//	Grid phi0Grid = new Grid("phi_0");
+//	Grid phi0SliceGrid = new Grid("phi_0 slice");
+//	Plot etaVsTimeLC = new Plot("eta v t LC");
+//	Plot fkPlot = new Plot ("f(k)");
+//	Plot etakSimPlot = new Plot("eta k sim");
+//	Plot convolve = new Plot("convolve");
 	Plot hSlice = new Plot("Horizontal Slice");
 	Plot vSlice = new Plot("Vertical Slice"); 
-	Plot eVector = new Plot ("Largest Eigenvector");
+	Grid mobilityCheck = new Grid("Mobility");
+//	Plot eVector = new Plot ("Largest Eigenvector");
 
 
 	public static void main(String[] args) {
@@ -82,12 +83,12 @@ public class svtFieldApp extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("Grids", phiGrid, vSlice, hSlice, SFvTime);
+		c.frameTogether("Grids", phiGrid, vSlice, hSlice, mobilityCheck);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
-		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R23T0.04h0.8"));
-		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R23T0.04h0.8"));
-		params.add("Dynamics", new ChoiceValue( "Glauber", "Langevin"));
+		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
+		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
+		params.add("Dynamics", new ChoiceValue("Langevin", "Glauber" ));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
@@ -104,11 +105,11 @@ public class svtFieldApp extends Simulation{
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
-		params.add("L/R", 5.565217391);
-		params.add("R/dx", 40.0);
+		params.add("L/R", 2.782608696);
+		params.add("R/dx", 50.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
-		params.addm("ky", 4);
+		params.addm("ky", 2);
 		params.addm("dkx", 1);
 		params.addm("dt", 0.01);
 		params.add("mean phi");
@@ -123,15 +124,15 @@ public class svtFieldApp extends Simulation{
 		params.set("Lp", ising.Lp);
 		params.set("mean phi", ising.mean(ising.phi));
 		phiGrid.registerData(Lp, Lp, ising.phi);
-		etaDotSF.registerData(Lp, Lp, etaK);
-		etaVsTimeLC.setAutoScale(true);
+//		etaDotSF.registerData(Lp, Lp, etaK);
+//		etaVsTimeLC.setAutoScale(true);
 		hSlice.setAutoScale(true);
 		vSlice.setAutoScale(true);
-		eVector.setAutoScale(true);
+//		eVector.setAutoScale(true);
 		SFvTime.setAutoScale(true);
 		SFvTime.setLogScale(false, true);
-		EtavTime.setAutoScale(true);
-		EtavTime.setLogScale(false, true);
+//		EtavTime.setAutoScale(true);
+//		EtavTime.setLogScale(false, true);
 		
 		double horizontalSlice = params.fget("Horizontal Slice");
 		double verticalSlice = params.fget("Vertical Slice");
@@ -140,6 +141,8 @@ public class svtFieldApp extends Simulation{
 				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
 				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
 
+		mobilityCheck.registerData(Lp, Lp, ising.mobility);
+		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
@@ -184,11 +187,17 @@ public class svtFieldApp extends Simulation{
 			ising.readParams(params);
 			if(calcContribs){ 
 				if(dynamics == "Langevin"){
-					ising.simModCalcContrib();
-					recordContribToFile();
+					if(approx == "None"){
+						ising.simCalcContrib();
+						recordContribToFile();
+					}else if(approx == "Modified Dynamics"){
+						ising.simModCalcContrib();
+						recordContribToFile();	
+					}
 				}else if(dynamics == "Glauber"){
 					ising.glauberCalcContrib();
 					recordContribToFile();
+//					System.out.println("Gl calc cont");
 				}
 			}
 			else{

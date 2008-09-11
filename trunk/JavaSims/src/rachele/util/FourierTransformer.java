@@ -34,7 +34,7 @@ public class FourierTransformer {
 		}
 		fft1D.transform(scratch1D);
 		for (int i = 0; i < L; i ++)
-			dst[i] = scratch1D[2*i];
+			dst[i] = scratch1D[2*i]/L;
 		return dst;
 	}
 

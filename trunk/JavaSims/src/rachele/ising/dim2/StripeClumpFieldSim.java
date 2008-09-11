@@ -59,7 +59,7 @@ public class StripeClumpFieldSim {
 		}
 		else if (params.sget("Dynamics")=="Langevin"){
 			calcXtraFunctions();			
-			findMatrix_mobility1();
+			findMatrix();
 		}
 		diagonalize();
 		for (int i=0; i < Lp; i ++){
@@ -183,7 +183,7 @@ public class StripeClumpFieldSim {
 		double kxValue;
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j <= i; j++){
-				M[i][j] = M[j][i] = (-ising.T*f_k[(i-j+Lp)%Lp]/Lp);
+				M[i][j] = M[j][i] = (-ising.T*f_k[(i-j+Lp)%Lp]);
 			}
 		}
 		for (int i = 0; i < Lp; i++){
@@ -192,9 +192,9 @@ public class StripeClumpFieldSim {
 			else
 				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
 			if(ising.circleInteraction)
-				M[i][i] -= ising.findVkCircle(Math.sqrt(kxValue*kxValue + kyValue*kyValue));
+				M[i][i] += ising.J*ising.findVkCircle(Math.sqrt(kxValue*kxValue + kyValue*kyValue));
 			else
-				M[i][i] -= ising.findVkSquare(kxValue, kyValue);
+				M[i][i] += ising.J*ising.findVkSquare(kxValue, kyValue);
 		}
 	}
 	
@@ -202,20 +202,22 @@ public class StripeClumpFieldSim {
 		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
 		double kxValue;
 		double [] mobility1d = new double [Lp];
-		for (int i = 0; i < Lp; i++)
-			mobility1d[i] = (1-phi0[i]*phi0[i])/ising.T;
-		double [] mobility_k = fft.calculate1DFT(mobility1d);
+		double [] f2 = new double [Lp];
 		for (int i = 0; i < Lp; i++){
-			for (int j = 0; j <= i; j++){
-				if(i >= Lp/2)
-					kxValue = 2.0*Math.PI*ising.R*(j-Lp)/ising.L;
-				else
-					kxValue = 2.0*Math.PI*ising.R*j/ising.L;
-				M[i][j] = M[j][i] = mobility_k[(i-j+Lp)%Lp]*ising.findVkSquare(kxValue, kyValue)/(Lp);
-			}
+			mobility1d[i] = ising.mobility[i];
+			f2[i] = mobility1d[i]*ising.T/(1-phi0[i]*phi0[i]);
 		}
+		double [] mobility_k = fft.calculate1DFT(mobility1d);
+		double [] f2k = fft.calculate1DFT(f2);
+//		System.out.println("mob = " + mobility_k[1]);
 		for (int i = 0; i < Lp; i++){
-			M[i][i] -= 1.0;
+			if(i >= Lp/2)
+				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
+			else
+				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
+			for (int j = 0; j <= i; j++){
+				M[i][j] = M[j][i] = mobility_k[(j-i+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue) - f2k[(j-i+Lp)%Lp];
+			}
 		}
 	}
 	
@@ -223,23 +225,19 @@ public class StripeClumpFieldSim {
 		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
 		double kxValue;
 		for (int i = 0; i < Lp; i++){
-			for (int j = 0; j <= i; j++){
-				if(i >= Lp/2)
-					kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
-				else
-					kxValue = 2.0*Math.PI*ising.R*i/ising.L;
-//				M[i][j] = M[j][i] = -ising.findVkSquare(kxValue, kyValue)*f_Gk[(i-j+Lp)%Lp]/(ising.T*ising.Lp);
-				M[i][j] = M[j][i] = -ising.findVkSquare(kxValue, kyValue)*f_Gk[(i-j+Lp)%Lp]/(ising.T*ising.Lp);
-
-			}
+			if(i >= Lp/2)
+				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
+			else
+				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
+			for (int j = 0; j <= i; j++)
+				M[i][j] = M[j][i] = - ising.J*ising.findVkSquare(kxValue, kyValue)*f_Gk[(j-i+Lp)%Lp]/(ising.T);
 		}
 		for (int i = 0; i < Lp; i++){
 			if(i >= Lp/2)
 				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
 			else
 				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
-			M[i][i] += -1 + ising.findVkSquare(kxValue, kyValue)/ising.T;
-//			M[i][i] += -1;
+			M[i][i] += -1 + ising.J*ising.findVkSquare(kxValue, kyValue)/ising.T;
 		}
 	}
 

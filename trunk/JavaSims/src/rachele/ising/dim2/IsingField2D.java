@@ -123,8 +123,8 @@ public class IsingField2D extends AbstractIsing2D{
 			phiSlice = getSymmetricSlice(fileName);
 			set1DConfig(phiSlice);
 			for (int i = 0; i < Lp*Lp; i++)
-				mobility[i] = 1;
-//				mobility[i] = (1 - phiSlice[i%Lp]*phiSlice[i%Lp]) / T;
+//				mobility[i] = 1;
+				mobility[i] = (1 - phiSlice[i%Lp]*phiSlice[i%Lp]) / T;
 		}else if (init == "Constant"){
 			System.out.println("Constant");
 			for (int i = 0; i < Lp*Lp; i ++)
@@ -170,7 +170,7 @@ public class IsingField2D extends AbstractIsing2D{
 
 	public void set1DConfig(double [] config){
 		for(int i = 0; i < Lp*Lp; i++)
-			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter*sqrt(1-pow(config[i%Lp],2))/(dx*dx);
+			phi[i]=config[i%Lp];// + (random.nextGaussian())*noiseParameter*sqrt(1-pow(config[i%Lp],2))/(dx*dx);
 	}
 
 	public double [] getSymmetricSlice(String file){
@@ -407,8 +407,8 @@ public class IsingField2D extends AbstractIsing2D{
 	* investigate the disorder->clump->stripe transition.
 	*/
 	public void simModCalcContrib() {
-			convolveWithRange(phi, phi_bar, R);
-			driftContrib = 0.0;
+		convolveWithRange(phi, phi_bar, R);
+		driftContrib = 0.0;
 		for (int i = 0; i < Lp*Lp; i++) {
 			double dF_dPhi = 0;
 			dF_dPhi = mobility[i]*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
@@ -426,6 +426,25 @@ public class IsingField2D extends AbstractIsing2D{
 		t += dt;
 	}
 
+	public void simCalcContrib() {
+		convolveWithRange(phi, phi_bar, R);
+		driftContrib = 0.0;
+		for (int i = 0; i < Lp*Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = mobility[i]*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
+			double driftTerm = - dt*dF_dPhi;
+			double noiseTerm = sqrt((dt*2*T*mobility[i])/dx)*noise();
+			delPhi[i] = driftTerm + noiseTerm;
+			//System.out.println(noiseTerm + " " + driftTerm + " " + delPhi[i]);
+			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
+			phiVector[i] = delPhi[i];
+		}
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += delPhi[i];	
+		driftContrib /= (Lp*Lp);
+		t += dt;
+	}
+	
 	public double [] simModCalcContribK(int kyValue) {
 		convolveWithRange(phi, phi_bar, R);
 		double [] driftProp = new double [Lp];
