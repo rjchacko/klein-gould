@@ -64,10 +64,10 @@ void test1() {
 
 
 void test2() {
-    int len = 8;
-    int dim = 7;
+    int len = 16;
+    int dim = 6;
     float h = 0;
-    float T = 2;
+    float T = 0.5;
     
     Ising2 ising1 = Ising2(len, dim, h, T);
     IsingCuda ising2 = IsingCuda(len, dim, h, T);
@@ -94,8 +94,10 @@ void test2() {
     printf("\nLattices\n");
     ising1.print();
     ising2.print();
-
+    
     ising1.compare(&ising2);
+    
+    printf("Magnetizations: %g %g\n", ising1.magnetization(), ising2.magnetization());
 }
 
 

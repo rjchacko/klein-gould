@@ -9,6 +9,13 @@ Ising::Ising(int len, int dim, float h, float T)
     : len(len), dim(dim), n((int)powl(len, dim)), h(h), T(T) {}
 
 
+double Ising::magnetization() {
+    int ret = 0;
+    for (int i = 0; i < n; i++)
+        ret += get(i);
+    return 2.0*ret-n;
+}
+
 void Ising::randomizeSpins() {
     // srand(0);
     for (int i = 0; i < n; i++) {
