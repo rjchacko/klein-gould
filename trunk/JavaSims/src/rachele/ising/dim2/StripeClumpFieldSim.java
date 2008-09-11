@@ -209,7 +209,6 @@ public class StripeClumpFieldSim {
 		}
 		double [] mobility_k = fft.calculate1DFT(mobility1d);
 		double [] f2k = fft.calculate1DFT(f2);
-//		System.out.println("mob = " + mobility_k[1]);
 		for (int i = 0; i < Lp; i++){
 			if(i >= Lp/2)
 				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
