@@ -1,3 +1,40 @@
+/*
+LICENSE: this code is subject to the license listed at
+http://www.amolf.nl/~vanmeel/mdgpu/download.html
+Among other restrictions, this code is released under the GNU Public License (GPL).
+
+Generate pseudo-random numbers using a linear congruential generator. The generated
+random numbers are identical to those produced by the lrand48() provided by the
+C standard library.
+
+Usage:
+
+// From host, allocate the Rand48 structure, pass it to CUDA, and release it.
+// The random sequence is persistent across CUDA kernel calls.
+
+void hostFunction() {
+    rng = new Rand48();
+    rng->init(GRID_DIM*BLOCK_DIM, SEED);
+    cudaFunction1 <<<GRID_DIM, BLOCK_DIM, sharedMem>>> (*rng);
+    cudaFunction2 <<<GRID_DIM, BLOCK_DIM, sharedMem>>> (*rng);
+    rng->destroy();
+    delete rng;
+}
+
+// From CUDA, load the random state from device memory into local registers,
+// generate random numbers, and finally store state back to device memory.
+// Note that the random state, rng, is stored in registers, and is being updated
+// with each device call.
+
+__global__ void cudaFunction1(Rand48 rng) {
+    rand48_loadState(rng);
+    ...
+    rand48_nextInt(rng);
+    ...
+    rand48_storeState(rng);
+}
+
+*/
 
 struct Rand48 {
     // strided iteration constants (48-bit, distributed on 2x 24-bit)
