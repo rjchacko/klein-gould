@@ -48,24 +48,26 @@ public class svtFieldApp extends Simulation{
 
 	//RUN OPTIONS
 	boolean writeToFile = true;
-	boolean accumsOn = false;
+	boolean accumsOn = true;
 	/**
 	 * 
 	 */
 	boolean calcContribs = true;
-	int accNo = 6;
+	int accNo = 1;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
-	Accumulator [] sfAcc = new Accumulator [accNo];
+	Accumulator [] etaLTAcc = new Accumulator [accNo];
+	Accumulator [] etaLTkAcc = new Accumulator [accNo];
 
     int [][][] sfLabel = new int [2][4][accNo];
 	
 	public int Lp;
-//	Grid etaDot = new Grid("ising delta phi");
+	Grid etaDot = new Grid("ising delta phi");
 	Grid phiGrid = new Grid("phi field");
 //	Grid etaDotSF = new Grid("sf phi field");
 	Plot SFvTime = new Plot("svt");
-//	Plot EtavTime = new Plot("etavt");
+	Plot EtavTime = new Plot("etavt");
+	Plot eta2 = new Plot("etavt2");
 //	Grid phi0Grid = new Grid("phi_0");
 //	Grid phi0SliceGrid = new Grid("phi_0 slice");
 //	Plot etaVsTimeLC = new Plot("eta v t LC");
@@ -84,6 +86,8 @@ public class svtFieldApp extends Simulation{
 
 	public void load(Control c) {
 		c.frameTogether("Grids", phiGrid, vSlice, hSlice, mobilityCheck);
+		c.frame(EtavTime);
+		c.frameTogether("etas", etaDot, eta2);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
@@ -124,6 +128,7 @@ public class svtFieldApp extends Simulation{
 		params.set("Lp", ising.Lp);
 		params.set("mean phi", ising.mean(ising.phi));
 		phiGrid.registerData(Lp, Lp, ising.phi);
+		etaDot.registerData(Lp, Lp, sc.etaLT);
 //		etaDotSF.registerData(Lp, Lp, etaK);
 //		etaVsTimeLC.setAutoScale(true);
 		hSlice.setAutoScale(true);
@@ -131,8 +136,10 @@ public class svtFieldApp extends Simulation{
 //		eVector.setAutoScale(true);
 		SFvTime.setAutoScale(true);
 		SFvTime.setLogScale(false, true);
-//		EtavTime.setAutoScale(true);
-//		EtavTime.setLogScale(false, true);
+		EtavTime.setAutoScale(true);
+		EtavTime.setLogScale(false, true);
+		eta2.setAutoScale(true);
+		eta2.setLogScale(false, true);
 		
 		double horizontalSlice = params.fget("Horizontal Slice");
 		double verticalSlice = params.fget("Vertical Slice");
@@ -148,12 +155,16 @@ public class svtFieldApp extends Simulation{
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
 		if(accumsOn){
 			for (int i = 0; i < accNo; i ++){
-				float colorChunk = (float)i/(float)accNo;
-				Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
+//				float colorChunk = (float)i/(float)accNo;
+//				Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
 				StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
-				SFvTime.registerLines(sb.toString(), etaAcc[i], col);
-				StringBuffer sb2 = new StringBuffer();sb2.append("s(t) "); sb2.append(i);
-				SFvTime.registerLines(sb2.toString(), sfAcc[i], col);
+//				EtavTime.registerLines(sb.toString(), etaAcc[i], Color.black);
+				StringBuffer sb2 = new StringBuffer();sb2.append("etaLT "); sb2.append(i);
+				EtavTime.registerLines(sb2.toString(), etaLTAcc[i], Color.BLUE);
+
+				StringBuffer sb3 = new StringBuffer();sb3.append("etaLT_k "); sb3.append(i);
+				EtavTime.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
+				eta2.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
 			}
 		}
 		if(flags.contains("Write 1D Config"))
@@ -174,15 +185,15 @@ public class svtFieldApp extends Simulation{
 		System.out.println("init");
 		String approx = params.sget("Approx");
 		double recordStep = 0.00001;	
-
 		for (int i = 0; i < Lp*Lp; i++)
 			eta[i] = ising.phi[i] - phi0[i%Lp];
-
+		sc.initEta();
 		calcHspinodal();
 		Job.animate();
 		initFiles();
 		String dynamics = params.sget("Dynamics");
-				
+
+		
 		while (true) {
 			ising.readParams(params);
 			if(calcContribs){ 
@@ -190,6 +201,7 @@ public class svtFieldApp extends Simulation{
 					if(approx == "None"){
 						ising.simCalcContrib();
 						recordContribToFile();
+						sc.simulateLinear();
 					}else if(approx == "Modified Dynamics"){
 						ising.simModCalcContrib();
 						recordContribToFile();	
@@ -212,10 +224,14 @@ public class svtFieldApp extends Simulation{
 					eta[i] = ising.phi[i] - phi0[i%Lp];
 				etaK = fft.find2DSF(eta, ising.L);
 				sf = fft.find2DSF(ising.phi, ising.L);
+				double [] scEtaK =fft.find2DSF(sc.etaLT,ising.L); 
 				if(accumsOn){
 					for (int i = 0; i < accNo; i++){
-						etaAcc[i].accum(ising.time(), etaK[sfLabel[0][3][i]]);
-						sfAcc[i].accum(ising.time(), sf[sfLabel[1][0][i]]);					
+						etaAcc[i].accum(ising.time(), etaK[sfLabel[0][1][i]]);
+						etaLTAcc[i].accum(ising.time(), scEtaK[sfLabel[0][1][i]]);	
+						int dkx = params.iget("dkx");
+						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT_k[i*dkx],2));
+						System.out.println(Math.pow(sc.etaLT_k[i*dkx],2));
 					}
 				}
 				recordSfDataToFile(sf);
@@ -303,7 +319,8 @@ public class svtFieldApp extends Simulation{
 		for (int i = 0; i < accNo; i++){ 
 			if(accumsOn){
 				etaAcc[i] = new Accumulator();
-				sfAcc[i] = new Accumulator();
+				etaLTAcc[i] = new Accumulator();
+				etaLTkAcc[i] = new Accumulator();
 			}
 			int index, x, y;
 			int dkx = params.iget("dkx");

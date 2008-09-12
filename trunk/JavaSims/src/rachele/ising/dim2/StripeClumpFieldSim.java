@@ -26,9 +26,9 @@ public class StripeClumpFieldSim {
 	IsingField2D ising;
 	FourierTransformer fft;
 	int ky;
-    double [] rhs, rhs2D, etaLT, eta, etaLT_k_slice, etaK; //right hand side
+    double [] rhs, rhs2D,  etaLT_k_slice, etaK; //right hand side
     double [] g_k, f_x, phi0_bar, c, f_G;
-	public double [] phi0, f_k, f_Gk, eigenvalue;
+	public double [] phi0, f_k, f_Gk, eigenvalue, etaLT, etaLT_k;
     double [][] M;// Main matrix 
     public double [][] VV;// Eigenvalue matrix
 	String phi0file;
@@ -301,14 +301,25 @@ public class StripeClumpFieldSim {
 	    
 	}
 	
-	public double [] simulateLinear(double [] etaLinear){
+	public void initEta(){
+		etaLT = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++)
+			etaLT[i] = ising.phi[i] - phi0[i%Lp];
+		double [] etaLT2D_k = fft.calculate2DFT(etaLT);
+		etaLT_k = new double [Lp];
+		for (int i = 0; i < Lp; i++)
+			etaLT_k[i] = etaLT2D_k[ky*Lp+i];
+		System.out.println("init eta");
+	}
+
+
+	public void simulateLinear(){
 		double [] linearTheoryGrowth = new double[Lp*Lp];
 		double [] eta_bar = new double[Lp*Lp];
 		double [] phi0_2D = new double[Lp*Lp];
 		for(int i = 0; i < Lp*Lp; i++)
 			phi0_2D[i] = phi0[i%Lp];
-//		ising.convolveWithRange(eta, eta_bar, ising.R);
-		eta_bar = fft.convolve2DwithFunction(etaLinear, new Function2D(){
+		eta_bar = fft.convolve2DwithFunction(etaLT, new Function2D(){
 			public double eval(double k1, double k2) {
 				double kRx = 2*Math.PI*ising.R*k1/ising.L;
 				double kRy = 2*Math.PI*ising.R*k2/ising.L;
@@ -316,10 +327,21 @@ public class StripeClumpFieldSim {
 				else return ising.findVkSquare(kRx, kRy);
 			}
 		});
-
 		for (int i = 0; i < Lp*Lp; i++)
-			linearTheoryGrowth[i] = ising.dt*(-eta_bar[i]-ising.T*etaLinear[i]*f_x[i%Lp]);
-		return linearTheoryGrowth;
+			linearTheoryGrowth[i] = ising.dt*ising.mobility[i]*(-eta_bar[i]-ising.T*etaLT[i]*f_x[i%Lp]);
+		for (int i = 0; i < Lp*Lp; i++)
+			etaLT[i] += linearTheoryGrowth[i];
 	}
 	
+	public void simulateLinearK(){
+		double [] linearTheoryGrowth = new double[Lp];
+		for (int i = 0; i < Lp; i++){
+			for (int j = 0; j < Lp; j++)
+				linearTheoryGrowth[i] += ising.dt*(M[i][j]*etaLT_k[j]);
+		}
+		for (int i = 0; i < Lp; i++){
+			etaLT_k[i] += linearTheoryGrowth[i];
+		}	
+	}
+
 }
