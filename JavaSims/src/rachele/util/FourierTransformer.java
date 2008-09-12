@@ -58,9 +58,29 @@ public class FourierTransformer {
 		}
 		fft2D.transform(scratch2D);
 		for (int i = 0; i < L*L; i ++)
-			dst[i] = scratch2D[2*i];
+			dst[i] = scratch2D[2*i]/(L*L);
+		return dst;
+		
+	}
+
+	public double [] calculate2DFT(double [] src, double size){
+		double dx = size/L;
+		double [] dst = new double [L*L];
+		for (int i = 0; i < L*L; i++) {
+			scratch2D[2*i] = src[i]*dx*dx;
+			scratch2D[2*i+1] = 0;
+		}
+		fft2D.transform(scratch2D);
+		scratch2D = fft2D.toWraparoundOrder(scratch2D);
+
+		for (int i=0; i < L*L; i++){
+			double re = scratch2D[2*i];
+			double im = scratch2D[2*i+1];
+			dst[i] = Math.sqrt((re*re + im*im)/(size*size));
+		}
 		return dst;
 	}
+
 	
 	public double [] calculate2DSF(double [] src, boolean centered, boolean zeroCenter){
 		double [] dst = new double [L*L];
@@ -120,15 +140,7 @@ public class FourierTransformer {
 		return dst;
 	}
 	
-	public double [] backConvolve1D(double [] src1, double [] src2){
-		double [] dst = new double [L];
-		src1 = calculate1DBackFT(src1);
-		src2 = calculate1DBackFT(src2);
-		for (int i = 0; i < L; i++)
-			dst[i] = src1[i]*src2[i];
-		dst = calculate1DFT(dst);
-		return dst;		
-	}
+
 	
 	public double [] convolve1D(double [] src1, double [] src2){
 		double [] dst = new double [L];
@@ -138,6 +150,41 @@ public class FourierTransformer {
 			dst[i] = src1[i]*src2[i];
 		dst = calculate1DBackFT(dst);
 		return dst;	
+	}
+
+	public double [] backConvolve1D(double [] src1, double [] src2){
+		double [] dst = new double [L];
+		src1 = calculate1DBackFT(src1);
+		src2 = calculate1DBackFT(src2);
+		
+		src1 = fft1D.toWraparoundOrder(src1);
+		src2 = fft1D.toWraparoundOrder(src2);		
+		for (int i = 0; i < L; i++)
+			dst[i] = src1[i]*src2[i];
+		dst = calculate1DFT(dst);
+		return dst;		
+	}
+	
+	public double [] backConvolve2D(double [] src1, double [] src2){
+		double [] dst = new double [L*L];
+		for (int i = 0; i < L*L; i++) {
+			scratch2D[2*i] = src1[i];
+			scratch2D[2*i+1] = 0;
+			scratch2D2[2*i] = src2[i];
+			scratch2D2[2*i+1] = 0;
+		}		
+		fft2D.backtransform(scratch2D);
+		fft2D.backtransform(scratch2D2);
+		scratch2D = fft2D.toWraparoundOrder(scratch2D);
+		scratch2D2 = fft2D.toWraparoundOrder(scratch2D2);
+		
+		for (int i = 0; i < 2 * L * L; i++)
+			scratch2D[i] *= scratch2D2[i];
+		
+		fft2D.transform(scratch2D);
+		for (int i = 0; i < L * L; i++)		
+			dst[i] = scratch2D[2*i];
+		return dst;
 	}
 	
 	public double [] convolve2D(double [] src1, double [] src2){

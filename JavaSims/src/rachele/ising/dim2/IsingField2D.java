@@ -170,7 +170,8 @@ public class IsingField2D extends AbstractIsing2D{
 
 	public void set1DConfig(double [] config){
 		for(int i = 0; i < Lp*Lp; i++)
-			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter*sqrt(1-pow(config[i%Lp],2))/(dx*dx);
+//			phi[i]=config[i%Lp] + (random.nextGaussian())*noiseParameter*sqrt(1-pow(config[i%Lp],2))/(dx*dx);
+		phi[i]=config[i%Lp] + (random.nextGaussian())*sqrt(1-pow(config[i%Lp],2))/(dx*dx);
 	}
 
 	public double [] getSymmetricSlice(String file){

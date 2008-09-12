@@ -98,7 +98,7 @@ public class svtFieldApp extends Simulation{
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
 		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian", "Constant"));
 		params.addm("Approx", new ChoiceValue("None", "Modified Dynamics"));
-		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
+		params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
@@ -158,7 +158,7 @@ public class svtFieldApp extends Simulation{
 //				float colorChunk = (float)i/(float)accNo;
 //				Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
 				StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
-//				EtavTime.registerLines(sb.toString(), etaAcc[i], Color.black);
+				EtavTime.registerLines(sb.toString(), etaAcc[i], Color.black);
 				StringBuffer sb2 = new StringBuffer();sb2.append("etaLT "); sb2.append(i);
 				EtavTime.registerLines(sb2.toString(), etaLTAcc[i], Color.BLUE);
 
@@ -202,6 +202,7 @@ public class svtFieldApp extends Simulation{
 						ising.simCalcContrib();
 						recordContribToFile();
 						sc.simulateLinear();
+//						sc.simulateLinearKbar();
 					}else if(approx == "Modified Dynamics"){
 						ising.simModCalcContrib();
 						recordContribToFile();	
@@ -231,7 +232,7 @@ public class svtFieldApp extends Simulation{
 						etaLTAcc[i].accum(ising.time(), scEtaK[sfLabel[0][1][i]]);	
 						int dkx = params.iget("dkx");
 						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT_k[i*dkx],2));
-						System.out.println(Math.pow(sc.etaLT_k[i*dkx],2));
+//						System.out.println(Math.pow(sc.etaLT_k[i*dkx],2));
 					}
 				}
 				recordSfDataToFile(sf);
