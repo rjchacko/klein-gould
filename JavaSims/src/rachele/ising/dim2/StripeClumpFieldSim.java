@@ -2,20 +2,20 @@ package rachele.ising.dim2;
 
 //import java.io.File;
 
-import java.awt.Color;
+//import java.awt.Color;
 import java.io.File;
 //import java.security.Policy.Parameters;
 
 import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import rachele.util.MathTools;
-import scikit.dataset.PointSet;
+//import scikit.dataset.PointSet;
 import scikit.jobs.params.Parameters;
 import scikit.numerics.Jama.EigenvalueDecomposition;
 import scikit.numerics.Jama.Matrix;
 import scikit.numerics.fn.Function1D;
 import scikit.numerics.fn.Function2D;
-import scikit.util.DoubleArray;
+import scikit.util.DoubleArray; 
 
 /**
 * Calculates matrix, eigenvectors, eigenvalues....
@@ -30,7 +30,7 @@ public class StripeClumpFieldSim {
 	int ky;
     double [] rhs, rhs2D,  etaLT_k_slice, etaK; //right hand side
     double [] g_k, f_x, phi0_bar, c, f_G;
-	public double [] phi0, f_k, f_Gk, eigenvalue, etaLT, etaLT_k;
+	public double [] phi0, f_k, f_Gk, eigenvalue, etaLT, etaLT2, etaLT_k, etaKchange, etaKchange2;
     double [][] M;// Main matrix 
     public double [][] VV;// Eigenvalue matrix
 	String phi0file;
@@ -47,6 +47,8 @@ public class StripeClumpFieldSim {
 		f_G = new double[Lp];
 		f_k = new double[Lp];
 		f_x = new double [Lp];
+		etaKchange = new double [Lp*Lp];
+		etaKchange2 = new double [Lp*Lp];
 		phi0 = new double [Lp];
 		phi0_bar = new double [Lp];
 		c = new double[Lp];
@@ -206,7 +208,7 @@ public class StripeClumpFieldSim {
 		double [] mobility1d = new double [Lp];
 		double [] f2 = new double [Lp];
 		for (int i = 0; i < Lp; i++){
-			mobility1d[i] = ising.mobility[i];
+			mobility1d[i] = ising.mobility[i+Lp*ky];
 			f2[i] = mobility1d[i]*ising.T/(1-phi0[i]*phi0[i]);
 		}
 		double [] mobility_k = fft.calculate1DFT(mobility1d);
@@ -217,8 +219,8 @@ public class StripeClumpFieldSim {
 			else
 				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
 			for (int j = 0; j <= i; j++){
-				M[i][j] = M[j][i] = mobility_k[(i-j+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue);
-//				M[i][j] = M[j][i] = mobility_k[(j-i+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue)- f2k[(j-i+Lp)%Lp];
+//				M[i][j] = M[j][i] = mobility_k[(i-j+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue);
+				M[i][j] = M[j][i] = mobility_k[(j-i+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue)- f2k[(j-i+Lp)%Lp];
 //				M[i][j] = M[j][i] = - f2k[(j-i+Lp)%Lp];
 
 			}
@@ -310,8 +312,9 @@ public class StripeClumpFieldSim {
 	
 	public void initEta(){
 		etaLT = new double [Lp*Lp];
+		etaLT2 = new double [Lp*Lp];
 		for (int i = 0; i < Lp*Lp; i++)
-			etaLT[i] = ising.phi[i] - phi0[i%Lp];
+			etaLT[i] = etaLT2[i] = ising.phi[i] - phi0[i%Lp];
 		double [] etaLT2D_k = fft.calculate2DFT(etaLT, ising.L);
 		etaLT_k = new double [Lp];
 		for (int i = ky*Lp; i < Lp*(ky+1); i++)
@@ -341,15 +344,24 @@ public class StripeClumpFieldSim {
 		});
 		for (int i = 0; i < Lp*Lp; i++){
 //			linearTheoryGrowth[i] = ising.dt*(-etaLT[i]);
-//			linearTheoryGrowth[i] = ising.dt*ising.mobility[i]*(-ising.T*etaLT[i]*f_x[i%Lp]);
+			linearTheoryGrowth[i] = ising.dt*ising.mobility[i]*(-ising.T*etaLT[i]*f_x[i%Lp]);
 			linearTheoryGrowth[i] += ising.dt*(-eta_bar[i]*ising.mobility[i]);
 		}
+		
+//		for (int i = 0; i < Lp*Lp; i++)
+//			etaKchange2[i] = eta_bar[i]*ising.mobility[i];
+		
 		for (int i = 0; i < Lp*Lp; i++)
 			etaLT[i] += linearTheoryGrowth[i];
 
 		
 		double [] linearGk = fft.calculate2DFT(linearTheoryGrowth, ising.L);
-		//now for fourier space
+		for (int i = 0; i < Lp; i++){
+				etaLT_k[i] += linearGk[i+Lp*ky];	
+		}
+		
+		//		
+//		//now for fourier space
 //		double [] eta_bar1d = new double [Lp];
 //		double [] mobility1d = new double [Lp];
 //		for (int i = 0; i < Lp; i++){
@@ -358,21 +370,31 @@ public class StripeClumpFieldSim {
 //		}
 //		double [] eta_bar_k = fft.calculate1DFT(eta_bar1d);
 //		double [] mobility_k = fft.calculate1DFT(mobility1d);
-//		double [] f_bar = fft.backConvolve1D(eta_bar_k, mobility_k);
-		double [] eta_bar_k2 = fft.calculate2DFT(eta_bar);
-		double [] mobility_k2 = fft.calculate2DFT(ising.mobility);
-		for (int i = 1; i < Lp*Lp; i += Lp)
-			System.out.println(i + " " + mobility_k2[i]);
-		double [] f_bar2 = fft.backConvolve2D(eta_bar_k2, mobility_k2);
+//		eta_bar1d = fft.calculate1DBackFT(eta_bar_k);
+//		mobility_k = fft.calculate1DBackFT(mobility_k);
+////		
+////		double [] f_bar = fft.convolve1D(eta_bar_k, mobility_k);
+//		double [] eta_bar_k2 = fft.calculate2DFT(eta_bar);
+//		double [] mobility_k2 = fft.calculate2DFT(ising.mobility);
+////		for (int i = 1; i < Lp*Lp; i += Lp)
+////			System.out.println(i + " " + mobility_k2[i]);
+//		double [] f_bar2 = fft.backConvolve2D(eta_bar_k2, mobility_k2);
+////		double [] etaKchange = new double [Lp*Lp];
+////		for (int i = 0; i < Lp*Lp; i++){
+//			etaKchange = fft.calculate2DBackFT(f_bar2);
+////		}
+//		linearTheoryGrowth = fft.calculate2DBackFT(f_bar2);
+//		for (int i = 0; i < Lp; i++){
+//			linearTheoryGrowth[i] = -ising.dt*linearTheoryGrowth[i];
+//		}
+//
+//		for (int i = 0; i < Lp*Lp; i++)
+//		etaLT2[i] += linearTheoryGrowth[i];
 		
-		for (int i = 0; i < Lp; i++){
-			linearTheoryGrowth[i] = ising.dt*f_bar2[i+Lp*ky];
-		}
-
-		for (int i = 0; i < Lp; i++){
-//			etaLT_k[i] += linearGk[i+Lp*ky];
-			etaLT_k[i] += linearTheoryGrowth[i];
-		}
+//		for (int i = 0; i < Lp; i++){
+//////			etaLT_k[i] += linearGk[i+Lp*ky];
+//			etaLT_k[i] += linearTheoryGrowth[i];
+//		}
 			
 	}
 	
