@@ -148,7 +148,7 @@ public class svtFieldApp extends Simulation{
 				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
 				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
 
-		mobilityCheck.registerData(Lp, Lp, ising.mobility);
+		mobilityCheck.registerData(Lp, Lp, sc.etaKchange2);
 		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
@@ -163,8 +163,11 @@ public class svtFieldApp extends Simulation{
 				EtavTime.registerLines(sb2.toString(), etaLTAcc[i], Color.BLUE);
 
 				StringBuffer sb3 = new StringBuffer();sb3.append("etaLT_k "); sb3.append(i);
+				
 				EtavTime.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
 				eta2.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
+				
+				etaDot.registerData(Lp, Lp, sc.etaKchange);
 			}
 		}
 		if(flags.contains("Write 1D Config"))
@@ -202,7 +205,7 @@ public class svtFieldApp extends Simulation{
 						ising.simCalcContrib();
 						recordContribToFile();
 						sc.simulateLinear();
-//						sc.simulateLinearKbar();
+						sc.simulateLinearK();
 					}else if(approx == "Modified Dynamics"){
 						ising.simModCalcContrib();
 						recordContribToFile();	
@@ -226,11 +229,13 @@ public class svtFieldApp extends Simulation{
 				etaK = fft.find2DSF(eta, ising.L);
 				sf = fft.find2DSF(ising.phi, ising.L);
 				double [] scEtaK =fft.find2DSF(sc.etaLT,ising.L); 
+//				double [] scEtaK2 =fft.find2DSF(sc.etaLT2,ising.L); 
 				if(accumsOn){
 					for (int i = 0; i < accNo; i++){
 						etaAcc[i].accum(ising.time(), etaK[sfLabel[0][1][i]]);
 						etaLTAcc[i].accum(ising.time(), scEtaK[sfLabel[0][1][i]]);	
 						int dkx = params.iget("dkx");
+//						etaLTkAcc[i].accum(ising.time(), scEtaK2[sfLabel[0][1][i]]);
 						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT_k[i*dkx],2));
 //						System.out.println(Math.pow(sc.etaLT_k[i*dkx],2));
 					}
