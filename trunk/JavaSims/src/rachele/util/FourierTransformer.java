@@ -38,6 +38,18 @@ public class FourierTransformer {
 		return dst;
 	}
 
+	public double [] calculate1DFT(double [] src, double size){
+		double dx = size/L;
+		double [] dst = new double[L];
+		for (int i = 0; i < L; i ++){
+			scratch1D[2*i] = src[i]*dx;
+			scratch1D[2*i+1] = 0;
+		}
+		fft1D.transform(scratch1D);
+		for (int i = 0; i < L; i ++)
+			dst[i] = scratch1D[2*i]/size;
+		return dst;
+	}
 
 	public double [] calculate1DBackFT(double [] src){
 		double [] dst = new double[L];
@@ -62,7 +74,8 @@ public class FourierTransformer {
 			dst[i] = scratch2D[2*i];
 		return dst;
 	}
-	
+
+		
 	public double [] calculate2DFT(double [] src){
 		double [] dst = new double [L*L];
 		for (int i = 0; i < L*L; i ++){
@@ -70,8 +83,15 @@ public class FourierTransformer {
 			scratch2D[2*i+1] = 0;
 		}
 		fft2D.transform(scratch2D);
+//		scratch2D = fft2D.toWraparoundOrder(scratch2D);
 		for (int i = 0; i < L*L; i ++)
 			dst[i] = scratch2D[2*i]/(L*L);
+
+//		for (int i=0; i < L*L; i++){
+//			double re = scratch2D[2*i];
+//			double im = scratch2D[2*i+1];
+//			dst[i] = Math.sqrt((re*re + im*im)/(L*L));
+//		}
 		return dst;
 	}
 
@@ -228,6 +248,32 @@ public class FourierTransformer {
 		fft2D.backtransform(scratch2D);
 		for (int i = 0; i < L*L; i++)
 			dst[i] = scratch2D[2*i]/(L*L);
+		return dst;
+	}
+
+	public double [] convolve2DwithFunction2(double [] src, Function2D fn){
+		double [] dst = new double [L*L];
+		src = calculate2DFT(src);
+		for (int y = -L/2; y < L/2; y++) {
+			for (int x = -L/2; x < L/2; x++) {
+				int i = (x+L)%L + L*((y+L)%L);
+				src[i] *=  fn.eval((double)x, (double)y);
+			}
+		}
+		dst = calculate2DBackFT(src);
+		return dst;
+	}
+
+	public double [] convolve2DwithFunction3(double [] src, Function2D fn){
+		double [] dst = new double [L*L];
+		src = calculate2DFT(src);
+		for (int y = -L/2; y < L/2; y++) {
+			for (int x = -L/2; x < L/2; x++) {
+				int i = (x+L)%L + L*((y+L)%L);
+				src[i] *=  fn.eval((double)x, (double)y);
+			}
+		}
+		dst = calculate2DBackFT(src);
 		return dst;
 	}
 	
