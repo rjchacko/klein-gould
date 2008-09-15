@@ -127,8 +127,10 @@ public class svtFieldApp extends Simulation{
 		params.set("Time", ising.time());
 		params.set("Lp", ising.Lp);
 		params.set("mean phi", ising.mean(ising.phi));
-		phiGrid.registerData(Lp, Lp, ising.phi);
-		etaDot.registerData(Lp, Lp, sc.etaLT);
+		phiGrid.registerData(Lp, Lp,(fft.calculate2DFT(ising.phi)));
+		etaDot.setAutoScale(true);
+		etaDot.registerData(Lp, Lp, sc.etaBarCheck);
+//		System.out.println("thel " + sc.eta_bar2[Lp]);
 //		etaDotSF.registerData(Lp, Lp, etaK);
 //		etaVsTimeLC.setAutoScale(true);
 		hSlice.setAutoScale(true);
@@ -148,7 +150,7 @@ public class svtFieldApp extends Simulation{
 				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
 				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
 
-		mobilityCheck.registerData(Lp, Lp, sc.etaKchange2);
+		mobilityCheck.registerData(Lp, Lp, sc.etaBar_k);
 		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
@@ -167,7 +169,7 @@ public class svtFieldApp extends Simulation{
 				EtavTime.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
 				eta2.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
 				
-				etaDot.registerData(Lp, Lp, sc.etaKchange);
+//				etaDot.registerData(Lp, Lp, sc.etaKchange);
 			}
 		}
 		if(flags.contains("Write 1D Config"))
@@ -206,6 +208,7 @@ public class svtFieldApp extends Simulation{
 						recordContribToFile();
 						sc.simulateLinear();
 						sc.simulateLinearK();
+//						sc.simulateLinearKbar1d();
 					}else if(approx == "Modified Dynamics"){
 						ising.simModCalcContrib();
 						recordContribToFile();	
@@ -226,9 +229,9 @@ public class svtFieldApp extends Simulation{
 			if(ising.time() >= recordStep){
 				for (int i = 0; i < Lp*Lp; i++)
 					eta[i] = ising.phi[i] - phi0[i%Lp];
-				etaK = fft.find2DSF(eta, ising.L);
+				etaK = fft.calculate2DFT(eta);
 				sf = fft.find2DSF(ising.phi, ising.L);
-				double [] scEtaK =fft.find2DSF(sc.etaLT,ising.L); 
+				double [] scEtaK =fft.calculate2DFT(sc.etaLT); 
 //				double [] scEtaK2 =fft.find2DSF(sc.etaLT2,ising.L); 
 				if(accumsOn){
 					for (int i = 0; i < accNo; i++){
@@ -236,8 +239,9 @@ public class svtFieldApp extends Simulation{
 						etaLTAcc[i].accum(ising.time(), scEtaK[sfLabel[0][1][i]]);	
 						int dkx = params.iget("dkx");
 //						etaLTkAcc[i].accum(ising.time(), scEtaK2[sfLabel[0][1][i]]);
-						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT_k[i*dkx],2));
-//						System.out.println(Math.pow(sc.etaLT_k[i*dkx],2));
+//						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT2D_k[sfLabel[0][1][i]],1));
+						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT_k[i*dkx],1));
+//						System.out.println(Math.pow(sc.etaLT_k[i*dkx],1));
 					}
 				}
 				recordSfDataToFile(sf);

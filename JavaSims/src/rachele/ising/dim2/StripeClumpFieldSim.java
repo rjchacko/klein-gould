@@ -30,8 +30,9 @@ public class StripeClumpFieldSim {
 	int ky;
     double [] rhs, rhs2D,  etaLT_k_slice, etaK; //right hand side
     double [] g_k, f_x, phi0_bar, c, f_G;
-	public double [] phi0, f_k, f_Gk, eigenvalue, etaLT, etaLT2, etaLT_k, etaKchange, etaKchange2;
-    double [][] M;// Main matrix 
+	public double [] phi0, f_k, f_Gk, eigenvalue, etaLT, etaLT2, etaLT_k, etaLT2D_k, etaKchange, etaKchange2;
+    public double [] etaBar_k, etaBarCheck, eta_bar2;
+	double [][] M;// Main matrix 
     public double [][] VV;// Eigenvalue matrix
 	String phi0file;
     
@@ -202,9 +203,36 @@ public class StripeClumpFieldSim {
 		}
 	}
 	
+//	public void findMatrix() {
+//		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
+//		double kxValue;
+//		double [] mobility1d = new double [Lp];
+//		double [] f2 = new double [Lp];
+//		for (int i = 0; i < Lp; i++){
+//			mobility1d[i] = ising.mobility[i+Lp*ky];
+//			f2[i] = mobility1d[i]*ising.T/(1-phi0[i]*phi0[i]);
+//		}
+//		double [] mobility_k = fft.calculate1DFT(mobility1d);
+//		double [] f2k = fft.calculate1DFT(f2);
+//
+//		for (int i = 0; i < Lp; i++){
+//			if(i >= Lp/2)
+//				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
+//			else
+//				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
+//			for (int j = 0; j <= i; j++){
+////				M[i][j] = M[j][i] = mobility_k[(i-j+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue);
+////				M[i][j] = M[j][i] = mobility_k[(j-i+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue)- f2k[(j-i+Lp)%Lp];
+//				M[i][j] = M[j][i] = - f2k[(j-i+Lp)%Lp];
+//
+//			}
+////			M[i][i] += mobility_k[0]*ising.J*ising.findVkSquare(kxValue, kyValue);
+//		}
+//
+//	}
+	
 	public void findMatrix() {
-		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
-		double kxValue;
+		//This is final and working.  Don't fuck it up.
 		double [] mobility1d = new double [Lp];
 		double [] f2 = new double [Lp];
 		for (int i = 0; i < Lp; i++){
@@ -213,21 +241,18 @@ public class StripeClumpFieldSim {
 		}
 		double [] mobility_k = fft.calculate1DFT(mobility1d);
 		double [] f2k = fft.calculate1DFT(f2);
-		for (int i = 0; i < Lp; i++){
-			if(i >= Lp/2)
-				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
-			else
-				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
-			for (int j = 0; j <= i; j++){
-//				M[i][j] = M[j][i] = mobility_k[(i-j+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue);
-				M[i][j] = M[j][i] = mobility_k[(j-i+Lp)%Lp]*ising.J*ising.findVkSquare(kxValue, kyValue)- f2k[(j-i+Lp)%Lp];
-//				M[i][j] = M[j][i] = - f2k[(j-i+Lp)%Lp];
 
+		int y1=ky;
+		for (int x1 = -Lp/2; x1 < Lp/2; x1++) {
+			for (int x2 = -Lp/2; x2 < Lp/2; x2++) {
+				double kRx = 2*Math.PI*ising.R*x2/ising.L;
+				double kRy = 2*Math.PI*ising.R*y1/ising.L;
+				M[(x2+Lp)%Lp][(x1+Lp)%Lp] = mobility_k[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kRx, kRy) - f2k[(x1-x2+Lp)%Lp];
 			}
-//			M[i][i] += mobility_k[0]*ising.J*ising.findVkSquare(kxValue, kyValue);
 		}
 
 	}
+
 	
 	public void findGlauberMatrix() {
 		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
@@ -315,12 +340,18 @@ public class StripeClumpFieldSim {
 		etaLT2 = new double [Lp*Lp];
 		for (int i = 0; i < Lp*Lp; i++)
 			etaLT[i] = etaLT2[i] = ising.phi[i] - phi0[i%Lp];
-		double [] etaLT2D_k = fft.calculate2DFT(etaLT, ising.L);
+		etaLT2D_k = new double [Lp*Lp];
+		etaLT2D_k = fft.calculate2DFT(etaLT);
 		etaLT_k = new double [Lp];
-		for (int i = ky*Lp; i < Lp*(ky+1); i++)
-			etaLT_k[i-ky*Lp] = etaLT2D_k[i]; 
-//		for (int i = 0; i < Lp; i++)
-//			etaLT_k[i] = etaLT2D_k[ky*Lp+i];
+		etaBar_k = new double [Lp*Lp];
+		etaBarCheck = new double [Lp*Lp];
+		eta_bar2 = new double[Lp*Lp];
+
+		
+//		for (int i = ky*Lp; i < Lp*(ky+1); i++)
+//			etaLT_k[i-ky*Lp] = etaLT2D_k[i]; 
+		for (int i = 0; i < Lp; i++)
+			etaLT_k[i] = etaLT2D_k[ky*Lp+i];
 		System.out.println("init eta");
 	}
 
@@ -348,53 +379,24 @@ public class StripeClumpFieldSim {
 			linearTheoryGrowth[i] += ising.dt*(-eta_bar[i]*ising.mobility[i]);
 		}
 		
-//		for (int i = 0; i < Lp*Lp; i++)
-//			etaKchange2[i] = eta_bar[i]*ising.mobility[i];
+
 		
 		for (int i = 0; i < Lp*Lp; i++)
 			etaLT[i] += linearTheoryGrowth[i];
 
-		
-		double [] linearGk = fft.calculate2DFT(linearTheoryGrowth, ising.L);
-		for (int i = 0; i < Lp; i++){
-				etaLT_k[i] += linearGk[i+Lp*ky];	
-		}
-		
-		//		
-//		//now for fourier space
-//		double [] eta_bar1d = new double [Lp];
-//		double [] mobility1d = new double [Lp];
-//		for (int i = 0; i < Lp; i++){
-//			eta_bar1d[i] = -eta_bar[ky*Lp+i];
-//			mobility1d[i] = ising.mobility[ky*Lp+i];
-//		}
-//		double [] eta_bar_k = fft.calculate1DFT(eta_bar1d);
-//		double [] mobility_k = fft.calculate1DFT(mobility1d);
-//		eta_bar1d = fft.calculate1DBackFT(eta_bar_k);
-//		mobility_k = fft.calculate1DBackFT(mobility_k);
-////		
-////		double [] f_bar = fft.convolve1D(eta_bar_k, mobility_k);
-//		double [] eta_bar_k2 = fft.calculate2DFT(eta_bar);
-//		double [] mobility_k2 = fft.calculate2DFT(ising.mobility);
-////		for (int i = 1; i < Lp*Lp; i += Lp)
-////			System.out.println(i + " " + mobility_k2[i]);
-//		double [] f_bar2 = fft.backConvolve2D(eta_bar_k2, mobility_k2);
-////		double [] etaKchange = new double [Lp*Lp];
-////		for (int i = 0; i < Lp*Lp; i++){
-//			etaKchange = fft.calculate2DBackFT(f_bar2);
-////		}
-//		linearTheoryGrowth = fft.calculate2DBackFT(f_bar2);
-//		for (int i = 0; i < Lp; i++){
-//			linearTheoryGrowth[i] = -ising.dt*linearTheoryGrowth[i];
+//		//this works:
+//		double [] linearGk = fft.calculate2DFT(linearTheoryGrowth);
+//		for (int i = 0; i < Lp*Lp; i++){
+//				etaLT2D_k[i] += linearGk[i];	
 //		}
 //
-//		for (int i = 0; i < Lp*Lp; i++)
-//		etaLT2[i] += linearTheoryGrowth[i];
-		
+//		//this works
 //		for (int i = 0; i < Lp; i++){
-//////			etaLT_k[i] += linearGk[i+Lp*ky];
-//			etaLT_k[i] += linearTheoryGrowth[i];
+//			etaLT_k[i] += linearGk[i+Lp*ky];	
 //		}
+//		
+		
+
 			
 	}
 	
@@ -402,19 +404,24 @@ public class StripeClumpFieldSim {
 		double [] linearTheoryGrowth = new double[Lp];
 		for (int i = 0; i < Lp; i++){
 			for (int j = 0; j < Lp; j++)
-				linearTheoryGrowth[i] = ising.dt*(M[i][j]*etaLT_k[j]);
+				linearTheoryGrowth[i] += ising.dt*(M[j][i]*etaLT_k[j]);
 		}
 		for (int i = 0; i < Lp; i++){
 			etaLT_k[i] += linearTheoryGrowth[i];
 		}	
 	}
 	
-	public void simulateLinearKbar(){
+	public void simulateLinearKbar1(){
+		//this works
 		
 		double [] eta_bar = new double[Lp*Lp];
 		double [] phi0_2D = new double[Lp*Lp];
 		for(int i = 0; i < Lp*Lp; i++)
 			phi0_2D[i] = phi0[i%Lp];
+		double [] mobility1d = new double [Lp];
+		for(int i = 0; i <Lp; i++)
+			mobility1d[i] = ising.mobility[i];
+		double [] mobility1dk = fft.calculate1DFT(mobility1d);
 		eta_bar = fft.convolve2DwithFunction(etaLT, new Function2D(){
 			public double eval(double k1, double k2) {
 				double kRx = 2*Math.PI*ising.R*k1/ising.L;
@@ -423,40 +430,223 @@ public class StripeClumpFieldSim {
 				else return ising.findVkSquare(kRx, kRy);
 			}
 		});
-		double [] eta_bar1d = new double [Lp];
-		for (int i = 0; i < Lp; i++){
-			eta_bar1d[i] = eta_bar[i+Lp*ky];
-		}
-		double [] eta_bar_k = new double [Lp];
-		eta_bar_k = fft.calculate1DFT(eta_bar1d);
-//		for (int i = 0; i < Lp; i++){
-//			eta_bar_k[i] *= Lp*Lp;
-//		}
-		double [] f_bar = new double [Lp];
-		double [] mobility_k = fft.calculate1DFT(ising.mobility);
-		f_bar = fft.backConvolve1D(mobility_k, eta_bar_k);
-		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;
-		double [] linearTheoryGrowth = new double[Lp];
-		double kxValue;
-		double [] Veta = new double [Lp];
-		for (int i = 0; i < Lp; i++){
-			if(i >= Lp/2)
-				kxValue = 2.0*Math.PI*ising.R*(i-Lp)/ising.L;
-			else
-				kxValue = 2.0*Math.PI*ising.R*i/ising.L;
-			Veta[i] = ising.J*ising.findVkSquare(kxValue, kyValue)*etaLT_k[i];
-		}
-
-//		f_bar = fft.backConvolve1D(ising.mobility, Veta);
-//		f_bar = fft.convolve1D(ising.mobility, Veta);
-		for (int i = 0; i < Lp; i++){
-			linearTheoryGrowth [i] = ising.dt*(f_bar[i]);
-//			linearTheoryGrowth [i] += -ising.dt*etaLT_k[i];
-		}
+		double [] etaBar_k = fft.calculate2DFT(eta_bar);
+		double [] etakDot = new double [Lp*Lp];
 		
+
 		for (int i = 0; i < Lp; i++){
-			etaLT_k[i] += linearTheoryGrowth[i];
+			for (int j = 0; j < Lp; j++){
+				etakDot[i] += -mobility1dk[(i-j+Lp)%Lp]*etaBar_k[j+Lp*ky];
+			}
+			etakDot[i] -=etaLT_k[i];
+		}
+		for (int i = 0; i < Lp; i++){
+			etaLT_k[i] += ising.dt*etakDot[i];
+			System.out.println(i + " " + etakDot[i]);
 		}
 	}
+
+	public void simulateLinearKbar2d(){
+		//this works
+		
+		double [] eta_bar = new double[Lp*Lp];
+		double [] phi0_2D = new double[Lp*Lp];
+		for(int i = 0; i < Lp*Lp; i++)
+			phi0_2D[i] = phi0[i%Lp];
+		double [] mobility1d = new double [Lp];
+		for(int i = 0; i <Lp; i++)
+			mobility1d[i] = ising.mobility[i];
+		double [] mobility1dk = fft.calculate1DFT(mobility1d);
+		eta_bar = fft.convolve2DwithFunction(etaLT, new Function2D(){
+			public double eval(double k1, double k2) {
+				double kRx = 2*Math.PI*ising.R*k1/ising.L;
+				double kRy = 2*Math.PI*ising.R*k2/ising.L;
+				if(ising.circleInteraction) return ising.findVkCircle(kRx*kRx + kRy*kRy);
+				else return ising.findVkSquare(kRx, kRy);
+			}
+		});
+		double [] etaBar_k = fft.calculate2DFT(eta_bar);
+		double [] etakDot = new double [Lp*Lp];
+		
+
+		//but etabar k = vk*etak
+		
+		for (int i = 0; i < Lp*Lp; i++){
+			int thisky = i/Lp;
+			int thiskx = i%Lp;
+			for (int j = 0; j < Lp; j++){
+				etakDot[i] += -mobility1dk[(thiskx-j+Lp)%Lp]*etaBar_k[j+Lp*thisky];
+			}
+			etakDot[i] -=etaLT2D_k[i];
+		}
+		for (int i = 0; i < Lp*Lp; i++){
+			etaLT2D_k[i] += ising.dt*etakDot[i];
+			System.out.println(i + " " + etakDot[i]);
+		}
+	}
+
+
+	public void simulateLinearKbar2d2(){
+		//this works
+		
+//		double [] eta_bar = new double[Lp*Lp];
+		double [] phi0_2D = new double[Lp*Lp];
+		for(int i = 0; i < Lp*Lp; i++)
+			phi0_2D[i] = phi0[i%Lp];
+		double [] mobility1d = new double [Lp];
+		for(int i = 0; i <Lp; i++)
+			mobility1d[i] = ising.mobility[i];
+		double [] mobility1dk = fft.calculate1DFT(mobility1d);
+		eta_bar2 = fft.convolve2DwithFunction2(etaLT, new Function2D(){
+			public double eval(double k1, double k2) {
+				double kRx = 2*Math.PI*ising.R*k1/ising.L;
+				double kRy = 2*Math.PI*ising.R*k2/ising.L;
+				if(ising.circleInteraction) return ising.findVkCircle(kRx*kRx + kRy*kRy);
+				else return ising.findVkSquare(kRx, kRy);
+			}
+		});
+//		etaBar_k = new double[Lp*Lp];
+		etaBar_k = fft.calculate2DFT(eta_bar2);
+//		etaBarCheck = new double [Lp*Lp];
+		double [] eta2dk= fft.calculate2DFT(etaLT);
+		for (int y = -Lp/2; y < Lp/2; y++) {
+			for (int x = -Lp/2; x < Lp/2; x++) {
+				int i = (x+Lp)%Lp + Lp*((y+Lp)%Lp);
+				double kRx = 2*Math.PI*ising.R*x/ising.L;
+				double kRy = 2*Math.PI*ising.R*y/ising.L;
+				etaBarCheck[i] = eta2dk[i]*ising.findVkSquare(kRx, kRy);				
+			}
+		}
+//		etaBarCheck = fft.calculate2DBackFT(etaBarCheck);
+		double [] etakDot = new double [Lp*Lp];
+		
+
+
+		//this works
+
+		for (int y1 = -Lp/2; y1 < Lp/2; y1++) {
+			for (int x1 = -Lp/2; x1 < Lp/2; x1++) {
+				int i1 = (x1+Lp)%Lp + Lp*((y1+Lp)%Lp);
+					for (int x2 = -Lp/2; x2 < Lp/2; x2++) {
+						int i2 = (x2+Lp)%Lp + Lp*((y1+Lp)%Lp);
+						double kRx = 2*Math.PI*ising.R*x2/ising.L;
+						double kRy = 2*Math.PI*ising.R*y1/ising.L;
+						etakDot[i1] += -mobility1dk[(x1-x2+Lp)%Lp]*eta2dk[i2]*ising.findVkSquare(kRx, kRy);
+					}
+
+				etakDot[i1] -=etaLT2D_k[i1];
+			}
+		}
+		
+	
+		
+//		for (int i = 0; i < Lp*Lp; i++){
+//			int thisky = i/Lp;
+//			int thiskx = i%Lp;
+//			for (int j = 0; j < Lp; j++){
+//				etakDot[i] += -mobility1dk[(thiskx-j+Lp)%Lp]*etaBarCheck[j+Lp*thisky];
+//			}
+//			etakDot[i] -=etaLT2D_k[i];
+//		}
+		for (int i = 0; i < Lp*Lp; i++){
+			etaLT2D_k[i] += ising.dt*etakDot[i];
+
+		}
+	}	
+
+	public void simulateLinearKbar1d(){
+		//this works
+
+		double [] phi0_2D = new double[Lp*Lp];
+		for(int i = 0; i < Lp*Lp; i++)
+			phi0_2D[i] = phi0[i%Lp];
+		double [] mobility1d = new double [Lp];
+		for(int i = 0; i <Lp; i++)
+			mobility1d[i] = ising.mobility[i];
+		double [] mobilityk = fft.calculate1DFT(mobility1d);
+		eta_bar2 = fft.convolve2DwithFunction2(etaLT, new Function2D(){
+			public double eval(double k1, double k2) {
+				double kRx = 2*Math.PI*ising.R*k1/ising.L;
+				double kRy = 2*Math.PI*ising.R*k2/ising.L;
+				if(ising.circleInteraction) return ising.findVkCircle(kRx*kRx + kRy*kRy);
+				else return ising.findVkSquare(kRx, kRy);
+			}
+		});
+		etaBar_k = fft.calculate2DFT(eta_bar2);
+		double [] eta2dk= fft.calculate2DFT(etaLT);
+		for (int y = -Lp/2; y < Lp/2; y++) {
+			for (int x = -Lp/2; x < Lp/2; x++) {
+				int i = (x+Lp)%Lp + Lp*((y+Lp)%Lp);
+				double kRx = 2*Math.PI*ising.R*x/ising.L;
+				double kRy = 2*Math.PI*ising.R*y/ising.L;
+				etaBarCheck[i] = eta2dk[i]*ising.findVkSquare(kRx, kRy);				
+			}
+		}
+		double [] etakDot = new double [Lp];
+
+
+		
+		//this works
+//		double [] f2 = new double [Lp];
+//		for (int i = 0; i < Lp; i++){
+//			mobility1d[i] = ising.mobility[i+Lp*ky];
+//			f2[i] = mobility1d[i]*ising.T/(1-phi0[i]*phi0[i]);
+//		}
+//		double [] mobility_k = fft.calculate1DFT(mobility1d);
+//		double [] f2k = fft.calculate1DFT(f2);
+//				for (int i = 0; i < Lp; i++){
+//			for (int j = 0; j < Lp; j++){
+//			M[i][j] = M[j][i] = - f2k[(j-i+Lp)%Lp];
+//			}
+//		}
+		
+		
+//		for (int x1 = -Lp/2; x1 < Lp/2; x1++) {
+//			for (int x2 = -Lp/2; x2 < Lp/2; x2++) {
+//				double kRx = 2*Math.PI*ising.R*x2/ising.L;
+//				double kRy = 2*Math.PI*ising.R*ky/ising.L;
+//				M[(x1+Lp)%Lp][(x2+Lp)%Lp] = M[(x2+Lp)%Lp][(x1+Lp)%Lp] = mobility_k[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kRx, kRy);//-f2k[(x1-x2+Lp)%Lp];//
+
+
+
+		
+		int y1= ky;
+		for (int x1 = -Lp/2; x1 < Lp/2; x1++) {
+			for (int x2 = -Lp/2; x2 < Lp/2; x2++) {
+				double kRx = 2*Math.PI*ising.R*x2/ising.L;
+				double kRy = 2*Math.PI*ising.R*y1/ising.L;
+//				etakDot[(x1+Lp)%Lp] += mobilityk[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kRx, kRy)*etaLT_k[(x2+Lp)%Lp];
+				M[(x1+Lp)%Lp][(x2+Lp)%Lp] = mobilityk[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kRx, kRy);
+			}
+
+
+		}
+
+		for (int x1 = -Lp/2; x1 < Lp/2; x1++) {
+			M[(x1+Lp)%Lp][(x1+Lp)%Lp] -= 1.0;//etaLT_k[(x1+Lp)%Lp];
+//			etakDot[(x1+Lp)%Lp] -=etaLT_k[(x1+Lp)%Lp];			
+		}
+		
+		//This does work
+//		for (int x1 = -Lp/2; x1 < Lp/2; x1++) {
+//			for (int x2 = -Lp/2; x2 < Lp/2; x2++) {
+//				etakDot[(x1+Lp)%Lp] += M[(x1+Lp)%Lp][(x2+Lp)%Lp]*etaLT_k[(x2+Lp)%Lp]; 
+//			}
+//		}
+		
+//		This is working now
+		for (int i = 0; i < Lp; i++){
+			for (int j = 0; j < Lp; j++){
+				etakDot[i] += M[i][j]*etaLT_k[j];
+			}
+		}
+
+
+		
+		for (int i = 0; i < Lp; i++){
+			etaLT_k[i] += ising.dt*etakDot[i];
+
+		}
+	}	
 
 }
