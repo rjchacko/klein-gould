@@ -92,7 +92,7 @@ public class GridTests extends Simulation{
 		
 		if (params.sget("Animation").equals("On")){
 			grid5.registerData(model.L,model.L,foo);
-			grid2.registerData(model.L,model.L,foo2);
+//			grid2.registerData(model.L,model.L,foo2);
 //			grid3.registerData(model.L,model.L,foo3);
 //			grid4.registerData(model.L,model.L,foo4);
 //			grid1.registerData(model.L,model.L,display);
@@ -167,11 +167,16 @@ public class GridTests extends Simulation{
 		
 		// Initialize foo
 		
-		foo = new int[model.N];
+		foo  = new int[model.N];
+		foo2 = new int[model.N];
+		foo3 = new int[model.N];
+		foo4 = new int[model.N];
 		
 		// Set time = 0
 		
 		displaycounter = 0;
+		
+		
 		
 		/**
 		 *	Test the ellipse method for lattice neighbors
@@ -183,11 +188,32 @@ public class GridTests extends Simulation{
 //			foo[ii]=0;
 //		}
 //		
+//		dummy = new ClustersV4(model.L, "Periodic");
+//
+//		
 //		for (int ii = 0 ; ii < thenbs.length; ii++){
 //			foo[thenbs[ii]]=1;
+//			dummy.addSite(thenbs[ii]);
 //		}
 //		
+//		// Add sites to cluster to test fractalDim
+//		
+//		for (int jj = 0 ; jj < model.N ; jj++){
+//			foo2[jj] = dummy.getClusterNumber(jj);
+//			foo3[jj] = dummy.getDist(jj);
+//			foo4[jj] = dummy.getDist(jj+model.N);
+//		}
+//
+//		// Now print foo2 - foo4 to file for testing
+//		
+//		PrintUtil.printArrayToFile("/Users/cserino/Desktop/Clusters_"+1+".txt", foo2,model.N,1);
+//		PrintUtil.printArrayToFile("/Users/cserino/Desktop/ClustersDX_"+1+".txt", foo3,model.N,1);
+//		PrintUtil.printArrayToFile("/Users/cserino/Desktop/ClustersDY_"+1+".txt", foo4,model.N,1);
+//
+//
 //		Job.animate();
+//	
+//	}
 		
 		/**
 		 * 			E-N-D
@@ -291,7 +317,7 @@ public class GridTests extends Simulation{
 		/**
 		 *	Test class Clusters(Parameters prms)
 		 */	
-//	
+	
 //		
 //	    palette1 = new ColorPalette();
 //	    palette2 = new ColorPalette();
@@ -415,7 +441,7 @@ public class GridTests extends Simulation{
 //			    
 //			
 //	}
-		
+//		
 		/**
 		 * 			E-N-D
 		 * 	Test class Clusters(Parameters prms)
@@ -428,19 +454,19 @@ public class GridTests extends Simulation{
 		/**
 	     *	Remind myself with R is for Sqaure Interaction
 		*/	
-//		
-//		int[] thenbs = LN.get(i0);
-//		
-//		for (int ii = 0 ; ii < model.N ; ii++){
-//			foo[ii]=0;
-//		}
-//		
-//		for (int ii = 0 ; ii < thenbs.length; ii++){
-//			foo[thenbs[ii]]=1;
-//		}
-//		
-//		Job.animate();
-//		
+		
+		int[] thenbs = LN.get(i0);
+		
+		for (int ii = 0 ; ii < model.N ; ii++){
+			foo[ii]=0;
+		}
+		
+		for (int ii = 0 ; ii < thenbs.length; ii++){
+			foo[thenbs[ii]]=1;
+		}
+		
+		Job.animate();
+		
 		
 		/**
 		 * 			E-N-D
@@ -455,39 +481,39 @@ public class GridTests extends Simulation{
 	     *	Test "quick" lattice neighbors
 		*/	
 		
-		foo2 = new int[model.N];
-		
-		for (int ii = 0 ; ii < model.N ; ii++){
-			foo[ii]=0;
-			foo2[ii]=0;
-		}
-		
-		int cs;
-		if(model.BCs.equals("Bordered")){
-			cs = (int)(model.L/2)*(1+model.L);
-		}
-		else{
-			cs = 0;
-		}
-		
-		int[] csNBS = LN.get(cs);
-
-		
-			
-		int[] test1 = LN.get(i0);
-		int[] test2 = LN.get(i0,cs,csNBS);
-
-		for (int jj = 0 ; jj < test1.length ; jj++){
-			foo[test1[jj]] = 1;
-		}
-		for (int jj = 0 ; jj < test2.length ; jj++){
-			foo2[test2[jj]] = 1;
-		}
-
-		Job.animate();
-			
-		
-		
+//		foo2 = new int[model.N];
+//		
+//		for (int ii = 0 ; ii < model.N ; ii++){
+//			foo[ii]=0;
+//			foo2[ii]=0;
+//		}
+//		
+//		int cs;
+//		if(model.BCs.equals("Bordered")){
+//			cs = (int)(model.L/2)*(1+model.L);
+//		}
+//		else{
+//			cs = 0;
+//		}
+//		
+//		int[] csNBS = LN.get(cs);
+//
+//		
+//			
+//		int[] test1 = LN.get(i0);
+//		int[] test2 = LN.get(i0,cs,csNBS);
+//
+//		for (int jj = 0 ; jj < test1.length ; jj++){
+//			foo[test1[jj]] = 1;
+//		}
+//		for (int jj = 0 ; jj < test2.length ; jj++){
+//			foo2[test2[jj]] = 1;
+//		}
+//		
+//		Job.animate();
+//			
+//		PrintUtil.printArrayToFile("/Users/cserino/Desktop/SimpleDiamond_1.txt",foo,model.N,1);
+//		
 		
 		/**
 		 * 			E-N-D
@@ -496,6 +522,8 @@ public class GridTests extends Simulation{
 		
 		
 	}
+		
+	
 }
 
 

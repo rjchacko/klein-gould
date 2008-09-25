@@ -12,7 +12,6 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import chris.TFB.TFBmodel;
-import chris.util.PrintUtil;
 
 public class TFBtests extends Simulation{
 	
@@ -41,12 +40,12 @@ public class TFBtests extends Simulation{
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Random Seed",0);
 		params.add("Lattice Size",1<<8);
-		params.add("Stress / site", 0.1);		
+		params.add("Stress / site", 10E-5);		
 		params.add("Failure Stress",5.0);
 		params.add("\u03C3_f width",(double) 0);
 		params.add("Kappa", (double) 0.5);
 		params.add("D", (double) 0.5);
-		params.add("Temperature", (double) 0.2);
+		params.add("Temperature", (double) 100);
 		params.add("Animation", new ChoiceValue("On","Off"));
 		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("MC Time Step");
@@ -57,28 +56,30 @@ public class TFBtests extends Simulation{
 	
 	public void run() {
 	
-		// initialize model
-		model = new TFBmodel(params);
-		
-		// setup grid
-		setupColors();
-		
-		// testing free energy
-		double[] crd = new double[model.getN()+1];
-		double[] tmp = new double[model.getN()+1];	
-		
-		for(int jj = 0 ; jj < model.getN()+1 ; jj++){
-			crd[jj] = jj/model.getN();
-			tmp[jj] = model.gEnergy(crd[jj]);
-			//tmp[jj] = 1E-5*crd[jj];
+		while(true){
+			// initialize model
+			model = new TFBmodel(params);
+
+			// setup grid
+			setupColors();
+
+			// testing free energy
+			double[] crd = new double[model.getN()+1];
+			double[] tmp = new double[model.getN()+1];	
+
+			for(int jj = 0 ; jj < model.getN()+1 ; jj++){
+				crd[jj] = ((double)jj)/model.getN();
+				tmp[jj] = model.gEnergy(crd[jj]);
+				//tmp[jj] = 1E-5*crd[jj];
+			}
+
+//			PrintUtil.printArrayToFile("/Users/cserino/Desktop/debugX.txt",crd,model.getN()+1,1);
+//			PrintUtil.printArrayToFile("/Users/cserino/Desktop/debugY.txt",tmp,model.getN()+1,1);
+
+			gEnergy = new PointSet(crd,tmp);
+
+			Job.animate();
 		}
-		
-		PrintUtil.printArrayToFile("/Users/cserino/Desktop/debugX.txt",crd,model.getN()+1,1);
-		PrintUtil.printArrayToFile("/Users/cserino/Desktop/debugY.txt",tmp,model.getN()+1,1);
-		
-		gEnergy = new PointSet(crd,tmp);
-		
-		Job.animate();
 		
 	}
 	
@@ -101,10 +102,12 @@ public class TFBtests extends Simulation{
 //		params.set("Phi", fmt.format(model.getPhi()));
 
 		if(!draw) return;
-		
+				
 		grid.registerData(L,L,model.getState());
-		gplot.registerLines("Free Energy",gEnergy, Color.BLACK);
+		gplot.setLogScale(false,true);
+		gplot.registerPoints("Free Energy",gEnergy, Color.BLACK);
 
+		
 		//if(params.sget("Record").equals("On")) model.takePicture(grid);
 
 	}
