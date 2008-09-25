@@ -12,10 +12,10 @@ import scikit.graphics.dim2.Grid;
 import scikit.jobs.params.Parameters;
 import chris.util.PrintUtil;
 
-public class TFBmodel {
+public class DTFBmodel {
 
 	private double 	stress, L, N, Stot, beta, kappa, Sf[], Sf0, SfW, t, sCum[], 
-					Omega, energy, D, Nalive;
+					Omega, energy, D0, D[], Dw, Nalive, elastic;
 	private int 	state[];
 	private String 	dir, of;
 	private boolean draw;
@@ -25,7 +25,7 @@ public class TFBmodel {
 	
 	private DecimalFormat fmt = new DecimalFormat("0000000");
 	
-	public TFBmodel(Parameters params){
+	public DTFBmodel(Parameters params){
 		
 		tfbConstructor(params);
 		
@@ -40,7 +40,8 @@ public class TFBmodel {
 		Stot   = N*stress;
 		beta   = 1/(params.fget("Temperature"));
 		kappa  = params.fget("Kappa");
-		D      = params.fget("D");
+		D0     = params.fget("D");
+		Dw     = params.fget("D width");
 		rand   = new Random(params.iget("Random Seed"));
 		Sf     = new double[(int) N];
 		state  = new int[(int) N];
@@ -58,10 +59,14 @@ public class TFBmodel {
 	
 	protected void initArrays(){
 		
+		energy  = 0;
+		elastic = 0.5*Stot*Stot/kappa;
 		for (int jj = 0 ; jj < N ; jj++){
 			Sf[jj]    = Sf0 + SfW*(0.5 - rand.nextDouble());
 			state[jj] = 1;
 			sCum[jj]  = 0;
+			D[jj]     = D0 * Dw*(rand.nextDouble() - 0.5);
+			energy    += elastic - D[jj];
 		}
 				
 		return;
@@ -79,7 +84,6 @@ public class TFBmodel {
 		}	
 		
 		Nalive += deltaN;
-		energy = hamiltonian(Nalive/N);
 		ergMetric();
 		
 		return (Nalive > 0);
@@ -87,24 +91,12 @@ public class TFBmodel {
 	
 	private boolean nextState(int st){
 			
-		double tempprob;
+		double dE = (2*state[st] - 1)*(elastic - D[st]);
+
+		if (dE > 0) return true;
+		if (rand.nextDouble() < Math.exp(-beta*dE)) return true;
+		return false;
 		
-		if(state[st] == 1){
-			tempprob = pFail(Nalive/N);
-			PrintUtil.printlnToFile("/Users/cserino/Desktop/DebugF.txt", Nalive/N, tempprob);
-			// If site passes failure requirement, return TRUE   
-			if(tempprob >= 1) return true;
-			if(rand.nextDouble() < tempprob) return true;
-			return false;
-		}
-		else{
-			tempprob = pHeal(Nalive/N);
-			PrintUtil.printlnToFile("/Users/cserino/Desktop/DebugH.txt", Nalive/N, tempprob);
-			// If site passes healing requirement, return TRUE   
-			if(tempprob >= 1) return true;
-			if(rand.nextDouble() < tempprob) return true;
-			return false;
-		}
 	}
 	
 //	private double pFail(double phiold){
@@ -125,77 +117,33 @@ public class TFBmodel {
 //		return Math.exp(-beta*dg);
 //	}
 	
-	private double pFail(double phiold){
-		
-		double phinew = (N*phiold-1)/N;
-		
-		if (phinew == 0) return 0;
-		
-		double dg = hamiltonian(phinew) - hamiltonian(phiold);
-		
-		//return Math.exp(-beta*dg);
-		return Math.exp(-N*beta*dg);
+//	private double pFail(double phiold){
+//		
+//		double phinew = (N*phiold-1)/N;
+//		
+//		if (phinew == 0) return 0;
+//		
+//		double dg = hamiltonian(phinew) - hamiltonian(phiold);
+//		
+//		return Math.exp(-beta*dg);
+//	}
+//	
+//	private double pHeal(double phiold){
+//		
+//		if (phiold == 0) return 100;
+//		
+//		double phinew = (N*phiold+1)/N;
+//		
+//		double dg = hamiltonian(phinew) - hamiltonian(phiold);
+//		
+//		return Math.exp(-beta*dg);
+//	}
 
-	}
-	
-	private double pHeal(double phiold){
-		
-		if (phiold == 0) return 100;
-		
-		double phinew = (N*phiold+1)/N;
-		
-		double dg = hamiltonian(phinew) - hamiltonian(phiold);
-		
-		//return Math.exp(-beta*dg);	// add N*
-		return Math.exp(-N*beta*dg);	// add N*
-	}
-	
-	
-	public double gEnergy(double phi){
-		
-		if(phi==0) return -0.5*(Stot*Stot/kappa)*10*N;
-		if(phi==1) return -0.5*(Stot*Stot/kappa);
-		
-		return -0.5*(Stot*Stot/kappa)*(1/phi) - D*phi + (1/beta)*(phi*Math.log(phi) + (1 - phi)*Math.log(1 - phi));
-	}
-	
-	public double hamiltonian(double phi){
-		
-		// this is the energy per particle
-		
-		if(phi == 0) return 10*Stot*Stot*N/kappa;
-		
-		return (0.5*Stot*Stot/(kappa*phi) - D*phi);
-	}
 	
 	public static void printParams(String fout, Parameters prms){
 		
 		PrintUtil.printlnToFile(fout, prms.toString());
 		return;
-	}
-
-	public double[] gLandscape(){
-		
-		double ret[] = new double[(int)N + 1];
-		
-		for(int jj = 0 ; jj < N+1 ; jj++){
-			ret[jj] = gEnergy(((double)jj)/N);
-		}
-		
-		return ret;
-				
-	}
-	
-	public double[] hLandscape(){
-		
-		double ret[] = new double[(int)N + 1];
-		
-		for(int jj = 0 ; jj < N+1 ; jj++){
-			ret[jj] = hamiltonian(((double)jj)/N);
-		}
-		
-		return ret;
-				
 	}
 	
 	public void writeHeader(){
@@ -281,11 +229,6 @@ public class TFBmodel {
 	public String getdir(){
 	
 		return dir;
-	}
-	
-	public double getD(){
-		
-		return D;
 	}
 	
 	public double getST(){

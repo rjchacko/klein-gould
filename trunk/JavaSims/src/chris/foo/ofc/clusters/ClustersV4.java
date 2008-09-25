@@ -811,4 +811,10 @@ private void resetPCNandDIST(int ns, int[] os){
 	  }
   }
   
+  public int whichCluster(){
+	  
+	  return PercolationCluster;
+  }
+  
+  
 }

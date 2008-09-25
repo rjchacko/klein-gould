@@ -218,7 +218,7 @@ public class damage {
 	}
 	
 	
-	private boolean sysFail(){
+	protected boolean sysFail(){
 		
 		return (nDS == N);
 	}
@@ -313,7 +313,14 @@ public class damage {
 		ks[site]          = true;
 		deadSite[site]    = true;
 		stress[site]      = 0;
+		
+		add2cluster(site);
 	
+		return;
+	}
+	
+	protected void add2cluster(int site){
+		
 		return;
 	}
 	
@@ -368,6 +375,19 @@ public class damage {
 			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {
 			System.err.println("Error in Writing File" + SaveAs);
+		}
+		
+		return;
+	}
+	
+	public void takePicture(Grid grid, boolean display, String fn){
+		
+		if(!display) return;
+
+		try {
+			ImageIO.write(grid.getImage(), "png", new File(fn));
+		} catch (IOException e) {
+			System.err.println("Error in Writing File" + fn);
 		}
 		
 		return;
@@ -470,6 +490,16 @@ public class damage {
 	public void printSr(String fn){
 		PrintUtil.printArrayToFile(fn, Sr, (int) L, 1);
 		return;
+	}
+	
+	public String getBC(){
+		
+		return bc;
+	}
+	
+	public void setDataFile(int str){
+		
+		datafile1 = outdir + File.separator + "StressData_" + str + ".txt";
 	}
 	
 }
