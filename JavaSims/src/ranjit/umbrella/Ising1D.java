@@ -1,9 +1,12 @@
 package ranjit.umbrella;
 
 import java.awt.Color;
+import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
+
+import javax.imageio.ImageIO;
 
 import ranjit.ising.spinblock.SpinBlocks1D;
 import scikit.dataset.Accumulator;
@@ -41,13 +44,13 @@ public class Ising1D extends Simulation {
 	public void load(Control c){		
 		params.add("T",1.0);
 		params.add("h",0.);
-		params.add("L",4096);
+		params.add("L",256);
 		params.add("R",1);
-		params.add("number of windows", 1024);
+		params.add("number of windows", 32);
 		params.add("first window",0);
-		params.add("last window", 1023);
-		params.add("window width",8);
-		params.add("MCS per window", 200);
+		params.add("last window", 31);
+		params.add("window width",16);
+		params.add("MCS per window", 1000);
 		params.add("mcs");
 		params.add("current window");
 		params.add("phi0");
@@ -144,6 +147,10 @@ public class Ising1D extends Simulation {
 			}
 			saveDataset(freeEnergy[currentWindow], prefix+"Free Energy"+currentWindow+".txt");
 			saveDataset(mag[currentWindow], prefix+"Magnetization"+currentWindow+".txt");
+			
+			try {
+				ImageIO.write(grid.getImage(), "png", new File(prefix+currentWindow+".png"));
+		}catch (IOException e) {}
 		}
 
 	}
