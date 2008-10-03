@@ -23,8 +23,8 @@ public class globalFreeEnergy extends Simulation {
 	Plot freeEnergyPlot=new Plot("Free Energy");
 	Plot fslopePlot=new Plot("First Derivative of Free Energy");
 	Plot fslope2Plot=new Plot("Second Derivative of Free Energy");
-	Plot fftPlot=new Plot("Fourier Transform");
-	
+	Plot fftIPlot=new Plot("Fourier Transform I");
+	Plot fftRPlot=new Plot("Fourier Transform R");
 	int firstWindow,lastWindow;
 	String filename;
 	
@@ -35,19 +35,19 @@ public class globalFreeEnergy extends Simulation {
 	}
 
 	public void load(Control c){
-		params.add("directory", "/Users/rjchacko/Desktop/NNIsingData/data64/Magnetization");
+		params.add("directory", "/Users/rjchacko/Desktop/NN2DIsingData/data64/Magnetization");
 		params.add("first window",0);
 		params.add("last window",1023);
-		c.frame(freeEnergyPlot, fslopePlot, fslope2Plot, fftPlot);
+		c.frame(freeEnergyPlot, fslopePlot, fslope2Plot, fftIPlot, fftRPlot);
 	}
 	@Override
 	public void animate() {
 		freeEnergyPlot.registerPoints("free energy", freeEnergy, Color.RED);
 		fslopePlot.registerPoints("free energy slope", fslope, Color.RED);
 		fslope2Plot.registerPoints("inverse susceptibility", fslope2, Color.RED);
-//		fftPlot.registerPoints("fftI", fftIAccum, Color.RED);
-//		fftPlot.registerPoints("fftR", fftRAccum, Color.BLUE);
-		fftPlot.registerPoints("fftMag", fftMagAccum, Color.BLUE);
+		fftIPlot.registerPoints("fftI", fftIAccum, Color.RED);
+		fftIPlot.registerPoints("fftR", fftRAccum, Color.BLUE);
+//		fftPlot.registerPoints("fftMag", fftMagAccum, Color.BLUE);
 		
 	}
 
@@ -56,7 +56,8 @@ public class globalFreeEnergy extends Simulation {
 		freeEnergy.clear();
 		freeEnergyPlot.clear();
 		fftIAccum.clear();
-		fftPlot.clear();
+		fftIPlot.clear();
+		fftRPlot.clear();
 	}
 
 	@Override
@@ -101,9 +102,9 @@ public class globalFreeEnergy extends Simulation {
 	    fft.transform(fftdata);
 	 
 	    for(int i=0;i<fftdata.length/2;i++){
-//	    	fftIAccum.accum(i, fftdata[2*i+1]);
-//	    	fftRAccum.accum(i,fftdata[2*i+1]);
-	    	fftMagAccum.accum(i, fftdata[2*i+1]*fftdata[2*i+1]+fftdata[2*i]*fftdata[2*i]);
+	    	fftIAccum.accum(i, fftdata[2*i]);
+	    	fftRAccum.accum(i,fftdata[2*i+1]);
+//	    	fftMagAccum.accum(i, fftdata[2*i+1]*fftdata[2*i+1]+fftdata[2*i]*fftdata[2*i]);
 	    }
 	    Job.animate();
 	}
