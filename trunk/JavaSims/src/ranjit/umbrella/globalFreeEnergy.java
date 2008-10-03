@@ -103,7 +103,7 @@ public class globalFreeEnergy extends Simulation {
 	    for(int i=0;i<fftdata.length/2;i++){
 //	    	fftIAccum.accum(i, fftdata[2*i+1]);
 //	    	fftRAccum.accum(i,fftdata[2*i+1]);
-	    	fftMagAccum.accum(i, fftdata[2*i+1]*fftdata[2*i+1]+fftdata[2*i+1]*fftdata[2*i+1]);
+	    	fftMagAccum.accum(i, fftdata[2*i+1]*fftdata[2*i+1]+fftdata[2*i]*fftdata[2*i]);
 	    }
 	    Job.animate();
 	}
