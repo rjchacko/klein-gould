@@ -28,7 +28,8 @@ public class MCDisorderStripesApp extends Simulation{
 	Grid grid = new Grid("Long Range Ising Model");
 	Grid sfGrid = new Grid("SF");
 	Plot sfkPlot = new Plot("sf_k plot");
-	Plot sftPlot = new Plot("sf_t plot"); 
+	Plot sftPlot = new Plot("sf_t plot");
+	Plot absMag = new Plot("abs mag");
 	int dx; 
 	IsingLR sim;
 	public FourierTransformer fft;
@@ -39,6 +40,7 @@ public class MCDisorderStripesApp extends Simulation{
 	int [][][] sfLabel = new int [2][4][accNo];//Hor, Vert; four corners to be averaged
 	Accumulator [] sf_tDomAveAcc = new Accumulator [accNo]; //Average sf for dominant direction (H or V)
 	Accumulator [] sf_tNDomAveAcc = new Accumulator [accNo];//Average sf for non-dominant direction (H or V)
+	Accumulator mag = new Accumulator();
 	double [][][] sf_tAcc;// 1st label: 0 = Horizontal direction, 1 = vertical direction; 2nd label -> accNo; 3rd label -> time Label
 	Accumulator sf_kTheoryAcc, sf_kTheory2Acc, sf_tTheoryAcc, sf_tTheory2Acc;
     boolean clearFile;
@@ -51,20 +53,20 @@ public class MCDisorderStripesApp extends Simulation{
 	public void load(Control c) {
 		
 		c.frame(grid);
-		c.frame(sftPlot);
+		c.frameTogether("plots", sftPlot, absMag);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/DS/testRuns"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<7);
-		params.add("R", 50);//1<<6);
+		params.add("L", 1<<9);
+		params.add("R", 184);//1<<6);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.096548444);
-		params.addm("J", -1.0);
+		params.addm("J", 1.0);
 		params.addm("h", 0.0);
-		params.addm("ky", 2);
-		params.addm("dkx", 1);
-		params.addm("dt", 1/(double)(1<<3));
-		params.addm("maxTime", 10.0);
+		params.addm("ky", 0);
+		params.addm("dkx", 0);
+		params.addm("dt", 1/(double)(1<<5));
+		params.addm("maxTime", 0.5);
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -87,6 +89,7 @@ public class MCDisorderStripesApp extends Simulation{
 			sftPlot.registerLines(sb1.toString(), sf_tDomAveAcc[i], col);
 			sftPlot.registerLines(sb2.toString(), sf_tNDomAveAcc[i], col);
 		}
+		absMag.registerLines("ab mag", mag, Color.black);
 	}
 	
 	public void clear() {
@@ -97,7 +100,7 @@ public class MCDisorderStripesApp extends Simulation{
 		fft = new FourierTransformer((int)(sim.L/dx));
 		sFactor = new double [sim.L/dx*sim.L/dx];
 		double maxTime = params.fget("maxTime");
-		double recordStep = 1/4.0;
+		double recordStep = 1/32.0;
 		double mod = maxTime%recordStep;
 		int maxTimeLabel = (int)(maxTime/recordStep);
 		System.out.println("Record Step = " + recordStep + " mod (must be zero) = " + mod);
@@ -121,6 +124,7 @@ public class MCDisorderStripesApp extends Simulation{
 				Job.animate();
 				if (sim.time()% recordStep == 0){
 					sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
+					mag.accum(sim.time(), Math.abs(sim.magnetization()));
 					for (int i = 0; i < accNo; i ++){
 						for (int j = 0; j < 4; j++){
 							sf_tAcc[0][i][timeLabel] = sFactor[sfLabel[0][j][i]];//horizontal direction
@@ -148,9 +152,10 @@ public class MCDisorderStripesApp extends Simulation{
 					double mcTime = timeL*recordStep;
 					sf_tDomAveAcc[i].accum(mcTime, sf_tAcc[domInt][i][timeL]/4.0);	
 					sf_tNDomAveAcc[i].accum(mcTime, sf_tAcc[nonDomInt][i][timeL]/4.0);	
+					
 				}
 			}
-			
+
 			repNo += 1;
 			params.set("Reps", repNo);
 			writeStDOtoFile();
