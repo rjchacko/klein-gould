@@ -66,9 +66,9 @@ public class LinearTheoryApp extends Simulation{
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
-		params.addm("T", 0.04);
-		params.addm("H", 0.8);
-		params.add("Magnetization", 0.760138297217);
+		params.addm("T", 0.096548444);
+		params.addm("H", 0.5);
+		params.add("Magnetization", 0.4508018);
 		params.addm("dt", 0.001);
 		params.addm("J", -1.0);
 		params.addm("R", 200000.0);
@@ -106,7 +106,7 @@ public class LinearTheoryApp extends Simulation{
 					double kR = 2.0*Math.PI*kR1int*ising.R/ising.L;
 					double pot = (kR == 0) ? 1 : Math.sin(kR)/kR; 
 					double D = (-pot-ising.T/(1.0-phi0*phi0))*(1-phi0*phi0)/ising.T;
-					return  (exp(2*t*D));
+					return  (exp(2*t*D)*(1 + (1.0-phi0*phi0)/D)-(1.0-phi0*phi0)/D);
 				}
 			}, Color.GREEN);
 		structurePeak.registerLines("First Peak", peak1AveAcc, Color.BLACK);
