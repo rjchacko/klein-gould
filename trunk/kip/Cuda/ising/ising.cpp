@@ -78,7 +78,11 @@ int Ising::shouldFlipSpin(int s, int m) {
     if (dE < 0)
         return 1;
     else {
-        float r = 0.1; //  ((float)lrand48()+1f) / (1<<31);
+#ifdef DETERMINISTIC
+        float r = 0.1;
+#else
+        float r = (float)lrand48() / (unsigned int)(1<<31);
+#endif
         return exp(- dE / T) > r;
     }
 }

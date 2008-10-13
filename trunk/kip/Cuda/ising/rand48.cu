@@ -129,16 +129,21 @@ __device__ inline void rand48_iterate(Rand48 &r) {
 
 __device__ inline int rand48_nextInt(Rand48 &r) {
     // get upper 31 (!) bits of the 2x 24bits
-    int res = ( r.state0.x >> 17 ) | ( r.state0.y << 7 );
+    int res = ( r.state0.y << 7 ) | ( r.state0.x >> 17 );
     rand48_iterate(r);
     return res;
 }
 
-// returns a float in the range [0, 1)
-__device__ inline int rand48_nextFloat(Rand48 &r) {
-    // use only upper 24 bits since floating point has 24 bit significand
-    // (ref: Java random documentation)
-    float res = r.state0.y / (float)(1<<24);
-    rand48_iterate(r);
-    return res;
-}
+
+// To generate a float in the range [0, 1) use the following:
+//    (float)rand48_nextInt(rng) / (unsigned int)(1<<31)
+//
+
+// (UNTESTED) returns a float in the range [0, 1)
+//__device__ inline int rand48_nextFloat(Rand48 &r) {
+//    // use only upper 24 bits since floating point has 24 bit significand
+//    // (ref: Java random documentation)
+//    float res = r.state0.y / (float)(1<<24);
+//    rand48_iterate(r);
+//    return res;
+//}
