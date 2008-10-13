@@ -101,11 +101,37 @@ void test2() {
 }
 
 
+float meanMagnetization(Ising &ising) {
+    float m = 0;
+    float iters = 100000;
+    for (int i = 0; i < iters; i++) {
+        ising.update(0);
+        ising.update(1);
+        m += ising.magnetization();
+    }
+    return m / iters;
+}
+
+void test3() {
+    int len = 10;
+    int dim = 2;
+    float h = -0.5;
+    float T = 2.0;
+    
+    IsingCuda ic = IsingCuda(len, dim, h, T);
+    Ising2 ih = Ising2(len, dim, h, T);
+
+    printf("Cuda: <m> = %.3f\n", meanMagnetization(ic));
+    printf("Host: <m> = %.3f\n", meanMagnetization(ih));
+}
+
+
 int main (int argc, char *argv[]) {
     initCuda(argc, argv);
     
     //test1();
-    test2();
+    //test2();
+    test3();
     
     return 0;
 }

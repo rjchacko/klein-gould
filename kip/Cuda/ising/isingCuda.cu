@@ -96,7 +96,11 @@ __device__ inline int shouldFlipSpin(IsingCudaParams p, Rand48 &rng, int s, int 
     if (dE < 0)
         return 1;
     else {
-        float r = 0.1; // rand48_nextFloat(rng);
+#ifdef DETERMINISTIC
+        float r = 0.1;
+#else
+        float r = (float)rand48_nextInt(rng) / (unsigned int)(1<<31);
+#endif
         return exp(- dE / p.T) > r;
     }
 }
