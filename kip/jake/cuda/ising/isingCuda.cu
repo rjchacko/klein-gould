@@ -73,7 +73,7 @@ double isingCuda_bitCount(unsigned int *d_idata, int n) {
     cudaMemcpy(h_odata, d_odata, blocks*sizeof(unsigned int), cudaMemcpyDeviceToHost);
     double gpu_result = 0;
     for (int i = 0; i < blocks; i++)  {
-        gpu_result += h_odata[i];
+        gpu_result += (double) h_odata[i];
     }
     cudaFree(d_odata);    
     return gpu_result;
@@ -96,7 +96,8 @@ __device__ inline int shouldFlipSpin(IsingCudaParams p, Rand48 &rng, int s, int 
     if (dE < 0)
         return 1;
     else {
-        float r = 0.1; // rand48_nextFloat(rng);
+        //float r = 0.1;
+        float r = rand48_nextFloat(rng);
         return exp(- dE / p.T) > r;
     }
 }

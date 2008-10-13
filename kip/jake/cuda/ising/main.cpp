@@ -100,12 +100,41 @@ void test2() {
     printf("Magnetizations: %g %g\n", ising1.magnetization(), ising2.magnetization());
 }
 
+// JEE: testing two dimensional ising model.
+void test3 ()
+{
+	int len = 10;
+	int dim = 2;
+	float h = 0;
+	float T = 2.0;
+	
+	IsingCuda ic = IsingCuda(len, dim, h, T);
+	//Ising2 ic = Ising2 (len, dim, h, T);
+
+	srand48 (128);
+	
+	// Initialize lattice: randomize spins
+	//ic.randomizeSpins ();
+
+	ic.print ();	
+	// All spins start down. Hence there was a phase transition if the total
+	// magnetization is greater than 0. 
+	while (ic.magnetization () <= 0)
+	{
+		ic.update (0);
+		ic.update (1);
+		//printf ("Magnetization: %.3f\n", ic.magnetization ());
+	}
+	ic.print ();
+}
+
 
 int main (int argc, char *argv[]) {
     initCuda(argc, argv);
     
     //test1();
-    test2();
+    //test2();
+		test3 ();
     
     return 0;
 }
