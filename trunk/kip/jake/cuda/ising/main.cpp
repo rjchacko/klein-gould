@@ -100,41 +100,63 @@ void test2() {
     printf("Magnetizations: %g %g\n", ising1.magnetization(), ising2.magnetization());
 }
 
-// JEE: testing two dimensional ising model.
-void test3 ()
-{
-	int len = 10;
-	int dim = 2;
-	float h = 0;
-	float T = 2.0;
-	
-	IsingCuda ic = IsingCuda(len, dim, h, T);
-	//Ising2 ic = Ising2 (len, dim, h, T);
 
-	srand48 (128);
-	
-	// Initialize lattice: randomize spins
-	//ic.randomizeSpins ();
-
-	ic.print ();	
-	// All spins start down. Hence there was a phase transition if the total
-	// magnetization is greater than 0. 
-	while (ic.magnetization () <= 0)
-	{
-		ic.update (0);
-		ic.update (1);
-		//printf ("Magnetization: %.3f\n", ic.magnetization ());
-	}
-	ic.print ();
+float meanMagnetization(Ising &ising) {
+    double m = 0;
+    double iters = 10000;
+    double mt;
+    for (int i = 0; i < iters; i++) {
+        ising.update(0);
+        ising.update(1);
+        mt = ising.magnetization ();
+        if (mt > ising.n || mt < -ising.n)
+            printf ("Error: magnetization measurement out of range.");
+        m += mt;
+    }
+    return (float) (m / iters);
 }
 
+void test3() {
+    int len = 10;
+    int dim = 7;
+    float h = 1.0;
+    float T = 2.0;
+    
+    IsingCuda ic = IsingCuda(len, dim, h, T);
+    //Ising2 ih = Ising2(len, dim, h, T);
+
+    printf("Cuda: <m> = %.3f\n", meanMagnetization(ic));
+    printf("%d\n", ic.n);
+    //printf("Host: <m> = %.3f\n", meanMagnetization(ih));
+}
+
+void test4 ()
+{
+    int len = 128;
+    int dim = 2;
+    float h = 0.5;
+    float T = 2.269*4/9;
+
+    FILE * out = fopen ("data/test.dat", "w");
+
+    int iters = 1000;
+
+    IsingCuda ic = IsingCuda (len, dim, h, T);
+    for (int i=0; i<iters; ++i)
+    {
+        fprintf (out, "%d\t%.3f\n", i, ic.magnetization ());
+        ic.update (0);
+        ic.update (1);
+    }
+}
 
 int main (int argc, char *argv[]) {
     initCuda(argc, argv);
     
     //test1();
     //test2();
-		test3 ();
+    //test3();
+    test4 ();
     
     return 0;
 }
