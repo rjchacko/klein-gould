@@ -2,6 +2,9 @@
 #define __ISING__
 
 
+// uncomment this line for deterministic behavior
+// #define DETERMINISTIC
+
 // ----------------------------------------------------------------------------
 // bits.cpp -- Utilities for manipulating bits
 //

@@ -4,12 +4,6 @@
 
 #include "ising.h"
 
-/**
- * WARNING: 
- * float r = ((float)lrand48()+1.0f) / (1<<31);
- * gives NEGATIVE numbers
- */
-
 
 Ising::Ising(int len, int dim, float h, float T)
     : len(len), dim(dim), n((int)powl(len, dim)), h(h), T(T) {}
@@ -84,10 +78,11 @@ int Ising::shouldFlipSpin(int s, int m) {
     if (dE < 0)
         return 1;
     else {
-        //float r = 0.1; 
-				float r = ((float)lrand48()+1.0f) / RAND_MAX;
-				//printf ("%f\n", r);
-				//float r = ((float)rand()+1.0f) / RAND_MAX;
+#ifdef DETERMINISTIC
+        float r = 0.1;
+#else
+        float r = (float)lrand48() / (unsigned int)(1<<31);
+#endif
         return exp(- dE / T) > r;
     }
 }
