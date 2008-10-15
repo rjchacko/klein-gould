@@ -142,6 +142,8 @@ protected:
 
 private:
     void index(int i, int *ip, int *delta);
+    void buildLookupTable (void);
+    void flipH (void);
 };
 
 

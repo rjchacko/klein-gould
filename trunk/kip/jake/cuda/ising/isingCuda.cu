@@ -30,13 +30,13 @@ typedef struct {
 
 
 // This variable stays in CUDA memory until the termination of the program
-__device__ static unsigned int * table = NULL;
+__constant__ static unsigned int * table = NULL;
 
-void buildLookupTable (IsingCudaParams p)
+void IsingCuda::buildLookupTable ()
 {
     // Note tables are of size 2*len in order to take care of both spin
     // cases
-    int len = 2*p.dim + 1;
+    int len = 2*dim + 1;
 
     cudaFree ((void **)&table);
     cudaMalloc ((void **)&table, 2*len*sizeof (unsigned int));
@@ -46,44 +46,38 @@ void buildLookupTable (IsingCudaParams p)
         (unsigned int *) malloc (2*len*sizeof (unsigned int));
     for (int i=0; i<=1; ++i)
     {
-        int s = (i ? -1 : 1);
-        for (int m=-2*p.dim; m<=2*p.dim; m+=2)
+        int s = (i==0 ? -1 : 1);
+        for (int m=-2*dim; m<=2*dim; m+=2)
         {
-            float dE = 2*s*(m + p.h);
-            int index = (m + 2*p.dim)/2 + i*len;
-            localTable[index] = 
-                (unsigned int) ((1<<31)*exp( -dE / p.T ));
+            int index = (m + 2*dim)/2 + i*len;
+            double dE = 2*s*(m + h);
+            if (dE < 0)
+                localTable[index] = RAND_MAX;
+            else
+                localTable[index] = (int) round(exp( -dE / T )*RAND_MAX);
         }
     }
 
-    cudaMemcpy 
-        (table, 
-         localTable, 
-         2*len*sizeof (unsigned int),
-         cudaMemcpyHostToDevice);
+    cudaMemcpyToSymbol (table, localTable, 2*len*sizeof (unsigned int));
 
     free (localTable);
 }
 
-void flipH (IsingCudaParams * p)
+void IsingCuda::flipH ()
 {
-    p->h = -(p->h);
-    buildLookupTable (*p);
+    h = -h;
+    buildLookupTable ();
 }
 
 __device__ inline int shouldFlipSpin_table
 (IsingCudaParams p, Rand48 &rng, int s, int m) 
 {
-    // Cannot completely eliminate floats...
-    float dE = 2*s*(m + p.h);
-    if (dE < 0)
-        return 1;
-    else
-    {
-        int spinIndexOffset = ( s==-1 ? 0 : 1 );
-        int index = (m + 2*p.dim)/2 + spinIndexOffset;
-        return rand48_nextInt(rng) < table[index];
-    }
+
+    int len = 2*p.dim + 1;
+    int spinIndexOffset = ( s==-1 ? 0 : 1 )*len;
+    int index = (m + 2*p.dim)/2 + spinIndexOffset;
+    
+    return rand48_nextInt (rng) < table[index];
 }
 
 // ----------------------------------------------------------------------------
@@ -227,7 +221,8 @@ __global__ void isingCuda_update(IsingCudaParams p, Rand48 rng) {
 
 // ----------------------------------------------------------------------------
 // Ising class interface
-//
+// JEE
+// functions for lookup table above
 
 IsingCuda::IsingCuda(int len, int dim, float h, float T) : Ising(len, dim, h, T) {
     assert(len % 2 == 0);
@@ -248,6 +243,9 @@ IsingCuda::IsingCuda(int len, int dim, float h, float T) : Ising(len, dim, h, T)
     
     rng = new Rand48();
     rng->init(GRID_DIM*BLOCK_DIM, 0); // initialize random numbers
+
+    // JEE Initialize lookup table
+    buildLookupTable ();
 }
 
 IsingCuda::~IsingCuda() {
@@ -255,6 +253,9 @@ IsingCuda::~IsingCuda() {
     cudaFree(d_blocks);
     rng->destroy();
     delete rng;
+
+    // Cleanup lookup table
+    cudaFree (table);
 }
 
 
