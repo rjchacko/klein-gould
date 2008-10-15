@@ -47,6 +47,9 @@ public:
     void print();
     void compare(Ising *that);
     
+    // JEE modification
+    void allSpinsUp (void);
+    
 protected:
     virtual void transferHostToDevice() {}
     virtual void transferDeviceToHost() {}

@@ -16,6 +16,75 @@
 #include "bits.cpp" // include CUDA device functions
 #include "rand48.cu" // random numbers
 
+typedef struct {
+    int len, dim, nblocks;
+    unsigned int *blocks;
+    float h, T; // external field and temperature
+    int parityTarget;
+} IsingCudaParams;
+
+// ----------------------------------------------------------------------------
+// Cuda lookup table (JEE)
+// The indexing is as follows:
+//      for m*s, look at table index (m + 2*dim)/2
+
+
+// This variable stays in CUDA memory until the termination of the program
+__device__ static unsigned int * table = NULL;
+
+void buildLookupTable (IsingCudaParams p)
+{
+    // Note tables are of size 2*len in order to take care of both spin
+    // cases
+    int len = 2*p.dim + 1;
+
+    cudaFree ((void **)&table);
+    cudaMalloc ((void **)&table, 2*len*sizeof (unsigned int));
+
+    // Build table on host then copy it to device
+    unsigned int * localTable = 
+        (unsigned int *) malloc (2*len*sizeof (unsigned int));
+    for (int i=0; i<=1; ++i)
+    {
+        int s = (i ? -1 : 1);
+        for (int m=-2*p.dim; m<=2*p.dim; m+=2)
+        {
+            float dE = 2*s*(m + p.h);
+            int index = (m + 2*p.dim)/2 + i*len;
+            localTable[index] = 
+                (unsigned int) ((1<<31)*exp( -dE / p.T ));
+        }
+    }
+
+    cudaMemcpy 
+        (table, 
+         localTable, 
+         2*len*sizeof (unsigned int),
+         cudaMemcpyHostToDevice);
+
+    free (localTable);
+}
+
+void flipH (IsingCudaParams * p)
+{
+    p->h = -(p->h);
+    buildLookupTable (*p);
+}
+
+__device__ inline int shouldFlipSpin_table
+(IsingCudaParams p, Rand48 &rng, int s, int m) 
+{
+    // Cannot completely eliminate floats...
+    float dE = 2*s*(m + p.h);
+    if (dE < 0)
+        return 1;
+    else
+    {
+        int spinIndexOffset = ( s==-1 ? 0 : 1 );
+        int index = (m + 2*p.dim)/2 + spinIndexOffset;
+        return rand48_nextInt(rng) < table[index];
+    }
+}
 
 // ----------------------------------------------------------------------------
 // Cuda magnetization calculation
@@ -82,13 +151,6 @@ double isingCuda_bitCount(unsigned int *d_idata, int n) {
 
 // ----------------------------------------------------------------------------
 // Cuda update implementation
-
-typedef struct {
-    int len, dim, nblocks;
-    unsigned int *blocks;
-    float h, T; // external field and temperature
-    int parityTarget;
-} IsingCudaParams;
 
 
 __device__ inline int shouldFlipSpin(IsingCudaParams p, Rand48 &rng, int s, int m) {

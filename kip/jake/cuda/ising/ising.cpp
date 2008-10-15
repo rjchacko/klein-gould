@@ -26,6 +26,13 @@ void Ising::randomizeSpins() {
     transferHostToDevice();
 }
 
+void Ising::allSpinsUp ()
+{
+    for (int i=0; i<n; ++i)
+        set (i, 1);
+    transferHostToDevice ();
+}
+
 void Ising::setSpins(int *spins) {
     for (int i = 0; i < n; i++) {
         set(i, spins[i]);

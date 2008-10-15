@@ -132,21 +132,40 @@ void test3() {
 
 void test4 ()
 {
+    const char basename[] = "data/trial";
+    const char ext[] = "cud";
+    char out_name[100];
+    int ntrials = 50;
+
     int len = 128;
     int dim = 2;
-    float h = 0.5;
+    float h = -0.37;
     float T = 2.269*4/9;
 
-    FILE * out = fopen ("data/test.dat", "w");
-
-    int iters = 1000;
+    FILE * out;
+    double m;
 
     IsingCuda ic = IsingCuda (len, dim, h, T);
-    for (int i=0; i<iters; ++i)
+
+    for (int i=0; i<ntrials; ++i)
     {
-        fprintf (out, "%d\t%.3f\n", i, ic.magnetization ());
-        ic.update (0);
-        ic.update (1);
+        // Initialize data output
+        sprintf (out_name, "%s_%.2f_%d.%s", basename, -h, i, ext);
+        out = fopen (out_name, "w");
+       
+        // Initialize the run
+        int step = 0;
+        ic.allSpinsUp ();
+        do
+        {
+            m = ic.magnetization () / ic.n;
+            // Data output to be compatible with my other script
+            fprintf (out, "%f\t%f\t%f\t%f\t%d\n", h, T, m, m*m, step++);
+            ic.update (0);
+            ic.update (1);
+        }
+        while (m > 0);
+        fclose (out);
     }
 }
 
