@@ -118,8 +118,8 @@ float meanMagnetization(Ising &ising) {
 
 void test3() {
     int len = 10;
-    int dim = 7;
-    float h = 1.0;
+    int dim = 2;
+    float h = -0.4;
     float T = 2.0;
     
     IsingCuda ic = IsingCuda(len, dim, h, T);
@@ -135,11 +135,11 @@ void test4 ()
     const char basename[] = "data/trial";
     const char ext[] = "cud";
     char out_name[100];
-    int ntrials = 50;
+    int ntrials = 1;
 
     int len = 128;
     int dim = 2;
-    float h = -0.37;
+    float h = -0.39;
     float T = 2.269*4/9;
 
     FILE * out;
@@ -169,13 +169,33 @@ void test4 ()
     }
 }
 
+void test5 ()
+{
+    int len = 10;
+    int dim = 7;
+    float h = -0.4;
+    float T = 2.0;
+
+    int iters = 10000;
+    
+    IsingCuda ic = IsingCuda(len, dim, h, T);
+
+    for (int i=0; i<iters; ++i)
+    {
+        ic.update (0);
+        ic.update (1);
+    }
+
+}
+
 int main (int argc, char *argv[]) {
     initCuda(argc, argv);
     
     //test1();
     //test2();
     //test3();
-    test4 ();
+    //test4 ();
+    test5 ();
     
     return 0;
 }
