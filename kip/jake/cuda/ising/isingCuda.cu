@@ -30,16 +30,15 @@ typedef struct {
 
 
 // This variable stays in CUDA memory until the termination of the program
-__constant__ static unsigned int * table = NULL;
+// Note that we must choose a sufficiently large array. Dynamic memory
+// allocation does not work for type __constant__.
+__constant__ unsigned int table[2*(2*7+1)];
 
 void IsingCuda::buildLookupTable ()
 {
     // Note tables are of size 2*len in order to take care of both spin
     // cases
     int len = 2*dim + 1;
-
-    cudaFree ((void **)&table);
-    cudaMalloc ((void **)&table, 2*len*sizeof (unsigned int));
 
     // Build table on host then copy it to device
     unsigned int * localTable = 
@@ -197,7 +196,8 @@ __device__ inline void isingCuda_updateSite(IsingCudaParams p, Rand48 &rng, int 
             int m = 2*(bitsPick4(acc, delta) - p.dim);
             // s = spin at this site (+/- 1)
             int s = 2*((cube >> delta) & 1) - 1;
-            if (shouldFlipSpin(p, rng, s, m)) {
+            //if (shouldFlipSpin(p, rng, s, m)) {
+            if (shouldFlipSpin_table(p, rng, s, m)) {
                 cube ^= (1 << delta);
             }
         }
