@@ -36,6 +36,8 @@ __global__ void cudaFunction1(Rand48 rng) {
 
 */
 
+#define KIP_RAND_MAX 2147483647L
+
 struct Rand48 {
     // strided iteration constants (48-bit, distributed on 2x 24-bit)
     uint2 A, C;
