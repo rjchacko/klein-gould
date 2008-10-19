@@ -173,7 +173,7 @@ void test5 ()
 {
     int len = 10;
     int dim = 7;
-    float h = -0.4;
+    float h = -0.40;
     float T = 2.0;
 
     int iters = 10000;
@@ -194,8 +194,8 @@ int main (int argc, char *argv[]) {
     //test1();
     //test2();
     //test3();
-    test4 ();
-    //test5 ();
+    //test4 ();
+    test5 ();
     
     return 0;
 }
