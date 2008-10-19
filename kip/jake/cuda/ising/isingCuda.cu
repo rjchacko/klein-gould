@@ -32,17 +32,25 @@ typedef struct {
 // This variable stays in CUDA memory until the termination of the program
 // Note that we must choose a sufficiently large array. Dynamic memory
 // allocation does not work for type __constant__.
-__constant__ unsigned int table[2*(2*7+1)];
+#define TABLESIZE 2*(2*7+1)
+//__constant__ int table[TABLESIZE];
+int * table;
+
+texture<int> tex;
 
 void IsingCuda::buildLookupTable ()
 {
     // Note tables are of size 2*len in order to take care of both spin
     // cases
     int len = 2*dim + 1;
-
     // Build table on host then copy it to device
-    unsigned int * localTable = 
-        (unsigned int *) malloc (2*len*sizeof (unsigned int));
+    int * localTable = 
+        (int *) malloc (2*len*sizeof (int));
+
+    cudaFree (table);
+    cudaMalloc ((void **)&table, TABLESIZE*sizeof(int));
+    cudaBindTexture (0, tex, table, TABLESIZE*sizeof(int));
+
     for (int i=0; i<=1; ++i)
     {
         int s = (i==0 ? -1 : 1);
@@ -57,7 +65,8 @@ void IsingCuda::buildLookupTable ()
         }
     }
 
-    cudaMemcpyToSymbol (table, localTable, 2*len*sizeof (unsigned int));
+    cudaMemcpyToSymbol 
+    ((void **)&table,localTable, 2*len*sizeof (int));
 
     free (localTable);
 }
@@ -71,12 +80,16 @@ void IsingCuda::flipH ()
 __device__ inline int shouldFlipSpin_table
 (IsingCudaParams p, Rand48 &rng, int s, int m) 
 {
-
     int len = 2*p.dim + 1;
     int spinIndexOffset = ( s==-1 ? 0 : 1 )*len;
     int index = (m + 2*p.dim)/2 + spinIndexOffset;
-    
-    return rand48_nextInt (rng) < table[index];
+
+#ifdef DETERMINISTIC
+    return 1000000 < table[index];
+#else
+    return rand48_nextInt (rng) < tex1Dfetch (tex, index);
+    //return rand48_nextInt (rng) < KIP_RAND_MAX;
+#endif
 }
 
 // ----------------------------------------------------------------------------
@@ -148,16 +161,12 @@ double isingCuda_bitCount(unsigned int *d_idata, int n) {
 
 __device__ inline int shouldFlipSpin(IsingCudaParams p, Rand48 &rng, int s, int m) {
     float dE = 2*s*(m + p.h);
-    if (dE < 0)
-        return 1;
-    else {
 #ifdef DETERMINISTIC
-        float r = 0.1;
+    float r = 0.1;
 #else
-        float r = (float)rand48_nextInt(rng) / (unsigned int)(1<<31);
+    float r = (float)rand48_nextInt(rng) / (unsigned int)(1<<31);
 #endif
-        return exp(- dE / p.T) > r;
-    }
+    return __expf (- dE / p.T) > r;
 }
 
 __device__ inline void isingCuda_updateSite(IsingCudaParams p, Rand48 &rng, int ip) {
