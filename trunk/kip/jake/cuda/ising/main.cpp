@@ -135,11 +135,11 @@ void test4 ()
     const char basename[] = "data/trial";
     const char ext[] = "cud";
     char out_name[100];
-    int ntrials = 1;
+    int ntrials = 50;
 
     int len = 128;
     int dim = 2;
-    float h = -0.39;
+    float h = -0.51;
     float T = 2.269*4/9;
 
     FILE * out;
@@ -194,8 +194,8 @@ int main (int argc, char *argv[]) {
     //test1();
     //test2();
     //test3();
-    //test4 ();
-    test5 ();
+    test4 ();
+    //test5 ();
     
     return 0;
 }

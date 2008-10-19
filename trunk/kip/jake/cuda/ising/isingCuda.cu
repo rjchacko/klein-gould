@@ -51,9 +51,9 @@ void IsingCuda::buildLookupTable ()
             int index = (m + 2*dim)/2 + i*len;
             double dE = 2*s*(m + h);
             if (dE < 0)
-                localTable[index] = RAND_MAX;
+                localTable[index] = KIP_RAND_MAX;
             else
-                localTable[index] = (int) round(exp( -dE / T )*RAND_MAX);
+                localTable[index] = (int) round(exp( -dE / T )*KIP_RAND_MAX);
         }
     }
 
