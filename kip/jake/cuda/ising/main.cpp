@@ -2,6 +2,8 @@
 #include <stdio.h>
 #include <assert.h>
 #include <math.h>
+#include <sys/time.h>
+
 
 #include "ising.h"
 
@@ -49,8 +51,8 @@ void testUpdate(Ising &ising1, Ising &ising2) {
 void test1() {
     int len = 6;
     int dim = 7;
-    float h = 0;
-    float T = 2;
+    double h = 0;
+    double T = 2;
     
     Ising1 ising1 = Ising1(len, dim, h, T);
     Ising2 ising2 = Ising2(len, dim, h, T);
@@ -66,8 +68,8 @@ void test1() {
 void test2() {
     int len = 16;
     int dim = 6;
-    float h = 0;
-    float T = 0.5;
+    double h = 0;
+    double T = 0.5;
     
     Ising2 ising1 = Ising2(len, dim, h, T);
     IsingCuda ising2 = IsingCuda(len, dim, h, T);
@@ -101,7 +103,7 @@ void test2() {
 }
 
 
-float meanMagnetization(Ising &ising) {
+double meanMagnetization(Ising &ising) {
     double m = 0;
     double iters = 10000;
     double mt;
@@ -113,14 +115,14 @@ float meanMagnetization(Ising &ising) {
             printf ("Error: magnetization measurement out of range.");
         m += mt;
     }
-    return (float) (m / iters);
+    return (double) (m / iters);
 }
 
 void test3() {
     int len = 10;
     int dim = 2;
-    float h = -0.4;
-    float T = 2.0;
+    double h = -0.4;
+    double T = 2.0;
     
     IsingCuda ic = IsingCuda(len, dim, h, T);
     //Ising2 ih = Ising2(len, dim, h, T);
@@ -139,8 +141,8 @@ void test4 ()
 
     int len = 128;
     int dim = 2;
-    float h = -0.51;
-    float T = 2.269*4/9;
+    double h = -0.51;
+    double T = 2.269*4/9;
 
     FILE * out;
     double m;
@@ -169,23 +171,68 @@ void test4 ()
     }
 }
 
-void test5 ()
+struct timeval startTime;
+
+void stopwatchStart() {
+    gettimeofday(&startTime, NULL);
+}
+
+double stopwatchStop() {
+    struct timeval endTime;
+    gettimeofday( &endTime, 0);
+
+    long ds = endTime.tv_sec - startTime.tv_sec;
+    long dus = endTime.tv_usec - startTime.tv_usec;
+    return ds + 0.000001*dus;
+}
+
+
+void test5 () // Timing test
 {
     int len = 10;
     int dim = 7;
-    float h = -0.40;
-    float T = 2.0;
+    double h = -0.40;
+    double T = 12.0;
 
-    int iters = 10000;
+    int iters = 5000;
     
     IsingCuda ic = IsingCuda(len, dim, h, T);
 
+    stopwatchStart (); 
     for (int i=0; i<iters; ++i)
     {
         ic.update (0);
         ic.update (1);
     }
+    double spinsPerSecond = (double) ic.n*iters/stopwatchStop ();
+    printf ("%.2e spin evaluations per second\n", spinsPerSecond);
 
+}
+
+void test6 () // Find m and probe for Tc
+{
+    int iters = 1000;
+
+    int len = 10;
+    int dim = 7;
+    double h = 0.00;
+    double Tmin = 5.0;
+    double Tmax = 15.0;
+    double dT = 0.1;
+ 
+    for (double T=Tmin; T<Tmax; T+=dT)
+    {
+        IsingCuda * ic = new IsingCuda (len, dim, h, T);
+        ic->allSpinsUp ();
+        for (int i=0; i<iters; ++i)
+        {
+            ic->update (0);
+            ic->update (1);
+        }
+        printf ("T = %.2e, m after %d steps = %.3e\n", 
+            ic->T, iters, ic->magnetization () / ic->n);
+    }
+    
 }
 
 int main (int argc, char *argv[]) {
@@ -196,6 +243,7 @@ int main (int argc, char *argv[]) {
     //test3();
     //test4 ();
     test5 ();
+    //test6 ();
     
     return 0;
 }

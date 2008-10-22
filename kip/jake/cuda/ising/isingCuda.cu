@@ -33,24 +33,17 @@ typedef struct {
 // Note that we must choose a sufficiently large array. Dynamic memory
 // allocation does not work for type __constant__.
 #define TABLESIZE 2*(2*7+1)
-//__constant__ int table[TABLESIZE];
-int * table;
-
-texture<int> tex;
+__constant__ unsigned int table[TABLESIZE];
 
 void IsingCuda::buildLookupTable ()
 {
     // Note tables are of size 2*len in order to take care of both spin
     // cases
     int len = 2*dim + 1;
+
     // Build table on host then copy it to device
-    int * localTable = 
-        (int *) malloc (2*len*sizeof (int));
-
-    cudaFree (table);
-    cudaMalloc ((void **)&table, TABLESIZE*sizeof(int));
-    cudaBindTexture (0, tex, table, TABLESIZE*sizeof(int));
-
+    unsigned int * localTable = 
+        (unsigned int *) malloc (2*len*sizeof (unsigned int));
     for (int i=0; i<=1; ++i)
     {
         int s = (i==0 ? -1 : 1);
@@ -61,12 +54,12 @@ void IsingCuda::buildLookupTable ()
             if (dE < 0)
                 localTable[index] = KIP_RAND_MAX;
             else
-                localTable[index] = (int) round(exp( -dE / T )*KIP_RAND_MAX);
+                localTable[index] = (unsigned int) round(exp( -dE / T )*KIP_RAND_MAX);
         }
     }
 
     cudaMemcpyToSymbol 
-    ((void **)&table,localTable, 2*len*sizeof (int));
+    (table,localTable, 2*len*sizeof (unsigned int));
 
     free (localTable);
 }
@@ -84,12 +77,7 @@ __device__ inline int shouldFlipSpin_table
     int spinIndexOffset = ( s==-1 ? 0 : 1 )*len;
     int index = (m + 2*p.dim)/2 + spinIndexOffset;
 
-#ifdef DETERMINISTIC
-    return 1000000 < table[index];
-#else
-    return rand48_nextInt (rng) < tex1Dfetch (tex, index);
-    //return rand48_nextInt (rng) < KIP_RAND_MAX;
-#endif
+    return rand48_nextInt (rng) < table[index];
 }
 
 // ----------------------------------------------------------------------------
@@ -170,6 +158,10 @@ __device__ inline int shouldFlipSpin(IsingCudaParams p, Rand48 &rng, int s, int 
 }
 
 __device__ inline void isingCuda_updateSite(IsingCudaParams p, Rand48 &rng, int ip) {
+
+    // JEE modification
+    //__shared__ volatile unsigned int shared_blocks;
+
     int parity = 0;
     Bits128 acc = {0, 0, 0, 0};
     int lenp_d = 1;
