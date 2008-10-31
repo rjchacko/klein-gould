@@ -116,6 +116,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		while (true) {
 			for (int i = 0; i < accNo; i ++)
 				sf_tAcc[i].clear();
+			sim.restartClock();
 			initializeStripes(initTime, quenchH);
 			sim.restartClock();
 			sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
@@ -191,6 +192,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 	
 	private void initializeStripes(double initTime, double finalH){
 		params.set("h", 0.0);
+		sim.randomizeField(params.fget("Initial magnetization"));	
 		while(sim.time() < initTime){ 
 			sim.step();
 			Job.animate();		
