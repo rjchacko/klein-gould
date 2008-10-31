@@ -1,6 +1,6 @@
 package rachele.ising.dim2.apps;
 
-import static scikit.util.Utilities.asList;
+//import static scikit.util.Utilities.asList;
 
 import java.awt.Color;
 import java.io.File;
@@ -10,7 +10,7 @@ import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
-import scikit.graphics.dim2.Geom2D;
+//import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -127,9 +127,9 @@ public class svtFieldApp extends Simulation{
 		params.set("Time", ising.time());
 		params.set("Lp", ising.Lp);
 		params.set("mean phi", ising.mean(ising.phi));
-		phiGrid.registerData(Lp, Lp,(fft.calculate2DFT(ising.phi)));
+		phiGrid.registerData(Lp, Lp,(fft.calculate2DSF(ising.phi, true, true)));
 		etaDot.setAutoScale(true);
-		etaDot.registerData(Lp, Lp, sc.etaBarCheck);
+		etaDot.registerData(Lp, Lp, ising.phi);
 //		System.out.println("thel " + sc.eta_bar2[Lp]);
 //		etaDotSF.registerData(Lp, Lp, etaK);
 //		etaVsTimeLC.setAutoScale(true);
@@ -146,9 +146,9 @@ public class svtFieldApp extends Simulation{
 		double horizontalSlice = params.fget("Horizontal Slice");
 		double verticalSlice = params.fget("Vertical Slice");
 
-		phiGrid.setDrawables(asList(
-				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
-				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
+//		phiGrid.setDrawables(asList(
+//				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
+//				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
 
 		mobilityCheck.registerData(Lp, Lp, sc.etaBar_k);
 		
