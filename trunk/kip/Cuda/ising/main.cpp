@@ -5,6 +5,24 @@
 
 #include "ising.h"
 
+#include <ctime>
+#include <sys/time.h>
+
+struct timeval startTime;
+
+void stopwatchStart() {
+    gettimeofday(&startTime, NULL);
+}
+
+double stopwatchReadSeconds() {
+    struct timeval endTime;
+    gettimeofday( &endTime, 0);
+    
+    long ds = endTime.tv_sec - startTime.tv_sec;
+    long dus = endTime.tv_usec - startTime.tv_usec;
+    return ds + 0.000001*dus;
+}
+
 
 void testSum(Ising &ising1, Ising &ising2) {
     int n = ising1.n;
@@ -125,13 +143,37 @@ void test3() {
     printf("Host: <m> = %.3f\n", meanMagnetization(ih));
 }
 
+void speedTest() {
+    int len = 20;
+    int dim = 6;
+    float h = 0;
+    float T = 0.5;
+    
+    
+    IsingCuda ising = IsingCuda(len, dim, h, T);
+    
+    stopwatchStart();
+    
+    int iters = 10;
+    for (int i = 0; i < iters; i++) {
+        ising.update(0);
+        ising.update(1);
+    }
+    ising.magnetization(); // force synchronization
+    
+    double secs = stopwatchReadSeconds();
+    double n = pow((double)len, (double)dim);
+    
+    printf("sec / gspin = %f\n", secs / (iters * (n / 1e9)));
+}
 
 int main (int argc, char *argv[]) {
     initCuda(argc, argv);
     
     //test1();
     //test2();
-    test3();
+    //test3();
+    speedTest();
     
     return 0;
 }
