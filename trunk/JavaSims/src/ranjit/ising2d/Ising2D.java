@@ -4,6 +4,8 @@ import java.awt.Color;
 import java.util.Random;
 
 import ranjit.ising.spinblock.SpinBlocks2D;
+import scikit.dataset.Accumulator;
+import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -13,13 +15,19 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Movies;
 import scikit.jobs.Simulation;
+import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
 
 public class Ising2D extends Simulation {
 	SpinBlocks2D spins;
 	Grid grid = new Grid ("Ising Lattice");
 	Histogram mag=new Histogram(0.00001);
-	Plot magPlot = new Plot("Magnetizations");
+	Accumulator fftRAccum=new Accumulator();
+	Accumulator fftIAccum=new Accumulator();
 	
+	Plot magPlot = new Plot("Magnetizations");
+	Plot fftPlot=new Plot("Fourier Transform");
+	
+	ComplexDoubleFFT_Mixed fft;
 	int L,R;
 	double T,h,J;
 	double E;
@@ -36,7 +44,7 @@ public class Ising2D extends Simulation {
 		params.add("R",1);
 		params.add("MCS",10000);
 		params.add("mcs");
-		c.frame(grid,magPlot);
+		c.frame(grid,magPlot,fftPlot);
 	}
 
 	public void animate() {
@@ -52,6 +60,8 @@ public class Ising2D extends Simulation {
 		grid.setColors(smooth);
 		grid.registerData(L,L,allSpins);
 		magPlot.registerPoints("Magnetization", mag, Color.RED);
+		fftPlot.registerPoints("Fourier Transform R", fftRAccum, Color.red);
+		fftPlot.registerPoints("Fourier Transform I", fftIAccum, Color.blue);
 	}
 
 
@@ -89,7 +99,19 @@ public class Ising2D extends Simulation {
 				mag.accum(m);
 				Job.animate();
 			}
-			params.set("mcs", mcs);			
+			params.set("mcs", mcs);
+			DatasetBuffer x=mag.copyData();
+			double fftdata[]=new double[2*x.size()];
+			fft=new ComplexDoubleFFT_Mixed(x.size());
+			for(int i=0;i<x.size();i++){
+				fftdata[2*i]=x.y(i);
+			}
+			
+			fft.transform(fftdata);
+			for(int i=0;i<fftdata.length/2;i++){
+				fftRAccum.accum(i, fftdata[2*i]);
+				fftIAccum.accum(i,fftdata[2*i+1]);
+			}
 		}
 	}
 
