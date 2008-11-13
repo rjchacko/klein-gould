@@ -49,7 +49,7 @@ void IsingCuda::buildLookupTable ()
         int s = (i==0 ? -1 : 1);
         for (int m=-2*dim; m<=2*dim; m+=2)
         {
-            int index = (m + 2*dim)/2 + i*len;
+            int index = (m + 2*dim)>>2 + i*len;
             double dE = 2*s*(m + h);
             if (dE < 0)
                 localTable[index] = KIP_RAND_MAX;
@@ -74,8 +74,10 @@ __device__ inline int shouldFlipSpin_table
 (IsingCudaParams p, Rand48 &rng, int s, int m) 
 {
     int len = 2*p.dim + 1;
-    int spinIndexOffset = ( s==-1 ? 0 : 1 )*len;
-    int index = (m + 2*p.dim)/2 + spinIndexOffset;
+    //int spinIndexOffset = ( s==-1 ? 0 : 1 )*len;
+    int spinIndexOffset = ((s+1)>>1)*len;
+    //int index = (m + 2*p.dim)/2 + spinIndexOffset;
+    int index = ((m + 2*p.dim)>>1) + spinIndexOffset;
 
     return rand48_nextInt (rng) < table[index];
 }
@@ -142,11 +144,133 @@ double isingCuda_bitCount(unsigned int *d_idata, int n) {
     return gpu_result;
 }
 
+// ----------------------------------------------------------------------------
+// Cuda Energy calculation JEE
+
+//#ifndef REDUCE_THREADS
+//#define REDUCE_THREADS 128
+//#endif
+//
+//#ifndef REDUCE_MAX_BLOCKS
+//#define REDUCE_MAX_BLOCKS 128
+//#endif
+
+__device__ inline void isingCuda_localInternalEnergy
+(IsingCudaParams p, int ip, int & internal_energy) {
+
+    int parity = 0;
+    Bits128 acc = {0, 0, 0, 0};
+    int lenp_d = 1;
+    Bits128 n1 = bitsExpand(p.blocks[ip]);
+    
+    for (int d = 0; d < p.dim; d++) {
+        int lenp = (d < 5) ? p.len>>2 : p.len;
+        int xp = (ip / lenp_d) % lenp;
+        parity += (d < 5) ? 0 : xp;
+        
+        int dx2 = (xp+1+lenp)%lenp - xp;
+        int dx0 = (xp-1+lenp)%lenp - xp;
+        Bits128 n2 = bitsExpand(p.blocks[ip+dx2*lenp_d]);
+        Bits128 n0 = bitsExpand(p.blocks[ip+dx0*lenp_d]);
+        
+        if (d < 5) {
+            int shift = 4 << d; // 4, 8, 16, 32, 64
+            acc = bitsAdd(acc, bitsMaskShiftL(bitsAdd(n1,n2), shift));
+            acc = bitsAdd(acc, bitsMaskShiftR(bitsAdd(n1,n0), shift));
+        }
+        else {
+            acc = bitsAdd(bitsAdd(n0,n2), acc);
+        }
+        
+        lenp_d *= lenp;
+    }
+
+    int deltaMax = p.dim < 5 ? (1 << p.dim) : 32;
+    int cube = p.blocks[ip];
+    for (int delta = 0; delta < deltaMax; delta++) {
+        // Make sure we only test even parity, to avoid double bond
+        // counting. This check is not done in the primary kernel.
+        if (((parity + bitCount(delta)) & 1) == 0) {
+            // m = total magnetization of neighbors; in range [-2 dim, +2 dim]
+            int m = 2*(bitsPick4(acc, delta) - p.dim);
+            // s = spin at this site (+/- 1)
+            int s = 2*((cube >> delta) & 1) - 1;
+            internal_energy = - m * s;
+        }
+    }
+}
+
+__global__ void isingCuda_internalEnergyKernel
+(IsingCudaParams p, int * odata) {
+
+    unsigned int tid = blockIdx.x;
+    unsigned int ip = blockIdx.x*(blockDim.x) + threadIdx.x;
+    unsigned int gridSize = gridDim.x*blockDim.x;
+
+    int acc = 0;
+    int ie; // internal energy
+    while (ip < p.nblocks) {
+        isingCuda_localInternalEnergy (p, ip, ie);
+        acc += ie;
+        ip += gridSize;
+    }
+
+    extern __shared__ int t[];
+    t[tid] = acc;
+    __syncthreads();
+
+    // do thread reduction
+    
+    // do reduction in shared mem
+    if (REDUCE_THREADS >= 256) { if (tid < 128) { t[tid] += t[128+tid]; } __syncthreads(); }
+    if (REDUCE_THREADS >= 128) { if (tid <  64) { t[tid] += t[ 64+tid]; } __syncthreads(); }
+    if (tid < 32) {
+        t[tid] += t[32+tid];
+        t[tid] += t[16+tid];
+        t[tid] += t[ 8+tid];
+        t[tid] += t[ 4+tid];
+        t[tid] += t[ 2+tid];
+        t[tid] += t[ 1+tid];
+    }
+    if (tid == 0) odata[blockIdx.x] = t[tid];
+}
+
+double IsingCuda::energy () 
+{
+    IsingCudaParams p;
+    p.len = len;
+    p.dim = dim;
+    p.nblocks = nblocks;
+    p.blocks = d_blocks;
+    p.h = h;
+    p.T = T;
+    p.parityTarget = 0; // Unnecessary
+
+    int h_odata [BLOCK_DIM];
+    int *d_odata;
+    cudaMalloc((void**) &d_odata, BLOCK_DIM*sizeof(int));
+
+    int sharedBytes = 0;
+    
+    isingCuda_internalEnergyKernel 
+        <<<GRID_DIM, BLOCK_DIM, sharedBytes>>> (p, d_odata);
+
+    cudaMemcpy 
+        (h_odata, d_odata, BLOCK_DIM*sizeof (int), cudaMemcpyDeviceToHost);
+    cudaFree (d_odata); // dont need these any more
+    double ie = 0;
+    for (int i=0; i<BLOCK_DIM; ++i)
+        ie += (double) h_odata[i];
+
+    double m = magnetization ();
+
+    return ie + m * h;
+}
 
 // ----------------------------------------------------------------------------
 // Cuda update implementation
 
-
+// JEE should flip spin from table function is above
 __device__ inline int shouldFlipSpin(IsingCudaParams p, Rand48 &rng, int s, int m) {
     float dE = 2*s*(m + p.h);
 #ifdef DETERMINISTIC
@@ -159,16 +283,13 @@ __device__ inline int shouldFlipSpin(IsingCudaParams p, Rand48 &rng, int s, int 
 
 __device__ inline void isingCuda_updateSite(IsingCudaParams p, Rand48 &rng, int ip) {
 
-    // JEE modification
-    //__shared__ volatile unsigned int shared_blocks;
-
     int parity = 0;
     Bits128 acc = {0, 0, 0, 0};
     int lenp_d = 1;
     Bits128 n1 = bitsExpand(p.blocks[ip]);
     
     for (int d = 0; d < p.dim; d++) {
-        int lenp = (d < 5) ? p.len/2 : p.len;
+        int lenp = (d < 5) ? p.len>>2 : p.len;
         int xp = (ip / lenp_d) % lenp;
         parity += (d < 5) ? 0 : xp;
         
@@ -192,7 +313,7 @@ __device__ inline void isingCuda_updateSite(IsingCudaParams p, Rand48 &rng, int 
     int deltaMax = p.dim < 5 ? (1 << p.dim) : 32;
     int cube = p.blocks[ip];
     for (int delta = 0; delta < deltaMax; delta++) {
-        if ((parity + bitCount(delta)) % 2 == p.parityTarget) {
+        if (((parity + bitCount(delta)) & 1) == p.parityTarget) {
             // m = total magnetization of neighbors; in range [-2 dim, +2 dim]
             int m = 2*(bitsPick4(acc, delta) - p.dim);
             // s = spin at this site (+/- 1)

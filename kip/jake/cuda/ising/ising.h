@@ -128,6 +128,7 @@ public:
     void completeNeighborSum(int *sum);
     void update(int parityTarget);
     double magnetization();
+    double energy ();
     
 protected:
     int nblocks; // nblocks = n/32 when dim >= 5

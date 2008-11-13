@@ -141,7 +141,7 @@ void test4 ()
 
     int len = 128;
     int dim = 2;
-    double h = -0.51;
+    double h = -0.45;
     double T = 2.269*4/9;
 
     FILE * out;
@@ -189,12 +189,12 @@ double stopwatchStop() {
 
 void test5 () // Timing test
 {
-    int len = 10;
+    int len = 8;
     int dim = 7;
     double h = -0.40;
     double T = 12.0;
 
-    int iters = 5000;
+    int iters = 1000;
     
     IsingCuda ic = IsingCuda(len, dim, h, T);
 
@@ -235,6 +235,19 @@ void test6 () // Find m and probe for Tc
     
 }
 
+void test7 () // testing energy calculation
+{
+    int len = 2;
+    int dim = 7;
+    double h = 0.00;
+    double T = 12.0;
+
+    IsingCuda ic = IsingCuda(len, dim, h, T);
+    ic.allSpinsUp ();
+    printf ("%f", ic.energy ());
+
+}
+
 int main (int argc, char *argv[]) {
     initCuda(argc, argv);
     
@@ -242,8 +255,9 @@ int main (int argc, char *argv[]) {
     //test2();
     //test3();
     //test4 ();
-    test5 ();
+    //test5 ();
     //test6 ();
+    test7 ();
     
     return 0;
 }
