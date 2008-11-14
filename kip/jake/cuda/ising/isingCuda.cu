@@ -49,7 +49,7 @@ void IsingCuda::buildLookupTable ()
         int s = (i==0 ? -1 : 1);
         for (int m=-2*dim; m<=2*dim; m+=2)
         {
-            int index = (m + 2*dim)>>2 + i*len;
+            int index = (m + 2*dim)/2 + i*len;
             double dE = 2*s*(m + h);
             if (dE < 0)
                 localTable[index] = KIP_RAND_MAX;
@@ -147,14 +147,6 @@ double isingCuda_bitCount(unsigned int *d_idata, int n) {
 // ----------------------------------------------------------------------------
 // Cuda Energy calculation JEE
 
-//#ifndef REDUCE_THREADS
-//#define REDUCE_THREADS 128
-//#endif
-//
-//#ifndef REDUCE_MAX_BLOCKS
-//#define REDUCE_MAX_BLOCKS 128
-//#endif
-
 __device__ inline void isingCuda_localInternalEnergy
 (IsingCudaParams p, int ip, int & internal_energy) {
 
@@ -203,7 +195,7 @@ __device__ inline void isingCuda_localInternalEnergy
 __global__ void isingCuda_internalEnergyKernel
 (IsingCudaParams p, int * odata) {
 
-    unsigned int tid = blockIdx.x;
+    unsigned int tid = threadIdx.x;
     unsigned int ip = blockIdx.x*(blockDim.x) + threadIdx.x;
     unsigned int gridSize = gridDim.x*blockDim.x;
 
@@ -221,7 +213,6 @@ __global__ void isingCuda_internalEnergyKernel
 
     // do thread reduction
     
-    // do reduction in shared mem
     if (REDUCE_THREADS >= 256) { if (tid < 128) { t[tid] += t[128+tid]; } __syncthreads(); }
     if (REDUCE_THREADS >= 128) { if (tid <  64) { t[tid] += t[ 64+tid]; } __syncthreads(); }
     if (tid < 32) {
@@ -235,37 +226,6 @@ __global__ void isingCuda_internalEnergyKernel
     if (tid == 0) odata[blockIdx.x] = t[tid];
 }
 
-double IsingCuda::energy () 
-{
-    IsingCudaParams p;
-    p.len = len;
-    p.dim = dim;
-    p.nblocks = nblocks;
-    p.blocks = d_blocks;
-    p.h = h;
-    p.T = T;
-    p.parityTarget = 0; // Unnecessary
-
-    int h_odata [BLOCK_DIM];
-    int *d_odata;
-    cudaMalloc((void**) &d_odata, BLOCK_DIM*sizeof(int));
-
-    int sharedBytes = 0;
-    
-    isingCuda_internalEnergyKernel 
-        <<<GRID_DIM, BLOCK_DIM, sharedBytes>>> (p, d_odata);
-
-    cudaMemcpy 
-        (h_odata, d_odata, BLOCK_DIM*sizeof (int), cudaMemcpyDeviceToHost);
-    cudaFree (d_odata); // dont need these any more
-    double ie = 0;
-    for (int i=0; i<BLOCK_DIM; ++i)
-        ie += (double) h_odata[i];
-
-    double m = magnetization ();
-
-    return ie + m * h;
-}
 
 // ----------------------------------------------------------------------------
 // Cuda update implementation
@@ -402,6 +362,38 @@ void IsingCuda::update(int parityTarget) {
 
 double IsingCuda::magnetization() {
     return 2.0*isingCuda_bitCount(d_blocks, nblocks) - n;
+}
+
+double IsingCuda::energy () 
+{
+    IsingCudaParams p;
+    p.len = len;
+    p.dim = dim;
+    p.nblocks = nblocks;
+    p.blocks = d_blocks;
+    p.h = h;
+    p.T = T;
+    p.parityTarget = 0; // Unnecessary
+
+    int h_odata [BLOCK_DIM];
+    int *d_odata;
+    cudaMalloc((void**) &d_odata, BLOCK_DIM*sizeof(int));
+
+    int sharedBytes = REDUCE_THREADS * sizeof(unsigned int);
+    
+    isingCuda_internalEnergyKernel 
+        <<<GRID_DIM, BLOCK_DIM, sharedBytes>>> (p, d_odata);
+
+    cudaMemcpy 
+        (h_odata, d_odata, BLOCK_DIM*sizeof (int), cudaMemcpyDeviceToHost);
+    cudaFree (d_odata); // dont need these any more
+    double ie = 0;
+    for (int i=0; i<BLOCK_DIM; ++i)
+        ie += (double) h_odata[i];
+
+    double m = magnetization ();
+
+    return ie - m * h;
 }
 
 void IsingCuda::transferHostToDevice() {

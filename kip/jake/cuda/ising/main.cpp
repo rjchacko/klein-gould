@@ -237,14 +237,22 @@ void test6 () // Find m and probe for Tc
 
 void test7 () // testing energy calculation
 {
-    int len = 2;
+    int len = 8;
     int dim = 7;
-    double h = 0.00;
-    double T = 12.0;
+    double h = 2.00;
+    double T = 8.50;
+
+    int iters = 10000;
 
     IsingCuda ic = IsingCuda(len, dim, h, T);
-    ic.allSpinsUp ();
-    printf ("%f", ic.energy ());
+    ic.allSpinsDown ();
+    printf ("M=%f, E=%f\n", ic.magnetization (), ic.energy ());
+    for (int i=0; i<iters; ++i)
+    {
+        ic.update (0);
+        ic.update (1);
+    }
+    printf ("M=%f, E=%f\n", ic.magnetization (), ic.energy ());
 
 }
 

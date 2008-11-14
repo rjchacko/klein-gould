@@ -49,6 +49,7 @@ public:
     
     // JEE modification
     void allSpinsUp (void);
+    void allSpinsDown (void);
     
 protected:
     virtual void transferHostToDevice() {}
