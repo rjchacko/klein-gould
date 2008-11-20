@@ -496,10 +496,20 @@ public class damage {
 		
 		return bc;
 	}
-	
-	public void setDataFile(int str){
+
+	public void setDataFile(String str){
 		
-		datafile1 = outdir + File.separator + "StressData_" + str + ".txt";
+		datafile1 = outdir + File.separator + "StressData_" + str+".txt";
+	}
+	
+	public void setDataFile(int num){
+		
+		datafile1 = outdir + File.separator + "StressData_" + num+".txt";
+	}
+	
+	public String getOutfile(){
+		
+		return datafile1;
 	}
 	
 }
