@@ -29,8 +29,8 @@ import static java.lang.Math.*;
 public class MonteCarloDataApp extends Simulation{
 
 	//Choose function of app
-	String averages = "S_k_DO";//take s(k) averages for disorder to order case
-	//String averages = "S_t_DO";//take s(t) averages for disorder to order case
+//	String averages = "S_k_DO";//take s(k) averages for disorder to order case
+	String averages = "S_t_DO";//take s(t) averages for disorder to order case
 	//String averages = "S_k_SC";//take s(k) averages for stripe to clump case
 	//String averages = "S_t_SC";//take s(k) averages for stripe to clump case
 	//String averages = "S_t_SC1D";//take s(t) averages for stripe to clump case starting with 1D stripe solution
@@ -46,7 +46,7 @@ public class MonteCarloDataApp extends Simulation{
 	double [] sFactor;
 
 	int [] sfLabel;
-	int accNo = 2;
+	int accNo = 1;
 	Accumulator [] sf_tAveAcc = new Accumulator [accNo];
 	Accumulator [] sf_tAcc = new Accumulator [accNo];
 	Accumulator [] sf_kAcc = new Accumulator [accNo]; 
@@ -77,15 +77,15 @@ public class MonteCarloDataApp extends Simulation{
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<9);
+		params.add("L", 1<<8);
 		//params.add("N", 1<<8);
-		params.add("R", 23);//1<<6);
+		params.add("R", 92);//1<<6);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.096548444);
-		params.addm("J", 1.0);
-		params.addm("h", 0.0);
-		params.addm("dt", 1/(double)(1<<4));
-		params.addm("maxTime", 5.0);
+		params.addm("T", 0.03);
+		params.addm("J", -1.0);
+		params.addm("h", 0.8);
+		params.addm("dt", 0.25);//1/(double)(1<<4));
+		params.addm("maxTime", 15.0);
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");

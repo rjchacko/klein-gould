@@ -26,7 +26,7 @@ public class MCIsingApp extends Simulation{
 	
 	Grid grid = new Grid("Long Range Ising Model");
 	Plot magPlot = new Plot("Magnetization");
-	Plot chiPlot = new Plot("Susceptibility");
+	Plot mag2Plot = new Plot("Susceptibility");
 	Plot chiTPlot = new Plot("Susceptibility v T");
 	IsingLR sim;
 //	IsingArbitraryConnect sim;
@@ -42,7 +42,7 @@ public class MCIsingApp extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("MC data",grid,magPlot,chiPlot,chiTPlot);
+		c.frameTogether("MC data",grid,magPlot,mag2Plot,chiTPlot);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/DO_MCdataAppBreakdown/testRuns"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
@@ -80,7 +80,7 @@ public class MCIsingApp extends Simulation{
 		double chi = (aveMagSq-aveMag*aveMag)/sim.T;
 		chiAcc.accum(sim.time(), chi);
 		
-		chiPlot.registerLines("Susceptibility", chiAcc, Color.blue);
+		mag2Plot.registerLines("Susceptibility", chiAcc, Color.blue);
 		if(flags.contains("Clear Accs")){
 			magAcc.clear();
 			chiAcc.clear();
