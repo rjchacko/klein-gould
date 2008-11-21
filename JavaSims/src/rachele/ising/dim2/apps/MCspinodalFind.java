@@ -18,7 +18,7 @@ public class MCspinodalFind extends Simulation{
 
 	Grid grid = new Grid("Long Range Ising Model");
 	Plot magPlot = new Plot("Magnetization");
-	Plot magSqPlot = new Plot("Magnetization");
+	Plot magSqPlot = new Plot("Magnetization2");
 	Plot chiPlot = new Plot("Susceptibility");
 	Plot chiTPlot = new Plot("Susceptibility v T");
 	IsingLR sim;
@@ -56,7 +56,6 @@ public class MCspinodalFind extends Simulation{
 		flags.add("Clear Accs");
 		flags.add("Clear Aves");
 		flags.add("Measure");
-
 	}
 
 
@@ -68,16 +67,17 @@ public class MCspinodalFind extends Simulation{
 		params.set("time", format(sim.time()));
 		params.set("magnetization", format(mag));
 		magAcc.accum(sim.time(),mag);
-		magSqAcc.accum(sim.time(),mag);
-		magPlot.registerLines("Magnetization", magAcc, Color.black);
-		magSqPlot.registerLines("secMom", magSqAcc, Color.black);
 
+		magPlot.registerLines("Magnetization", magAcc, Color.black);
+		
 		aveMag = (aveMag*n+mag)/(n+1);
 		aveMagSq = (aveMagSq*n+mag*mag)/(n+1);
 		n+=1;
+		magSqAcc.accum(sim.time(),aveMagSq);
 		double chi = (aveMagSq-aveMag*aveMag)/sim.T;
 		chiAcc.accum(sim.time(), chi);
 
+		magSqPlot.registerLines("secMom", magSqAcc, Color.black);
 		chiPlot.registerLines("Susceptibility", chiAcc, Color.blue);
 		if(flags.contains("Clear Accs")){
 			magAcc.clear();
@@ -114,6 +114,8 @@ public class MCspinodalFind extends Simulation{
 
 	public void run() {
 		chiTAcc.enableErrorBars(true);
+		magAcc.enableErrorBars(true);
+		magSqAcc.enableErrorBars(true);
 		sim = new IsingLR(params);
 		maxTime = params.fget("max time");
 //		sim = new IsingArbitraryConnect(params);

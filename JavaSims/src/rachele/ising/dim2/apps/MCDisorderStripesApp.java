@@ -94,7 +94,7 @@ public class MCDisorderStripesApp extends Simulation{
 		fft = new FourierTransformer((int)(sim.L/dx));
 		sFactor = new double [sim.L/dx*sim.L/dx];
 		double maxTime = params.fget("maxTime");
-		double recordStep = 1/32.0;
+		double recordStep = 0.25;
 		double mod = maxTime%recordStep;
 		int maxTimeLabel = (int)(maxTime/recordStep);
 		System.out.println("Record Step = " + recordStep + " mod (must be zero) = " + mod);
