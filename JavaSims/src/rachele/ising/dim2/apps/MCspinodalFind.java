@@ -45,10 +45,10 @@ public class MCspinodalFind extends Simulation{
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 1.2);
 		params.addm("J", 1.0);
-		params.addm("h", 0.0);
-		params.addm("dt", 1.0);//1/(double)(1<<4));
+		params.addm("h", 0.77);
+		params.addm("dt", 0.1);//1/(double)(1<<4));
 		params.addm("take data",1);
-		params.addm("max time",10);
+		params.addm("max time",1);
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -62,6 +62,8 @@ public class MCspinodalFind extends Simulation{
 	public void animate() {
 		grid.setScale(-1.0, 1.0);
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
+		magPlot.setLogScale(true, true);
+		magSqPlot.setLogScale(true, true);
 		mag = sim.magnetization();
 		maxTime = params.fget("max time");
 		params.set("time", format(sim.time()));
@@ -93,14 +95,14 @@ public class MCspinodalFind extends Simulation{
 			if (measure) measure=false;
 			else if (measure==false) measure=true;
 		}
-		int measureStep = params.iget("take data");
-		params.set("Measuring", measure);
-		if(measure){
-			if(sim.time()%measureStep==0){
-				chiTAcc.accum(sim.T,chi);
-				chiTPlot.registerLines("chi T", chiTAcc, Color.red);
-			}
-		}
+//		int measureStep = params.iget("take data");
+//		params.set("Measuring", measure);
+//		if(measure){
+//			if(sim.time()%measureStep==0){
+//				chiTAcc.accum(sim.T,chi);
+//				chiTPlot.registerLines("chi T", chiTAcc, Color.red);
+//			}
+//		}
 		flags.clear();
 		sim.setParameters(params);
 	}
@@ -116,6 +118,9 @@ public class MCspinodalFind extends Simulation{
 		chiTAcc.enableErrorBars(true);
 		magAcc.enableErrorBars(true);
 		magSqAcc.enableErrorBars(true);
+		magAcc.clear();
+		magSqAcc.clear();
+		chiAcc.clear();
 		sim = new IsingLR(params);
 		maxTime = params.fget("max time");
 //		sim = new IsingArbitraryConnect(params);
