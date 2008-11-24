@@ -26,7 +26,7 @@ public class MCspinodalFind extends Simulation{
 	IsingLR sim;
 //	IsingArbitraryConnect sim;
 	boolean measure=false;
-	int dx,n;
+	int dx,n, repNo;
 	double mag, maxTime;
 	double [] aveMag, aveMagSq; 
 	Accumulator magAveAcc = new Accumulator();
@@ -55,7 +55,7 @@ public class MCspinodalFind extends Simulation{
 		params.addm("dt", 0.1);//1/(double)(1<<4));
 		params.addm("take data",1);
 		params.addm("max time",10);
-		params.addm("max time",30);
+		params.add("rep no");
 		params.add("time");
 		params.add("magnetization");
 		flags.add("Clear Accs");
@@ -70,7 +70,8 @@ public class MCspinodalFind extends Simulation{
 		maxTime = params.fget("max time");
 		params.set("time", format(sim.time()));
 		params.set("magnetization", format(mag));
-
+		params.set("rep no", repNo);
+		
 		magPlot.registerLines("Magnetization", magAveAcc, Color.black);
 		magPlot.registerLines("Magnetization1", magAcc, Color.green);
 		magSqPlot.registerLines("secMom", magSqAveAcc, Color.black);
@@ -115,6 +116,7 @@ public class MCspinodalFind extends Simulation{
 		chiAveAcc.clear();
 		sim = new IsingLR(params);
 		maxTime = params.fget("max time");
+		repNo = 0;
 		
 		int maxTimeChunk = (int)(maxTime/sim.dTime());
 		aveMag = new double [maxTimeChunk];
@@ -126,7 +128,8 @@ public class MCspinodalFind extends Simulation{
 			magSqAcc.clear();
 			chiAcc.clear();
 			magAcc.clear();
-			sim.randomizeField(params.fget("Initial magnetization"));		
+			sim.randomizeField(params.fget("Initial magnetization"));
+			repNo += 1;
 			for(int i = 0; i < maxTimeChunk; i ++){
 				sim.step();
 				mag = sim.magnetization();
