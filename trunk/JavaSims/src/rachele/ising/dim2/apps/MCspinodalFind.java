@@ -3,8 +3,10 @@ package rachele.ising.dim2.apps;
 import static scikit.util.Utilities.format;
 
 import java.awt.Color;
+import java.io.File;
 
 import rachele.ising.dim2.IsingLR;
+import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
@@ -24,8 +26,12 @@ public class MCspinodalFind extends Simulation{
 	IsingLR sim;
 //	IsingArbitraryConnect sim;
 	boolean measure=false;
-	int dx,n, repNo;
-	double mag, aveMag, aveMagSq, maxTime;
+	int dx,n;
+	double mag, maxTime;
+	double [] aveMag, aveMagSq; 
+	Accumulator magAveAcc = new Accumulator();
+	Accumulator magSqAveAcc = new Accumulator();
+	Accumulator chiAveAcc = new Accumulator();
 	Accumulator magAcc = new Accumulator();
 	Accumulator magSqAcc = new Accumulator();
 	Accumulator chiAcc = new Accumulator();
@@ -36,27 +42,23 @@ public class MCspinodalFind extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("MC data",grid,chiPlot,magPlot,chiTPlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/DO_MCdataAppBreakdown/testRuns"));
+		c.frameTogether("MC data",grid,magPlot,magSqPlot);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/spinodal_find/testRuns"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<9);
 		params.add("R", 184);//1<<6);
-		params.add("Initial magnetization", .99);
+		params.add("Initial magnetization", .999);
 		params.addm("T", 0.096548444);
 		params.addm("J", 1.0);
 		params.addm("h", -0.779);
 		params.addm("dt", 0.1);//1/(double)(1<<4));
 		params.addm("take data",1);
+		params.addm("max time",10);
 		params.addm("max time",30);
 		params.add("time");
-		params.add("rep no");
 		params.add("magnetization");
-		params.add("Lp");
-		params.add("Measuring");
 		flags.add("Clear Accs");
-		flags.add("Clear Aves");
-		flags.add("Measure");
 	}
 
 
@@ -64,35 +66,22 @@ public class MCspinodalFind extends Simulation{
 		grid.setScale(-1.0, 1.0);
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
 		magPlot.setLogScale(true, true);
-		chiPlot.setLogScale(true, true);
 		magSqPlot.setLogScale(true, true);
-		mag = sim.magnetization();
 		maxTime = params.fget("max time");
 		params.set("time", format(sim.time()));
 		params.set("magnetization", format(mag));
-		params.set("rep no", repNo);
-		magAcc.accum(sim.time(),mag);
 
-		magPlot.registerLines("Magnetization", magAcc, Color.black);
-		
-		aveMag = (aveMag*n+mag)/(n+1);
-		aveMagSq = (aveMagSq*n+mag*mag)/(n+1);
-		n+=1;
-		magSqAcc.accum(sim.time(),aveMagSq);
-		double chi = (aveMagSq-aveMag*aveMag);
-		chiAcc.accum(sim.time(), chi);
+		magPlot.registerLines("Magnetization", magAveAcc, Color.black);
+		magPlot.registerLines("Magnetization1", magAcc, Color.green);
+		magSqPlot.registerLines("secMom", magSqAveAcc, Color.black);
+		magSqPlot.registerLines("secMom1", magSqAcc, Color.green);
+//		chiPlot.registerLines("Susceptibility", chiAveAcc, Color.blue);
+//		chiPlot.registerLines("Susceptibility1", chiAcc, Color.green);
 
-		magSqPlot.registerLines("secMom", magSqAcc, Color.black);
-		chiPlot.registerLines("Susceptibility", chiAcc, Color.blue);
 		if(flags.contains("Clear Accs")){
-			magAcc.clear();
-			magSqAcc.clear();
-			chiAcc.clear();
-		}
-		if(flags.contains("Clear Aves")){
-			aveMag = 0;
-			aveMagSq = 0;
-			n=0;
+			magAveAcc.clear();
+			magSqAveAcc.clear();
+			chiAveAcc.clear();
 		}
 		if(flags.contains("Measure")){
 			if (measure) measure=false;
@@ -118,30 +107,57 @@ public class MCspinodalFind extends Simulation{
 
 
 	public void run() {
-		chiTAcc.enableErrorBars(true);
-		magAcc.enableErrorBars(true);
-		magSqAcc.enableErrorBars(true);
-		magAcc.clear();
-		magSqAcc.clear();
-		chiAcc.clear();
+		chiAcc.enableErrorBars(true);
+		magAveAcc.enableErrorBars(true);
+		magSqAveAcc.enableErrorBars(true);
+		magAveAcc.clear();
+		magSqAveAcc.clear();
+		chiAveAcc.clear();
 		sim = new IsingLR(params);
 		maxTime = params.fget("max time");
+		
+		int maxTimeChunk = (int)(maxTime/sim.dTime());
+		aveMag = new double [maxTimeChunk];
+		aveMagSq = new double [maxTimeChunk];
 //		sim = new IsingArbitraryConnect(params);
 		dx=1;
-		repNo = 0;
-		
 		while(true){
-			repNo += 1;
 			sim.restartClock();
+			magSqAcc.clear();
+			chiAcc.clear();
+			magAcc.clear();
 			sim.randomizeField(params.fget("Initial magnetization"));		
-			while(sim.time() < maxTime){
+			for(int i = 0; i < maxTimeChunk; i ++){
 				sim.step();
+				mag = sim.magnetization();
+				magAveAcc.accum(sim.time(),mag);
+				magAcc.accum(sim.time(),mag);
+				aveMag[i] = (aveMag[i]*n+mag)/(n+1);
+				aveMagSq[i] = (aveMagSq[i]*n+mag*mag)/(n+1);
+				n+=1;
+//				double chi = (aveMagSq[i]-aveMag[i]*aveMag[i])/sim.T;
+//				chiAcc.accum(sim.time(), chi);
+//				chiAveAcc.accum(sim.time(), chi);
+				double secMom = (aveMagSq[i]-aveMag[i]*aveMag[i]);
+				magSqAveAcc.accum(sim.time(),secMom);
+				magSqAcc.accum(sim.time(),secMom);				
 				Job.animate();
 			}
+			writeToFile();
 		}
 
 	}
 
+	void writeToFile(){	
+		String message1 = "#Glauber Monte Carlo run: Short time scaling dynamics to find spinodal field h_s.";
+		String fileName = params.sget("Data Dir") + File.separator + "h" + sim.h +"M";
+		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
+		StringBuffer mb = new StringBuffer(); String message2 = mb.toString();
+		mb.append("Average magnetization vs time");
+		FileUtil.initFile(fileName, params, message1, message2);		
+		FileUtil.printAccumToFile(fileName, magAveAcc);
+	}
+	
 }
 
 
