@@ -24,7 +24,7 @@ public class MCspinodalFind extends Simulation{
 	IsingLR sim;
 //	IsingArbitraryConnect sim;
 	boolean measure=false;
-	int dx,n;
+	int dx,n, repNo;
 	double mag, aveMag, aveMagSq, maxTime;
 	Accumulator magAcc = new Accumulator();
 	Accumulator magSqAcc = new Accumulator();
@@ -36,20 +36,21 @@ public class MCspinodalFind extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("MC data",grid,magPlot,magSqPlot,chiTPlot);
+		c.frameTogether("MC data",grid,chiPlot,magPlot,chiTPlot);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/DO_MCdataAppBreakdown/testRuns"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<7);
-		params.add("R", 1);//1<<6);
-		params.add("Initial magnetization", 0.0);
-		params.addm("T", 1.2);
+		params.add("L", 1<<9);
+		params.add("R", 184);//1<<6);
+		params.add("Initial magnetization", .99);
+		params.addm("T", 0.096548444);
 		params.addm("J", 1.0);
-		params.addm("h", 0.77);
+		params.addm("h", -0.779);
 		params.addm("dt", 0.1);//1/(double)(1<<4));
 		params.addm("take data",1);
-		params.addm("max time",1);
+		params.addm("max time",30);
 		params.add("time");
+		params.add("rep no");
 		params.add("magnetization");
 		params.add("Lp");
 		params.add("Measuring");
@@ -63,11 +64,13 @@ public class MCspinodalFind extends Simulation{
 		grid.setScale(-1.0, 1.0);
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
 		magPlot.setLogScale(true, true);
+		chiPlot.setLogScale(true, true);
 		magSqPlot.setLogScale(true, true);
 		mag = sim.magnetization();
 		maxTime = params.fget("max time");
 		params.set("time", format(sim.time()));
 		params.set("magnetization", format(mag));
+		params.set("rep no", repNo);
 		magAcc.accum(sim.time(),mag);
 
 		magPlot.registerLines("Magnetization", magAcc, Color.black);
@@ -76,7 +79,7 @@ public class MCspinodalFind extends Simulation{
 		aveMagSq = (aveMagSq*n+mag*mag)/(n+1);
 		n+=1;
 		magSqAcc.accum(sim.time(),aveMagSq);
-		double chi = (aveMagSq-aveMag*aveMag)/sim.T;
+		double chi = (aveMagSq-aveMag*aveMag);
 		chiAcc.accum(sim.time(), chi);
 
 		magSqPlot.registerLines("secMom", magSqAcc, Color.black);
@@ -125,7 +128,10 @@ public class MCspinodalFind extends Simulation{
 		maxTime = params.fget("max time");
 //		sim = new IsingArbitraryConnect(params);
 		dx=1;
+		repNo = 0;
+		
 		while(true){
+			repNo += 1;
 			sim.restartClock();
 			sim.randomizeField(params.fget("Initial magnetization"));		
 			while(sim.time() < maxTime){
