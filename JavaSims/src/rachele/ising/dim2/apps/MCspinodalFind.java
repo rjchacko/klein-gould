@@ -48,13 +48,13 @@ public class MCspinodalFind extends Simulation{
 		params.add("Random seed", 0);
 		params.add("L", 1<<9);
 		params.add("R", 184);//1<<6);
-		params.add("Initial magnetization", .999);
-		params.addm("T", 0.096548444);
+		params.add("Initial magnetization", 1.0);
+		params.addm("T", 0.4444444444);
 		params.addm("J", 1.0);
-		params.addm("h", -0.779);
+		params.addm("h", -0.317612);
 		params.addm("dt", 0.1);//1/(double)(1<<4));
 		params.addm("take data",1);
-		params.addm("max time",10);
+		params.addm("max time",30);
 		params.add("rep no");
 		params.add("time");
 		params.add("magnetization");
@@ -153,7 +153,7 @@ public class MCspinodalFind extends Simulation{
 
 	void writeToFile(){	
 		String message1 = "#Glauber Monte Carlo run: Short time scaling dynamics to find spinodal field h_s.";
-		String fileName = params.sget("Data Dir") + File.separator + "h" + sim.h +"M";
+		String fileName = params.sget("Data Dir") + File.separator + "h" + -sim.h +"M";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		StringBuffer mb = new StringBuffer(); String message2 = mb.toString();
 		mb.append("Average magnetization vs time");

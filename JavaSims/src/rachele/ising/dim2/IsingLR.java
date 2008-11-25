@@ -119,7 +119,7 @@ public class IsingLR extends RewindableDynamics {
 			int x1 = random.nextInt(L);
 			int y1 = random.nextInt(L);
 			int s1 = spins.get(x1, y1);
-			double dE = 2*s1*(h + J*(spins.sumInRange(x1,y1)-s1)/(4*R*R));
+			double dE = 2*s1*(h + J*(spins.sumInRange(x1,y1)-s1)/(4*R*(R+1)));
 			switch (dynamics) {
 				case METROPOLIS:
 				case GLAUBER:
@@ -134,7 +134,7 @@ public class IsingLR extends RewindableDynamics {
 					int y2 = (y1 + random.nextInt(2*R+1) - R + L)%L;
 					int s2 = spins.get(x2, y2);
 					if (s2 != s1) {
-						dE += 2*s2*(h + J*(spins.sumInRange(x2,y2)-s2)/(4*R*R));
+						dE += 2*s2*(h + J*(spins.sumInRange(x2,y2)-s2)/(4*R*(R+1)));
 						if (shouldFlip(dE)) {
 							spins.flip(x1, y1);
 							spins.flip(x2, y2);
