@@ -1,11 +1,9 @@
-package rachele.ising.dim2.apps;
+package rachele.curieWeissIsing.apps;
 
 import static scikit.util.Utilities.format;
-
 import java.awt.Color;
 import java.io.File;
-
-import rachele.ising.dim2.IsingLR;
+import rachele.curieWeissIsing.CWIsing;
 import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
@@ -13,41 +11,40 @@ import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
-import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
+
+
 /**
- * Finds effective spinodal for the long-range Ising model with Glauber dynamics.
+ * Finds effective spinodal for the Curie-Weiss Ising model with Glauber dynamics.
  */
-public class MCspinodalFind extends Simulation{
+public class FindSpinodalApp extends Simulation{
 
 	Grid grid = new Grid("Long Range Ising Model");
 	Plot magPlot = new Plot("Magnetization");
 	Plot magSqPlot = new Plot("Magnetization2");
 	Plot chiPlot = new Plot("Susceptibility");
 	Plot chiTPlot = new Plot("Susceptibility v T");
-	IsingLR sim;
-//	IsingArbitraryConnect sim;
+	CWIsing sim;
 	boolean measure=false;
-	int dx,n, repNo;
-	double mag, maxTime, delta_mag;
+	int repNo;
+	double mag, maxTime;
+	double delta_mag;   // = mag - mag_spinodal 
 	double [] aveMag, aveMagSq; 
 	Accumulator magAveAcc = new Accumulator();
 	Accumulator magSqAveAcc = new Accumulator();
-	Accumulator chiAveAcc = new Accumulator();
 	Accumulator magAcc = new Accumulator();
 	Accumulator magSqAcc = new Accumulator();
 
+	
 	public static void main(String[] args) {
-		new Control(new MCspinodalFind(), "Monte Carlo");
+		new Control(new FindSpinodalApp(), "CW Ising Find Spinodal");
 	}
 
 	public void load(Control c) {
-		c.frameTogether("MC data",grid,magPlot,magSqPlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/spinodal_find/testRuns"));
-		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
+		c.frameTogether("MC-CW Ising data",grid,magPlot,magSqPlot);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/spinodal_find/CW/testRuns"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<9);
-		params.add("R", 184);//1<<6);
 		params.add("Initial magnetization", 1.0);
 		params.addm("T", 0.4444444444);
 		params.addm("J", 1.0);
@@ -60,8 +57,7 @@ public class MCspinodalFind extends Simulation{
 		params.add("magnetization");
 		flags.add("Clear Accs");
 	}
-
-
+	
 	public void animate() {
 		grid.setScale(-1.0, 1.0);
 		grid.registerData(sim.L, sim.L, sim.getField(1));
@@ -75,13 +71,10 @@ public class MCspinodalFind extends Simulation{
 		magPlot.registerLines("Magnetization", magAveAcc, Color.black);
 		magPlot.registerLines("Magnetization1", magAcc, Color.green);
 		magSqPlot.registerLines("secMom", magSqAveAcc, Color.black);
-		magSqPlot.registerLines("secMom1", magSqAcc, Color.green);
-
 
 		if(flags.contains("Clear Accs")){
 			magAveAcc.clear();
 			magSqAveAcc.clear();
-			chiAveAcc.clear();
 		}
 		if(flags.contains("Measure")){
 			if (measure) measure=false;
@@ -93,18 +86,16 @@ public class MCspinodalFind extends Simulation{
 
 
 	public void clear() {
-
-
 	}
-
 
 	public void run() {
 		magAveAcc.enableErrorBars(true);
 		magSqAveAcc.enableErrorBars(true);
 		magAveAcc.clear();
 		magSqAveAcc.clear();
-		chiAveAcc.clear();
-		sim = new IsingLR(params);
+		magSqAcc.enableErrorBars(true);
+
+		sim = new CWIsing(params);
 		maxTime = params.fget("max time");
 		repNo = 0;
 		double mag_sp = Math.sqrt(1.0-sim.T/sim.J);
@@ -112,7 +103,6 @@ public class MCspinodalFind extends Simulation{
 		int maxTimeChunk = (int)(maxTime/sim.dTime());
 		aveMag = new double [maxTimeChunk];
 		aveMagSq = new double [maxTimeChunk];
-//		sim = new IsingArbitraryConnect(params);
 		
 		while(true){
 			sim.restartClock();
@@ -133,7 +123,7 @@ public class MCspinodalFind extends Simulation{
 			writeToFile();
 		}
 
-
+		
 	}
 
 	void writeToFile(){	
@@ -155,5 +145,3 @@ public class MCspinodalFind extends Simulation{
 	}
 	
 }
-
-
