@@ -86,7 +86,7 @@ public class FindSpinodalApp extends Simulation{
 
 
 	public void clear() {
-	}
+	} 
 
 	public void run() {
 		magAveAcc.enableErrorBars(true);
