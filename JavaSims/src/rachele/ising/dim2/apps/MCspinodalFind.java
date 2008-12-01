@@ -52,7 +52,7 @@ public class MCspinodalFind extends Simulation{
 		params.addm("T", 0.4444444444);
 		params.addm("J", 1.0);
 		params.addm("h", -0.317612);
-		params.addm("dt", 0.1);//1/(double)(1<<4));
+		params.addm("dt", 1.0);//1/(double)(1<<4));
 		params.addm("take data",1);
 		params.addm("max time",100);
 		params.add("rep no");
@@ -119,17 +119,21 @@ public class MCspinodalFind extends Simulation{
 			magAcc.clear();
 			sim.randomizeField(params.fget("Initial magnetization"));
 			repNo += 1;
+			mag = sim.magnetization();
 			for(int i = 0; i < maxTimeChunk; i ++){
-				sim.step();
-				mag = sim.magnetization();
-				delta_mag = mag - mag_sp;
-				magAveAcc.accum(sim.time(),delta_mag);
-				magAcc.accum(sim.time(),delta_mag);
-				aveMag[i] = (aveMag[i]*(repNo-1)+delta_mag)/(repNo);
-				aveMagSq[i] = (aveMagSq[i]*(repNo-1)+delta_mag*delta_mag)/(repNo);
-				magSqAveAcc.accum(sim.time(),aveMagSq[i]-aveMag[i]*aveMag[i]);
-				Job.animate();
+				if(mag > 0){
+					sim.step();
+					mag = sim.magnetization();
+					delta_mag = mag - mag_sp;
+					magAveAcc.accum(sim.time(),delta_mag);
+					magAcc.accum(sim.time(),delta_mag);
+					aveMag[i] = (aveMag[i]*(repNo-1)+delta_mag)/(repNo);
+					aveMagSq[i] = (aveMagSq[i]*(repNo-1)+delta_mag*delta_mag)/(repNo);
+					magSqAveAcc.accum(sim.time(),aveMagSq[i]-aveMag[i]*aveMag[i]);
+					Job.animate();
+				}
 			}
+			Job.animate();
 			writeToFile();
 		}
 
