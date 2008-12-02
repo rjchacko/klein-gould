@@ -1,28 +1,26 @@
 package rachele.Networks;
 
-//import static java.lang.Math.min;
-//import rachele.ising.dim2.IsingLR.DynType;
-import scikit.jobs.params.Parameters;
 import kip.util.Random;
+import scikit.jobs.params.Parameters;
 
-public class RandomGraph {
-
+public class SmallWorld {
 	Random random = new Random();
 	public int [] spin;
 	public int L;
-	int z, sumSpins;
+	int z, R, sumSpins;
 	public double T, h, dt, J;
-	double time;
+	double time, p;
 	int [][] neighborTable;
 	
-	public RandomGraph(Parameters params) {
+	public SmallWorld(Parameters params) {
 		L = Integer.highestOneBit(params.iget("L"));
 		params.set("L", L);
 		spin = new int [L*L];
-		z = params.iget("z");
+		R = params.iget("R");
+		z = (2*R+1)*(2*R+1)-1;
+		params.set("z",z);
 		neighborTable = new int [L*L][z];
 		random.setSeed(params.iget("Random seed"));
-		findRandomNeigbors();
 		setParameters(params);
 	}
 	
@@ -31,6 +29,7 @@ public class RandomGraph {
 		J  = params.fget("J", 1);
 		h  = params.fget("h", 0.0);
 		dt = params.fget("dt");
+		p = params.fget("p");
 		params.set("magnetization", sumSpins/(double)(L*L));
 
 	}
@@ -98,6 +97,42 @@ public class RandomGraph {
 	
 	public void restartClock(){
 		time = 0.0;
+	}
+	
+	public void setSquareNeighbors(){	
+		System.out.println("Setting Square Neighbors");
+		for(int i = 0; i < L*L; i++){
+			int x = i%L;
+			int y = i/L;
+			int nborIndex = 0;
+			for(int dx = -R; dx <= R; dx++){
+				for(int dy = -R; dy <= R; dy++){
+					if(dx != 0 | dy != 0){
+						//neighbor site -> new site = x+dx, y+dy
+						int nborSite = ((y+dy+L)%L)*L+((x+dx+L)%L);
+						neighborTable[i][nborIndex] = nborSite;
+						nborIndex += 1;
+					}
+				}
+			}
+		}
+	}
+	
+	public void rewire(){
+		System.out.println("Rewiring");
+		for (int i = 0; i < L*L; i++){
+			for (int j = 0; j < z; j++){
+				double rand = random.nextDouble();
+				if (p < rand){
+//					System.out.println(i + " " + j);
+					int newNbor = (int)(random.nextDouble()*(double)(L*L));
+					while(i == newNbor){
+						newNbor = (int)(random.nextDouble()*(double)(L*L));						
+					}
+					neighborTable[i][j]=newNbor;
+				}
+			}
+		}
 	}
 
 }
