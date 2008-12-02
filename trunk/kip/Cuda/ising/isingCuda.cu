@@ -279,7 +279,7 @@ void initCuda(int argc, char *argv[]) {
         fprintf(stderr, "No devices supporting CUDA.\n");
         exit(EXIT_FAILURE);
     }
-    int dev = deviceCount - 1;
+    int dev = 0;
     if (argc > 1) {
         sscanf(argv[1], "%d", &dev);
     }

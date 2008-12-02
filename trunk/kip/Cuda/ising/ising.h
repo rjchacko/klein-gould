@@ -3,7 +3,7 @@
 
 
 // uncomment this line for deterministic behavior
-// #define DETERMINISTIC
+//#define DETERMINISTIC
 
 // ----------------------------------------------------------------------------
 // bits.cpp -- Utilities for manipulating bits
@@ -25,6 +25,13 @@ int bitsPick4(Bits128 x, int n);
 
 
 // ----------------------------------------------------------------------------
+// critical.cpp -- Search for critical temperature
+//
+
+void find_tc();
+
+
+// ----------------------------------------------------------------------------
 // Ising -- base class
 //
 
@@ -41,6 +48,7 @@ public:
     virtual double magnetization();
     
     void randomizeSpins();
+    void setSpinsUp();
     void setSpins(int *spins);
     void getSpins(int *spins);
     void printLattice(int *a);
