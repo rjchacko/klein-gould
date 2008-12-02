@@ -8,8 +8,7 @@ void accumulateStatistics(Ising *ising, double *m_acc, double *msqr_acc) {
     *msqr_acc += m*m;
 }
 
-// assumes cuda_init() already called
-
+// find_tc() assumes initCuda() already called
 void find_tc() {
     int l = 128;
     int d = 2;
