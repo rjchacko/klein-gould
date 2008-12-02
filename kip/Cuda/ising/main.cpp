@@ -133,14 +133,20 @@ float meanMagnetization(Ising &ising) {
 void test3() {
     int len = 10;
     int dim = 2;
-    float h = -0.5;
+    float h = 0.5;
     float T = 2.0;
     
     IsingCuda ic = IsingCuda(len, dim, h, T);
-    Ising2 ih = Ising2(len, dim, h, T);
-
+    Ising1 ih1 = Ising1(len, dim, h, T);
+    Ising2 ih2 = Ising2(len, dim, h, T);
+    
+    ic.setSpinsUp();
+    ih1.setSpinsUp();
+    ih2.setSpinsUp();
+    
     printf("Cuda: <m> = %.3f\n", meanMagnetization(ic));
-    printf("Host: <m> = %.3f\n", meanMagnetization(ih));
+    printf("Host1: <m> = %.3f\n", meanMagnetization(ih1));
+    printf("Host2: <m> = %.3f\n", meanMagnetization(ih2));
 }
 
 void speedTest() {
@@ -173,7 +179,8 @@ int main (int argc, char *argv[]) {
     //test1();
     //test2();
     //test3();
-    speedTest();
+    //speedTest();
+    find_tc();
     
     return 0;
 }
