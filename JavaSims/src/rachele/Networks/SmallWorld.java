@@ -123,7 +123,7 @@ public class SmallWorld {
 		for (int i = 0; i < L*L; i++){
 			for (int j = 0; j < z; j++){
 				double rand = random.nextDouble();
-				if (p < rand){
+				if (rand < p){
 //					System.out.println(i + " " + j);
 					int newNbor = (int)(random.nextDouble()*(double)(L*L));
 					while(i == newNbor){

@@ -39,15 +39,15 @@ public class FindSpinodalSWApp extends Simulation{
 
 	public void load(Control c) {
 		c.frameTogether("MC-RG Ising data",grid,magPlot,magSqPlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/spinodal_find/SW/z80/p0.9"));
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/spinodal_find/SW/testRuns"));
 		params.add("Random seed", 208);
 		params.add("L", 1<<7);
 		params.add("Initial magnetization", 1.0);
 		params.addm("T", 0.4444444444);
 		params.addm("J", 1.0);
 		params.addm("h", -0.31);
-		params.addm("R", 4);
-		params.addm("p", 0.9);
+		params.addm("R", 1);
+		params.addm("p", 0.6);
 		params.addm("dt", 1.0);
 		params.addm("max time",100);
 		params.add("z");
