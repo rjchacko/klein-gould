@@ -91,7 +91,8 @@ public class IrIsing extends Simulation {
 		params.add("M");
 		params.add("Bond probability");
 		
-		c.frameTogether("graphs",grid,magPlot,momentPlot,clustTotalPlot,largestClustPlot,clustPlot);
+		c.frameTogether("graphs",grid,magPlot,momentPlot,clustTotalPlot);
+		c.frame(largestClustPlot,clustPlot);
 	}
 
 	@Override
