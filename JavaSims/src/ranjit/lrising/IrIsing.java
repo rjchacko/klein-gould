@@ -141,7 +141,7 @@ public class IrIsing extends Simulation {
 			if(history.size()==100)history.remove(0);
 			//save spin configurations for intervention
 			try {
-	            FileOutputStream fos = new FileOutputStream("history");
+	            FileOutputStream fos = new FileOutputStream("/Users/rjchacko/Desktop/history");
 	            ObjectOutputStream oos = new ObjectOutputStream(fos);
 	            oos.writeObject(history);
 	            oos.flush();
