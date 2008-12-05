@@ -46,12 +46,12 @@ public class MCspinodalFind extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/spinodal_find/testRuns"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<9);
-		params.add("R", 184);//1<<6);
+		params.add("L", 1<<7);
+		params.add("R", 6);//1<<6);
 		params.add("Initial magnetization", 1.0);
 		params.addm("T", 0.4444444444);
 		params.addm("J", 1.0);
-		params.addm("h", -0.317612);
+		params.addm("h", -0.31);
 		params.addm("dt", 1.0);//1/(double)(1<<4));
 		params.addm("take data",1);
 		params.addm("max time",100);
