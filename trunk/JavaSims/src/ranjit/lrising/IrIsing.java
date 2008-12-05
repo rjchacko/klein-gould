@@ -60,7 +60,7 @@ public class IrIsing extends Simulation {
 		clustTotalPlot.registerPoints("allclusters", clustTotalAccum, Color.green);
 		largestClustPlot.registerPoints("largestclust", largestClustAccum,Color.red);
 		for(int i=0;i<60;i++){
-			clustPlot.registerPoints("numClust"+i, clustBins[i], new Color((int)Math.exp(2*i)));
+			clustPlot.registerPoints("numClust"+i, clustBins[i], new Color((int)Math.exp(0.5*i)));
 		}
 	}
 
