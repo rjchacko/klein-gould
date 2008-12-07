@@ -709,6 +709,17 @@ private void resetPCNandDIST(int ns, int[] os){
   public int getClusterSize(int s) {
     return(parent[s]==EMPTY) ? 0 : -parent[findRoot(s)];
   }
+  
+  public int getClusterSizeV2(int s) {
+	  
+	  int counter = 0;
+	  int pcns = pcn[s];
+	  
+	    for(int jj = 0 ; jj < N ; jj++){
+	    	if(pcn[jj] == pcns) counter++;
+	    }
+	    return counter;
+  }
 
   public int getLargestCluster() {
 	  int max = 1;

@@ -64,5 +64,15 @@ public class damageCluster extends damage{
 		
 		return clusters.whichCluster();
 	}
+	
+	public int getSize(int cn){
+		
+		return clusters.getClusterSize(cn);
+	}
+	
+	public int getSizeV2(int cn){
+		
+		return clusters.getClusterSizeV2(cn);
+	}
 
 }

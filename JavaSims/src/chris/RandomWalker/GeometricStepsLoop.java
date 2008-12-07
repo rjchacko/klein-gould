@@ -1,6 +1,7 @@
 package chris.RandomWalker;
 
 import java.io.File;
+import java.text.DecimalFormat;
 import java.util.Random;
 
 import chris.util.PrintUtil;
@@ -13,19 +14,20 @@ import scikit.jobs.params.DoubleValue;
 import scikit.jobs.params.StringValue;
 
 
-public class GeometricSteps2D extends Simulation{
+public class GeometricStepsLoop extends Simulation{
 
 	private int seed, walkers, steps, pdf[], bins;
 	private double lambda, drmax, binsize;
-	//private double local[][];
 	private String outdir, fout, pfile;
 	private Random rand;
 	private boolean r2o;
 	
+	DecimalFormat fmt = new DecimalFormat("0.00");
+	
 	private static final double twoPI = 8*Math.atan(1);
 	
 	public static void main(String[] args) {
-		new Control(new GeometricSteps2D(), "Parameters");
+		new Control(new GeometricStepsLoop(), "Parameters");
 	}
 	
 	public void load(Control c) {
@@ -43,25 +45,29 @@ public class GeometricSteps2D extends Simulation{
 	public void run() {
 	
 		// Step up parameters for the simulation
-		setup();
+		
+		while(lambda < 1){
+		
+			setup();
 
-		params.set("Status", "Running");
-		// Perform random walks
-		for (int jj = 0 ;jj < walkers ; jj++){
-//			local[jj] = walk();
-//			updatePDF(local[jj]);
-			updatePDF(walk());
-			if(jj%10000 == 0){
-				params.set("Status", jj);
-				Job.animate();
+			params.set("Status", "Running");
+			// Perform random walks
+			for (int jj = 0 ;jj < walkers ; jj++){
+				updatePDF(walk());
+				if(jj%10000 == 0){
+					params.set("Status", jj);
+					Job.animate();
+				}
 			}
-		}
 
-		savedata();
-		params.set("Status", "Done");
-		Job.animate();
-		
-		
+			savedata();
+			params.set("Status", "Done");
+			Job.animate();
+		    
+			params.set("Random Seed", params.iget("Random Seed")+1);
+			params.set("lambda", params.fget("lambda")+0.01);
+			
+		}
 	
 	}
 	
@@ -78,8 +84,8 @@ public class GeometricSteps2D extends Simulation{
 		tmp     = params.sget("File Name");
 		
 //		local = new double[walkers][2];
-		fout  = outdir + File.separator + tmp + ".txt";
-		pfile = outdir + File.separator + "Params_" + tmp + ".txt";
+		fout  = outdir + File.separator + tmp + "_" + fmt.format(lambda) +".txt";
+		pfile = outdir + File.separator + "Params_" + tmp + "_" + fmt.format(lambda)  + ".txt";
 		rand  = new Random(seed); 
 		pdf   = new int[bins];
 		
