@@ -223,6 +223,25 @@ public class PrintUtil {
 		}
 	}
 	
+	static public void printWalkerData(String fileName, int[] array, int N, double offSet, double binWidth){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii < N ; ii++){				
+				pw.print(ii);
+				pw.print("\t");
+				pw.print(offSet + ii*binWidth);
+				pw.print("\t");
+				pw.print(array[ii]);
+				pw.println();
+			}
+			pw.close();
+		}
+		catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	static public void printArrayToFile(String fileName, double[] array, int m, int n){
 		try{
 			
@@ -259,6 +278,42 @@ public class PrintUtil {
 			ex.printStackTrace();
 		}
 	}
+	
+	static public void printArrayToFile(String fileName, double[][] array, int m, int n){
+		try{
+			
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			
+			
+			// print info here
+//			pw.println("m by n array");
+//			pw.println("printing:");
+//			pw.println("i = 0, 1, 2, . . . m-1 ");
+//			pw.println("i = m, m+1 , . . . ");
+//			pw.println("    .");
+//			pw.println("    .");
+//			pw.println("    .");
+//			pw.println("    n, n+1, . . . n+m");
+//			pw.print("m = ");
+//			pw.println(m);
+//			pw.print("n = ");
+//			pw.println(n);
+			for (int ii = 0 ; ii < m ; ii++){
+				for(int jj = 0 ; jj < n ; jj++){
+					pw.print(array[jj][ii]);
+					pw.print("\t");
+				}
+				pw.println();
+			}
+			
+			pw.close();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	
 	static public void printTimeAndVectorToFile(String fileName, double T, double[] vector){
 
