@@ -30,7 +30,7 @@ public class StripeClumpFieldSim {
 	int ky;
     double [] rhs, rhs2D,  etaLT_k_slice, etaK; //right hand side
     double [] g_k, f_x, phi0_bar, c, f_G;
-	public double [] phi0, f_k, f_Gk, eigenvalue, etaLT, etaLT2, etaLT_k, etaLT2D_k, etaKchange, etaKchange2;
+	public double [] phi0, f_k, f_Gk, eigenvalue, eigenvalueI, etaLT, etaLT2, etaLT_k, etaLT2D_k, etaKchange, etaKchange2;
     public double [] etaBar_k, etaBarCheck, eta_bar2;
 	double [][] M;// Main matrix 
     public double [][] VV;// Eigenvalue matrix
@@ -54,6 +54,7 @@ public class StripeClumpFieldSim {
 		phi0_bar = new double [Lp];
 		c = new double[Lp];
 		eigenvalue = new double[Lp];
+		eigenvalueI = new double[Lp];
 		M = new double [Lp][Lp];
 		VV = new double [Lp][Lp];
 		
@@ -67,10 +68,6 @@ public class StripeClumpFieldSim {
 			findMatrix();
 		}
 		diagonalize();
-		for (int i=0; i < Lp; i ++){
-			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
-		}
-		
 		
 		writeMatrixResultsToFile(params);
 
@@ -109,7 +106,7 @@ public class StripeClumpFieldSim {
 			sb.deleteCharAt(sb.length()-1);
 		}
 		for (int i=0; i < Lp; i ++){
-			System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
+			System.out.println("eigenvalue " + i + " = " + eigenvalue[i] + " " + eigenvalueI[i]);
 		}
 		System.out.println("kR line = " + kRLine);
 
@@ -313,9 +310,12 @@ public class StripeClumpFieldSim {
 		Eig = matrix.eig();
 		eigenvalue = new double [Lp];
 		eigenvalue = Eig.getRealEigenvalues();
-		
 
-		for (int i = 0; i < Lp; i ++)
+		eigenvalueI = new double [Lp];
+		eigenvalueI = Eig.getImagEigenvalues();
+
+
+//		for (int i = 0; i < Lp; i ++)
 			//System.out.println("eigenvalue " + i + " = " + eigenvalue[i]);
 		if(DoubleArray.max(eigenvalue)>0.0)System.out.println("eigenvalue max ="  +  DoubleArray.max(eigenvalue));
 		System.out.println("eigenvalue min ="  + DoubleArray.min(eigenvalue));
@@ -324,11 +324,11 @@ public class StripeClumpFieldSim {
 		VV = MathTools.normalizeRows(VV);
 		for (int i = 0; i < Lp; i++){
 			double normalizedCheck = MathTools.dot(VV[i],VV[i]);
-			if(Math.abs(normalizedCheck-1.0)>.000001)
+			if(Math.abs(normalizedCheck-1.0)>.01)
 				System.out.println("dot prod norm = " + normalizedCheck);
 			for (int j = 0; j < Lp; j++){
 				double orthogCheck = MathTools.dot(VV[i],VV[j]);
-				if(i != j & Math.abs(orthogCheck)>0.000001)
+				if(i != j & Math.abs(orthogCheck)>0.01)
 					System.out.println("dot prod orth = " + orthogCheck);			
 			}
 		}
