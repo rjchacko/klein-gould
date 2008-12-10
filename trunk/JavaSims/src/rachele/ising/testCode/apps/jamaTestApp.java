@@ -60,10 +60,10 @@ public class jamaTestApp{
 		System.out.println(" ");
 		
 	double normalizedCheck = MathTools.dot(VV[0],VV[0]);
-	System.out.println("dot prod = " + normalizedCheck);
+	System.out.println("dot prod norm check = " + normalizedCheck);
 
 	double orthogCheck = MathTools.dot(VV[0],VV[1]);
-	System.out.println("dot prod = " + orthogCheck);
+	System.out.println("dot prod orthog check = " + orthogCheck);
 	
 	Matrix D = Eig.getD();
 	double [][] DD = D.transpose().getArray();//take transpose to get eigenvectors as row
@@ -83,8 +83,9 @@ public class jamaTestApp{
 	System.out.println(eigenvalue2[0] + " " + eigenvalue2[1]+ " " + eigenvalue2[2]);
 
 	double[] e = Eig.getRealEigenvalues();
+	double[] ei = Eig.getImagEigenvalues();
 	for(int i = 0; i <L; i++){
-		System.out.println("ev " + i + " = " + e[i]);
+		System.out.println("ev " + i + " = " + e[i] + " " + ei[i]);
 	}
     
     //SVD
@@ -105,6 +106,4 @@ public class jamaTestApp{
 	    double lambda = sum/VV[testInt][testInt];
 	    System.out.println("ev = " + e[testInt] + " lambda = " + lambda);
     }
-
-    
 }
