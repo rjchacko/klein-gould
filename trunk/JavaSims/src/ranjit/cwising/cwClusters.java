@@ -1,9 +1,9 @@
-package ranjit.lrising;
+package ranjit.cwising;
 
 import java.util.Random;
 
 
-public class lrClusters{
+public class cwClusters{
   static private final int NONE = Integer.MIN_VALUE;  	
   int L,R,N;                        // linear dimension of lattice
  
@@ -36,7 +36,7 @@ public class lrClusters{
   private int[] parent;
   Random r= new Random();
   
-  public lrClusters(int L, double bondProbability) {
+  public cwClusters(int L, double bondProbability) {
     this.L = L;
     this.N=L*L;
     this.bondProbability = bondProbability;

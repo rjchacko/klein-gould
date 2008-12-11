@@ -1,4 +1,4 @@
-package ranjit.lrising;
+package ranjit.cwising;
 
 import java.awt.Color;
 import java.io.FileInputStream;
@@ -17,7 +17,7 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.FileValue;
 
-public class lrIsingInt extends Simulation {
+public class cwIsingInt extends Simulation {
 
 	int spins[]=null;
 	int L;
@@ -155,7 +155,7 @@ public class lrIsingInt extends Simulation {
 
 
 	public static void main(String[] args) {
-		new Control(new lrIsingInt(),"Ising 2D Umbrella Sampling");
+		new Control(new cwIsingInt(),"Ising 2D Umbrella Sampling");
 	}
 
 }
