@@ -44,15 +44,15 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 	int ky;
 	
 	public static void main(String[] args) {
-		new Control(new MCStripesClumpsSt1DsolnApp(), "Monte Carlo");
+		new Control(new MCStripesClumpsSt1DsolnApp(), "Stripes to Clumps");
 	}
 
 	public void load(Control c) {
 
 		c.frame(grid);
 		c.frame(sftPlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/OO_Svt/k=4.51/testRun"));
-		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1d/L128R46T0-04h0-8"));
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/conservedOP/testruns"));
+		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.08h0.65"));
 		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Ising Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
