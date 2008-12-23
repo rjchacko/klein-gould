@@ -31,13 +31,14 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 
 	Grid grid = new Grid("Long Range Ising Model");
 	Plot sftPlot = new Plot("sf_t plot");
+	Plot slicePlot = new Plot("Slice");
 	int dx;
 	IsingLR sim;
 	public FourierTransformer fft;
 	double [] sFactor;
 	Random random = new Random();
 	Accumulator sf_kAcc;
-	int accNo = 6;
+	int accNo = 20;
 	Accumulator [] sf_tAveAcc = new Accumulator [accNo];
 	Accumulator [] sf_tAcc = new Accumulator [accNo];
 	int [] sfLabel = new int [accNo];
@@ -49,9 +50,8 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 
 	public void load(Control c) {
 
-		c.frame(grid);
-		c.frame(sftPlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/conservedOP/testruns"));
+		c.frameTogether("Data",grid,sftPlot,slicePlot);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/conservedOP_SC/testruns"));
 		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.08h0.65"));
 		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Ising Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
@@ -64,7 +64,7 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		params.addm("dt", 1.0);//1/(double)(1<<1));
 		params.addm("maxTime", 30.0);
 		params.addm("ky", 2);
-		params.addm("kx int", 2);
+		params.addm("kx int", 1);
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
@@ -79,6 +79,7 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		sim.setParameters(params);
 		params.set("Lp", sim.L/dx);
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
+//		slicePlot.registerLines("Slice", sim.getAveHslice(), Color.GREEN);
 		for (int i = 0; i < accNo; i ++){
 			StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
 			float colorChunk = (float)i/(float)accNo;

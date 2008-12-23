@@ -5,6 +5,7 @@ import static java.lang.Math.min;
 import kip.ising.RewindableDynamics;
 import kip.ising.spinblock.SpinBlocks2D;
 import kip.util.Random;
+import scikit.dataset.PointSet;
 import scikit.jobs.params.Parameters;
 
 public class IsingLR extends RewindableDynamics {
@@ -164,6 +165,17 @@ public class IsingLR extends RewindableDynamics {
 		intsPerSpin = (double)intCount/(L*L);
 		intsPerSpin /=(R*R);
 		return intsPerSpin;
+	}
+	
+	public PointSet getAveHslice(){
+		double slice[] = new double[L];
+		for (int x = 0; x < L; x++) {
+			int sum=0;
+			for(int y = 0; y < L; y++)
+				sum += spins.get(x, y);
+			slice[x] = sum/(double)L;
+		}
+		return new PointSet(0, 1.0, slice);
 	}
 	
 }
