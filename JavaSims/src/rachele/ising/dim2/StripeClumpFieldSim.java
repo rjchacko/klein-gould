@@ -66,6 +66,9 @@ public class StripeClumpFieldSim {
 		else if (params.sget("Dynamics")=="Langevin"){
 			calcXtraFunctions();			
 			findMatrix();
+		}else if(params.sget("Dynamics")=="Conserved"){
+			calcXtraFunctions();
+			findConservedMatrix();
 		}
 		diagonalize();
 		
@@ -250,6 +253,27 @@ public class StripeClumpFieldSim {
 
 	}
 
+	public void findConservedMatrix() {
+		//only for constant mobility M=1
+		double [] mobility1d = new double [Lp];
+		double [] f2 = new double [Lp];
+		for (int i = 0; i < Lp; i++){
+			mobility1d[i] = ising.mobility[i+Lp*ky];
+			f2[i] = mobility1d[i]*ising.T/(1-phi0[i]*phi0[i]);
+		}
+		double [] mobility_k = fft.calculate1DFT(mobility1d);
+		double [] f2k = fft.calculate1DFT(f2);
+
+		int y1=ky;
+		for (int x1 = -Lp/2; x1 < Lp/2; x1++) {
+			for (int x2 = -Lp/2; x2 < Lp/2; x2++) {
+				double kRx = 2*Math.PI*ising.R*x2/ising.L;
+				double kRy = 2*Math.PI*ising.R*y1/ising.L;
+				M[(x2+Lp)%Lp][(x1+Lp)%Lp] = (kRx*kRx+kRy*kRy)*(mobility_k[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kRx, kRy) - f2k[(x1-x2+Lp)%Lp]);
+			}
+		}
+
+	}
 	
 	public void findGlauberMatrix() {
 		double kyValue = 2.0*Math.PI*ising.R*ky/ising.L;

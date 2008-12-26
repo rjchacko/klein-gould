@@ -9,6 +9,7 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import kip.util.Random;
 import rachele.util.FileUtil;
+import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
 import scikit.jobs.params.Parameters;
@@ -26,6 +27,7 @@ public class IsingField2D extends AbstractIsing2D{
 	public int aveCount;
 	public double [] phi_bar, delPhi, Lambda, A;
 	ComplexDouble2DFFT fft;	// Object to perform transforms
+	FourierTransformer myfft;
 	double[] fftScratch;
 	public double lambda;
 	static double delta = 1e-10;
@@ -107,6 +109,7 @@ public class IsingField2D extends AbstractIsing2D{
 		
 		fftScratch = new double[2*Lp*Lp];
 		fft = new ComplexDouble2DFFT(Lp, Lp);
+		myfft = new FourierTransformer(Lp);
 		
 	
 		//String init = "Random Gaussian";
@@ -114,8 +117,9 @@ public class IsingField2D extends AbstractIsing2D{
 		if(init == "Random Gaussian"){
 			randomizeField(DENSITY);
 			for (int i = 0; i < Lp*Lp; i++)
-				mobility[i] = (1.0 - DENSITY*DENSITY)/T;
-			System.out.println("Random Gaussian");
+				mobility[i] = 1.0;
+//				mobility[i] = (1.0 - DENSITY*DENSITY)/T;
+				System.out.println("Random Gaussian");
 		}else if(init == "Read 1D Soln"){
 			System.out.println("Read in 1D solution");
 			String fileName = params.sget("1D Input File");
@@ -123,8 +127,8 @@ public class IsingField2D extends AbstractIsing2D{
 			phiSlice = getSymmetricSlice(fileName);
 			set1DConfig(phiSlice);
 			for (int i = 0; i < Lp*Lp; i++)
-//				mobility[i] = 1;
-				mobility[i] = (1 - phiSlice[i%Lp]*phiSlice[i%Lp]) / T;
+				mobility[i] = 1;
+//				mobility[i] = (1 - phiSlice[i%Lp]*phiSlice[i%Lp]) / T;
 		}else if (init == "Constant"){
 			System.out.println("Constant");
 			for (int i = 0; i < Lp*Lp; i ++)
@@ -468,7 +472,36 @@ public class IsingField2D extends AbstractIsing2D{
 		return driftProp;
 		
 	}
+	
+	public void simulateConserved(){
 
+		double [] phi_ft = myfft.calculate2DFT(phi);
+		double [] arctanh_phi = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++)
+			arctanh_phi[i] = scikit.numerics.Math2.atanh(phi[i]);
+		double [] arctanh_ft = myfft.calculate2DFT(arctanh_phi);
+		
+		double [] phi_dot_k = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++){
+			int kx = i%Lp;
+			int ky = i/Lp;
+			double kRValue = (2*PI*sqrt(kx*kx+ky*ky)/L) * R;
+			double k_xR = (2*PI*kx/L)*R;
+			double k_yR =(2*PI*ky/L)*R;
+			double V = (k_xR == 0 ? 1 : sin(k_xR)/k_xR);
+			V *= (k_yR == 0 ? 1 : sin(k_yR)/k_yR);
+			//warning: assuming mobility is constant here.
+			phi_dot_k [i] = mobility[i]*kRValue*kRValue*(J*V*phi_ft[i]-T*arctanh_ft[i]);
+		}
+		
+		double [] phi_dot = myfft.calculate2DBackFT(phi_dot_k);
+
+		for (int i = 0; i < Lp*Lp; i++){
+			phi[i] += dt*phi_dot[i] + sqrt((dt*2*T*mobility[i])/dx)*noise();
+		}
+		t += dt;
+	}
+	
 	public void simulate() {
 		freeEnergy = 0;  //free energy is calculated for previous time step
 		double potAccum = 0;
