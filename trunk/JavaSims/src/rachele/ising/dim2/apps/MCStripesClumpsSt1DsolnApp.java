@@ -30,6 +30,7 @@ import scikit.jobs.params.FileValue;
 public class MCStripesClumpsSt1DsolnApp extends Simulation{
 
 	Grid grid = new Grid("Long Range Ising Model");
+	Grid sfGrid = new Grid("Structure Factor");
 	Plot sftPlot = new Plot("sf_t plot");
 	Plot slicePlot = new Plot("Slice");
 	int dx;
@@ -50,7 +51,7 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 
 	public void load(Control c) {
 
-		c.frameTogether("Data",grid,sftPlot,slicePlot);
+		c.frameTogether("Data",grid,sfGrid,sftPlot,slicePlot);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/conservedOP_SC/testruns"));
 		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.08h0.65"));
 		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Ising Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
@@ -79,6 +80,9 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		sim.setParameters(params);
 		params.set("Lp", sim.L/dx);
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
+//		for(int i = 0; i < sim.L; i++)
+//			sFactor[i] = 0;
+//		sfGrid.registerData(sim.L/dx, sim.L/dx,sFactor);
 //		slicePlot.registerLines("Slice", sim.getAveHslice(), Color.GREEN);
 		for (int i = 0; i < accNo; i ++){
 			StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
@@ -113,7 +117,7 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 				sf_tAcc[i].clear();
 			initializeStripes();
 			sim.restartClock();
-			sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
+			sFactor = fft.calculate2DSF(sim.getField(dx), false, true);
 			sim.restartClock();
 			int recordInt = 0;
 			int recordStep = 0;
@@ -122,7 +126,8 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 				sim.step();
 				Job.animate();
 				if (sim.time() > recordStep){
-					sFactor = fft.find2DSF(sim.getField(dx), sim.L);
+//					sFactor = fft.find2DSF(sim.getField(dx), sim.L);
+					sFactor = fft.calculate2DSF(sim.getField(dx), false, true);
 					collect(sFactor,sfLabel);
 					recordStep += step;
 					recordInt +=1;
@@ -188,13 +193,15 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 	
 	private void writeStSCtoFile(){
 		String message1 = "#Glauber Monte Carlo run: S vs t for several values of k. Stripe to clump H quench.";
-		String fileName = params.sget("Data Dir") + File.separator + "f0";
+		String fileName = params.sget("Data Dir") + File.separator + "f00";
 		StringBuffer fileBuffer = new StringBuffer(); fileBuffer.append(fileName);
 		for (int i=0; i < accNo; i ++){
 			StringBuffer mb = new StringBuffer();
 			mb.append("# kx value = ");	mb.append(kRvalue(sfLabel[i]%sim.L)); mb.append(" ky value = ");
 			mb.append(kRvalue(ky));			
-			fileBuffer.deleteCharAt(fileBuffer.length()-1);	fileBuffer.append(i); fileName = fileBuffer.toString();
+			fileBuffer.deleteCharAt(fileBuffer.length()-1);fileBuffer.deleteCharAt(fileBuffer.length()-1);
+			if(i < 10) fileBuffer.append("0");
+			fileBuffer.append(i); fileName = fileBuffer.toString();
 			String message2 = mb.toString();
 			FileUtil.initFile(fileName, params, message1, message2);		
 			FileUtil.printAccumToFile(fileName, sf_tAveAcc[i]);

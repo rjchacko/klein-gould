@@ -52,7 +52,7 @@ public class svtFieldApp extends Simulation{
 	/**
 	 * 
 	 */
-	boolean calcContribs = true;
+	boolean calcContribs = false;
 	int accNo = 1;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
@@ -92,7 +92,7 @@ public class svtFieldApp extends Simulation{
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
 		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
-		params.add("Dynamics", new ChoiceValue("Langevin", "Glauber" ));
+		params.add("Dynamics", new ChoiceValue("Conserved", "Langevin", "Glauber" ));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
@@ -115,7 +115,7 @@ public class svtFieldApp extends Simulation{
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
 		params.addm("dkx", 1);
-		params.addm("dt", 0.01);
+		params.addm("dt", 0.000001);
 		params.add("mean phi");
 		params.add("Time");
 		params.add("Lp");
@@ -127,7 +127,8 @@ public class svtFieldApp extends Simulation{
 		params.set("Time", ising.time());
 		params.set("Lp", ising.Lp);
 		params.set("mean phi", ising.mean(ising.phi));
-		phiGrid.registerData(Lp, Lp,(fft.calculate2DSF(ising.phi, true, true)));
+//		phiGrid.registerData(Lp, Lp,(fft.calculate2DSF(ising.phi, true, true)));
+		phiGrid.registerData(Lp,Lp,ising.phi);
 		etaDot.setAutoScale(true);
 		etaDot.registerData(Lp, Lp, ising.phi);
 //		System.out.println("thel " + sc.eta_bar2[Lp]);
@@ -225,6 +226,9 @@ public class svtFieldApp extends Simulation{
 					else if (approx == "Modified Dynamics")ising.simulate();
 				}else if (dynamics == "Glauber")
 					ising.simulateGlauber();
+				else if (dynamics == "Conserved"){
+					ising.simulateConserved();
+				}
 			}
 			if(ising.time() >= recordStep){
 				for (int i = 0; i < Lp*Lp; i++)
