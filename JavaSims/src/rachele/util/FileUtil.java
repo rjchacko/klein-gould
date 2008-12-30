@@ -188,10 +188,74 @@ public class FileUtil {
 			pw.println(message2);
 			String [] keys = params.keys();
 			for (int i = 0; i < keys.length; i++)
-				pw.println(" # " + keys[i] + " " + params.sget(keys[i]));
+				pw.println("# " + keys[i] + " " + params.sget(keys[i]));
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
+	}
+	
+	static public double [][] readDoubleData(String FileName){
+		//Counts number of lines that contains data (means does not start with a "#" and is not blank.)
+
+		int noPre = 0;
+		int noData = 0;
+		try{
+			File myFile = new File(FileName);
+			DataInputStream dis = new DataInputStream(new FileInputStream(myFile));
+			int ct = 0;
+			try{
+				while(true){
+					ct += 1;
+//					char c = dis.readChar();
+					String line = dis.readLine();
+					StringBuffer sb = new StringBuffer();
+					sb.append(line); 
+//					sb.delete(1, sb.length());
+					String num = "#";
+					String ss = sb.toString();
+					System.out.println(ct + " " + ss);
+					if (ss == num){
+//						System.out.println("equal " + ss);
+						noPre += 1;
+					}else{
+						noData += 1;
+//						System.out.println("not " + ss);
+					}
+				}
+			} catch (EOFException e) {
+			}
+		} catch (FileNotFoundException e) {
+			System.err.println("FileStreamsTest: " + e);
+		} catch (Exception ex) {
+			ex.printStackTrace();
+		}	
+		System.out.println(noPre + " init lines and " + noData + " data lines in " + FileName);
+		double [][] output = new double [2][noData];
+//		try{
+//			File myFile = new File(FileName);
+//			DataInputStream dis = new DataInputStream(new FileInputStream(myFile));
+//			try{
+//				int n = 0;
+//				int dataNo = 0;
+//				while(true){
+//					n+=1;
+//					if(n > noPre){
+//						output[0][dataNo]=dis.readDouble();
+//						dis.readChar();       // throws out the tab
+//						output[1][dataNo]=dis.readDouble();
+//						dataNo+=1;
+//					}
+//						
+//				}
+//			} catch (EOFException e) {
+//			}
+//		} catch (FileNotFoundException e) {
+//			System.err.println("FileStreamsTest: " + e);
+//		} catch (Exception ex) {
+//			ex.printStackTrace();
+//		}
+		return output;
+		
 	}
 	
 }

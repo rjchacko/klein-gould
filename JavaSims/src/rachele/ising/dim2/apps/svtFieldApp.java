@@ -11,6 +11,7 @@ import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
 //import scikit.graphics.dim2.Geom2D; 
+import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -22,6 +23,8 @@ import scikit.jobs.params.DoubleValue;
 import scikit.jobs.params.FileValue;
 
 /**
+* 
+* Starting to test the conserved OP code, but not working as of 12-30-08
 * 
 * Something is screwed up with the first run of this program.  
 * I don't know why, but you can avoid the problems for some reason
@@ -52,22 +55,33 @@ public class svtFieldApp extends Simulation{
 	/**
 	 * 
 	 */
-	boolean calcContribs = false;
+	boolean calcContribs = true;
 	int accNo = 1;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
 	Accumulator [] etaLTAcc = new Accumulator [accNo];
 	Accumulator [] etaLTkAcc = new Accumulator [accNo];
-
+	Accumulator driftAcc = new Accumulator();
+	Accumulator noiseAcc = new Accumulator();
+	Accumulator absNoiseAcc = new Accumulator();
+	Accumulator absDriftAcc = new Accumulator();
+	Accumulator noiseModeAcc = new Accumulator();
+	Accumulator driftModeAcc = new Accumulator();
+	Accumulator totalDriftMode = new Accumulator();
+	
     int [][][] sfLabel = new int [2][4][accNo];
 	
 	public int Lp;
-	Grid etaDot = new Grid("ising delta phi");
+//	Grid etaDot = new Grid("ising delta phi");
 	Grid phiGrid = new Grid("phi field");
 //	Grid etaDotSF = new Grid("sf phi field");
-	Plot SFvTime = new Plot("svt");
-	Plot EtavTime = new Plot("etavt");
-	Plot eta2 = new Plot("etavt2");
+//	Plot SFvTime = new Plot("svt");
+//	Plot EtavTime = new Plot("etavt");
+//	Plot eta2 = new Plot("etavt2");
+	Plot contribPlot = new Plot("Drift and Noise");
+	Plot absContribPlot = new Plot("Abs Drift and Noise");
+	Plot contribPlotK = new Plot ("Abs Drift and Noise for 1 k mode");
+	Grid driftGrid = new Grid("Drift Grid");
 //	Grid phi0Grid = new Grid("phi_0");
 //	Grid phi0SliceGrid = new Grid("phi_0 slice");
 //	Plot etaVsTimeLC = new Plot("eta v t LC");
@@ -76,7 +90,7 @@ public class svtFieldApp extends Simulation{
 //	Plot convolve = new Plot("convolve");
 	Plot hSlice = new Plot("Horizontal Slice");
 	Plot vSlice = new Plot("Vertical Slice"); 
-	Grid mobilityCheck = new Grid("Mobility");
+//	Grid mobilityCheck = new Grid("Mobility");
 //	Plot eVector = new Plot ("Largest Eigenvector");
 
 
@@ -85,20 +99,20 @@ public class svtFieldApp extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("Grids", phiGrid, vSlice, hSlice, mobilityCheck);
-		c.frame(EtavTime);
-		c.frameTogether("etas", etaDot, eta2);
+		c.frameTogether("Grids", phiGrid, vSlice, hSlice, contribPlot, absContribPlot, contribPlotK, driftGrid);
+//		c.frame(EtavTime);
+//		c.frameTogether("etas", etaDot, eta2);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
 		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
-		params.add("Dynamics", new ChoiceValue("Conserved", "Langevin", "Glauber" ));
+		params.add("Dynamics", new ChoiceValue("Glauber","Langevin", "Conserved" ));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
 		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian", "Constant"));
-		params.addm("Approx", new ChoiceValue("None", "Modified Dynamics"));
-		params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
+		params.addm("Approx", new ChoiceValue( "Modified Dynamics", "None"));
+		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
@@ -115,7 +129,7 @@ public class svtFieldApp extends Simulation{
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
 		params.addm("dkx", 1);
-		params.addm("dt", 0.000001);
+		params.addm("dt", 0.1);
 		params.add("mean phi");
 		params.add("Time");
 		params.add("Lp");
@@ -129,20 +143,20 @@ public class svtFieldApp extends Simulation{
 		params.set("mean phi", ising.mean(ising.phi));
 //		phiGrid.registerData(Lp, Lp,(fft.calculate2DSF(ising.phi, true, true)));
 		phiGrid.registerData(Lp,Lp,ising.phi);
-		etaDot.setAutoScale(true);
-		etaDot.registerData(Lp, Lp, ising.phi);
+//		etaDot.setAutoScale(true);
+//		etaDot.registerData(Lp, Lp, ising.phi);
 //		System.out.println("thel " + sc.eta_bar2[Lp]);
 //		etaDotSF.registerData(Lp, Lp, etaK);
 //		etaVsTimeLC.setAutoScale(true);
 		hSlice.setAutoScale(true);
 		vSlice.setAutoScale(true);
 //		eVector.setAutoScale(true);
-		SFvTime.setAutoScale(true);
-		SFvTime.setLogScale(false, true);
-		EtavTime.setAutoScale(true);
-		EtavTime.setLogScale(false, true);
-		eta2.setAutoScale(true);
-		eta2.setLogScale(false, true);
+//		SFvTime.setAutoScale(true);
+//		SFvTime.setLogScale(false, true);
+//		EtavTime.setAutoScale(true);
+//		EtavTime.setLogScale(false, true);
+//		eta2.setAutoScale(true);
+//		eta2.setLogScale(false, true);
 		
 		double horizontalSlice = params.fget("Horizontal Slice");
 		double verticalSlice = params.fget("Vertical Slice");
@@ -151,24 +165,40 @@ public class svtFieldApp extends Simulation{
 //				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
 //				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
 
-		mobilityCheck.registerData(Lp, Lp, sc.etaBar_k);
+//		mobilityCheck.registerData(Lp, Lp, sc.etaBar_k);
 		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
+		if(calcContribs){
+			contribPlot.registerPoints("Noise", noiseAcc, Color.RED);
+			contribPlot.registerPoints("Drift", driftAcc, Color.BLUE);
+			absContribPlot.registerPoints("Abs Drift", absDriftAcc, Color.BLUE);
+			absContribPlot.registerPoints("Abs Noise", absNoiseAcc, Color.RED);
+			double [] noiseFT = fft.calculate2DSF(ising.noiseTermC, false, false);
+			double [] driftFT = fft.calculate2DSF(ising.driftTermC, false, false);
+			totalDriftMode.accum(ising.time(),ising.mean(driftFT));
+			int modeNo = 10;
+			driftModeAcc.accum(ising.time(),driftFT[modeNo]/(Lp*Lp));
+			noiseModeAcc.accum(ising.time(),noiseFT[modeNo]/(Lp*Lp));
+			driftGrid.registerData(Lp,Lp,driftFT);
+			contribPlotK.registerPoints("noise mode", noiseModeAcc, Color.RED);
+			contribPlotK.registerPoints("drift mode", driftModeAcc, Color.BLUE);
+			contribPlotK.registerPoints("k_drift", totalDriftMode, Color.GREEN);			
+		}
 		if(accumsOn){
 			for (int i = 0; i < accNo; i ++){
 //				float colorChunk = (float)i/(float)accNo;
 //				Color col = Color.getHSBColor(colorChunk, 1.0f, 1.0f);
 				StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
-				EtavTime.registerLines(sb.toString(), etaAcc[i], Color.black);
+//				EtavTime.registerLines(sb.toString(), etaAcc[i], Color.black);
 				StringBuffer sb2 = new StringBuffer();sb2.append("etaLT "); sb2.append(i);
-				EtavTime.registerLines(sb2.toString(), etaLTAcc[i], Color.BLUE);
+//				EtavTime.registerLines(sb2.toString(), etaLTAcc[i], Color.BLUE);
 
 				StringBuffer sb3 = new StringBuffer();sb3.append("etaLT_k "); sb3.append(i);
 				
-				EtavTime.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
-				eta2.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
+//				EtavTime.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
+//				eta2.registerLines(sb3.toString(), etaLTkAcc[i], Color.RED);
 				
 //				etaDot.registerData(Lp, Lp, sc.etaKchange);
 			}
@@ -182,6 +212,13 @@ public class svtFieldApp extends Simulation{
 	}
 
 	public void clear() {
+		noiseAcc.clear();
+		driftAcc.clear();
+		absNoiseAcc.clear();
+		absDriftAcc.clear();
+		noiseModeAcc.clear();
+		driftModeAcc.clear();
+		totalDriftMode.clear();
 	}
 
 	public void run() {
@@ -195,7 +232,7 @@ public class svtFieldApp extends Simulation{
 			eta[i] = ising.phi[i] - phi0[i%Lp];
 		sc.initEta();
 		calcHspinodal();
-		Job.animate();
+//		Job.animate();
 		initFiles();
 		String dynamics = params.sget("Dynamics");
 
@@ -216,11 +253,14 @@ public class svtFieldApp extends Simulation{
 					}
 				}else if(dynamics == "Glauber"){
 					ising.glauberCalcContrib();
-					recordContribToFile();
+					driftAcc.accum(ising.time(),ising.driftContrib);
+					noiseAcc.accum(ising.time(),1.0-ising.driftContrib);
+					absDriftAcc.accum(ising.time(),ising.absDriftContrib);
+					absNoiseAcc.accum(ising.time(),ising.absNoiseContrib);
+//					recordContribToFile();
 //					System.out.println("Gl calc cont");
 				}
-			}
-			else{
+			}else{
 				if (dynamics == "Langevin"){
 					if (approx == "None") ising.simulate();// ising.simulateSimple();
 					else if (approx == "Modified Dynamics")ising.simulate();
