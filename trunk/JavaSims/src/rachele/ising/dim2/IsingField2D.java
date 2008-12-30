@@ -43,7 +43,9 @@ public class IsingField2D extends AbstractIsing2D{
 	public double [] h;
 	public double f_p;
 	public double fret;
-	public double driftContrib;
+	public double driftContrib, absDriftContrib, absNoiseContrib;
+	public double [] noiseTermC;
+	public double [] driftTermC;
 	
 	Accumulator accClumpFreeEnergy;
 	Accumulator accStripeFreeEnergy;
@@ -102,6 +104,8 @@ public class IsingField2D extends AbstractIsing2D{
 		phiVector = new double[Lp*Lp];
 		A = new double [Lp*Lp];
 		mobility = new double [Lp*Lp];
+		noiseTermC = new double [Lp*Lp];
+		driftTermC = new double [Lp*Lp];
 		//HH = new double[Lp*Lp];
 		//double backgroundH = params.fget("H");
 		//double stripeH = params.fget("H Stripe");
@@ -329,20 +333,26 @@ public class IsingField2D extends AbstractIsing2D{
 	public void glauberCalcContrib() {
 		convolveWithRange(phi, phi_bar, R);
 		driftContrib = 0.0;
+		absDriftContrib = 0.0;
+		absNoiseContrib = 0.0;
 
 		for (int i = 0; i < Lp*Lp; i++){
 			double arg = (phi_bar[i] + H)/T;
 			double tanh = Math.tanh(arg);
-			double driftTerm = dt*(tanh-phi[i]);
+			driftTermC[i] = dt*(tanh-phi[i]);
 			double noisePre = sqrt(2-pow(Math.tanh(arg),2)-pow(phi[i],2));
-			double noiseTerm = noisePre*noise()*sqrt(dt*2/(dx*dx));
-			delPhi[i] = driftTerm + noiseTerm;
+			noiseTermC[i] = noisePre*noise()*sqrt(dt*2/(dx*dx));
+			delPhi[i] = driftTermC[i] + noiseTermC[i];
 			//driftContrib += abs(tanh)/(abs(tanh)+abs(phi[i]));
-			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
+			driftContrib += abs(driftTermC[i])/(abs(driftTermC[i])+abs(noiseTermC[i]));
+			absDriftContrib += abs(driftTermC[i]);
+			absNoiseContrib += abs(noiseTermC[i]);
 		}
 		for (int i = 0; i < Lp*Lp; i++) 
 			phi[i] += delPhi[i];			
 		driftContrib /= (Lp*Lp);
+		absNoiseContrib /= (Lp*Lp);
+		absDriftContrib /= (Lp*Lp);
 		t += dt;	
 	}
 	
