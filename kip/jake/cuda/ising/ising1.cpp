@@ -49,6 +49,12 @@ void Ising1::completeNeighborSum(int *sum) {
     }
 }
 
+void Ising1::update ()
+{
+    update (0);
+    update (1);
+}
+
 void Ising1::update(int parityTarget) {
     for (int i = 0; i < n; i++) {
         if (indexParity(i) == parityTarget) {
@@ -59,4 +65,9 @@ void Ising1::update(int parityTarget) {
             }
         }
     }
+}
+
+double Ising1::energy ()
+{
+    return 0.0f;
 }

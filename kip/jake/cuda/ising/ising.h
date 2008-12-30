@@ -38,6 +38,7 @@ public:
     
     virtual void completeNeighborSum(int *sum) = 0;
     virtual void update(int parityTarget) = 0;
+    virtual void update () = 0;
     virtual double magnetization();
     
     void randomizeSpins();
@@ -75,7 +76,9 @@ public:
     ~Ising1();
     
     void completeNeighborSum(int *sum);
+    void update (void);
     void update(int parityTarget);
+    double energy ();
 
 protected:
     void transferHostToDevice() {}
@@ -101,7 +104,9 @@ public:
     ~Ising2();
     
     void completeNeighborSum(int *sum);
+    void update (void);
     void update(int parityTarget);
+    double energy ();
 
 protected:
     void set(int i, int s);
@@ -127,6 +132,7 @@ public:
     ~IsingCuda();
     
     void completeNeighborSum(int *sum);
+    void update (void);
     void update(int parityTarget);
     double magnetization();
     double energy ();

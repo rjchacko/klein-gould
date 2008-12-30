@@ -136,6 +136,12 @@ void Ising2::completeNeighborSum(int *sum) {
     }
 }
 
+void Ising2::update ()
+{
+    update (0);
+    update (1);
+}
+
 void Ising2::update(int parityTarget) {
     for (int ip = 0; ip < nblocks; ip++) {
         int parity = 0;
@@ -178,4 +184,9 @@ void Ising2::update(int parityTarget) {
         }
         blocks[ip] = cube;
     }
+}
+
+double Ising2::energy ()
+{
+    return 0.0f;
 }
