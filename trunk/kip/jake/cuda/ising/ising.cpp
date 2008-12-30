@@ -40,6 +40,11 @@ void Ising::allSpinsDown ()
     transferHostToDevice ();
 }
 
+void Ising::flipH ()
+{
+    h = -h;
+}
+
 void Ising::setSpins(int *spins) {
     for (int i = 0; i < n; i++) {
         set(i, spins[i]);
