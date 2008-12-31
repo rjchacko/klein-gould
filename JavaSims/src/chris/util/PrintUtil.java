@@ -233,6 +233,8 @@ public class PrintUtil {
 				pw.print(offSet + ii*binWidth);
 				pw.print("\t");
 				pw.print(array[ii]);
+				pw.print("\t");
+				pw.print((double)(array[ii])/(offSet + ii*binWidth));
 				pw.println();
 			}
 			pw.close();
@@ -241,6 +243,29 @@ public class PrintUtil {
 			ex.printStackTrace();
 		}
 	}
+	
+	static public void printWalkerData(String fileName, int[][] array, int N){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii < N ; ii++){				
+				for(int jj = 0 ; jj < N ; jj++){
+					pw.print((double)(ii)/(double)(N)-0.5);
+					pw.print("\t");
+					pw.print((double)(jj)/(double)(N)-0.5);
+					pw.print("\t");
+					pw.print(array[ii][jj]);
+					pw.println();
+				}
+				pw.println();
+			}
+			pw.close();
+		}
+		catch (IOException ex){
+			ex.printStackTrace();
+		}		
+	}
+	
 	
 	static public void printArrayToFile(String fileName, double[] array, int m, int n){
 		try{
@@ -312,6 +337,30 @@ public class PrintUtil {
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
+	}
+	
+	static public void printArray4Splot(String fileName, double[][] array, int Yindx, int Zindx, int N, double Xval){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			
+		
+		for (int ii = 0 ; ii < N ; ii++){
+			pw.print(Xval);
+			pw.print("\t");
+			pw.print(array[Yindx][ii]);
+			pw.print("\t");
+			pw.print(array[Zindx][ii]);
+			pw.println();
+		}
+		pw.println();
+		
+		pw.close();
+		}
+		catch (IOException ex){
+		ex.printStackTrace();
+	}
+		
 	}
 	
 	
