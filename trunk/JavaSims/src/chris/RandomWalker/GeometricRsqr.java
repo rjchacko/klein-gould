@@ -1,18 +1,21 @@
-package chris.util;
+package chris.RandomWalker;
 
 import java.text.DecimalFormat;
+
+import chris.util.PrintUtil;
+import chris.util.ReadInUtil;
 
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.FileValue;
 
-public class ManySplotUtil extends Simulation{
+public class GeometricRsqr extends Simulation{
 
 	DecimalFormat fmt = new DecimalFormat("0.00");
 	
 	public static void main(String[] args) {
-		new Control(new ManySplotUtil(), "Create for GNUPLOT Splot from TAB");
+		new Control(new GeometricRsqr(), "get <r^2> from distribution");
 	}
 	
 	public void load(Control c) {
@@ -35,7 +38,8 @@ public class ManySplotUtil extends Simulation{
 		
 		
 		String bsnm = getBasename();
-		String fout = bsnm + "_splot.txt";
+		String fout = bsnm + "_R2.txt";
+		PrintUtil.printlnToFile(fout,"lambda","<R^2>");
 		
 		for(double ii = 0.5 ; ii < 1 ; ii+= 0.01){
 			
@@ -46,14 +50,10 @@ public class ManySplotUtil extends Simulation{
 			
 			ReadInUtil rin = new ReadInUtil(fin);
 			double[][] tmp = rin.getData(new int[] {1,2,3},params.iget("Number of Header Rows / Rows to Skip"));			
-			PrintUtil.printArray4Splot(fout, tmp, 1, 2, tmp[0].length, ii);
+			double R2 = getR2(tmp);
+			PrintUtil.printlnToFile(fout,ii,R2);
 			
 		}
-		
-//		ReadInUtil rin = new ReadInUtil(params.sget("TAB File"));
-//		double[][] tmp = rin.getData(new int[] {1,2,3},params.iget("Number of Header Rows / Rows to Skip"));
-//		String tmpfout = "/Users/cserino/Desktop/TESTOUT.txt";
-//		PrintUtil.printArrayToFile(tmpfout,tmp,tmp[0].length,tmp.length);
 		
 		return;
 	}
@@ -76,6 +76,19 @@ public class ManySplotUtil extends Simulation{
 		
 		return ret;
 
+	}
+	
+	private double getR2(double[][] dataArray){
+		
+		double cnt = 0;		
+		double cntR2 = 0;
+		
+		for (int jj = 0 ; jj < dataArray[0].length ; jj++){
+			cnt+=dataArray[2][jj];
+			cntR2+=dataArray[1][jj]*dataArray[1][jj]*dataArray[2][jj];
+		}
+		
+		return cntR2/cnt;
 	}
 
 }

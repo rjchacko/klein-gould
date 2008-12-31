@@ -1,7 +1,6 @@
 package chris.RandomWalker;
 
 import java.io.File;
-import java.text.DecimalFormat;
 import java.util.Random;
 
 import chris.util.PrintUtil;
@@ -14,20 +13,17 @@ import scikit.jobs.params.DoubleValue;
 import scikit.jobs.params.StringValue;
 
 
-public class GeometricStepsLoop extends Simulation{
+public class GeometricStepsdD extends Simulation{
 
-	private int seed, walkers, steps, pdf[], bins;
+	private int seed, walkers, steps, pdf[], bins, dim;
 	private double lambda, drmax, binsize;
+	//private double local[][];
 	private String outdir, fout, pfile;
 	private Random rand;
 	private boolean r2o;
-	
-	DecimalFormat fmt = new DecimalFormat("0.00");
-	
-	private static final double twoPI = 8*Math.atan(1);
-	
+		
 	public static void main(String[] args) {
-		new Control(new GeometricStepsLoop(), "Parameters");
+		new Control(new GeometricStepsdD(), "Parameters");
 	}
 	
 	public void load(Control c) {
@@ -35,39 +31,36 @@ public class GeometricStepsLoop extends Simulation{
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/PY542/Final"));
 		params.add("File Name", new StringValue("foo"));
 		params.add("Random Seed",(int) 0);
-		params.add("Bins", (int) 5000);
-		params.add("Walkers", (int) 10000000);
-		params.add("Steps", (int) 10);
-		params.add("lambda", new DoubleValue(0.01, 0., 1.));
+		params.add("Dimension", (int) 2);
+		params.add("Bins", (int) 500);
+		params.add("Walkers", (int) 100000000);
+		params.add("Steps", (int) 20);
+		params.add("lambda", new DoubleValue(0.5, 0., 1.));
 		params.add("Status");
 	}
 
 	public void run() {
 	
 		// Step up parameters for the simulation
-		
-		while(lambda < 1){
-		
-			setup();
+		setup();
 
-			params.set("Status", "Running");
-			// Perform random walks
-			for (int jj = 0 ;jj < walkers ; jj++){
-				updatePDF(walk());
-				if(jj%10000 == 0){
-					params.set("Status", jj);
-					Job.animate();
-				}
+		params.set("Status", "Running");
+		// Perform random walks
+		for (int jj = 0 ;jj < walkers ; jj++){
+//			local[jj] = walk();
+//			updatePDF(local[jj]);
+			updatePDF(walk());
+			if(jj%10000 == 0){
+				params.set("Status", jj);
+				Job.animate();
 			}
-
-			savedata();
-			params.set("Status", "Done");
-			Job.animate();
-		    
-			params.set("Random Seed", params.iget("Random Seed")+1);
-			params.set("lambda", params.fget("lambda")+0.01);
-			
 		}
+
+		savedata();
+		params.set("Status", "Done");
+		Job.animate();
+		
+		
 	
 	}
 	
@@ -76,6 +69,7 @@ public class GeometricStepsLoop extends Simulation{
 		String tmp;
 		
 		seed    = params.iget("Random Seed");
+		dim     = params.iget("Dimension");
 		bins    = params.iget("Bins");
 		walkers = params.iget("Walkers");
 		steps   = params.iget("Steps");
@@ -84,8 +78,8 @@ public class GeometricStepsLoop extends Simulation{
 		tmp     = params.sget("File Name");
 		
 //		local = new double[walkers][2];
-		fout  = outdir + File.separator + tmp + "_" + fmt.format(lambda) +".txt";
-		pfile = outdir + File.separator + "Params_" + tmp + "_" + fmt.format(lambda)  + ".txt";
+		fout  = outdir + File.separator + tmp + ".txt";
+		pfile = outdir + File.separator + "Params_" + tmp + ".txt";
 		rand  = new Random(seed); 
 		pdf   = new int[bins];
 		
@@ -129,21 +123,20 @@ public class GeometricStepsLoop extends Simulation{
 	private double[] walk(){
 		
 		double stepsize = 1;
-		double[] rr = new double[2];
-		double theta, costheta, sintheta;
+		double[] rr = new double[dim];
 		
-		rr[0] = 0;
-		rr[1] = 0;
+		for (int jj = 0 ; jj < dim ; jj++){
+			rr[jj] = 0;
+		}
+
 		
 		for (int jj = 0 ; jj < steps ; jj++){
-			/*
-			 * This is probably slow!
-			 */
-			theta = nextAngle();
-			costheta = Math.cos(theta);
-			sintheta = Math.sin(theta);
-			rr[0] += stepsize*costheta;
-			rr[1] += stepsize*sintheta;
+
+			double[] tmp = nextStep(stepsize);
+
+			for (int kk = 0 ; kk < dim ; kk++){
+				rr[kk] += tmp[kk];
+			}
 			
 			stepsize = stepsize*lambda;
 		}
@@ -151,11 +144,20 @@ public class GeometricStepsLoop extends Simulation{
 		return rr;
 	}
 	
-	private double nextAngle(){
-		/*
-		 * might be faster to just generate cosines (or sines)
-		 */
-		return twoPI*rand.nextDouble();
+	private double[] nextStep(double norm){
+		double[] ret = new double[dim];
+		double tmpnorm = 0;
+		
+		for (int jj = 0 ; jj < dim ; jj++){
+			ret[jj] = rand.nextDouble()-0.5;
+			tmpnorm += ret[jj]*ret[jj];
+		}
+		tmpnorm = Math.sqrt(tmpnorm);
+		for (int jj = 0 ; jj < dim ; jj++){
+			ret[jj] = norm*ret[jj]/tmpnorm;
+		}
+		
+		return ret;
 	}
 	
 	private void updatePDF(double[] rr){
@@ -164,11 +166,18 @@ public class GeometricStepsLoop extends Simulation{
 		 * SHIFT IF drmax < 1
 		 * 
 		 */
+		
+		double rs = 0;
+		for (int jj = 0 ; jj < dim ; jj++){
+			rs += rr[jj]*rr[jj];
+		}
+		rs = Math.sqrt(rs);
+		
 		if(r2o){
-			pdf[(int)(Math.sqrt(rr[0]*rr[0] + rr[1]*rr[1])/binsize)]++;	
+			pdf[(int)(rs/binsize)]++;	
 		}
 		else{
-			pdf[(int)((Math.sqrt(rr[0]*rr[0] + rr[1]*rr[1])-1.+drmax)/binsize)]++;	
+			pdf[(int)(rs/binsize)]++;	
 		}
 		return;
 	}
