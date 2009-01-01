@@ -22,9 +22,9 @@ public class SmallWorldApp extends Simulation{
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.44444444444);
 		params.addm("J", 1.0);
-		params.addm("h", 0.317);
-		params.addm("R", 4);
-		params.addm("p",1.0);
+		params.addm("h", 0.229);
+		params.addm("R", 1);
+		params.addm("p",0.8);
 		params.addm("dt", 1.0);
 		params.add("z");
 		params.add("time");
