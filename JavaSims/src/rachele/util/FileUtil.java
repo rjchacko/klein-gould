@@ -101,8 +101,24 @@ public class FileUtil {
 		try{
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			for (int i = 0; i < size; i++)
+			for (int i = 0; i < size; i++){
 				pw.println(data.x(i) + " " + data.y(i) + " " + data.errorY(i));
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+
+	static public void printAccumToFile(String fileName, Accumulator acc, boolean errorBars){
+		DatasetBuffer data = acc.copyData();
+		int size = data.size();
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int i = 0; i < size; i++){
+				if (errorBars) pw.println(data.x(i) + " " + data.y(i) + " " + data.errorY(i));
+				else pw.println(data.x(i) + " " + data.y(i));
+			}
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
@@ -170,7 +186,7 @@ public class FileUtil {
 		try{
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			pw.println(message1);
+			pw.println("#" + message1);
 			String [] keys = params.keys();
 			for (int i = 0; i < keys.length; i++)
 				pw.println("# " + keys[i] + " " + params.sget(keys[i]));
@@ -184,8 +200,8 @@ public class FileUtil {
 		try{
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			pw.println(message1);
-			pw.println(message2);
+			pw.println("#" + message1);
+			pw.println("#" + message2);
 			String [] keys = params.keys();
 			for (int i = 0; i < keys.length; i++)
 				pw.println("# " + keys[i] + " " + params.sget(keys[i]));

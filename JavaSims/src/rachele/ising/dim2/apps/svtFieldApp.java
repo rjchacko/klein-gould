@@ -5,7 +5,7 @@ package rachele.ising.dim2.apps;
 import java.awt.Color;
 import java.io.File;
 import rachele.ising.dim2.IsingField2D;
-import rachele.ising.dim2.StripeClumpFieldSim;
+//import rachele.ising.dim2.StripeClumpFieldSim;
 import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
@@ -42,7 +42,7 @@ public class svtFieldApp extends Simulation{
 
 	IsingField2D ising;
 	FourierTransformer fft;
-    StripeClumpFieldSim sc;
+//    StripeClumpFieldSim sc;
 	double [] eta, etaK, sf; //right hand side
 	double [] phi0, phi0_bar; // Background stripe configuration and this configuration convoluted with potential.
 	int ky;
@@ -65,9 +65,9 @@ public class svtFieldApp extends Simulation{
 	Accumulator noiseAcc = new Accumulator();
 	Accumulator absNoiseAcc = new Accumulator();
 	Accumulator absDriftAcc = new Accumulator();
-	Accumulator noiseModeAcc = new Accumulator();
-	Accumulator driftModeAcc = new Accumulator();
-	Accumulator totalDriftMode = new Accumulator();
+	Accumulator drift2acc = new Accumulator();
+	Accumulator drift2sumAcc = new Accumulator();
+	Accumulator drift0acc = new Accumulator();
 	
     int [][][] sfLabel = new int [2][4][accNo];
 	
@@ -102,7 +102,7 @@ public class svtFieldApp extends Simulation{
 		c.frameTogether("Grids", phiGrid, vSlice, hSlice, contribPlot, absContribPlot, contribPlotK, driftGrid);
 //		c.frame(EtavTime);
 //		c.frameTogether("etas", etaDot, eta2);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/testRuns"));
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/contribs/DO_crit"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
 		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
@@ -116,8 +116,8 @@ public class svtFieldApp extends Simulation{
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
-		params.addm("T", 0.04);
-		params.addm("H", 0.80);
+		params.addm("T", 0.096548);
+		params.addm("H", 0.0);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.01);
 		params.addm("J", -1.0);
@@ -175,16 +175,11 @@ public class svtFieldApp extends Simulation{
 			contribPlot.registerPoints("Drift", driftAcc, Color.BLUE);
 			absContribPlot.registerPoints("Abs Drift", absDriftAcc, Color.BLUE);
 			absContribPlot.registerPoints("Abs Noise", absNoiseAcc, Color.RED);
-			double [] noiseFT = fft.calculate2DSF(ising.noiseTermC, false, false);
 			double [] driftFT = fft.calculate2DSF(ising.driftTermC, false, false);
-			totalDriftMode.accum(ising.time(),ising.mean(driftFT));
-			int modeNo = 10;
-			driftModeAcc.accum(ising.time(),driftFT[modeNo]/(Lp*Lp));
-			noiseModeAcc.accum(ising.time(),noiseFT[modeNo]/(Lp*Lp));
 			driftGrid.registerData(Lp,Lp,driftFT);
-			contribPlotK.registerPoints("noise mode", noiseModeAcc, Color.RED);
-			contribPlotK.registerPoints("drift mode", driftModeAcc, Color.BLUE);
-			contribPlotK.registerPoints("k_drift", totalDriftMode, Color.GREEN);			
+			contribPlotK.registerPoints("noise mode", drift2acc, Color.RED);
+			contribPlotK.registerPoints("drift mode", drift2sumAcc, Color.BLUE);
+			contribPlotK.registerPoints("k_drift", drift0acc, Color.GREEN);			
 		}
 		if(accumsOn){
 			for (int i = 0; i < accNo; i ++){
@@ -216,9 +211,9 @@ public class svtFieldApp extends Simulation{
 		driftAcc.clear();
 		absNoiseAcc.clear();
 		absDriftAcc.clear();
-		noiseModeAcc.clear();
-		driftModeAcc.clear();
-		totalDriftMode.clear();
+		drift2acc.clear();
+		drift2sumAcc.clear();
+		drift0acc.clear();
 	}
 
 	public void run() {
@@ -230,7 +225,7 @@ public class svtFieldApp extends Simulation{
 		double recordStep = 0.00001;	
 		for (int i = 0; i < Lp*Lp; i++)
 			eta[i] = ising.phi[i] - phi0[i%Lp];
-		sc.initEta();
+//		sc.initEta();
 		calcHspinodal();
 //		Job.animate();
 		initFiles();
@@ -244,8 +239,8 @@ public class svtFieldApp extends Simulation{
 					if(approx == "None"){
 						ising.simCalcContrib();
 						recordContribToFile();
-						sc.simulateLinear();
-						sc.simulateLinearK();
+//						sc.simulateLinear();
+//						sc.simulateLinearK();
 //						sc.simulateLinearKbar1d();
 					}else if(approx == "Modified Dynamics"){
 						ising.simModCalcContrib();
@@ -257,6 +252,14 @@ public class svtFieldApp extends Simulation{
 					noiseAcc.accum(ising.time(),1.0-ising.driftContrib);
 					absDriftAcc.accum(ising.time(),ising.absDriftContrib);
 					absNoiseAcc.accum(ising.time(),ising.absNoiseContrib);
+//					double [] noiseFT = fft.calculate2DSF(ising.noiseTermC, false, false);
+					double [] driftFT = fft.calculate2DSF(ising.driftTermC, false, false);
+					int modeNo = params.iget("ky");
+					System.out.println("k mag = " + 2*Math.PI*ising.R*modeNo/ising.L);
+					drift0acc.accum(ising.time(),driftFT[0]/(Lp*Lp*ising.mean(driftFT)));
+					drift2sumAcc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo]+driftFT[modeNo*Lp]+driftFT[Lp*Lp-Lp*modeNo])/(Lp*Lp*ising.mean(driftFT)));
+					drift2acc.accum(ising.time(),driftFT[modeNo]/(Lp*Lp*ising.mean(driftFT)));
+					writeAccumsToFile();
 //					recordContribToFile();
 //					System.out.println("Gl calc cont");
 				}
@@ -275,16 +278,16 @@ public class svtFieldApp extends Simulation{
 					eta[i] = ising.phi[i] - phi0[i%Lp];
 				etaK = fft.calculate2DFT(eta);
 				sf = fft.find2DSF(ising.phi, ising.L);
-				double [] scEtaK =fft.calculate2DFT(sc.etaLT); 
+//				double [] scEtaK =fft.calculate2DFT(sc.etaLT); 
 //				double [] scEtaK2 =fft.find2DSF(sc.etaLT2,ising.L); 
 				if(accumsOn){
 					for (int i = 0; i < accNo; i++){
 						etaAcc[i].accum(ising.time(), etaK[sfLabel[0][1][i]]);
-						etaLTAcc[i].accum(ising.time(), scEtaK[sfLabel[0][1][i]]);	
-						int dkx = params.iget("dkx");
+//						etaLTAcc[i].accum(ising.time(), scEtaK[sfLabel[0][1][i]]);	
+//						int dkx = params.iget("dkx");
 //						etaLTkAcc[i].accum(ising.time(), scEtaK2[sfLabel[0][1][i]]);
 //						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT2D_k[sfLabel[0][1][i]],1));
-						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT_k[i*dkx],1));
+//						etaLTkAcc[i].accum(ising.time(), Math.pow(sc.etaLT_k[i*dkx],1));
 //						System.out.println(Math.pow(sc.etaLT_k[i*dkx],1));
 					}
 				}
@@ -325,6 +328,39 @@ public class svtFieldApp extends Simulation{
 		}
 	}	
 
+	private void writeAccumsToFile(){
+		String dir = params.sget("Data Dir");
+		String fileName = dir + File.separator + "n";
+		String message1 = "#(sum_position noise term) / (sum_position noise term + sum_position drift term)";
+		FileUtil.deleteFile(fileName);
+		FileUtil.initFile(fileName, params, message1);
+		FileUtil.printAccumToFile(fileName, noiseAcc, false);
+
+		fileName = dir + File.separator + "d";
+		message1 = "#(sum_position drift term) / (sum_position noise term + sum_position drift term)";
+		FileUtil.deleteFile(fileName);
+		FileUtil.initFile(fileName, params, message1);
+		FileUtil.printAccumToFile(fileName, driftAcc, false);
+		
+		fileName = dir + File.separator + "d0";
+		message1 = "#(S_D(k=0,t)) / sum_k S_D(k,t)";
+		FileUtil.deleteFile(fileName);
+		FileUtil.initFile(fileName, params, message1);
+		FileUtil.printAccumToFile(fileName, drift0acc, false);
+
+		fileName = dir + File.separator + "d2";
+		message1 = "(S_D(k=2pi*2R/L,t) pos x direction) / sum_k S_D(k,t)";
+		FileUtil.deleteFile(fileName);
+		FileUtil.initFile(fileName, params, message1);
+		FileUtil.printAccumToFile(fileName, drift2acc, false);
+
+		fileName = dir + File.separator + "d2s";
+		message1 = "(S_D(k=2pi*2R/L,t) summed over +-x dir and +- y dir) / sum_k S_D(k,t)";
+		FileUtil.deleteFile(fileName);
+		FileUtil.initFile(fileName, params, message1);
+		FileUtil.printAccumToFile(fileName, drift2sumAcc, false);
+	}
+	
 	private void recordContribToFile(){
 		String fileName = params.sget("Data Dir") + File.separator + "n";
 		double driftC = ising.driftContrib;
@@ -355,21 +391,22 @@ public class svtFieldApp extends Simulation{
 			FileUtil.initFile(fileName, params, message1, message2);
 
 		}
-		if(calcContribs){
-			String mes1 = "# Noise contribution to dynamics";
-			String noiseFile =  params.sget("Data Dir") + File.separator + "n";
-			FileUtil.initFile(noiseFile, params, mes1);			
-			String mes2 = "# Drift contribution to dynamics";
-			String driftFile =  params.sget("Data Dir") + File.separator + "d";
-			FileUtil.initFile(driftFile, params, mes2);			
-		}
+//		if(calcContribs){
+//			String mes1 = "# Noise contribution to dynamics";
+//			String noiseFile =  params.sget("Data Dir") + File.separator + "n";
+//			FileUtil.initFile(noiseFile, params, mes1);			
+//			String mes2 = "# Drift contribution to dynamics";
+//			String driftFile =  params.sget("Data Dir") + File.separator + "d";
+//			FileUtil.initFile(driftFile, params, mes2);			
+//			
+//		}
 	}
 
 	private void initialize(){
 
 		ising = new IsingField2D(params);
 		this.Lp=ising.Lp;
-		sc = new StripeClumpFieldSim(ising, params);
+//		sc = new StripeClumpFieldSim(ising, params);
 		for (int i = 0; i < accNo; i++){ 
 			if(accumsOn){
 				etaAcc[i] = new Accumulator();
