@@ -8,7 +8,10 @@ public class NewmanZiff {
 	public boolean wrap_vertical = false;
 	public boolean wrap_diagonal = false;
 	
-	// if (parent[i] <  0), then |parent[i]| is size of this cluster
+	private final int EMPTY = Integer.MIN_VALUE;
+	
+	// if (parent[i] = EMPTY), then site is unoccupied, otherwise
+	// if (parent[i] <  0), then -parent[i] is size of this cluster
 	// if (parent[i] >= 0), then parent[i] is the parent of i
 	private int parent[];
 	
@@ -22,12 +25,20 @@ public class NewmanZiff {
 		dy = new short[n];
 		
 		for (int i = 0; i < n; i++) {
-			parent[i] = -1; // root
+			parent[i] = EMPTY; // root site
 			dx[i] = dy[i] = 0;
 		}
 	}
 	
+	public void occupySite(int i) {
+		if (parent[i] == EMPTY)
+			parent[i] = -1;
+	}
+	
 	public void addBond(int i, int j, int dx_i2j, int dy_i2j) {
+		occupySite(i);
+		occupySite(j);
+		
 		compressPath(i);
 		compressPath(j);
 
@@ -49,8 +60,12 @@ public class NewmanZiff {
 		}
 	}
 	
+	public boolean isOccupied(int i) {
+		return parent[i] != EMPTY;
+	}
+	
 	public int clusterSize(int i) {
-		return -parent[findRoot(i)];
+		return isOccupied(i) ? -parent[findRoot(i)] : 0;
 	}
 	
 	private void mergeRoots(int i, int j, int dx_i2j, int dy_i2j) {
