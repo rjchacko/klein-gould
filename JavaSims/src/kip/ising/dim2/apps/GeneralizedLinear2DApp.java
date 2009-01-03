@@ -26,8 +26,9 @@ public class GeneralizedLinear2DApp extends Simulation {
 	}
 	
 	Grid grid = new Grid("Coarse Grained Field");
-	Grid structureGrid = new Grid("Structure Factor");
-	Plot structurePlot = new Plot("Structure", "Time", "Structure");
+	Grid structureGrid = new Grid("Structure Grid");
+	Plot structurePlot = new Plot("Structure Evolution", "Time", "Structure");
+	
 	int dx;
 	IsingLR sim;
 	StructureFactor structure; 
@@ -94,9 +95,9 @@ public class GeneralizedLinear2DApp extends Simulation {
 			System.out.println("dom " + dominantK);
 			
 			while (sim.t < 10) {
-				sim.step();
 				structure.calculate();
 				structMax.accum(sim.t, structure.data[dominantK]);
+				sim.step();
 				
 				Job.animate();
 			}
@@ -123,7 +124,7 @@ public class GeneralizedLinear2DApp extends Simulation {
 			}
 			sim.setParameters(params);
 			sim.t = 0;
-			while (sim.t < 10) {
+			while (sim.t < 20) {
 				sim.step();
 				// structure.calculate();
 				Job.animate();
@@ -151,7 +152,7 @@ public class GeneralizedLinear2DApp extends Simulation {
 	}
 	
 	int getGrowthMode() {
-		int k0 = 4; // valid when L=512, R=85
+		int k0 = 2; // valid when L=256, R=85
 		String type = params.sget("Transition type");
 		if (type.equals("Fluid->Clump") || type.equals("Fluid->Stripe") || type.equals("Clump->Fluid"))
 			return k0;
@@ -190,7 +191,7 @@ public class GeneralizedLinear2DApp extends Simulation {
 	}
 
 	
-	public class IsingLR {
+	class IsingLR {
 		public SpinBlocks2D spins;
 		public double dt, t;
 		public int L, R;
