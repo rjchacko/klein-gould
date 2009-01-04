@@ -68,6 +68,25 @@ public class NewmanZiff {
 		return isOccupied(i) ? -parent[findRoot(i)] : 0;
 	}
 	
+	public boolean horizontalHomology() {
+		return wrap_horizontal && !wrap_vertical && !wrap_diagonal;
+	}
+	
+	public boolean verticalHomology() {
+		return wrap_vertical && !wrap_horizontal && !wrap_diagonal;
+	}
+	
+	public boolean pointHomology() {
+		return !wrap_horizontal && !wrap_vertical && !wrap_diagonal;
+	}
+	
+	public boolean crossHomology() {
+		return
+			(wrap_horizontal && wrap_vertical) ||
+			(wrap_horizontal && wrap_diagonal) ||
+			(wrap_vertical && wrap_diagonal);
+	}
+	
 	private void mergeRoots(int i, int j, int dx_i2j, int dy_i2j) {
 		int r_i = findRoot(i);
 		int r_j = findRoot(j);
