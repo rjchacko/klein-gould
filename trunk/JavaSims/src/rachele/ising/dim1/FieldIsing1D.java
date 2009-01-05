@@ -2,7 +2,6 @@ package rachele.ising.dim1;
 
 import kip.util.Random;
 //import rachele.util.FourierTransformer;
-import scikit.dataset.Accumulator;
 import scikit.jobs.params.Parameters;
 import scikit.numerics.fft.managed.ComplexDoubleFFT;
 import scikit.numerics.fft.managed.ComplexDoubleFFT_Mixed;
@@ -22,13 +21,11 @@ import static scikit.util.DoubleArray.*;
 */
 public class FieldIsing1D{
 	public int Lp;
-	public double dt = 1;
+	public double dt;
 	public double t, noiseParam;
-	public double[] phi, F;
+	public double[] phi, F, phi_k;
 	double DENSITY;
 	double [] phi_bar, del_phi;
-//	boolean noise;
-	
 	public double L, R, T, J, dx, H, ampFactor;
 	Random random = new Random();
 	
@@ -37,9 +34,7 @@ public class FieldIsing1D{
 	ComplexDoubleFFT fft;
 	private double[] fftScratch;
 	public double freeEnergyDensity;
-	
-	Accumulator freeEngAcc;
-	
+
 	public FieldIsing1D(Parameters params) {
 		random.setSeed(params.iget("Random Seed"));
 		
@@ -50,6 +45,7 @@ public class FieldIsing1D{
 		J = params.fget("J");
 		DENSITY = params.fget("Density");
 		H = params.fget("H");
+		dt = params.fget("dt");
 		Lp = Integer.highestOneBit((int)rint((L/dx)));
 		dx = L / Lp;
 		double RoverDx = R/dx;
@@ -59,16 +55,17 @@ public class FieldIsing1D{
 		noiseParam = params.fget("Noise");
 		
 		phi = new double[Lp];
+//		phi_k = new double [Lp*2];
 		phi_bar = new double[Lp];
 		del_phi = new double[Lp];
 		F = new double [Lp];
 		
 		fftScratch = new double[2*Lp];
 		fft = new ComplexDoubleFFT_Mixed(Lp);
-		freeEngAcc = new Accumulator(dt);
 		
 		for (int i = 0; i < Lp; i++)
-			phi[i] = DENSITY+ noiseParam*random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));;
+			phi[i] = DENSITY+ noiseParam*random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));
+		phi_k = transform(phi);
 	}
 	
 	public void readParams(Parameters params) {
@@ -78,24 +75,19 @@ public class FieldIsing1D{
 		H = params.fget("H");
 		L = R*params.fget("L/R");
 		dx = R/params.fget("R/dx");
+		dt = params.fget("dt");
 		Lp = Integer.highestOneBit((int)rint((L/dx)));
 		dx = L / Lp;
 		params.set("R/dx", R/dx);
 		params.set("DENSITY", mean(phi));
 		noiseParam = params.fget("Noise");
-//		if (params.sget("Noise").equals("On"))
-//			noise = true;
-//		else
-//			noise = false;		
+		
 	}
 	
 	public double time() {
 		return t;
 	}
 	
-	public Accumulator getFreeEngAcc() {
-		return freeEngAcc;
-	}
 	
 	public void measureFreeEng(){
 		convolveWithRange(phi, phi_bar, R);
@@ -107,7 +99,6 @@ public class FieldIsing1D{
 			freeEnergyDensity += F[i];
 		}
 		freeEnergyDensity /= (double)Lp;
-		freeEngAcc.accum(t, freeEnergyDensity);
 	}
 	
 	void convolveWithRange(double[] src, double[] dest, double R) {
@@ -174,6 +165,104 @@ public class FieldIsing1D{
 		t += dt;	
 	}
 	
+	public void simulateConserved(){
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp];
+		for (int i = 0; i < Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] = - dt*dF_dPhi;
+		}
+
+		double [] k2ft_drift = transform(drift);
+		for (int i = 0; i < Lp; i++) {
+			double kValue = (2*PI*i*R/L);
+			k2ft_drift[2*i] *= (kValue*kValue);
+			k2ft_drift[2*i+1] *= (kValue*kValue);
+		}
+		del_phi = backtransform(k2ft_drift);
+		
+		for (int i = 0; i < Lp; i++) {
+			phi[i] += del_phi[i] + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+		}	
+		
+		t += dt;
+
+	}
+	
+	public void simulateConservedWithMobility(){
+		// dphi/dt = grad dot mobility * grad(del F/ del phi)
+		// impliment as IFT(k*FT(mobility *IFT(k(FT(del F / del phi)))))
+		// or
+		// k*f_(mob*{if_[k(f_dfdp)]})
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp];
+		for (int i = 0; i < Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] = - dt*dF_dPhi;
+		}
+		double [] kft_drift = transform(drift);
+		for (int i = 0; i < Lp; i++) {
+			double kValue = (2*PI*i*R/L);
+			kft_drift[2*i] *= (kValue);
+			kft_drift[2*i+1] *= (kValue);
+		}
+		double [] m_kdrift = backtransform(kft_drift);
+		for (int i = 0; i < Lp; i++) 
+			m_kdrift[i] *= Math.pow(1-phi[i]*phi[i],2);
+		double [] k_mkdrift = transform(m_kdrift);
+		for (int i = 0; i < Lp; i++) {
+			double kValue = (2*PI*i*R/L);
+			k_mkdrift[2*i] *= (kValue);
+			k_mkdrift[2*i+1] *= (kValue);
+		}		
+		del_phi = backtransform(k_mkdrift);
+		for (int i = 0; i < Lp; i++) {
+			phi[i] += del_phi[i];// + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+		}	
+		t += dt;
+	}
+	
+	public void simulateConseveredSemiImp(){
+//		double [] atanh = new double [Lp];
+//		for (int i = 0; i < Lp; i++){
+//			atanh[i] = T*scikit.numerics.Math2.atanh(phi[i]);
+//		}
+//		double [] atanh_k = transform(atanh);
+//		for (int x = -Lp/2; x < Lp/2; x++) {
+//			double kR = (2*PI*x*R/L);
+//			int i = (x + Lp) % Lp;
+//			double V = (kR == 0 ? 1 : sin(kR)/(kR));
+//			double k = (2*PI*x/L);
+//			phi_k[2*i] = (phi_k[2*i] + dt*k*k*R*R*T*atanh_k[2*i])/(1.0-k*k*R*R*V*dt); 
+//			phi_k[2*i+1] = (phi_k[2*i+1] + dt*k*k*R*R*T*atanh_k[2*i+1])/(1.0-k*k*R*R*V*dt); 
+//		}
+//		phi = backtransform(phi_k);
+		
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp];
+		for (int i = 0; i < Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] = - dt*dF_dPhi;
+		}
+
+		double [] k2ft_drift = transform(drift);
+		for (int i = 0; i < Lp; i++) {
+			double kValue = (2*PI*i*R/L);
+			k2ft_drift[2*i] *= (kValue*kValue);
+			k2ft_drift[2*i+1] *= (kValue*kValue);
+		}
+		for (int i = 0; i < Lp; i++){
+			phi_k[2*i] += k2ft_drift[2*i];
+			phi_k[2*i+1] += k2ft_drift[2*i+1];
+		}
+		phi = backtransform (phi_k);
+		
+		t += dt;
+	}
+	
 	/**
 	 * This method exists to find a stripe
 	 * solution for the 2D circle interaction,
@@ -228,6 +317,27 @@ public class FieldIsing1D{
 		for (int i = 0; i < Lp; i++) {
 			dest[i] = fftScratch[2*i+0] / Lp;
 		}
+	}
+	private double [] transform(double [] src){
+
+		for (int i = 0; i < Lp; i++) {
+			fftScratch[2*i+0] = src[i];
+			fftScratch[2*i+1] = 0;
+		}
+		fft.transform(fftScratch);
+		return fftScratch;
+		
+	}
+
+
+	private double [] backtransform(double [] src){
+
+		fft.backtransform(src);
+		double [] dest = new double [Lp];
+		for (int i = 0; i < Lp; i++)
+			dest[i] = src[2*i] / (Lp);
+		return dest;
+		
 	}
 	
 }

@@ -62,9 +62,9 @@ public class IsingField2D extends AbstractIsing2D{
 		random.setSeed(params.iget("Random seed", 1));
 		J = params.fget("J");
 		R = params.fget("R");
+		dx = R/params.fget("R/dx");
 		L = R*params.fget("L/R");
 		T = params.fget("T");
-		dx = R/params.fget("R/dx");
 		dt = params.fget("dt");
 		H = params.fget("H");
 		//dT = params.fget("dT");
@@ -86,6 +86,7 @@ public class IsingField2D extends AbstractIsing2D{
 		//theory = params.sget("Approx");
 		Lp = Integer.highestOneBit((int)rint((L/dx)));
 		dx = L / Lp;
+		System.out.println("dx = " + dx);
 		double RoverDx = R/dx;
 		params.set("R/dx", RoverDx);
 		//params.set("Lp", Lp);
@@ -451,7 +452,7 @@ public class IsingField2D extends AbstractIsing2D{
 			double noiseTerm = sqrt((dt*2*T*mobility[i])/dx)*noise();
 			delPhi[i] = driftTerm + noiseTerm;
 			//System.out.println(noiseTerm + " " + driftTerm + " " + delPhi[i]);
-			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
+			driftContrib += abs(driftTerm/dt)/(abs(driftTerm/dt)+abs(noiseTerm/dt));
 			phiVector[i] = delPhi[i];
 		}
 		for (int i = 0; i < Lp*Lp; i++) 
@@ -482,34 +483,55 @@ public class IsingField2D extends AbstractIsing2D{
 		return driftProp;
 		
 	}
+
 	
 	public void simulateConserved(){
-
-		double [] phi_ft = myfft.calculate2DFT(phi);
-		double [] arctanh_phi = new double [Lp*Lp];
-		for (int i = 0; i < Lp*Lp; i++)
-			arctanh_phi[i] = scikit.numerics.Math2.atanh(phi[i]);
-		double [] arctanh_ft = myfft.calculate2DFT(arctanh_phi);
-		
-		double [] phi_dot_k = new double [Lp*Lp];
-		for (int i = 0; i < Lp*Lp; i++){
-			int kx = i%Lp;
-			int ky = i/Lp;
-			double kRValue = (2*PI*sqrt(kx*kx+ky*ky)/L) * R;
-			double k_xR = (2*PI*kx/L)*R;
-			double k_yR =(2*PI*ky/L)*R;
-			double V = (k_xR == 0 ? 1 : sin(k_xR)/k_xR);
-			V *= (k_yR == 0 ? 1 : sin(k_yR)/k_yR);
-			//warning: assuming mobility is constant here.
-			phi_dot_k [i] = mobility[i]*kRValue*kRValue*(J*V*phi_ft[i]-T*arctanh_ft[i]);
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] = - dt*dF_dPhi;
 		}
-		
-		double [] phi_dot = myfft.calculate2DBackFT(phi_dot_k);
 
-		for (int i = 0; i < Lp*Lp; i++){
-			phi[i] += dt*phi_dot[i] + sqrt((dt*2*T*mobility[i])/dx)*noise();
+		double [] kft_drift = transform(drift);
+		for (int i = 0; i < Lp*Lp; i++) {
+			int ky = i / Lp;
+			int kx = i % Lp;
+			double kValue = (2*PI*sqrt((double)(ky*ky+kx*kx))*R/L);
+			kft_drift[2*i] *= (kValue);
+			kft_drift[2*i+1] *= (kValue);
 		}
+		double [] m_kdrift = backtransform(kft_drift);
+		for (int i = 0; i < Lp*Lp; i++) 
+			m_kdrift[i] *= Math.pow(1-phi[i]*phi[i],2);
+		
+		double [] k_mkdrift = transform(m_kdrift);
+		for (int i = 0; i < Lp*Lp; i++) {
+			int ky = i / Lp;
+			int kx = i % Lp;
+			double kValue = (2*PI*sqrt((double)(ky*ky+kx*kx))*R/L);
+			k_mkdrift[2*i] *= (kValue);
+			k_mkdrift[2*i+1] *= (kValue);
+		}		
+		
+		delPhi = backtransform(k_mkdrift);
+		
+		for (int i = 0; i < Lp*Lp; i++) {
+			double noiseTerm = sqrt(dt*2/(dx*dx))*noise();
+			phi[i] += delPhi[i]+noise()*noiseTerm;
+			driftTermC[i] = delPhi[i];
+			driftContrib += abs(driftTermC[i])/(abs(driftTermC[i])+abs(noiseTerm));
+			absDriftContrib += abs(driftTermC[i]);
+			absNoiseContrib += abs(noiseTerm);
+			
+		}	
+		driftContrib /= (Lp*Lp);
+		absNoiseContrib /= (Lp*Lp);
+		absDriftContrib /= (Lp*Lp);
 		t += dt;
+//		System.out.println("conserved");
+
 	}
 	
 	public void simulate() {
@@ -785,7 +807,24 @@ public class IsingField2D extends AbstractIsing2D{
 		FileUtil.printlnToFile(fileName, "# max time = ", params.sget("Max Time"));
 		FileUtil.printlnToFile(fileName, "# reps = ", params.sget("Reps"));
 	}
-	
+	private double [] transform(double [] src){
+
+		for (int i = 0; i < Lp*Lp; i++) {
+			fftScratch[2*i+0] = src[i];
+			fftScratch[2*i+1] = 0;
+		}
+		fft.transform(fftScratch);
+		return fftScratch;
+	}
+
+
+	private double [] backtransform(double [] src){
+		fft.backtransform(src);
+		double [] dest = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++)
+			dest[i] = src[2*i] / (Lp*Lp);
+		return dest;
+	}
 //	private void setExternalField(double backgroundH, double stripeH){
 //		for (int i = Lp; i < Lp*Lp; i++)
 //			HH[i] = backgroundH;
