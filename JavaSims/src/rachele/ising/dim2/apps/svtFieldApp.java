@@ -12,6 +12,7 @@ import scikit.dataset.Accumulator;
 import scikit.dataset.PointSet;
 //import scikit.graphics.dim2.Geom2D; 
 //import scikit.graphics.dim2.Geom2D;
+import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -44,7 +45,7 @@ public class svtFieldApp extends Simulation{
 	FourierTransformer fft;
 //    StripeClumpFieldSim sc;
 	double [] eta, etaK, sf; //right hand side
-	double [] phi0, phi0_bar; // Background stripe configuration and this configuration convoluted with potential.
+	double [] phi0, phi0_bar, unstableSoln; // Background stripe configuration and this configuration convoluted with potential.
 	int ky;
 	double kRChunk; //=2piR/L
 	public String writeDir;
@@ -55,7 +56,7 @@ public class svtFieldApp extends Simulation{
 	/**
 	 * 
 	 */
-	boolean calcContribs = true;
+	boolean calcContribs = false;
 	int accNo = 1;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
@@ -68,6 +69,9 @@ public class svtFieldApp extends Simulation{
 	Accumulator drift2acc = new Accumulator();
 	Accumulator drift2sumAcc = new Accumulator();
 	Accumulator drift0acc = new Accumulator();
+	Accumulator sf_hAcc = new Accumulator();
+	Accumulator sf_vAcc = new Accumulator();
+	
 	
     int [][][] sfLabel = new int [2][4][accNo];
 	
@@ -82,6 +86,7 @@ public class svtFieldApp extends Simulation{
 	Plot absContribPlot = new Plot("Abs Drift and Noise");
 	Plot contribPlotK = new Plot ("Abs Drift and Noise for 1 k mode");
 	Grid driftGrid = new Grid("Drift Grid");
+	Plot plotSF = new Plot("SFs");
 //	Grid phi0Grid = new Grid("phi_0");
 //	Grid phi0SliceGrid = new Grid("phi_0 slice");
 //	Plot etaVsTimeLC = new Plot("eta v t LC");
@@ -99,37 +104,37 @@ public class svtFieldApp extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("Grids", phiGrid, vSlice, hSlice, contribPlot, absContribPlot, contribPlotK, driftGrid);
+		c.frameTogether("Grids", phiGrid, vSlice, hSlice, contribPlot, absContribPlot, contribPlotK, driftGrid, plotSF);
 //		c.frame(EtavTime);
 //		c.frameTogether("etas", etaDot, eta2);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/contribs/DO_crit"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
 		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
-		params.add("Dynamics", new ChoiceValue("Glauber","Langevin", "Conserved" ));
+		params.add("Dynamics", new ChoiceValue( "Conserved", "Glauber","Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
-		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian", "Constant"));
+		params.add("Init Conditions", new ChoiceValue("Random Gaussian", "Read 1D Soln","Read From File", "Constant"));
 		params.addm("Approx", new ChoiceValue( "Modified Dynamics", "None"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
-		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
+		params.addm("Horizontal Slice", new DoubleValue(0.42, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
-		params.addm("T", 0.096548);
+		params.addm("T", 0.04);
 		params.addm("H", 0.0);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.01);
 		params.addm("J", -1.0);
-		params.addm("R", 2000000.0);
+		params.addm("R", 4600000.0);
 		params.addm("Random seed", 0);
 		params.add("L/R", 2.782608696);
-		params.add("R/dx", 50.0);
+		params.add("R/dx", 46.0);
 		params.add("kR bin-width", 0.1);
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
 		params.addm("dkx", 1);
-		params.addm("dt", 0.1);
+		params.addm("dt", 0.00001);
 		params.add("mean phi");
 		params.add("Time");
 		params.add("Lp");
@@ -142,6 +147,7 @@ public class svtFieldApp extends Simulation{
 		params.set("Lp", ising.Lp);
 		params.set("mean phi", ising.mean(ising.phi));
 //		phiGrid.registerData(Lp, Lp,(fft.calculate2DSF(ising.phi, true, true)));
+		phiGrid.setAutoScale(false);
 		phiGrid.registerData(Lp,Lp,ising.phi);
 //		etaDot.setAutoScale(true);
 //		etaDot.registerData(Lp, Lp, ising.phi);
@@ -161,14 +167,15 @@ public class svtFieldApp extends Simulation{
 		double horizontalSlice = params.fget("Horizontal Slice");
 		double verticalSlice = params.fget("Vertical Slice");
 
-//		phiGrid.setDrawables(asList(
-//				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN),
-//				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE)));
+		phiGrid.addDrawable(
+				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN));
+//				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE));
 
 //		mobilityCheck.registerData(Lp, Lp, sc.etaBar_k);
 		
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
+		hSlice.registerLines("unstable soln", new PointSet(0, 1, unstableSoln) , Color.RED);
 		vSlice.registerLines("Slice", ising.getVslice(verticalSlice), Color.BLUE);
 		if(calcContribs){
 			contribPlot.registerPoints("Noise", noiseAcc, Color.RED);
@@ -179,7 +186,10 @@ public class svtFieldApp extends Simulation{
 			driftGrid.registerData(Lp,Lp,driftFT);
 			contribPlotK.registerPoints("noise mode", drift2acc, Color.RED);
 			contribPlotK.registerPoints("drift mode", drift2sumAcc, Color.BLUE);
-			contribPlotK.registerPoints("k_drift", drift0acc, Color.GREEN);			
+			contribPlotK.registerPoints("k_drift", drift0acc, Color.GREEN);	
+			plotSF.setLogScale(false, true);
+			plotSF.registerPoints("horizontal sf", sf_hAcc, Color.ORANGE);
+			plotSF.registerPoints("verticalal sf", sf_vAcc, Color.CYAN);
 		}
 		if(accumsOn){
 			for (int i = 0; i < accNo; i ++){
@@ -214,6 +224,9 @@ public class svtFieldApp extends Simulation{
 		drift2acc.clear();
 		drift2sumAcc.clear();
 		drift0acc.clear();
+		sf_vAcc.clear();
+		sf_hAcc.clear();
+		
 	}
 
 	public void run() {
@@ -248,21 +261,27 @@ public class svtFieldApp extends Simulation{
 					}
 				}else if(dynamics == "Glauber"){
 					ising.glauberCalcContrib();
-					driftAcc.accum(ising.time(),ising.driftContrib);
-					noiseAcc.accum(ising.time(),1.0-ising.driftContrib);
-					absDriftAcc.accum(ising.time(),ising.absDriftContrib);
-					absNoiseAcc.accum(ising.time(),ising.absNoiseContrib);
-//					double [] noiseFT = fft.calculate2DSF(ising.noiseTermC, false, false);
-					double [] driftFT = fft.calculate2DSF(ising.driftTermC, false, false);
-					int modeNo = params.iget("ky");
-					System.out.println("k mag = " + 2*Math.PI*ising.R*modeNo/ising.L);
-					drift0acc.accum(ising.time(),driftFT[0]/(Lp*Lp*ising.mean(driftFT)));
-					drift2sumAcc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo]+driftFT[modeNo*Lp]+driftFT[Lp*Lp-Lp*modeNo])/(Lp*Lp*ising.mean(driftFT)));
-					drift2acc.accum(ising.time(),driftFT[modeNo]/(Lp*Lp*ising.mean(driftFT)));
-					writeAccumsToFile();
-//					recordContribToFile();
-//					System.out.println("Gl calc cont");
+
+
+				}else if(dynamics == "Conserved"){
+					ising.simulateConserved();
 				}
+				driftAcc.accum(ising.time(),ising.driftContrib);
+				noiseAcc.accum(ising.time(),1.0-ising.driftContrib);
+				absDriftAcc.accum(ising.time(),ising.absDriftContrib);
+				absNoiseAcc.accum(ising.time(),ising.absNoiseContrib);
+//				double [] noiseFT = fft.calculate2DSF(ising.noiseTermC, false, false);
+				double [] driftFT = fft.calculate2DSF(ising.driftTermC, false, false);
+				int modeNo = params.iget("ky");
+				System.out.println("k mag = " + 2*Math.PI*ising.R*modeNo/ising.L);
+				drift0acc.accum(ising.time(),driftFT[0]/(Lp*Lp*ising.mean(driftFT)));
+				drift2sumAcc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo]+driftFT[modeNo*Lp]+driftFT[Lp*Lp-Lp*modeNo])/(Lp*Lp*ising.mean(driftFT)));
+				drift2acc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo])/(Lp*Lp*ising.mean(driftFT)));
+				double [] sf = fft.calculate2DSF(ising.phi, false, false);
+				sf_hAcc.accum(ising.time(),sf[modeNo]+sf[Lp-modeNo]);
+				sf_vAcc.accum(ising.time(),sf[modeNo*Lp]+sf[Lp*Lp-Lp*modeNo]);
+				writeAccumsToFile();
+//				recordContribToFile();
 			}else{
 				if (dynamics == "Langevin"){
 					if (approx == "None") ising.simulate();// ising.simulateSimple();
@@ -334,13 +353,13 @@ public class svtFieldApp extends Simulation{
 		String message1 = "#(sum_position noise term) / (sum_position noise term + sum_position drift term)";
 		FileUtil.deleteFile(fileName);
 		FileUtil.initFile(fileName, params, message1);
-		FileUtil.printAccumToFile(fileName, noiseAcc, false);
+		FileUtil.printAccumToFile(fileName, absNoiseAcc, false);
 
 		fileName = dir + File.separator + "d";
 		message1 = "#(sum_position drift term) / (sum_position noise term + sum_position drift term)";
 		FileUtil.deleteFile(fileName);
 		FileUtil.initFile(fileName, params, message1);
-		FileUtil.printAccumToFile(fileName, driftAcc, false);
+		FileUtil.printAccumToFile(fileName, absDriftAcc, false);
 		
 		fileName = dir + File.separator + "d0";
 		message1 = "#(S_D(k=0,t)) / sum_k S_D(k,t)";
@@ -359,6 +378,19 @@ public class svtFieldApp extends Simulation{
 		FileUtil.deleteFile(fileName);
 		FileUtil.initFile(fileName, params, message1);
 		FileUtil.printAccumToFile(fileName, drift2sumAcc, false);
+
+		fileName = dir + File.separator + "h";
+		message1 = "Horizontal compoents of SF at k*";
+		FileUtil.deleteFile(fileName);
+		FileUtil.initFile(fileName, params, message1);
+		FileUtil.printAccumToFile(fileName, sf_hAcc, false);
+		
+		fileName = dir + File.separator + "v";
+		message1 = "Horizontal compoents of SF at k*";
+		FileUtil.deleteFile(fileName);
+		FileUtil.initFile(fileName, params, message1);
+		FileUtil.printAccumToFile(fileName, sf_vAcc, false);
+		
 	}
 	
 	private void recordContribToFile(){
@@ -445,8 +477,11 @@ public class svtFieldApp extends Simulation{
 		eta = new double[Lp*Lp];
 		etaK = new double[Lp*Lp];
 		phi0 = new double [Lp];
+		unstableSoln = new double [Lp];
 		String fileName = params.sget("1D Input File");
 		phi0 = ising.getSymmetricSlice(fileName);
+		fileName = params.sget("New 1D Input File");
+		unstableSoln = ising.getSymmetricSlice(fileName);
 	}	
 
     private void write1Dconfig(){
