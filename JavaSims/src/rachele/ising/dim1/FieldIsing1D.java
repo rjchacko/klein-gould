@@ -23,9 +23,9 @@ public class FieldIsing1D{
 	public int Lp;
 	public double dt;
 	public double t, noiseParam;
-	public double[] phi, F, phi_k;
+	public double[] phi, F, phi_k, test_phi, del_phi;
 	double DENSITY;
-	double [] phi_bar, del_phi;
+	double [] phi_bar;
 	public double L, R, T, J, dx, H, ampFactor;
 	Random random = new Random();
 	
@@ -58,14 +58,15 @@ public class FieldIsing1D{
 //		phi_k = new double [Lp*2];
 		phi_bar = new double[Lp];
 		del_phi = new double[Lp];
+		test_phi = new double [Lp];
 		F = new double [Lp];
+		phi_k = new double [2*Lp];
 		
 		fftScratch = new double[2*Lp];
 		fft = new ComplexDoubleFFT_Mixed(Lp);
 		
-		for (int i = 0; i < Lp; i++)
-			phi[i] = DENSITY+ noiseParam*random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));
-		phi_k = transform(phi);
+
+
 	}
 	
 	public void readParams(Parameters params) {
@@ -165,6 +166,12 @@ public class FieldIsing1D{
 		t += dt;	
 	}
 	
+	public void test(){
+		phi_k = transform (phi);
+		test_phi = backtransform (phi_k);
+		System.out.print("tester");
+	}
+	
 	public void simulateConserved(){
 		convolveWithRange(phi, phi_bar, R);
 		double drift [] = new double [Lp];
@@ -174,12 +181,24 @@ public class FieldIsing1D{
 			drift[i] = - dt*dF_dPhi;
 		}
 
-		double [] k2ft_drift = transform(drift);
+		double [] scratch2 = transform(drift);
+		double [] k2ft_drift = new double [2*Lp];
+		for (int i = 0; i < 2*Lp; i++)
+			k2ft_drift[i] = scratch2[i];
+		
 		for (int i = 0; i < Lp; i++) {
 			double kValue = (2*PI*i*R/L);
 			k2ft_drift[2*i] *= (kValue*kValue);
 			k2ft_drift[2*i+1] *= (kValue*kValue);
 		}
+		for (int i = 0; i < 2*Lp; i++) {
+			phi_k[i] = k2ft_drift[i];
+		}
+		double [] scratch  = backtransform(phi_k);
+
+		for (int i = 0; i < Lp; i++)
+			test_phi[i] = scratch[i];
+		
 		del_phi = backtransform(k2ft_drift);
 		
 		for (int i = 0; i < Lp; i++) {
@@ -325,8 +344,10 @@ public class FieldIsing1D{
 			fftScratch[2*i+1] = 0;
 		}
 		fft.transform(fftScratch);
+		System.out.println("zero = "+ fftScratch[0]);
+
 		return fftScratch;
-		
+	
 	}
 
 
@@ -336,8 +357,24 @@ public class FieldIsing1D{
 		double [] dest = new double [Lp];
 		for (int i = 0; i < Lp; i++)
 			dest[i] = src[2*i] / (Lp);
-		return dest;
+		return dest;	
+	}
+	
+	public void init_phi_k(){
+
+		for (int i = 0; i < Lp; i++)
+			phi[i] = DENSITY+ noiseParam*random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));
 		
+		for (int i = 0; i < Lp; i++) {
+			fftScratch[2*i+0] = phi[i];
+			fftScratch[2*i+1] = 0;
+		}
+		fft.transform(fftScratch);
+
+	
+		for (int i = 0; i < Lp*2; i++)
+			phi_k [i] = fftScratch [i];
+
 	}
 	
 }
