@@ -45,6 +45,16 @@ void Ising::flipH ()
     h = -h;
 }
 
+void Ising::downH ()
+{
+    h = (h < 0) ? h : -h;
+}
+
+void Ising::upH ()
+{
+    h = (h > 0) ? h : -h;
+}
+
 void Ising::setSpins(int *spins) {
     for (int i = 0; i < n; i++) {
         set(i, spins[i]);
