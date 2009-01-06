@@ -186,14 +186,15 @@ double stopwatchStop() {
 
 void test5 () // Timing test
 {
-    int len = 8;
-    int dim = 7;
-    double h = -0.40;
+    int len = 10;
+    int dim = 5;
+    double h = 0.00;
     double T = 12.0;
 
-    int iters = 1000;
+    int iters = 10000;
     
-    IsingCuda ic = IsingCuda(len, dim, h, T);
+    //IsingCuda ic = IsingCuda(len, dim, h, T);
+    Ising2 ic = Ising2(len, dim, h, T);
 
     stopwatchStart (); 
     for (int i=0; i<iters; ++i)

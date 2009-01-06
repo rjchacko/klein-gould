@@ -52,6 +52,8 @@ public:
     void allSpinsUp (void);
     void allSpinsDown (void);
     void flipH (void);
+    void downH (void);
+    void upH (void);
     
 protected:
     virtual void transferHostToDevice() {}
@@ -152,7 +154,6 @@ protected:
 private:
     void index(int i, int *ip, int *delta);
     void buildLookupTable (void);
-    void flipH (void);
 };
 
 
