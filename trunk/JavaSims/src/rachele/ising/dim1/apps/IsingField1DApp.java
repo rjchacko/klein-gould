@@ -21,7 +21,8 @@ public class IsingField1DApp extends Simulation{
 	Plot fieldPlot = new Plot("Coarse Grained Field", "x", "phi(x)");
 	Plot ftPlot = new Plot("FT", "k", "ft_phi(x)");
     Plot SFPlot = new Plot("Structure factor");
-    Plot test = new Plot("test phi");
+    Plot test = new Plot("test phi", "x", "phi(x)");
+    Plot testPlot = new Plot("test phi ft","k", "ft_phi(x)");
     FieldIsing1D ising;
     StructureFactor1D sf;
     public int timeCount;
@@ -32,7 +33,7 @@ public class IsingField1DApp extends Simulation{
 	
 	public void load(Control c) {
 		//c.frameTogether("Displays", fieldPlot, freeEngPlot, freeEngDenPlot, SFPlot);
-		c.frameTogether("data", fieldPlot, ftPlot, test);
+		c.frameTogether("data", fieldPlot, ftPlot, test, testPlot);
 		//	Default parameters for nucleation
 //		//params.addm("Model", new ChoiceValue("A", "B"));
 //		params.addm("Noise", new ChoiceValue("On", "Off"));
@@ -58,7 +59,7 @@ public class IsingField1DApp extends Simulation{
 
 		params.add("Config Directory",new DirectoryValue("/home/erdomi/data/lraim/configs1dAutoName"));
 		params.addm("Noise", new DoubleValue(1.0, 0, 1.0).withSlider());
-		params.addm("Dynamics", new ChoiceValue("Conserved","Conserved w mob", "Conserved semi imp", "Langevin", "Glauber"));
+		params.addm("Dynamics", new ChoiceValue("Langevin","Conserved F Space", "Conserved","Conserved w mob", "Conserved semi imp",  "Glauber"));
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.08, 0, 0.2).withSlider());
 		params.addm("J", +1.0);
@@ -70,7 +71,7 @@ public class IsingField1DApp extends Simulation{
 		params.add("Density", -.4);
 		params.add("Time Allocation");
 		params.add("max Write Time", 30.0);
-		params.addm("dt",0.000001);
+		params.addm("dt",0.1);
 		params.add("Time");
 		params.add("DENSITY");
 		params.add("Lp");
@@ -83,13 +84,30 @@ public class IsingField1DApp extends Simulation{
 		params.set("Time", format(ising.t));
 		params.set("Free Energy", format(ising.freeEnergyDensity));
 		ising.readParams(params);
-		//fieldPlot.setAutoScale(true);
-		//fieldPlot.set
+		fieldPlot.setAutoScale(true);
+		test.setAutoScale(true);
+		testPlot.setAutoScale(true);
 		
 		SFPlot.registerLines("Structure factor", sf.getAccumulator(), Color.BLACK);
 		fieldPlot.registerLines("Field", new PointSet(0, ising.dx, ising.phi), Color.BLACK);
-		ftPlot.registerLines("FT", new PointSet(0, ising.dx, ising.phi_k), Color.BLUE);	
-		test.registerLines("tester", new PointSet(0, ising.dx, ising.test_phi), Color.RED);	
+		double [] realFT = new double [ising.Lp];
+		double [] imagFT = new double [ising.Lp];
+		for (int i = 1; i < ising.Lp; i++){
+			realFT[i] = ising.phi_k[2*i];
+			imagFT[i] = ising.phi_k[2*i+1];
+		}
+		
+		ftPlot.registerLines("real", new PointSet(0, ising.dx, realFT), Color.BLUE);	
+		ftPlot.registerLines("imag", new PointSet(0, ising.dx, imagFT), Color.RED);	
+		
+		for (int i = 1; i < ising.Lp; i++){
+			realFT[i] = ising.phi2_k[2*i];
+			imagFT[i] = ising.phi2_k[2*i+1];
+		}
+		testPlot.registerLines("real2", new PointSet(0, ising.dx, realFT), Color.BLUE);	
+		testPlot.registerLines("imag2", new PointSet(0, ising.dx, imagFT), Color.RED);			
+		test.registerLines("tester", new PointSet(0, ising.dx, ising.phi2), Color.RED);
+//		testPlot.registerLines("test ft", new PointSet(0, ising.dx, ising.phi2_k), Color.GREEN);
 		
 		if (flags.contains("Clear S.F.")) {
 			sf.getAccumulator().clear();
@@ -119,7 +137,6 @@ public class IsingField1DApp extends Simulation{
 		double binWidth = KR_SP / floor(KR_SP/params.fget("kR bin-width"));
 
 		sf = new StructureFactor1D(ising.Lp, ising.L, ising.R, binWidth);
-		ising.init_phi_k();
 		Job.animate();
 		
 		timeCount = maxWriteCount +1;
@@ -151,8 +168,14 @@ public class IsingField1DApp extends Simulation{
 			}
 			if(params.sget("Dynamics")=="Glauber") ising.simulateGlauber();
 			else if(params.sget("Dynamics")=="Langevin")ising.simulate();
-			else if (params.sget("Dynamics")=="Conserved")ising.test();// ising.simulateConserved();	
-			else if (params.sget("Dynamics")=="Conserved w mob") ising.simulateConservedWithMobility();
+			else if (params.sget("Dynamics")=="Conserved"){ ising.simulateConserved();
+//				ising.simulateConservedFspace();
+//				ising.simulateConseveredSemiImp();
+			}else if (params.sget("Dynamics")=="Conserved w mob") ising.simulateConservedWithMobility();
+			else if (params.sget("Dynamics")=="Conserved F Space"){
+				ising.simulateConserved();
+				ising.simulateConservedFspace();
+			}
 			else if (params.sget("Dynamics")=="Conserved semi imp") ising.simulateConseveredSemiImp();			
 			sf.accumulate(ising.phi);
 			Job.animate();

@@ -51,11 +51,8 @@ public class svtFieldApp extends Simulation{
 	public String writeDir;
 
 	//RUN OPTIONS
-	boolean writeToFile = true;
-	boolean accumsOn = true;
-	/**
-	 * 
-	 */
+	boolean writeToFile = false;
+	boolean accumsOn = false;
 	boolean calcContribs = false;
 	int accNo = 1;
 	
@@ -123,7 +120,7 @@ public class svtFieldApp extends Simulation{
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
 		params.addm("T", 0.04);
 		params.addm("H", 0.0);
-		params.addm("dT", 0.001);
+		params.addm("dT", 1.0);
 		params.addm("tolerance", 0.01);
 		params.addm("J", -1.0);
 		params.addm("R", 4600000.0);
@@ -134,7 +131,7 @@ public class svtFieldApp extends Simulation{
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
 		params.addm("dkx", 1);
-		params.addm("dt", 0.00001);
+		params.addm("dt", 1.0);
 		params.add("mean phi");
 		params.add("Time");
 		params.add("Lp");

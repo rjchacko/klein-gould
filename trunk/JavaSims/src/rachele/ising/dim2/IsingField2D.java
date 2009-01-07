@@ -486,6 +486,7 @@ public class IsingField2D extends AbstractIsing2D{
 
 	
 	public void simulateConserved(){
+		
 		convolveWithRange(phi, phi_bar, R);
 		double drift [] = new double [Lp*Lp];
 		for (int i = 0; i < Lp*Lp; i++) {
@@ -495,31 +496,19 @@ public class IsingField2D extends AbstractIsing2D{
 		}
 
 		double [] kft_drift = transform(drift);
-		for (int i = 0; i < Lp*Lp; i++) {
-			int ky = i / Lp;
-			int kx = i % Lp;
-			double kValue = (2*PI*sqrt((double)(ky*ky+kx*kx))*R/L);
-			kft_drift[2*i] *= (kValue);
-			kft_drift[2*i+1] *= (kValue);
+		for (int y = -Lp/2; y < Lp/2; y++) {
+			for (int x = -Lp/2; x < Lp/2; x++) {
+				double k = (2*PI*sqrt(x*x+y*y)/Lp);
+				int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
+				kft_drift[2*i] *= (k*k);
+				kft_drift[2*i+1] *= (k*k);
+			}
 		}
-		double [] m_kdrift = backtransform(kft_drift);
-		for (int i = 0; i < Lp*Lp; i++) 
-			m_kdrift[i] *= Math.pow(1-phi[i]*phi[i],2);
 		
-		double [] k_mkdrift = transform(m_kdrift);
-		for (int i = 0; i < Lp*Lp; i++) {
-			int ky = i / Lp;
-			int kx = i % Lp;
-			double kValue = (2*PI*sqrt((double)(ky*ky+kx*kx))*R/L);
-			k_mkdrift[2*i] *= (kValue);
-			k_mkdrift[2*i+1] *= (kValue);
-		}		
-		
-		delPhi = backtransform(k_mkdrift);
-		
+		delPhi = backtransform(kft_drift);
 		for (int i = 0; i < Lp*Lp; i++) {
 			double noiseTerm = sqrt(dt*2/(dx*dx))*noise();
-			phi[i] += delPhi[i]+noise()*noiseTerm;
+			phi[i] += delPhi[i]+noiseTerm;
 			driftTermC[i] = delPhi[i];
 			driftContrib += abs(driftTermC[i])/(abs(driftTermC[i])+abs(noiseTerm));
 			absDriftContrib += abs(driftTermC[i]);
@@ -530,8 +519,6 @@ public class IsingField2D extends AbstractIsing2D{
 		absNoiseContrib /= (Lp*Lp);
 		absDriftContrib /= (Lp*Lp);
 		t += dt;
-//		System.out.println("conserved");
-
 	}
 	
 	public void simulate() {
