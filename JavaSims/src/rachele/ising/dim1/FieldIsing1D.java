@@ -188,7 +188,7 @@ public class FieldIsing1D{
 			double kValue = (2*PI*x/Lp);
 			int i = (x + Lp) % Lp;
 			k2ft_drift[2*i] *= (kValue*kValue);
-			k2ft_drift[2*i+1] *= (kValue*kValue);
+//			k2ft_drift[2*i+1] *= (kValue*kValue);
 		}
 
 		del_phi = backtransform(k2ft_drift);
