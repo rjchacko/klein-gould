@@ -22,10 +22,10 @@ import static scikit.util.DoubleArray.*;
 public class FieldIsing1D{
 	public int Lp;
 	public double dt;
-	public double t, noiseParam;
-	public double[] phi, F, phi_k, test_phi, del_phi;
+	public double t, noiseParam, noiseTerm;
+	public double[] phi, F, phi_k, phi2, phi2_k;
 	double DENSITY;
-	double [] phi_bar;
+	double [] phi_bar, del_phi;
 	public double L, R, T, J, dx, H, ampFactor;
 	Random random = new Random();
 	
@@ -55,17 +55,21 @@ public class FieldIsing1D{
 		noiseParam = params.fget("Noise");
 		
 		phi = new double[Lp];
-//		phi_k = new double [Lp*2];
 		phi_bar = new double[Lp];
 		del_phi = new double[Lp];
-		test_phi = new double [Lp];
+		phi2 = new double [Lp];
+		phi2_k = new double[2*Lp];
 		F = new double [Lp];
 		phi_k = new double [2*Lp];
 		
 		fftScratch = new double[2*Lp];
 		fft = new ComplexDoubleFFT_Mixed(Lp);
 		
-
+		for (int i = 0; i < Lp; i++){
+			double newPhi = DENSITY + noiseParam*random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));
+			phi[i] =  newPhi;
+			phi2[i] = newPhi;
+		}
 
 	}
 	
@@ -147,6 +151,7 @@ public class FieldIsing1D{
 			phi[i] += del_phi[i];	
 		measureFreeEng();
 		t += dt;
+		phi_k = transform(phi);
 	}
 
 	public void simulateGlauber() {
@@ -166,99 +171,9 @@ public class FieldIsing1D{
 		t += dt;	
 	}
 	
-	public void test(){
-		phi_k = transform (phi);
-		test_phi = backtransform (phi_k);
-		System.out.print("tester");
-	}
 	
 	public void simulateConserved(){
-		convolveWithRange(phi, phi_bar, R);
-		double drift [] = new double [Lp];
-		for (int i = 0; i < Lp; i++) {
-			double dF_dPhi = 0;
-			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
-			drift[i] = - dt*dF_dPhi;
-		}
 
-		double [] scratch2 = transform(drift);
-		double [] k2ft_drift = new double [2*Lp];
-		for (int i = 0; i < 2*Lp; i++)
-			k2ft_drift[i] = scratch2[i];
-		
-		for (int i = 0; i < Lp; i++) {
-			double kValue = (2*PI*i*R/L);
-			k2ft_drift[2*i] *= (kValue*kValue);
-			k2ft_drift[2*i+1] *= (kValue*kValue);
-		}
-		for (int i = 0; i < 2*Lp; i++) {
-			phi_k[i] = k2ft_drift[i];
-		}
-		double [] scratch  = backtransform(phi_k);
-
-		for (int i = 0; i < Lp; i++)
-			test_phi[i] = scratch[i];
-		
-		del_phi = backtransform(k2ft_drift);
-		
-		for (int i = 0; i < Lp; i++) {
-			phi[i] += del_phi[i] + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
-		}	
-		
-		t += dt;
-
-	}
-	
-	public void simulateConservedWithMobility(){
-		// dphi/dt = grad dot mobility * grad(del F/ del phi)
-		// impliment as IFT(k*FT(mobility *IFT(k(FT(del F / del phi)))))
-		// or
-		// k*f_(mob*{if_[k(f_dfdp)]})
-		convolveWithRange(phi, phi_bar, R);
-		double drift [] = new double [Lp];
-		for (int i = 0; i < Lp; i++) {
-			double dF_dPhi = 0;
-			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
-			drift[i] = - dt*dF_dPhi;
-		}
-		double [] kft_drift = transform(drift);
-		for (int i = 0; i < Lp; i++) {
-			double kValue = (2*PI*i*R/L);
-			kft_drift[2*i] *= (kValue);
-			kft_drift[2*i+1] *= (kValue);
-		}
-		double [] m_kdrift = backtransform(kft_drift);
-		for (int i = 0; i < Lp; i++) 
-			m_kdrift[i] *= Math.pow(1-phi[i]*phi[i],2);
-		double [] k_mkdrift = transform(m_kdrift);
-		for (int i = 0; i < Lp; i++) {
-			double kValue = (2*PI*i*R/L);
-			k_mkdrift[2*i] *= (kValue);
-			k_mkdrift[2*i+1] *= (kValue);
-		}		
-		del_phi = backtransform(k_mkdrift);
-		for (int i = 0; i < Lp; i++) {
-			phi[i] += del_phi[i];// + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
-		}	
-		t += dt;
-	}
-	
-	public void simulateConseveredSemiImp(){
-//		double [] atanh = new double [Lp];
-//		for (int i = 0; i < Lp; i++){
-//			atanh[i] = T*scikit.numerics.Math2.atanh(phi[i]);
-//		}
-//		double [] atanh_k = transform(atanh);
-//		for (int x = -Lp/2; x < Lp/2; x++) {
-//			double kR = (2*PI*x*R/L);
-//			int i = (x + Lp) % Lp;
-//			double V = (kR == 0 ? 1 : sin(kR)/(kR));
-//			double k = (2*PI*x/L);
-//			phi_k[2*i] = (phi_k[2*i] + dt*k*k*R*R*T*atanh_k[2*i])/(1.0-k*k*R*R*V*dt); 
-//			phi_k[2*i+1] = (phi_k[2*i+1] + dt*k*k*R*R*T*atanh_k[2*i+1])/(1.0-k*k*R*R*V*dt); 
-//		}
-//		phi = backtransform(phi_k);
-		
 		convolveWithRange(phi, phi_bar, R);
 		double drift [] = new double [Lp];
 		for (int i = 0; i < Lp; i++) {
@@ -268,17 +183,138 @@ public class FieldIsing1D{
 		}
 
 		double [] k2ft_drift = transform(drift);
-		for (int i = 0; i < Lp; i++) {
-			double kValue = (2*PI*i*R/L);
+
+		for(int x = -Lp/2; x < Lp/2; x++){
+			double kValue = (2*PI*x/Lp);
+			int i = (x + Lp) % Lp;
 			k2ft_drift[2*i] *= (kValue*kValue);
 			k2ft_drift[2*i+1] *= (kValue*kValue);
 		}
-		for (int i = 0; i < Lp; i++){
-			phi_k[2*i] += k2ft_drift[2*i];
-			phi_k[2*i+1] += k2ft_drift[2*i+1];
-		}
-		phi = backtransform (phi_k);
+
+		del_phi = backtransform(k2ft_drift);
 		
+		for (int i = 0; i < Lp; i++) {
+			phi[i] += del_phi[i] + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+		}	
+		phi_k = transform(phi);
+		t += dt;
+	}
+
+	public void simulateConservedFspace(){
+		convolveWithRange(phi2, phi_bar, R);
+		double drift [] = new double [Lp];
+		for (int i = 0; i < Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi2[i]));
+			drift[i] = - dt*dF_dPhi;
+		}
+
+		double [] k2ft_drift = transform(drift);
+		for(int x = -Lp/2; x < Lp/2; x++){
+			double kValue = (2*PI*x/Lp);
+			int i = (x + Lp) % Lp;
+			k2ft_drift[2*i] *= (kValue*kValue);
+			k2ft_drift[2*i+1] *= (kValue*kValue);
+		}
+
+		double [] scr = transform(phi2);
+		for (int i = 0; i < 2*Lp; i++) {
+			phi2_k[i] = scr[i]+k2ft_drift[i];
+		}
+		double [] scr2 = new double [2*Lp];
+		for (int i = 0; i < 2*Lp; i++) {
+			scr2[i] = phi2_k[i];
+		}
+
+		double [] scr3 = backtransform(scr2);
+
+		for (int i = 0; i < Lp; i++) {
+			phi2[i] = scr3[i]/2.0;
+		}
+		
+		t += dt;
+	}
+	
+	/**
+	* Solves eqn of motion for system with conserved OP and 
+	* mobility M=(1-phi(x)*phi(x))^2. 
+	* 
+	* This does not give the same effect as Glauber dynamics (ie- it still 
+	* suffers from range exceptions with the arctanh.  Cannot use and additional
+	* factor of M in real space, because this does not conserve mobility. For our 
+	* purposes, it seems to work just the same as M=1 (program lasts the same amount
+	* of time, so may as well just use M=1.)
+	* 
+	*  The eqn is:
+	*  dphi/dt = grad dot mobility * grad(del F/ del phi)
+	*  implimented as IFT(k*FT(mobility *IFT(k(FT(del F / del phi)))))
+	*  or 
+	*  k*f_(mob*{if_[k(f_dfdp)]})
+	*/
+	public void simulateConservedWithMobility(){
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp];
+		for (int i = 0; i < Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] = - dt*dF_dPhi;
+		}
+
+		double [] kft_drift = transform(drift);
+
+		for(int x = -Lp/2; x < Lp/2; x++){
+			double kValue = (2*PI*x/Lp);
+			int i = (x + Lp) % Lp;
+			kft_drift[2*i] *= (kValue);
+			kft_drift[2*i+1] *= (kValue);
+		}
+		fft.backtransform(kft_drift);
+		fft.transform(kft_drift);
+		for (int i = 0; i < Lp; i++) {
+			kft_drift[2*i] *=  Math.pow(1-phi[i]*phi[i],2) / Lp;
+			kft_drift[2*i+1] *= 1.0/Lp;
+		}
+
+		for(int x = -Lp/2; x < Lp/2; x++){
+			double kValue = (2*PI*x/Lp);
+			int i = (x + Lp) % Lp;
+			kft_drift[2*i] *= (kValue);
+			kft_drift[2*i+1] *= (kValue);
+		}		
+		del_phi = backtransform(kft_drift);
+		for (int i = 0; i < Lp; i++) {
+			phi[i] += del_phi[i] + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+		}	
+		t += dt;
+		System.out.println(del_phi[0]);
+	}
+	
+	public void simulateConseveredSemiImp(){
+		
+		double [] atanh = new double [Lp];
+		for (int i = 0; i < Lp; i++){
+			atanh[i] = T*scikit.numerics.Math2.atanh(phi2[i]);
+		}
+		double [] atanh_k = transform(atanh);
+		for (int i = 0; i < Lp; i++) {
+			fftScratch[2*i+0] = phi2[i];
+			fftScratch[2*i+1] = 0;
+		}
+		fft.transform(fftScratch);
+		for (int i = 0; i < 2*Lp; i++) {
+			phi2_k[i] = fftScratch[i];
+			}
+		for (int x = -Lp/2; x < Lp/2; x++) {
+			double kR = (2*PI*x*R/L);
+			int i = (x + Lp) % Lp;
+			double V = (kR == 0 ? 1 : sin(kR)/(kR));
+//			double k = (2*PI*x/L);
+			double add = (phi2_k[2*i] + dt*kR*kR*T*atanh_k[2*i])/(1.0-kR*kR*J*V*dt);
+			System.out.println("add = " + add);
+			phi2_k[2*i] = (phi2_k[2*i] + dt*kR*kR*T*atanh_k[2*i])/(1.0-kR*kR*J*V*dt); 
+			phi2_k[2*i+1] = (phi2_k[2*i+1] + dt*kR*kR*T*atanh_k[2*i+1])/(1.0-kR*kR*J*V*dt); 
+		}
+		phi2 = backtransform(phi2_k);
 		t += dt;
 	}
 	
@@ -338,43 +374,21 @@ public class FieldIsing1D{
 		}
 	}
 	private double [] transform(double [] src){
-
 		for (int i = 0; i < Lp; i++) {
 			fftScratch[2*i+0] = src[i];
 			fftScratch[2*i+1] = 0;
 		}
 		fft.transform(fftScratch);
-		System.out.println("zero = "+ fftScratch[0]);
-
 		return fftScratch;
-	
 	}
-
-
+	
 	private double [] backtransform(double [] src){
-
 		fft.backtransform(src);
 		double [] dest = new double [Lp];
-		for (int i = 0; i < Lp; i++)
+		for (int i = 0; i < Lp; i++){
 			dest[i] = src[2*i] / (Lp);
+		}
 		return dest;	
 	}
-	
-	public void init_phi_k(){
-
-		for (int i = 0; i < Lp; i++)
-			phi[i] = DENSITY+ noiseParam*random.nextGaussian()*sqrt((1-DENSITY*DENSITY)/(dx*dx));
 		
-		for (int i = 0; i < Lp; i++) {
-			fftScratch[2*i+0] = phi[i];
-			fftScratch[2*i+1] = 0;
-		}
-		fft.transform(fftScratch);
-
-	
-		for (int i = 0; i < Lp*2; i++)
-			phi_k [i] = fftScratch [i];
-
-	}
-	
 }
