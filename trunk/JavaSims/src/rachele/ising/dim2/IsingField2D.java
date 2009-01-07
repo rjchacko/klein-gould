@@ -501,7 +501,6 @@ public class IsingField2D extends AbstractIsing2D{
 				double k = (2*PI*sqrt(x*x+y*y)/Lp);
 				int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
 				kft_drift[2*i] *= (k*k);
-				kft_drift[2*i+1] *= (k*k);
 			}
 		}
 		

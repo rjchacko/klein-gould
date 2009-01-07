@@ -75,7 +75,7 @@ public class svtFieldApp extends Simulation{
 	public int Lp;
 //	Grid etaDot = new Grid("ising delta phi");
 	Grid phiGrid = new Grid("phi field");
-//	Grid etaDotSF = new Grid("sf phi field");
+	Grid etaDotSF = new Grid("sf phi field");
 //	Plot SFvTime = new Plot("svt");
 //	Plot EtavTime = new Plot("etavt");
 //	Plot eta2 = new Plot("etavt2");
@@ -167,9 +167,10 @@ public class svtFieldApp extends Simulation{
 		phiGrid.addDrawable(
 				Geom2D.line(0, horizontalSlice, 1, horizontalSlice, Color.GREEN));
 //				Geom2D.line(verticalSlice, 0, verticalSlice, 1, Color.BLUE));
-
-//		mobilityCheck.registerData(Lp, Lp, sc.etaBar_k);
 		
+//		mobilityCheck.registerData(Lp, Lp, sc.etaBar_k);
+		double [] ft = fft.calculate2DSF(ising.delPhi, true, true);
+		driftGrid.registerData(Lp,Lp,ft);
 		hSlice.registerLines("Slice", ising.getHslice(horizontalSlice), Color.GREEN);
 		hSlice.registerLines("phi0", new PointSet(0, 1, phi0) , Color.BLACK);
 		hSlice.registerLines("unstable soln", new PointSet(0, 1, unstableSoln) , Color.RED);
