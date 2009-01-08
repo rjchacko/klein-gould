@@ -53,7 +53,7 @@ public class svtFieldApp extends Simulation{
 	//RUN OPTIONS
 	boolean writeToFile = false;
 	boolean accumsOn = false;
-	boolean calcContribs = false;
+	boolean calcContribs = true;
 	int accNo = 1;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];

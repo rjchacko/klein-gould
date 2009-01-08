@@ -131,8 +131,12 @@ public class IsingLR extends RewindableDynamics {
 					
 				case KAWA_GLAUBER:
 				case KAWA_METROPOLIS:
-					int x2 = (x1 + random.nextInt(2*R+1) - R + L)%L;
-					int y2 = (y1 + random.nextInt(2*R+1) - R + L)%L;
+					int dx = random.nextInt(2*R+1) - R;
+					int dy = random.nextInt(2*R+1) - R;
+//					int dx = random.nextInt(R) - R/2;
+//					int dy = random.nextInt(R) - R/2;
+					int x2 = (x1 + dx + L)%L;
+					int y2 = (y1 + dy + L)%L;
 					int s2 = spins.get(x2, y2);
 					if (s2 != s1) {
 						dE += 2*s2*(h + J*(spins.sumInRange(x2,y2)-s2)/(4*R*(R+1)));
