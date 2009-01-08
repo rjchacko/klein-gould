@@ -12,6 +12,7 @@ import rachele.ising.dim2.IsingLR;
 import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
+import scikit.dataset.PointSet;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
@@ -40,6 +41,8 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 	Random random = new Random();
 	Accumulator sf_kAcc;
 	int accNo = 20;
+	double [] inputSlice;
+	double [] unstableSlice;
 	Accumulator [] sf_tAveAcc = new Accumulator [accNo];
 	Accumulator [] sf_tAcc = new Accumulator [accNo];
 	int [] sfLabel = new int [accNo];
@@ -54,6 +57,7 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		c.frameTogether("Data",grid,sfGrid,sftPlot,slicePlot);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/conservedOP_SC/testruns"));
 		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.08h0.65"));
+		params.add("Input 1D Unstable File",new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.661"));
 		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Ising Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
@@ -83,7 +87,9 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 //		for(int i = 0; i < sim.L; i++)
 //			sFactor[i] = 0;
 //		sfGrid.registerData(sim.L/dx, sim.L/dx,sFactor);
-//		slicePlot.registerLines("Slice", sim.getAveHslice(), Color.GREEN);
+		slicePlot.registerLines("Slice", sim.getAveHslice(), Color.BLACK);
+		slicePlot.registerLines("Slice Input",  new PointSet(0, 1, inputSlice), Color.GREEN);
+		slicePlot.registerLines("Slice Unstable",  new PointSet(0, 1, unstableSlice), Color.RED);
 		for (int i = 0; i < accNo; i ++){
 			StringBuffer sb = new StringBuffer();sb.append("s(t) Ave "); sb.append(i);
 			float colorChunk = (float)i/(float)accNo;
@@ -152,32 +158,31 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 	}
 
 	private void initializeStripes(){
-
-		String fileName = params.sget("Input 1D File");
-		//need to make phi0 symmetric
-		double [] tempPhi0 = FileUtil.readConfigFromFile(fileName, sim.L);
-		double [] phi0 = new double [sim.L];
-		double minPhi0Value = 1.0;
-		int minPhi0Location = -1;
-		for (int i = 0; i < sim.L; i++){
-			if (tempPhi0[i] < minPhi0Value){
-				minPhi0Location = i;
-				minPhi0Value = tempPhi0[i];
-				//System.out.println(tempPhi0[i] + " " + i);
-			}
-		}	
-		//System.out.println(tempPhi0[minPhi0Location] + " " + minPhi0Location);
-		for (int i = 0; i < sim.L; i++){
-			phi0[i] = tempPhi0[(minPhi0Location+i)%sim.L];
-			//System.out.println("phi0 " + i + " = " + phi0[i]);
-		}		
+		
 		//now load the Ising lattice with the proper probability
 		for (int i = 0; i < sim.L*sim.L; i++){
-			double prob = (phi0[i%sim.L]+1.0)/2.0;
+			double prob = (inputSlice[i%sim.L]+1.0)/2.0;
 			if(random.nextDouble()>prob) sim.spins.set(i%sim.L, i/sim.L, -1);
 			else sim.spins.set(i%sim.L, i/sim.L, 1);
 		}
 
+	}
+	
+	private double [] getSymmetricSlice(String file){
+		double [] slice = new double [sim.L];
+		double [] temp= FileUtil.readConfigFromFile(file, sim.L);
+		double minPhi0Value = 1.0;
+		int minPhi0Location = -1;
+		for (int i = 0; i < sim.L; i++){
+			if (temp[i] < minPhi0Value){
+				minPhi0Location = i;
+				minPhi0Value = temp[i];
+			}
+		}	
+		for (int i = 0; i < sim.L; i++){
+			slice[i] = temp[(minPhi0Location+i)%sim.L];
+		}
+		return slice;
 	}
 	
 	public int findBestkR(){
@@ -221,6 +226,10 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		}
 		sim.randomizeField(params.fget("Initial magnetization"));		
 		dx = 1;
+		String inputFile = params.sget("Input 1D File");
+		inputSlice = getSymmetricSlice(inputFile);
+		String unstableFile = params.sget("Input 1D Unstable File");
+		unstableSlice = getSymmetricSlice(unstableFile);
 	}
 	
 	public void writeConfigToFile(){

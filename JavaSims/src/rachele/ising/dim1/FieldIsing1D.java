@@ -188,7 +188,6 @@ public class FieldIsing1D{
 			double kValue = (2*PI*x/Lp);
 			int i = (x + Lp) % Lp;
 			k2ft_drift[2*i] *= (kValue*kValue);
-//			k2ft_drift[2*i+1] *= (kValue*kValue);
 		}
 
 		del_phi = backtransform(k2ft_drift);
@@ -201,35 +200,42 @@ public class FieldIsing1D{
 	}
 
 	public void simulateConservedFspace(){
-		convolveWithRange(phi2, phi_bar, R);
+
+		convolveWithRange(phi, phi_bar, R);
 		double drift [] = new double [Lp];
 		for (int i = 0; i < Lp; i++) {
 			double dF_dPhi = 0;
-			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi2[i]));
+			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
 			drift[i] = - dt*dF_dPhi;
 		}
 
 		double [] k2ft_drift = transform(drift);
+
 		for(int x = -Lp/2; x < Lp/2; x++){
 			double kValue = (2*PI*x/Lp);
 			int i = (x + Lp) % Lp;
 			k2ft_drift[2*i] *= (kValue*kValue);
-			k2ft_drift[2*i+1] *= (kValue*kValue);
 		}
 
-		double [] scr = transform(phi2);
-		for (int i = 0; i < 2*Lp; i++) {
-			phi2_k[i] = scr[i]+k2ft_drift[i];
+
+		for (int i = 0; i < Lp; i++) {
+			phi_k[2*i] += k2ft_drift[2*i];
 		}
+		
+		double [] scr = transform(phi);
+		for (int i = 0; i < Lp; i++) {
+			phi_k[2*i] = scr[2*i];
+		}
+		
 		double [] scr2 = new double [2*Lp];
 		for (int i = 0; i < 2*Lp; i++) {
-			scr2[i] = phi2_k[i];
+			scr2[i] = phi_k[i];
 		}
 
 		double [] scr3 = backtransform(scr2);
 
 		for (int i = 0; i < Lp; i++) {
-			phi2[i] = scr3[i]/2.0;
+			phi[i] = scr3[i]/2;
 		}
 		
 		t += dt;
@@ -266,7 +272,6 @@ public class FieldIsing1D{
 			double kValue = (2*PI*x/Lp);
 			int i = (x + Lp) % Lp;
 			kft_drift[2*i] *= (kValue);
-			kft_drift[2*i+1] *= (kValue);
 		}
 		fft.backtransform(kft_drift);
 		fft.transform(kft_drift);
@@ -279,7 +284,6 @@ public class FieldIsing1D{
 			double kValue = (2*PI*x/Lp);
 			int i = (x + Lp) % Lp;
 			kft_drift[2*i] *= (kValue);
-			kft_drift[2*i+1] *= (kValue);
 		}		
 		del_phi = backtransform(kft_drift);
 		for (int i = 0; i < Lp; i++) {
@@ -293,28 +297,30 @@ public class FieldIsing1D{
 		
 		double [] atanh = new double [Lp];
 		for (int i = 0; i < Lp; i++){
-			atanh[i] = T*scikit.numerics.Math2.atanh(phi2[i]);
+			atanh[i] = T*scikit.numerics.Math2.atanh(phi[i]);
 		}
 		double [] atanh_k = transform(atanh);
 		for (int i = 0; i < Lp; i++) {
-			fftScratch[2*i+0] = phi2[i];
+			fftScratch[2*i+0] = phi[i];
 			fftScratch[2*i+1] = 0;
 		}
 		fft.transform(fftScratch);
 		for (int i = 0; i < 2*Lp; i++) {
-			phi2_k[i] = fftScratch[i];
-			}
-		for (int x = -Lp/2; x < Lp/2; x++) {
-			double kR = (2*PI*x*R/L);
-			int i = (x + Lp) % Lp;
-			double V = (kR == 0 ? 1 : sin(kR)/(kR));
-//			double k = (2*PI*x/L);
-			double add = (phi2_k[2*i] + dt*kR*kR*T*atanh_k[2*i])/(1.0-kR*kR*J*V*dt);
-			System.out.println("add = " + add);
-			phi2_k[2*i] = (phi2_k[2*i] + dt*kR*kR*T*atanh_k[2*i])/(1.0-kR*kR*J*V*dt); 
-			phi2_k[2*i+1] = (phi2_k[2*i+1] + dt*kR*kR*T*atanh_k[2*i+1])/(1.0-kR*kR*J*V*dt); 
+			phi_k[i] = fftScratch[i];
 		}
-		phi2 = backtransform(phi2_k);
+		double [] del_phi_k = new double [2*Lp];
+		for (int x = -Lp/2; x < Lp/2; x++) {
+			double k = (2*PI*x/L);
+			int i = (x + Lp) % Lp;
+			double V = (k == 0 ? 1 : sin(k*R)/(k*R));
+			double new_phi_k = (phi_k[2*i] + dt*k*k*T*atanh_k[2*i])/(1.0-k*k*J*V*dt);
+//			new_phi_k[2*i+1] = (phi2_k[2*i+1] + dt*kR*kR*T*atanh_k[2*i+1])/(1.0-kR*kR*J*V*dt);
+			del_phi_k [2*i] = new_phi_k - phi_k[i];
+		}
+		del_phi = backtransform(del_phi_k);
+		for (int i = 0; i < Lp; i++) {
+			phi[i] += del_phi[i] + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+		}	
 		t += dt;
 	}
 	

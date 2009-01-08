@@ -59,7 +59,7 @@ public class IsingField1DApp extends Simulation{
 
 		params.add("Config Directory",new DirectoryValue("/home/erdomi/data/lraim/configs1dAutoName"));
 		params.addm("Noise", new DoubleValue(1.0, 0, 1.0).withSlider());
-		params.addm("Dynamics", new ChoiceValue("Langevin","Conserved F Space", "Conserved","Conserved w mob", "Conserved semi imp",  "Glauber"));
+		params.addm("Dynamics", new ChoiceValue( "Conserved semi imp", "Conserved F Space", "Langevin","Conserved","Conserved w mob", "Glauber"));
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.08, 0, 0.2).withSlider());
 		params.addm("J", +1.0);
@@ -90,7 +90,7 @@ public class IsingField1DApp extends Simulation{
 		
 		SFPlot.registerLines("Structure factor", sf.getAccumulator(), Color.BLACK);
 		fieldPlot.registerLines("Field", new PointSet(0, ising.dx, ising.phi), Color.BLACK);
-		double [] realFT = new double [ising.Lp];
+		double [] realFT = new double [ising.Lp];  
 		double [] imagFT = new double [ising.Lp];
 		for (int i = 1; i < ising.Lp; i++){
 			realFT[i] = ising.phi_k[2*i];
@@ -173,7 +173,7 @@ public class IsingField1DApp extends Simulation{
 //				ising.simulateConseveredSemiImp();
 			}else if (params.sget("Dynamics")=="Conserved w mob") ising.simulateConservedWithMobility();
 			else if (params.sget("Dynamics")=="Conserved F Space"){
-				ising.simulateConserved();
+//				ising.simulateConserved();
 				ising.simulateConservedFspace();
 			}
 			else if (params.sget("Dynamics")=="Conserved semi imp") ising.simulateConseveredSemiImp();			
