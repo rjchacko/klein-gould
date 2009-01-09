@@ -199,6 +199,63 @@ public class FieldIsing1D{
 		t += dt;
 	}
 
+	public void simulateConservedFiniteDiff(){
+
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp];
+		for (int i = 0; i < Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] =  dt*dF_dPhi;
+		}
+
+		for (int i = 0; i < Lp; i++) {
+			int irt = (i+1)/Lp;
+			int ilf = (i-1+Lp)/Lp;
+			del_phi[i] = (-2*drift[i] + drift[irt] + drift[ilf]);
+		}
+				
+		for (int i = 0; i < Lp; i++) {
+			phi[i] += del_phi[i] + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+		}	
+		phi_k = transform(phi);
+		t += dt;
+	}
+
+	public void simulateConservedFiniteDiffMob(){
+
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp];
+		for (int i = 0; i < Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] =  dt*dF_dPhi;
+		}
+
+		double [] mgrad = new double [Lp];
+		for (int i = 0; i < Lp; i++) {
+			int irt = (i+1)%Lp;
+			int ilf = (i-1+Lp)%Lp;
+			mgrad[i] = (1-phi[i]*phi[i])*(drift[irt] - drift[ilf])/2.0;
+		}
+		for (int i = 0; i < Lp; i++) {
+			int irt = (i+1)%Lp;
+			int ilf = (i-1+Lp)%Lp;
+			del_phi[i] = (mgrad[irt] - mgrad[ilf])/2;
+		}		
+//		
+//		double [] newPhi = new double [Lp];
+//		for (int i = 0; i < Lp; i++) {	
+//			newPhi[i] =  (phi[(i-1+Lp)/Lp]+phi[(i+1)/Lp])/2.0+ del_phi[i];// + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+//		}		
+		
+		for (int i = 0; i < Lp; i++) {	
+			phi[i] += del_phi[i] + (1-phi[i]*phi[i])*sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+		}	
+		phi_k = transform(phi);
+		t += dt;
+	}
+	
 	public void simulateConservedFspace(){
 
 		convolveWithRange(phi, phi_bar, R);
@@ -310,16 +367,21 @@ public class FieldIsing1D{
 		}
 		double [] del_phi_k = new double [2*Lp];
 		for (int x = -Lp/2; x < Lp/2; x++) {
-			double k = (2*PI*x/L);
+			double k = (2*PI*x/Lp);
 			int i = (x + Lp) % Lp;
-			double V = (k == 0 ? 1 : sin(k*R)/(k*R));
-			double new_phi_k = (phi_k[2*i] + dt*k*k*T*atanh_k[2*i])/(1.0-k*k*J*V*dt);
-//			new_phi_k[2*i+1] = (phi2_k[2*i+1] + dt*kR*kR*T*atanh_k[2*i+1])/(1.0-kR*kR*J*V*dt);
-			del_phi_k [2*i] = new_phi_k - phi_k[i];
+			double V = (k == 0 ? 1 : sin(k)/(k));
+			double new_phi_k = (phi_k[2*i] + dt*k*k*atanh_k[2*i])/(1.0-k*k*J*V*dt);
+
+			del_phi_k [2*i] = new_phi_k - phi_k[2*i];
+//			System.out.println("del phi k " + k*k*atanh_k[2*i]);
+//			new_phi_k = (phi_k[2*i+1] + dt*atanh_k[2*i+1])/(1.0-J*V*dt);
+//			del_phi_k [2*i+1] = new_phi_k - phi_k[2*i+1];
 		}
 		del_phi = backtransform(del_phi_k);
+
 		for (int i = 0; i < Lp; i++) {
-			phi[i] += del_phi[i] + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+			phi[i] += del_phi[i];// + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
+//			System.out.println("del phi " + del_phi_k[2*i]);
 		}	
 		t += dt;
 	}

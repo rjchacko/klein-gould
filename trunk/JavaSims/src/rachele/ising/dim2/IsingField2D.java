@@ -521,6 +521,89 @@ public class IsingField2D extends AbstractIsing2D{
 		t += dt;
 	}
 	
+	public void simulateConservedFiniteDiff(){
+		
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] =  dt*dF_dPhi;
+		}
+
+		for (int y = 0; y < Lp; y++) {
+			for (int x = 0; x < Lp; x++) {
+				int i = y*Lp + x;
+				int rt = y*Lp+(x+1)%Lp;
+				int lf = y*Lp+(x-1+Lp)%Lp;
+				int up = (y+1)%Lp + x;
+				int dn = (y-1+Lp)%Lp + x;
+				delPhi[i] = (-2*drift[i] + drift[rt] + drift[lf])+(-2*drift[i] + drift[up] + drift[dn]);
+			}
+		}
+		
+		for (int i = 0; i < Lp*Lp; i++) {
+			double noiseTerm = sqrt(dt*2/(dx*dx))*noise();
+			phi[i] += delPhi[i]+noiseTerm;
+			driftTermC[i] = delPhi[i];
+			driftContrib += abs(driftTermC[i])/(abs(driftTermC[i])+abs(noiseTerm));
+			absDriftContrib += abs(driftTermC[i]);
+			absNoiseContrib += abs(noiseTerm);
+			
+		}	
+		driftContrib /= (Lp*Lp);
+		absNoiseContrib /= (Lp*Lp);
+		absDriftContrib /= (Lp*Lp);
+		t += dt;
+	}
+	
+	public void simulateConservedFiniteDiffMob(){
+		
+		convolveWithRange(phi, phi_bar, R);
+		double drift [] = new double [Lp*Lp];
+		for (int i = 0; i < Lp*Lp; i++) {
+			double dF_dPhi = 0;
+			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			drift[i] =  dt*dF_dPhi;
+		}
+		double [] mgrad = new double [Lp*Lp];
+		for (int y = 0; y < Lp; y++) {
+			for (int x = 0; x < Lp; x++) {
+				int i = y*Lp + x;
+				int up = (y+1)%Lp + x;
+				int dn = (y-1+Lp)%Lp + x;
+				int rt = y*Lp + (x + 1)%Lp;
+				int lf = y*Lp + (x - 1 + Lp)%Lp;
+				mgrad[i] = (1-phi[i]*phi[i])*(drift[rt] + drift[up] - drift[lf] - drift[dn])/2.0;				
+			}
+		}
+
+		for (int y = 0; y < Lp; y++) {
+			for (int x = 0; x < Lp; x++) {
+				int i = y*Lp + x;
+				int up = (y+1)%Lp + x;
+				int dn = (y-1+Lp)%Lp + x;
+				int rt = y*Lp + (x + 1)%Lp;
+				int lf = y*Lp + (x - 1 + Lp)%Lp;
+				delPhi[i] = (mgrad[rt] + mgrad[up] - mgrad[lf] - mgrad[dn])/2.0;				
+			}
+		}
+				
+		for (int i = 0; i < Lp*Lp; i++) {
+			double noiseTerm = sqrt(dt*2/(dx*dx))*noise();
+			phi[i] += delPhi[i]+noiseTerm;
+			driftTermC[i] = delPhi[i];
+			driftContrib += abs(driftTermC[i])/(abs(driftTermC[i])+abs(noiseTerm));
+			absDriftContrib += abs(driftTermC[i]);
+			absNoiseContrib += abs(noiseTerm);
+			
+		}	
+		driftContrib /= (Lp*Lp);
+		absNoiseContrib /= (Lp*Lp);
+		absDriftContrib /= (Lp*Lp);
+		t += dt;
+	}
+	
 	public void simulate() {
 		freeEnergy = 0;  //free energy is calculated for previous time step
 		double potAccum = 0;
