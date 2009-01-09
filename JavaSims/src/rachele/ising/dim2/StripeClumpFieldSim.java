@@ -267,9 +267,9 @@ public class StripeClumpFieldSim {
 		int y1=ky;
 		for (int x1 = -Lp/2; x1 < Lp/2; x1++) {
 			for (int x2 = -Lp/2; x2 < Lp/2; x2++) {
-				double kRx = 2*Math.PI*ising.R*x2/ising.L;
-				double kRy = 2*Math.PI*ising.R*y1/ising.L;
-				M[(x2+Lp)%Lp][(x1+Lp)%Lp] = (kRx*kRx+kRy*kRy)*(mobility_k[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kRx, kRy) - f2k[(x1-x2+Lp)%Lp]);
+				double kx = 2*Math.PI*x2/ising.L;
+				double ky = 2*Math.PI*y1/ising.L;
+				M[(x2+Lp)%Lp][(x1+Lp)%Lp] = (kx*kx+ky*ky)*(mobility_k[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kx*ising.R, ky*ising.R) - f2k[(x1-x2+Lp)%Lp]);
 			}
 		}
 

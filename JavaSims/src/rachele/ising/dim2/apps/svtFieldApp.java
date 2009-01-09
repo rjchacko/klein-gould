@@ -5,7 +5,7 @@ package rachele.ising.dim2.apps;
 import java.awt.Color;
 import java.io.File;
 import rachele.ising.dim2.IsingField2D;
-//import rachele.ising.dim2.StripeClumpFieldSim;
+import rachele.ising.dim2.StripeClumpFieldSim;
 import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
@@ -43,7 +43,7 @@ public class svtFieldApp extends Simulation{
 
 	IsingField2D ising;
 	FourierTransformer fft;
-//    StripeClumpFieldSim sc;
+    StripeClumpFieldSim sc;
 	double [] eta, etaK, sf; //right hand side
 	double [] phi0, phi0_bar, unstableSoln; // Background stripe configuration and this configuration convoluted with potential.
 	int ky;
@@ -440,7 +440,7 @@ public class svtFieldApp extends Simulation{
 
 		ising = new IsingField2D(params);
 		this.Lp=ising.Lp;
-//		sc = new StripeClumpFieldSim(ising, params);
+		sc = new StripeClumpFieldSim(ising, params);
 		for (int i = 0; i < accNo; i++){ 
 			if(accumsOn){
 				etaAcc[i] = new Accumulator();
