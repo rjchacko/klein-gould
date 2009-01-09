@@ -522,6 +522,7 @@ public class IsingField2D extends AbstractIsing2D{
 	}
 	
 	public void simulateConservedFiniteDiff(){
+		//The finite difference algorithm causes diagonal patterns.
 		
 		convolveWithRange(phi, phi_bar, R);
 		double drift [] = new double [Lp*Lp];
@@ -534,11 +535,21 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int y = 0; y < Lp; y++) {
 			for (int x = 0; x < Lp; x++) {
 				int i = y*Lp + x;
-				int rt = y*Lp+(x+1)%Lp;
+				int rt = y*Lp+(x)%Lp;
+//				int rrt = y*Lp+(x+2)%Lp;
 				int lf = y*Lp+(x-1+Lp)%Lp;
+//				int llf = y*Lp+(x-2+Lp)%Lp;
 				int up = (y+1)%Lp + x;
+//				int uup = (y+2)%Lp + x;
 				int dn = (y-1+Lp)%Lp + x;
+//				int ddn = (y-2+Lp)%Lp + x;
 				delPhi[i] = (-2*drift[i] + drift[rt] + drift[lf])+(-2*drift[i] + drift[up] + drift[dn]);
+//				delPhi[i] = (-mgrad[rrt]+8*mgrad[irt]-8*mgrad[ilf]+mgrad[llf])/12;
+//				int ru = ((y+1)%Lp)*Lp+(x+1)%Lp;
+//				int lu = ((y+1)%Lp)*Lp+(x-1+Lp)%Lp;
+//				int rd = ((y-1+Lp)%Lp)*Lp+(x+1)%Lp;
+//				int ld = ((y-1+Lp)%Lp)*Lp+(x-1+Lp)%Lp;
+//				delPhi[i] += (-2*drift[i] + drift[ru] + drift[lu] + -2*drift[i] + drift[rd] + drift[ld])/2.0;
 			}
 		}
 		
@@ -570,22 +581,34 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int y = 0; y < Lp; y++) {
 			for (int x = 0; x < Lp; x++) {
 				int i = y*Lp + x;
+				int rt = y*Lp+(x)%Lp;
+				int rrt = y*Lp+(x+2)%Lp;
+				int lf = y*Lp+(x-1+Lp)%Lp;
+				int llf = y*Lp+(x-2+Lp)%Lp;
 				int up = (y+1)%Lp + x;
+				int uup = (y+2)%Lp + x;
 				int dn = (y-1+Lp)%Lp + x;
-				int rt = y*Lp + (x + 1)%Lp;
-				int lf = y*Lp + (x - 1 + Lp)%Lp;
-				mgrad[i] = (1-phi[i]*phi[i])*(drift[rt] + drift[up] - drift[lf] - drift[dn])/2.0;				
+				int ddn = (y-2+Lp)%Lp + x;
+//				mgrad[i] = (1-phi[i]*phi[i])*(drift[rt] + drift[up] - drift[lf] - drift[dn])/2.0;				
+				mgrad[i] = (1-phi[i]*phi[i])*(-drift[uup]+8*drift[up]-8*drift[dn]+drift[ddn])/12;				
+				mgrad[i] += (1-phi[i]*phi[i])*(-drift[rrt]+8*drift[rt]-8*drift[lf]+drift[llf])/12;				
 			}
 		}
 
 		for (int y = 0; y < Lp; y++) {
 			for (int x = 0; x < Lp; x++) {
 				int i = y*Lp + x;
+				int rt = y*Lp+(x)%Lp;
+				int rrt = y*Lp+(x+2)%Lp;
+				int lf = y*Lp+(x-1+Lp)%Lp;
+				int llf = y*Lp+(x-2+Lp)%Lp;
 				int up = (y+1)%Lp + x;
+				int uup = (y+2)%Lp + x;
 				int dn = (y-1+Lp)%Lp + x;
-				int rt = y*Lp + (x + 1)%Lp;
-				int lf = y*Lp + (x - 1 + Lp)%Lp;
-				delPhi[i] = (mgrad[rt] + mgrad[up] - mgrad[lf] - mgrad[dn])/2.0;				
+				int ddn = (y-2+Lp)%Lp + x;
+				delPhi[i] = (-mgrad[rrt]+8*mgrad[rt]-8*mgrad[lf]+mgrad[llf])/12;
+				delPhi[i] += (-mgrad[uup]+8*mgrad[up]-8*mgrad[dn]+mgrad[ddn])/12;
+//				delPhi[i] = (mgrad[rt] + mgrad[up] - mgrad[lf] - mgrad[dn])/2.0;				
 			}
 		}
 				

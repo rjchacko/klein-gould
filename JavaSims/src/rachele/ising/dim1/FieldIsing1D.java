@@ -236,18 +236,19 @@ public class FieldIsing1D{
 		for (int i = 0; i < Lp; i++) {
 			int irt = (i+1)%Lp;
 			int ilf = (i-1+Lp)%Lp;
-			mgrad[i] = (1-phi[i]*phi[i])*(drift[irt] - drift[ilf])/2.0;
+			int rrt = (i+2)%Lp;
+			int llf = (i-2+Lp)%Lp;
+//			mgrad[i] = (1-phi[i]*phi[i])*(drift[irt] - drift[ilf])/2.0;
+			mgrad[i] = (1-phi[i]*phi[i])*(-drift[rrt]+8*drift[irt]-8*drift[ilf]+drift[llf])/12;
 		}
 		for (int i = 0; i < Lp; i++) {
 			int irt = (i+1)%Lp;
 			int ilf = (i-1+Lp)%Lp;
-			del_phi[i] = (mgrad[irt] - mgrad[ilf])/2;
+			int rrt = (i+2)%Lp;
+			int llf = (i-2+Lp)%Lp;
+//			del_phi[i] = (mgrad[irt] - mgrad[ilf])/2;
+			del_phi[i] = (-mgrad[rrt]+8*mgrad[irt]-8*mgrad[ilf]+mgrad[llf])/12;
 		}		
-//		
-//		double [] newPhi = new double [Lp];
-//		for (int i = 0; i < Lp; i++) {	
-//			newPhi[i] =  (phi[(i-1+Lp)/Lp]+phi[(i+1)/Lp])/2.0+ del_phi[i];// + sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;
-//		}		
 		
 		for (int i = 0; i < Lp; i++) {	
 			phi[i] += del_phi[i] + (1-phi[i]*phi[i])*sqrt(dt*2*T/dx)*random.nextGaussian()*noiseParam;

@@ -169,12 +169,9 @@ public class IsingField1DApp extends Simulation{
 			if(params.sget("Dynamics")=="Glauber") ising.simulateGlauber();
 			else if(params.sget("Dynamics")=="Langevin")ising.simulate();
 			else if (params.sget("Dynamics")=="Conserved"){ ising.simulateConserved();
-//				ising.simulateConservedFspace();
-//				ising.simulateConseveredSemiImp();
 			}else if (params.sget("Dynamics")=="Conserved w mob") ising.simulateConservedWithMobility();
 			else if (params.sget("Dynamics")=="Conserved Finite Diff"){
-//				ising.simulateConserved();
-//				ising.simulateConservedFspace();
+//				ising.simulateConservedFiniteDiff();
 				ising.simulateConservedFiniteDiffMob();
 			}
 			else if (params.sget("Dynamics")=="Conserved semi imp") ising.simulateConseveredSemiImp();			
