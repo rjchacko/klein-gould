@@ -4,9 +4,9 @@ public class NewmanZiff {
 	// number of sites
 	public int n;
 
-	public boolean wrap_horizontal = false;
-	public boolean wrap_vertical = false;
-	public boolean wrap_diagonal = false;
+	protected boolean wrap_horizontal = false;
+	protected boolean wrap_vertical = false;
+	protected boolean wrap_diagonal = false;
 	
 	private final int EMPTY = Integer.MIN_VALUE;
 	
@@ -43,6 +43,8 @@ public class NewmanZiff {
 		compressPath(j);
 
 		if (findRoot(i) == findRoot(j)) {
+			// i and j are neighor sites.  if their displacements to their
+			// (shared) root differs, then the cluster has wrapped
 			boolean horiz = dx[i] != dx_i2j + dx[j];
 			boolean vert  = dy[i] != dy_i2j + dy[j];
 			if (horiz && vert)
@@ -87,11 +89,14 @@ public class NewmanZiff {
 			(wrap_vertical && wrap_diagonal);
 	}
 	
+	protected int findRoot(int i) {
+		return (parent[i] < 0) ? i : findRoot(parent[i]);
+	}
+	
 	private void mergeRoots(int i, int j, int dx_i2j, int dy_i2j) {
 		int r_i = findRoot(i);
 		int r_j = findRoot(j);
 		assert (r_i != r_j);
-		assert (false);
 		
 		parent[r_j] += parent[r_i]; // r_j is root for i and j clusters 
 		parent[r_i] = r_j;          // link r_i to r_j
@@ -107,9 +112,5 @@ public class NewmanZiff {
 			parent[i] = parent[parent[i]];
 		}
 		assert (i == findRoot(i) || parent[i] == findRoot(i));
-	}
-	
-	private int findRoot(int i) {
-		return (parent[i] < 0) ? i : findRoot(parent[i]);
 	}
 }
