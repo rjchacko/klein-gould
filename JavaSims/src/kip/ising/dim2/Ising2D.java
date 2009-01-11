@@ -9,6 +9,7 @@ public class Ising2D {
 	public double T;
 	public Random random = new Random();
 	public double time;
+	public boolean openBoundary = false;
 	
 	public Ising2D(int seed, int _L1, int _L2, double _T) {
 		random.setSeed(seed);
@@ -27,19 +28,32 @@ public class Ising2D {
 			spin[i] = random.nextDouble() < 0.5 ? 1 : -1;
 	}
 	
-	private int neighborSum(int i) {			
+	private int neighborSum(int i) {
 		int x = i % L1;
-		int y = i / L1;			
-		int xp = (x+1)%L1;
-		int xm = (x-1+L1)%L1;
-		int yp = (y+1)%L2;
-		int ym = (y-1+L2)%L2;
-
+		int y = i / L1;
 		int acc = 0;
-		acc += spin[yp*L1+x];
-		acc += spin[ym*L1+x];
-		acc += spin[y*L1+xp];
-		acc += spin[y*L1+xm];
+		
+		if (openBoundary) {
+			if (y < L2-1)
+				acc += spin[i+L1];
+			if (y > 0)
+				acc += spin[i-L1];
+			if (x < L1-1)
+				acc += spin[i+1];
+			if (x > 0)
+				acc += spin[i-1];
+		}
+		else {
+			int yp = (y+1)%L2;
+			int ym = (y-1+L2)%L2;
+			int xp = (x+1)%L1;
+			int xm = (x-1+L1)%L1;
+			acc += spin[yp*L1+x];
+			acc += spin[ym*L1+x];
+			acc += spin[y*L1+xp];
+			acc += spin[y*L1+xm];
+		}
+		
 		return acc;
 	}
 	

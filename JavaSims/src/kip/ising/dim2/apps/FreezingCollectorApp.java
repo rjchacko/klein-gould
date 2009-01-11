@@ -10,6 +10,7 @@ import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
+import scikit.jobs.params.ChoiceValue;
 import scikit.util.Utilities;
 
 
@@ -27,10 +28,11 @@ public class FreezingCollectorApp extends Simulation {
 	public void load(Control c) {
 		c.frame(grid, homPlot);
 		
+		params.add("Boundary", new ChoiceValue("Open", "Periodic"));
 		params.add("L", 256);
 		params.add("Ratio", 1.0);
 		params.add("Count max", 10000);
-		params.add("Time max", 250);
+		params.add("Time max", 100);
 		params.add("count");
 		params.add("time");
 	}
@@ -51,6 +53,7 @@ public class FreezingCollectorApp extends Simulation {
 	}
 	
 	public void run() {
+		boolean openBoundary = params.sget("Boundary").equals("Open");
 		int L2 = params.iget("L");
 		int L1 = (int) (L2 * params.fget("Ratio"));
 		
@@ -67,14 +70,16 @@ public class FreezingCollectorApp extends Simulation {
 		
 		for (count = 0; count < cntMax; count++) {
 			sim = new Ising2D(count, L1, L2, 0);
+			sim.openBoundary = openBoundary;
 			
 			while (sim.time < timeMax) {
 				sim.step(1);            
 				Job.animate();
 				
 				if (sim.time % sampleInterval == 0) {
-		    		PercolationSite2d nz = new PercolationSite2d(sim.L1, sim.L2);
+		    		PercolationSite2d nz = new PercolationSite2d(sim.L1, sim.L2, openBoundary);
 		    		nz.occupyAndBondSites(sim.spin, 1);
+		    		nz.findHomologies();
 		    		horz.accum(sim.time, nz.horizontalHomology() ? 1 : 0);
 		    		vert.accum(sim.time, nz.verticalHomology() ? 1 : 0);
 		    		cross.accum(sim.time, (nz.crossHomology() || nz.pointHomology()) ? 1 : 0);
