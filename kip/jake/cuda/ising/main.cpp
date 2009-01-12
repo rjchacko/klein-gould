@@ -202,6 +202,73 @@ void find_tc2 ()
     fclose (out);
 }
 
+void nucleation_times ()
+{
+    // Criterion for nucleation: field and magnetization point in same 
+    // direction.
+    //
+
+    // // 7d Tc ~ 12.8690191
+    // // 6d Tc ~ 10.8348231
+    // // 5d Tc ~ 8.77847518
+    const int d = 5;
+    const int l = 12;
+    const double T = 8.77847518*4/9;
+    const double h = 2.51;
+    //const int d = 2;
+    //const int l = 64;
+    //const double T = 2.269*4/9;
+    //const double h = 0.55;
+
+    int ntrials = 5000;
+    int relaxTime = 50;
+    int iters = 500;
+
+    const int nbins = iters/25;
+    int * bins = new int [nbins];
+
+    int numNucleations = 0;
+    double meanNucleation = 0;
+
+    IsingCuda ic = IsingCuda (l, d, h, T);
+
+    for (int i=0; i<ntrials; ++i)
+    {
+        ic.allSpinsUp (); // Prepare the lattice
+        ic.upH ();
+        for (int j=0; j<relaxTime; ++j)
+            ic.update ();
+        ic.downH (); // now, m*h < 0
+        
+        int step = 0;
+        while (step < iters+1)
+        {   
+            ic.update ();
+            ++step;
+            if (ic.magnetization () * ic.h > 0) // if transitioned
+            {
+                ++numNucleations;
+                meanNucleation += (double) step;
+
+                ++ bins [(step-1)*nbins/iters]; 
+                break;
+            }
+        }
+        if ( !(i%100) ) printf ("Finished %d/%d\n", i, ntrials);
+    }
+
+    meanNucleation /= numNucleations; // Get an average nucleation time
+
+    FILE * out = fopen ("data/nt.dat", "w");
+    assert (out);
+    
+    fprintf (out, "# Mean nucleation time: %.6e\n", meanNucleation);
+    for (int i=0; i<nbins; ++i)
+        fprintf (out, "%d\t%d\n", iters*(i+1)/nbins, bins[i]);
+
+    fclose (out); delete bins;
+}
+
 void find_hs ()
 {
     // // Stauffer 7d Tc ~ 12.8690191
@@ -312,7 +379,8 @@ int main (int argc, char *argv[]) {
     //test7 ();
     //find_tc ();
     //find_tc2 ();
-    find_hs ();
+    nucleation_times ();
+    //find_hs ();
     
     return 0;
 }
