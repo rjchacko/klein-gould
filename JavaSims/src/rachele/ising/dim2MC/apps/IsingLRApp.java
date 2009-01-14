@@ -1,11 +1,12 @@
-package rachele.ising.dim2.apps;
+package rachele.ising.dim2MC.apps;
 
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import rachele.ising.dim2.*;
+//import rachele.ising.dim2.*;
+import rachele.ising.dim2MC.IsingLR;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;

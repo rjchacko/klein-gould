@@ -4,8 +4,8 @@ import static scikit.util.Utilities.format;
 
 import java.awt.Color;
 
-import rachele.ising.dim2.IsingLR;
 import rachele.ising.dim2.StructureFactor;
+import rachele.ising.dim2MC.IsingLR;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;

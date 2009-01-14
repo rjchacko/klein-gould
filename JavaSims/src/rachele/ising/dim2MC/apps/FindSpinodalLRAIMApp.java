@@ -1,11 +1,11 @@
-package rachele.ising.dim2.apps;
+package rachele.ising.dim2MC.apps;
 
 import static scikit.util.Utilities.format;
 
 import java.awt.Color;
 import java.io.File;
 
-import rachele.ising.dim2.IsingLR;
+import rachele.ising.dim2MC.IsingLR;
 import rachele.util.FileUtil;
 import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;

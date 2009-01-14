@@ -1,10 +1,11 @@
-package rachele.ising.dim2.apps;
+package rachele.ising.dim2MC.apps;
 
 import static java.lang.Math.exp;
 import static scikit.util.Utilities.format;
 
 import java.awt.Color;
-import rachele.ising.dim2.IsingLR;
+
+import rachele.ising.dim2MC.IsingLR;
 import scikit.dataset.Function;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Grid;

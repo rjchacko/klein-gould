@@ -1,34 +1,32 @@
-package rachele.ising.dim2;
+package rachele.ising.dim2MC;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.min;
-import kip.ising.RewindableDynamics;
-import kip.ising.spinblock.SpinBlocks2D;
 import kip.util.Random;
 import scikit.dataset.PointSet;
 import scikit.jobs.params.Parameters;
 
-public class IsingLR extends RewindableDynamics {
-	public SpinBlocks2D spins;
+public class IsingLRCircle {
 
-
+	public IsingCircleIntSpins spins;
 	public enum DynType {METROPOLIS, GLAUBER, KAWA_GLAUBER, KAWA_METROPOLIS};
 	public DynType dynamics = DynType.GLAUBER;
-	public int L, R;
-	public double T, J, h;
+	public int L, R, z;
+	public double T, J, h, dt, time;
 	public Random random = new Random();
 	public static final double kRpeak = 4.4934092;
 
 	
-	public IsingLR(Parameters params) {
+	public IsingLRCircle(Parameters params) {
 		L = Integer.highestOneBit(params.iget("L"));
 		params.set("L", L);
 		R = min(params.iget("R"), L/2-1);
 		params.set("R", R);
 		
-		spins = new SpinBlocks2D(L, R);
+		spins = new IsingCircleIntSpins(L, R);
 		random.setSeed(params.iget("Random seed"));
 		setParameters(params);
+		z = spins.findZ();
 	}
 	
 	
@@ -51,18 +49,12 @@ public class IsingLR extends RewindableDynamics {
 	}
 	
 	
-	public RewindableDynamics clone() {
-		IsingLR ising = (IsingLR)super.clone();
-		ising.random = ising.random.clone();
-		return ising;
-	}
-	
+
 	
 	public double magnetization() {
 		return (double)spins.sumAll() / (L*L);
 	}
 	
-
 	public void randomizeField(double m) {
 		if (m == 1 || m == -1) {
 			for (int i = 0; i < L*L; i++)
@@ -81,6 +73,10 @@ public class IsingLR extends RewindableDynamics {
 		time = 0.0;
 	}
 	
+	public double time(){
+		return time;
+	}
+	
 	public void setField(double m) {
 		double mAcc = 0;
 		for (int i = 0; i < L*L; i++) {
@@ -90,13 +86,10 @@ public class IsingLR extends RewindableDynamics {
 		}
 	}
 	
-	public double[] getField(int dx) {
-		int scale = Integer.numberOfTrailingZeros(dx);
-		int blocks[] = spins.blocksAtScale(scale);
-		double ret[] = new double[blocks.length];
-		double blockSize = (1<<scale)*(1<<scale);
-		for (int i = 0; i < blocks.length; i++)
-			ret[i] = blocks[i]/blockSize;
+	public double[] getField() {
+		double ret[] = new double[L*L];
+		for (int i = 0; i < L*L; i++)
+			ret[i] = spins.get(i);
 		return ret;
 	}
 	
@@ -115,12 +108,12 @@ public class IsingLR extends RewindableDynamics {
 		return false;
 	}
 	
-	protected void _step() {
+	public void step() {
 		for (int cnt = 0; cnt < L*L*dt; cnt++) {
 			int x1 = random.nextInt(L);
 			int y1 = random.nextInt(L);
 			int s1 = spins.get(x1, y1);
-			double dE = 2*s1*(h + J*(spins.sumInRange(x1,y1)-s1)/(4*R*(R+1)));
+			double dE = 2*s1*(h + J*(spins.sumInRange(x1,y1)-s1)/(z));
 			switch (dynamics) {
 				case METROPOLIS:
 				case GLAUBER:
@@ -139,7 +132,7 @@ public class IsingLR extends RewindableDynamics {
 					int y2 = (y1 + dy + L)%L;
 					int s2 = spins.get(x2, y2);
 					if (s2 != s1) {
-						dE += 2*s2*(h + J*(spins.sumInRange(x2,y2)-s2)/(4*R*(R+1)));
+						dE += 2*s2*(h + J*(spins.sumInRange(x2,y2)-s2)/(z));
 						if (shouldFlip(dE)) {
 							spins.flip(x1, y1);
 							spins.flip(x2, y2);
@@ -149,8 +142,9 @@ public class IsingLR extends RewindableDynamics {
 				default:
 					assert false;
 			}
-			scikit.jobs.Job.yield();
+//			scikit.jobs.Job.yield();
 		}
+		time += dt;
 	}
 	
 	public double dTime(){
@@ -181,5 +175,4 @@ public class IsingLR extends RewindableDynamics {
 		}
 		return new PointSet(0, 1.0, slice);
 	}
-	
 }
