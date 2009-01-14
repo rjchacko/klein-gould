@@ -1,7 +1,7 @@
 package rachele.ising.dim2;
 
 import static java.lang.Math.min;
-import rachele.ising.dim2.IsingLR.DynType;
+import rachele.ising.dim2MC.IsingLR.DynType;
 import scikit.jobs.params.Parameters;
 import kip.util.Random;
 

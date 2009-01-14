@@ -1,4 +1,4 @@
-package rachele.ising.dim2.apps;
+package rachele.ising.dim2MC.apps;
 
 import java.awt.Color;
 import java.io.DataInputStream;
@@ -10,7 +10,8 @@ import java.io.FileNotFoundException;
 //import java.io.IOException;
 //import java.io.PrintWriter;
 
-import rachele.ising.dim2.*;
+//import rachele.ising.dim2.*;
+import rachele.ising.dim2MC.IsingLR;
 import scikit.dataset.Accumulator;
 import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Function;

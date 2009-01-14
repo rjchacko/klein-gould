@@ -5,7 +5,7 @@ import static scikit.util.Utilities.format;
 import java.awt.Color;
 import java.io.File;
 
-import rachele.ising.dim2.IsingLR;
+import rachele.ising.dim2MC.IsingLR;
 import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
