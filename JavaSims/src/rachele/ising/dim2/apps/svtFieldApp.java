@@ -104,11 +104,11 @@ public class svtFieldApp extends Simulation{
 		c.frameTogether("Grids", phiGrid, vSlice, hSlice, contribPlot, absContribPlot, contribPlotK, driftGrid, plotSF);
 //		c.frame(EtavTime);
 //		c.frameTogether("etas", etaDot, eta2);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/contribs/DO_crit"));
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/stage1/constantH/"));
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
 		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
-		params.add("Dynamics", new ChoiceValue("Conserved Finite Diff", "Conserved", "Glauber","Langevin"));
+		params.add("Dynamics", new ChoiceValue("Glauber","Conserved Finite Diff", "Conserved", "Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
@@ -118,8 +118,8 @@ public class svtFieldApp extends Simulation{
 		params.addm("Horizontal Slice", new DoubleValue(0.42, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
-		params.addm("T", 0.04);
-		params.addm("H", 0.0);
+		params.addm("T", 0.1);
+		params.addm("H", 0.6);
 		params.addm("dT", 1.0);
 		params.addm("tolerance", 0.01);
 		params.addm("J", -1.0);
@@ -131,7 +131,7 @@ public class svtFieldApp extends Simulation{
 		params.add("Magnetization", 0.0);
 		params.addm("ky", 2);
 		params.addm("dkx", 1);
-		params.addm("dt", 1.0);
+		params.addm("dt", 0.1);
 		params.add("mean phi");
 		params.add("Time");
 		params.add("Lp");
