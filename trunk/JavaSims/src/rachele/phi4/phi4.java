@@ -11,7 +11,7 @@ import kip.util.Random;
 public class phi4 {
 	public double L, R, T, dx, H;
 	public int Lp;
-	
+	private double g, r;
 	public double J, dT;
 	public int N;
 	public double DENSITY;
@@ -30,19 +30,19 @@ public class phi4 {
 	public phi4(Parameters params) {
 		random.setSeed(params.iget("Random seed", 1));
 		R = params.fget("R");
-		dx = R/params.fget("R/dx");
-		L = R*params.fget("L/R");
+		dx = params.fget("dx");
+		Lp = params.iget("Lp");
+		Lp = Integer.highestOneBit((int)rint((Lp)));
+		L = Lp*dx;
 		T = params.fget("T");
 		dt = params.fget("dt");
 		H = params.fget("H");
 		DENSITY = params.fget("Magnetization");
+		g = params.fget("g");
+		r = params.fget("r");
 		
 		noiseParameter = params.fget("Noise");
-		Lp = Integer.highestOneBit((int)rint((L/dx)));
-		dx = L / Lp;
-		System.out.println("dx = " + dx);
-		double RoverDx = R/dx;
-		params.set("R/dx", RoverDx);
+
 		N = Lp*Lp;
 
 		t = 0;
@@ -72,16 +72,17 @@ public class phi4 {
 	public void readParams(Parameters params) {
 		dt = params.fget("dt");
 		R = params.fget("R");
-		L = R*params.fget("L/R");
-		dx = R/params.fget("R/dx");
-		Lp = Integer.highestOneBit((int)rint((L/dx)));
-		dx = L / Lp;
+		dx = params.fget("dx");
+		Lp = params.iget("Lp");
+		Lp = Integer.highestOneBit((int)rint((Lp)));
+		L = Lp*dx;
 		H = params.fget("H");
 		T = params.fget("T");
 		params.set("R/dx", R/dx);
 		params.set("Lp", Lp);
 		noiseParameter = params.fget("Noise");
-
+		g = params.fget("g");
+		r = params.fget("r");
 	}
 
 	public void simulatePhi4(){
@@ -96,9 +97,7 @@ public class phi4 {
 			int dn = Lp*((y - 1 + Lp)%Lp)+ x;
 			
 			double grad2 = -4*phi[i] + phi[rt] + phi[lf] + phi[up] + phi[dn];
-			double g = 1.0;
 			double gamma = 1.0;
-			double r = -1.0;
 //			double drift = dt*-gamma*(-R*grad2);
 			double drift = dt*-gamma*(-R*grad2 + r*phi[i] +g*Math.pow(phi[i], 3));
 //			double noiseTerm = noise()*sqrt(dt*2/(dx*dx));

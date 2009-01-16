@@ -1,7 +1,8 @@
-package rachele.phi4;
+package rachele.phi4.apps;
 
 import java.awt.Color;
 
+import rachele.phi4.phi4;
 import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
@@ -33,20 +34,20 @@ public class Phi4App extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("Grids", phiGrid, sfPlot);
+		c.frameTogether("Grids", phiGrid, sfPlot, sfGrid);
 		params.add("Dynamics", new ChoiceValue("Phi4","Glauber","Conserved Finite Diff", "Conserved", "Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.add("Init Conditions", new ChoiceValue("Random Gaussian", "Read 1D Soln","Read From File", "Constant"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("T", 0.1);
 		params.addm("H", 0.6);
-		params.addm("R", 4600000.0);
+		params.addm("R", 1.0);
 		params.addm("Random seed", 0);
-		params.add("L/R", 2.782608696);
-		params.add("R/dx", 46.0);
+		params.addm("Lp", 128);
+		params.addm("dx", 50000);
 		params.add("Magnetization", 0.0);
-		params.addm("ky", 2);
-		params.addm("dkx", 1);
+		params.addm("g", 1.0);
+		params.addm("r", -0.03);
 		params.addm("dt", 0.00000001);
 		params.add("mean phi");
 		params.add("Time");
@@ -70,7 +71,7 @@ public class Phi4App extends Simulation{
 	}
 
 	public void clear() {
-		
+		k0.clear();
 	}
 
 	public void run() {
@@ -80,9 +81,9 @@ public class Phi4App extends Simulation{
 		while (true) {
 			field.readParams(params);
 			field.simulatePhi4();			
-			sf = fft.calculate2DSF(field.delPhi, false, true);
+			sf = fft.calculate2DSF(field.phi, false, false);
 //			k0.accum(field.time(), sf[Lp*Lp/2+Lp/2]);
-			k0.accum(field.time(), sf[0]);
+			k0.accum(field.t, sf[0]);
 			Job.animate();
 
 		}	
