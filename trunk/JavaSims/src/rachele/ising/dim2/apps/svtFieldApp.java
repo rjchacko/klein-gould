@@ -53,7 +53,7 @@ public class svtFieldApp extends Simulation{
 	//RUN OPTIONS
 	boolean writeToFile = false;
 	boolean accumsOn = false;
-	boolean calcContribs = true;
+	boolean calcContribs = false;
 	int accNo = 1;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
@@ -108,7 +108,7 @@ public class svtFieldApp extends Simulation{
 		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
 		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
 		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
-		params.add("Dynamics", new ChoiceValue("Glauber","Conserved Finite Diff", "Conserved", "Langevin"));
+		params.add("Dynamics", new ChoiceValue("Phi4","Glauber","Conserved Finite Diff", "Conserved", "Langevin"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
@@ -292,6 +292,8 @@ public class svtFieldApp extends Simulation{
 					ising.simulateConserved();
 				}else if (dynamics == "Conserved Finite Diff"){
 					ising.simulateConservedFiniteDiffMob();
+				}else if (dynamics == "Phi4"){
+					ising.simulatePhi4();
 				}
 			}
 			if(ising.time() >= recordStep){

@@ -314,6 +314,30 @@ public class IsingField2D extends AbstractIsing2D{
 			phi[i] += delPhi[i];			
 		t += dt;		
 	}
+
+	public void simulatePhi4(){
+		//phi 4th theory from corberi paper
+	
+		for (int i = 0; i < Lp*Lp; i++){
+			int x = i%Lp;
+			int y = i/Lp;
+			int rt = y*Lp + (x+1)%Lp;
+			int lf = y*Lp + (x-1+Lp)%Lp;
+			int up = Lp*((y + 1)%Lp) + x;
+			int dn = Lp*((y - 1 + Lp)%Lp)+ x;
+			
+			double grad2 = -4*phi[i] + phi[rt] + phi[lf] + phi[up] + phi[dn];
+			double g = 1.0;
+			double gamma = 1.0;
+			double r = -1.0;
+			double drift = dt*-gamma*(-R*grad2 + r*phi[i] +g*Math.pow(phi[i], 3));
+//			double noiseTerm = noise()*sqrt(dt*2/(dx*dx));
+			delPhi[i] =  drift;// + noiseTerm;
+		}
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += delPhi[i];			
+		t += dt;		
+	}
 	
 	public void simulateGlauber(){
 		convolveWithRange(phi, phi_bar, R);	
@@ -535,13 +559,13 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int y = 0; y < Lp; y++) {
 			for (int x = 0; x < Lp; x++) {
 				int i = y*Lp + x;
-				int rt = y*Lp+(x)%Lp;
+				int rt = y*Lp+(x+1)%Lp;
 //				int rrt = y*Lp+(x+2)%Lp;
 				int lf = y*Lp+(x-1+Lp)%Lp;
 //				int llf = y*Lp+(x-2+Lp)%Lp;
-				int up = (y+1)%Lp + x;
+				int up = Lp*(y+1)%Lp + x;
 //				int uup = (y+2)%Lp + x;
-				int dn = (y-1+Lp)%Lp + x;
+				int dn = Lp*(y-1+Lp)%Lp + x;
 //				int ddn = (y-2+Lp)%Lp + x;
 				delPhi[i] = (-2*drift[i] + drift[rt] + drift[lf])+(-2*drift[i] + drift[up] + drift[dn]);
 //				delPhi[i] = (-mgrad[rrt]+8*mgrad[irt]-8*mgrad[ilf]+mgrad[llf])/12;
@@ -581,7 +605,7 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int y = 0; y < Lp; y++) {
 			for (int x = 0; x < Lp; x++) {
 				int i = y*Lp + x;
-				int rt = y*Lp+(x)%Lp;
+				int rt = y*Lp+(x+1)%Lp;
 				int rrt = y*Lp+(x+2)%Lp;
 				int lf = y*Lp+(x-1+Lp)%Lp;
 				int llf = y*Lp+(x-2+Lp)%Lp;
@@ -598,7 +622,7 @@ public class IsingField2D extends AbstractIsing2D{
 		for (int y = 0; y < Lp; y++) {
 			for (int x = 0; x < Lp; x++) {
 				int i = y*Lp + x;
-				int rt = y*Lp+(x)%Lp;
+				int rt = y*Lp+(x+1)%Lp;
 				int rrt = y*Lp+(x+2)%Lp;
 				int lf = y*Lp+(x-1+Lp)%Lp;
 				int llf = y*Lp+(x-2+Lp)%Lp;
