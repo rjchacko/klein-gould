@@ -1,76 +1,97 @@
 package rachele.ising.dim2MC.apps;
 
+import static java.lang.Math.exp;
+import static scikit.util.Utilities.format;
+
+import java.awt.Color;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-//import rachele.ising.dim2.*;
+
 import rachele.ising.dim2MC.IsingLR;
+import rachele.util.FileUtil;
+import rachele.util.FourierTransformer;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
+import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import static scikit.util.Utilities.format;
-import rachele.util.*;
-import static java.lang.Math.*;
 
-
-public class IsingLRApp extends Simulation {
+public class IsingKawJumpApp extends Simulation{
 	
 	Grid grid = new Grid("Long Range Ising Model");
 	Grid sfGrid = new Grid("SF");
-	int dx;
+	Plot sfPlot = new Plot("Sfs");
+
 	IsingLR sim;
 	public FourierTransformer fft;
+	
+	int dx;
 	double [] sFactor;
-	Accumulator sf_k;
-	Accumulator sfTheoryAcc, sfTheory2Acc;
     boolean clearFile;
     boolean takeAverages;
    	double [] sfTimeArray;
-	
+   	
+	Accumulator sf_k, sf_tv, sf_th;//, sf_th2, sf_tv2;
+	Accumulator sfTheoryAcc, sfTheory2Acc;
+   	
 	public static void main(String[] args) {
-		new Control(new IsingLRApp(), "Ising Model");
+		new Control(new IsingKawJumpApp(), "Ising Model");
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("grids", grid, sfGrid);		
-		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
+		c.frameTogether("grids", grid, sfGrid, sfPlot);		
+		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Kawasaki Metropolis", "Ising Glauber",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<9);
-		params.add("R", 1<<6);
+		params.add("L", 1<<7);
+		params.add("R", 46);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.04);
+		params.addm("T", 0.1);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
 		params.addm("dt", 1/(double)(1<<3));
+		params.addm("Jump Range", 1);
+		params.addm("kx", 2);
+		params.addm("ky", 2);
 		params.add("time");
-		params.add("magnetization");
-		params.add("Lp");
-		params.add("Reps");
 		flags.add("Write Config");
+		flags.add("Clear");
 		sf_k = new Accumulator();
 		sfTheoryAcc = new Accumulator();
-		
+		sf_th = new Accumulator();
+		sf_tv = new Accumulator();
+//		sf_th2 = new Accumulator();
+//		sf_tv2 = new Accumulator();		
 	}	
 	
 	public void animate() {
 		params.set("time", format(sim.time()));
-		params.set("magnetization", format(sim.magnetization()));
 		sim.setParameters(params);
-		params.set("Lp", sim.L/dx);
 		
+		sfPlot.setAutoScale(true);
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
 		sfGrid.registerData(sim.L/dx, sim.L/dx, sFactor);
+		sfPlot.registerPoints("sf_h", sf_th, Color.BLUE);
+		sfPlot.registerPoints("sf_v", sf_tv, Color.RED);
+//		sfPlot.registerPoints("sf_h2", sf_th2, Color.GREEN);
+//		sfPlot.registerPoints("sf_v2", sf_tv2, Color.ORANGE);
+		
 		if(flags.contains("Write Config")) writeConfigToFile();
+		if(flags.contains("Clear")){
+			sf_tv.clear();
+			sf_th.clear();			
+		}
 		flags.clear();
 	}
 	
 	public void clear() {
+		sf_tv.clear();
+		sf_th.clear();
 	}
 	
 	public void run() {
@@ -79,11 +100,22 @@ public class IsingLRApp extends Simulation {
 		sFactor = new double [sim.L/dx*sim.L/dx];
 		double step = 0.10;
 		int recordStep = 0;
+		int kx = params.iget("kx");
+		int ky = params.iget("ky");
+//		int k2 = 5;
 		while (true) {
 			sim.step();
 			if (sim.time() > recordStep){
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
-//				recordSfDataToFile(sFactor);
+				sf_th.accum(sim.time(), sFactor[kx]);
+				sf_th.accum(sim.time(), sFactor[sim.L-kx]);
+				sf_tv.accum(sim.time(), sFactor[ky*sim.L]);
+				sf_tv.accum(sim.time(), sFactor[(sim.L-ky)*sim.L]);
+//				sf_th2.accum(sim.time(), sFactor[k2]);
+//				sf_th2.accum(sim.time(), sFactor[sim.L-k2]);
+//				sf_tv2.accum(sim.time(), sFactor[k2*sim.L]);
+//				sf_tv2.accum(sim.time(), sFactor[(sim.L-k2)*sim.L]);
+				//				recordSfDataToFile(sFactor);
 				recordStep += step;
 			}
 			Job.animate();
@@ -126,7 +158,8 @@ public class IsingLRApp extends Simulation {
 	public void initialize(){
 		sim = new IsingLR(params);
 		//sim.setField(params.fget("Initial magnetization"));
-		sim.randomizeField(params.fget("Initial magnetization"));		
+		sim.randomizeField(params.fget("Initial magnetization"));	
+		sim.jumpRange = params.iget("Jump Range");
 		dx = 1;
 		if(params.sget("init") == "Read From File") readInitialConfiguration();
 		clearFile = true;

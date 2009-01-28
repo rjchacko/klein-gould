@@ -34,6 +34,7 @@ public class phi4 {
 		Lp = params.iget("Lp");
 		Lp = Integer.highestOneBit((int)rint((Lp)));
 		L = Lp*dx;
+		params.set("Lp", Lp);
 		T = params.fget("T");
 		dt = params.fget("dt");
 		H = params.fget("H");
@@ -61,32 +62,35 @@ public class phi4 {
 	}
 	
 	public void randomizeField(double m) {
-		for (int i = 0; i < Lp*Lp; i++)
+		for (int i = 0; i < Lp*Lp; i++){
 			
 			//phi[i] = 0.00001*random.nextGaussian()/(dx);
+//			phi[i] = m + random.nextGaussian()*sqrt((1-m*m));
 			phi[i] = m + random.nextGaussian()*sqrt((1-m*m)/(dx*dx));
+					
 			//whether or not you start the system at the specified density doesn't matter too much because
 			//the mag conservation algorithm will quickly take it to the correct density
+		}
 	}
 	
 	public void readParams(Parameters params) {
 		dt = params.fget("dt");
 		R = params.fget("R");
 		dx = params.fget("dx");
-		Lp = params.iget("Lp");
-		Lp = Integer.highestOneBit((int)rint((Lp)));
+		double Lpp = params.fget("Lp");
+		Lp = Integer.highestOneBit((int)rint((Lpp)));
 		L = Lp*dx;
 		H = params.fget("H");
 		T = params.fget("T");
-		params.set("R/dx", R/dx);
 		params.set("Lp", Lp);
 		noiseParameter = params.fget("Noise");
 		g = params.fget("g");
 		r = params.fget("r");
 	}
 
-	public void simulatePhi4(){
-		//phi 4th theory from corberi paper
+	public void simulatePhi4Corberi(){
+		// phi 4th theory from corberi paper
+		// Mobility = 1
 	
 		for (int i = 0; i < Lp*Lp; i++){
 			int x = i%Lp;
@@ -98,7 +102,6 @@ public class phi4 {
 			
 			double grad2 = -4*phi[i] + phi[rt] + phi[lf] + phi[up] + phi[dn];
 			double gamma = 1.0;
-//			double drift = dt*-gamma*(-R*grad2);
 			double drift = dt*-gamma*(-R*grad2 + r*phi[i] +g*Math.pow(phi[i], 3));
 //			double noiseTerm = noise()*sqrt(dt*2/(dx*dx));
 			delPhi[i] =  drift;// + noiseTerm;
@@ -107,7 +110,33 @@ public class phi4 {
 			phi[i] += delPhi[i];			
 		t += dt;		
 	}
+	
+	public void simulatePhi4COP(){
 		
+	}
+	
+
+	public void simulatePhi4NCOP(){
+		
+		for (int i = 0; i < Lp*Lp; i++){
+			int x = i%Lp;
+			int y = i/Lp;
+			int rt = y*Lp + (x+1)%Lp;
+			int lf = y*Lp + (x-1+Lp)%Lp;
+			int up = Lp*((y + 1)%Lp) + x;
+			int dn = Lp*((y - 1 + Lp)%Lp)+ x;
+			
+			double grad2 = -4*phi[i] + phi[rt] + phi[lf] + phi[up] + phi[dn];
+			double gamma = 1.0;
+			double drift = dt*-gamma*(-R*R*grad2 + r*phi[i] +g*Math.pow(phi[i], 3));
+			double noiseTerm = noise()*sqrt(dt*2/(dx*dx));
+			delPhi[i] =  drift + noiseTerm;
+		}
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += delPhi[i];			
+		t += dt;
+	}
+	
 	public void restartClock(){t=0.0;}
 
 		

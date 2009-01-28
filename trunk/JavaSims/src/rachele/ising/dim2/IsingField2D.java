@@ -81,7 +81,7 @@ public class IsingField2D extends AbstractIsing2D{
 		slowPower = 2;
 		if(params.sget("Dynamics?") == "Langevin Conserve M") magConservation = true;
 		else if(params.sget("Dynamics?") == "Langevin No M Conservation") magConservation = false;
-		theory = params.sget("Approx");
+//		theory = params.sget("Approx");
 
 		//theory = params.sget("Approx");
 		Lp = Integer.highestOneBit((int)rint((L/dx)));
@@ -254,7 +254,7 @@ public class IsingField2D extends AbstractIsing2D{
 		noiseParameter = params.fget("Noise");
 		if(params.sget("Dynamics?") == "Langevin Conserve M") magConservation = true;
 		else if(params.sget("Dynamics?") == "Langevin No M Conservation") magConservation = false;
-		theory = params.sget("Approx");
+//		theory = params.sget("Approx");
 	}
 	
 	public void initializeFieldWithSeed() {
@@ -315,29 +315,6 @@ public class IsingField2D extends AbstractIsing2D{
 		t += dt;		
 	}
 
-	public void simulatePhi4(){
-		//phi 4th theory from corberi paper
-	
-		for (int i = 0; i < Lp*Lp; i++){
-			int x = i%Lp;
-			int y = i/Lp;
-			int rt = y*Lp + (x+1)%Lp;
-			int lf = y*Lp + (x-1+Lp)%Lp;
-			int up = Lp*((y + 1)%Lp) + x;
-			int dn = Lp*((y - 1 + Lp)%Lp)+ x;
-			
-			double grad2 = -4*phi[i] + phi[rt] + phi[lf] + phi[up] + phi[dn];
-			double g = 1.0;
-			double gamma = 1.0;
-			double r = -1.0;
-			double drift = dt*-gamma*(-R*grad2 + r*phi[i] +g*Math.pow(phi[i], 3));
-//			double noiseTerm = noise()*sqrt(dt*2/(dx*dx));
-			delPhi[i] =  drift;// + noiseTerm;
-		}
-		for (int i = 0; i < Lp*Lp; i++) 
-			phi[i] += delPhi[i];			
-		t += dt;		
-	}
 	
 	public void simulateGlauber(){
 		convolveWithRange(phi, phi_bar, R);	
@@ -525,7 +502,6 @@ public class IsingField2D extends AbstractIsing2D{
 				double k = (2*PI*sqrt(x*x+y*y)/Lp);
 				int i = Lp*((y+Lp)%Lp) + (x+Lp)%Lp;
 				kft_drift[2*i] *= (k*k);
-//				kft_drift[2*i+1] *= (k*k);
 			}
 		}
 		
@@ -545,6 +521,31 @@ public class IsingField2D extends AbstractIsing2D{
 		t += dt;
 	}
 	
+
+	public void simulatePhi4(){
+		//phi 4th theory from corberi paper
+	
+		for (int i = 0; i < Lp*Lp; i++){
+			int x = i%Lp;
+			int y = i/Lp;
+			int rt = y*Lp + (x+1)%Lp;
+			int lf = y*Lp + (x-1+Lp)%Lp;
+			int up = Lp*((y + 1)%Lp) + x;
+			int dn = Lp*((y - 1 + Lp)%Lp)+ x;
+			
+			double grad2 = -4*phi[i] + phi[rt] + phi[lf] + phi[up] + phi[dn];
+			double gamma = 1.0;
+			double r = -1.0;
+			double g = 1.0;
+			double drift = dt*-gamma*(-R*grad2 + r*phi[i] +g*Math.pow(phi[i], 3));
+			double noiseTerm = noise()*sqrt(dt*2/(dx*dx));
+			delPhi[i] =  drift + noiseTerm;
+		}
+		for (int i = 0; i < Lp*Lp; i++) 
+			phi[i] += delPhi[i];			
+		t += dt;		
+	}
+	
 	public void simulateConservedFiniteDiff(){
 		//The finite difference algorithm causes diagonal patterns.
 		
@@ -555,31 +556,27 @@ public class IsingField2D extends AbstractIsing2D{
 			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
 			drift[i] =  dt*dF_dPhi;
 		}
-
-		for (int y = 0; y < Lp; y++) {
-			for (int x = 0; x < Lp; x++) {
-				int i = y*Lp + x;
-				int rt = y*Lp+(x+1)%Lp;
-//				int rrt = y*Lp+(x+2)%Lp;
-				int lf = y*Lp+(x-1+Lp)%Lp;
-//				int llf = y*Lp+(x-2+Lp)%Lp;
-				int up = Lp*(y+1)%Lp + x;
-//				int uup = (y+2)%Lp + x;
-				int dn = Lp*(y-1+Lp)%Lp + x;
-//				int ddn = (y-2+Lp)%Lp + x;
-				delPhi[i] = (-2*drift[i] + drift[rt] + drift[lf])+(-2*drift[i] + drift[up] + drift[dn]);
+		for (int i = 0; i < Lp*Lp; i++){
+			int x = i%Lp;
+			int y = i/Lp;
+			int rt = y*Lp + (x+1)%Lp;
+			int lf = y*Lp + (x-1+Lp)%Lp;
+			int up = Lp*((y + 1)%Lp) + x;
+			int dn = Lp*((y - 1 + Lp)%Lp)+ x;
+			
+			delPhi[i] = (-4*drift[i] + drift[rt] + drift[lf] + drift[up] + drift[dn]);
 //				delPhi[i] = (-mgrad[rrt]+8*mgrad[irt]-8*mgrad[ilf]+mgrad[llf])/12;
 //				int ru = ((y+1)%Lp)*Lp+(x+1)%Lp;
 //				int lu = ((y+1)%Lp)*Lp+(x-1+Lp)%Lp;
 //				int rd = ((y-1+Lp)%Lp)*Lp+(x+1)%Lp;
 //				int ld = ((y-1+Lp)%Lp)*Lp+(x-1+Lp)%Lp;
 //				delPhi[i] += (-2*drift[i] + drift[ru] + drift[lu] + -2*drift[i] + drift[rd] + drift[ld])/2.0;
-			}
+
 		}
 		
 		for (int i = 0; i < Lp*Lp; i++) {
 			double noiseTerm = sqrt(dt*2/(dx*dx))*noise();
-			phi[i] += delPhi[i]+noiseTerm;
+			phi[i] += delPhi[i];//+noiseTerm;
 			driftTermC[i] = delPhi[i];
 			driftContrib += abs(driftTermC[i])/(abs(driftTermC[i])+abs(noiseTerm));
 			absDriftContrib += abs(driftTermC[i]);
@@ -593,6 +590,8 @@ public class IsingField2D extends AbstractIsing2D{
 	}
 	
 	public void simulateConservedFiniteDiffMob(){
+		//both the stencile pt method and regular finite diff method give strange
+		//diagonal patterns in the FT-- never goes to stripes or clumps
 		
 		convolveWithRange(phi, phi_bar, R);
 		double drift [] = new double [Lp*Lp];
@@ -602,38 +601,88 @@ public class IsingField2D extends AbstractIsing2D{
 			drift[i] =  dt*dF_dPhi;
 		}
 		double [] mgrad = new double [Lp*Lp];
-		for (int y = 0; y < Lp; y++) {
-			for (int x = 0; x < Lp; x++) {
-				int i = y*Lp + x;
-				int rt = y*Lp+(x+1)%Lp;
-				int rrt = y*Lp+(x+2)%Lp;
-				int lf = y*Lp+(x-1+Lp)%Lp;
-				int llf = y*Lp+(x-2+Lp)%Lp;
-				int up = (y+1)%Lp + x;
-				int uup = (y+2)%Lp + x;
-				int dn = (y-1+Lp)%Lp + x;
-				int ddn = (y-2+Lp)%Lp + x;
-//				mgrad[i] = (1-phi[i]*phi[i])*(drift[rt] + drift[up] - drift[lf] - drift[dn])/2.0;				
-				mgrad[i] = (1-phi[i]*phi[i])*(-drift[uup]+8*drift[up]-8*drift[dn]+drift[ddn])/12;				
-				mgrad[i] += (1-phi[i]*phi[i])*(-drift[rrt]+8*drift[rt]-8*drift[lf]+drift[llf])/12;				
-			}
-		}
 
-		for (int y = 0; y < Lp; y++) {
-			for (int x = 0; x < Lp; x++) {
-				int i = y*Lp + x;
-				int rt = y*Lp+(x+1)%Lp;
-				int rrt = y*Lp+(x+2)%Lp;
-				int lf = y*Lp+(x-1+Lp)%Lp;
-				int llf = y*Lp+(x-2+Lp)%Lp;
-				int up = (y+1)%Lp + x;
-				int uup = (y+2)%Lp + x;
-				int dn = (y-1+Lp)%Lp + x;
-				int ddn = (y-2+Lp)%Lp + x;
-				delPhi[i] = (-mgrad[rrt]+8*mgrad[rt]-8*mgrad[lf]+mgrad[llf])/12;
-				delPhi[i] += (-mgrad[uup]+8*mgrad[up]-8*mgrad[dn]+mgrad[ddn])/12;
-//				delPhi[i] = (mgrad[rt] + mgrad[up] - mgrad[lf] - mgrad[dn])/2.0;				
-			}
+		int x, y, x0, y0;
+		for (int i = 0; i < Lp*Lp; i++) {
+			x0 = i%Lp; y0 = i/Lp;
+			x = (x0 + 1 + Lp)%Lp;
+			y = y0;
+			int irt = y*Lp+x;
+			
+			x = (x0 - 1 + Lp)%Lp;
+			y = y0;			
+			int ilf = y*Lp+x;
+			
+			x = (x0 + 2 + Lp)%Lp;
+			y = y0;					
+			int rrt = y*Lp+x;
+			
+			x = (x0 - 2 + Lp)%Lp;
+			y = y0;	
+			int llf = y*Lp+x;
+			
+			x = x0;
+			y = (y0 + 2 + Lp)%Lp;
+			int uup = y*Lp+x;
+			
+			x = x0;
+			y = (y0 + 1 + Lp)%Lp;
+			int up =  y*Lp+x;
+			
+			x = x0;
+			y = (y0 - 1 + Lp)%Lp;
+			int dn =  y*Lp+x;
+			
+			x = x0;
+			y = (y0 - 2 + Lp)%Lp;
+			int ddn = y*Lp+x;
+//			mgrad[i] = (-drift[rrt]+8*drift[irt]-8*drift[ilf]+drift[llf])/12;
+//			mgrad[i] += (-drift[uup]+8*drift[up]-8*drift[dn]+drift[ddn])/12;
+			mgrad[i] =  (drift[irt]-drift[ilf] + drift[up]-drift[dn])/2.0;
+//			delPhi[i] = (-4*drift[i] + drift[irt] + drift[ilf] + drift[up] + drift[dn]);
+		}
+		
+		
+//		for(int i = 0; i < Lp*Lp; i++){
+//			mgrad[i] *= (1-phi[i]*phi[i]);
+//		}
+//		
+		for (int i = 0; i < Lp*Lp; i++) {
+			x0 = i%Lp; y0 = i/Lp;
+			x = (x0 + 1 + Lp)%Lp;
+			y = y0;
+			int irt = y*Lp+x;
+			
+			x = (x0 - 1 + Lp)%Lp;
+			y = y0;			
+			int ilf = y*Lp+x;
+			
+			x = (x0 + 2 + Lp)%Lp;
+			y = y0;					
+			int rrt = y*Lp+x;
+			
+			x = (x0 - 2 + Lp)%Lp;
+			y = y0;	
+			int llf = y*Lp+x;
+			
+			x = x0;
+			y = (y0 + 2 + Lp)%Lp;
+			int uup = y*Lp+x;
+			
+			x = x0;
+			y = (y0 + 1 + Lp)%Lp;
+			int up =  y*Lp+x;
+			
+			x = x0;
+			y = (y0 - 1 + Lp)%Lp;
+			int dn =  y*Lp+x;
+			
+			x = x0;
+			y = (y0 - 2 + Lp)%Lp;
+			int ddn = y*Lp+x;
+//			delPhi[i] = (-mgrad[llf]+8*mgrad[ilf]-8*mgrad[irt]+mgrad[rrt])/12;
+//			delPhi[i] += (-mgrad[ddn]+8*mgrad[dn]-8*mgrad[up]+mgrad[uup])/12;
+			delPhi[i] =  (mgrad[irt]-mgrad[ilf] + mgrad[up]-mgrad[dn])/2.0;
 		}
 				
 		for (int i = 0; i < Lp*Lp; i++) {
