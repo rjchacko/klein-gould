@@ -14,7 +14,7 @@ public class IsingLR extends RewindableDynamics {
 
 	public enum DynType {METROPOLIS, GLAUBER, KAWA_GLAUBER, KAWA_METROPOLIS};
 	public DynType dynamics = DynType.GLAUBER;
-	public int L, R;
+	public int L, R, jumpRange;
 	public double T, J, h;
 	public Random random = new Random();
 	public static final double kRpeak = 4.4934092;
@@ -29,6 +29,8 @@ public class IsingLR extends RewindableDynamics {
 		spins = new SpinBlocks2D(L, R);
 		random.setSeed(params.iget("Random seed"));
 		setParameters(params);
+		jumpRange = R; //this will be changed for some applications.
+//		jumpRange = 1;
 	}
 	
 	
@@ -131,10 +133,8 @@ public class IsingLR extends RewindableDynamics {
 					
 				case KAWA_GLAUBER:
 				case KAWA_METROPOLIS:
-					int dx = random.nextInt(2*R+1) - R;
-					int dy = random.nextInt(2*R+1) - R;
-//					int dx = random.nextInt(R) - R/2;
-//					int dy = random.nextInt(R) - R/2;
+					int dx = random.nextInt(2*jumpRange+1) - jumpRange;
+					int dy = random.nextInt(2*jumpRange+1) - jumpRange;
 					int x2 = (x1 + dx + L)%L;
 					int y2 = (y1 + dy + L)%L;
 					int s2 = spins.get(x2, y2);

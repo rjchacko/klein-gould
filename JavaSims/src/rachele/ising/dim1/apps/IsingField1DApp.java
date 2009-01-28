@@ -7,7 +7,6 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import scikit.graphics.dim2.Plot;
 import rachele.ising.dim1.FieldIsing1D;
@@ -26,6 +25,7 @@ public class IsingField1DApp extends Simulation{
     FieldIsing1D ising;
     StructureFactor1D sf;
     public int timeCount;
+    String dynamics;
     
 	public static void main(String[] args) {
 		new Control(new IsingField1DApp(), "Ising Field 1D");
@@ -57,18 +57,18 @@ public class IsingField1DApp extends Simulation{
 		
 //  Default params for clump model
 
-		params.add("Config Directory",new DirectoryValue("/home/erdomi/data/lraim/configs1dAutoName"));
+//		params.add("Config Directory",new DirectoryValue("/Users/erdomi/data/lraim/configs1dAutoName"));
 		params.addm("Noise", new DoubleValue(1.0, 0, 1.0).withSlider());
 		params.addm("Dynamics", new ChoiceValue("Conserved Finite Diff", "Conserved semi imp",  "Langevin","Conserved","Conserved w mob", "Glauber"));
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.08, 0, 0.2).withSlider());
-		params.addm("J", +1.0);
-		params.addm("H", 0.65);
+		params.addm("J", -1.0);
+		params.addm("H", 0.0);
 		params.addm("R", 4600000);
 		params.add("L/R", 2.7826087);
 		params.add("R/dx", 46.0);
 		params.add("kR bin-width", 0.1);
-		params.add("Density", -.4);
+		params.add("Density", 0.7);
 		params.add("Time Allocation");
 		params.add("max Write Time", 30.0);
 		params.addm("dt",0.1);
@@ -122,13 +122,7 @@ public class IsingField1DApp extends Simulation{
 	
 	public void run(){
 		ising = new FieldIsing1D(params);
-		String writeDir = params.sget("Config Directory");
-		StringBuffer sb = new StringBuffer();
-		sb.append(writeDir); sb.append(File.separator); sb.append("L"); sb.append(ising.Lp);
-		int range = (int)(ising.Lp/params.fget("L/R")); sb.append("R"); sb.append(range);
-		sb.append("T"); sb.append(ising.T); sb.append("h"); sb.append(ising.H);
-		String configFileName = sb.toString();
-	    sb.append("params"); String paramsFile = sb.toString();
+
 		int maxWriteCount = (int)(params.fget("max Write Time")/ising.dt);
 	    params.set("Time Allocation", maxWriteCount);
 	    double maxWriteTime = maxWriteCount*ising.dt;
@@ -146,87 +140,53 @@ public class IsingField1DApp extends Simulation{
 		else
 			glauber = false;
 		System.out.println("Galuber dynamics is " + glauber);
-		
-
+		dynamics = params.sget("Dynamics");
 		
 		while (true) {
-			if (flags.contains("Write")) {
-				timeCount = 0;
-				FileUtil.deleteFile(configFileName);
-				FileUtil.initFile(paramsFile, params);
-				while (timeCount <= maxWriteCount){
-					writeConfigToFileWithTime(configFileName);				
-					Job.animate();					
-					params.set("Time Count", timeCount);
-					timeCount += 1;
-				}
-				flags.clear();
-			}else if(flags.contains("Write Config")){
-				FileUtil.initFile(paramsFile, params);
-				FileUtil.deleteFile(configFileName);
-				FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
-			}
-			if(params.sget("Dynamics")=="Glauber") ising.simulateGlauber();
-			else if(params.sget("Dynamics")=="Langevin")ising.simulate();
-			else if (params.sget("Dynamics")=="Conserved"){ ising.simulateConserved();
-			}else if (params.sget("Dynamics")=="Conserved w mob") ising.simulateConservedWithMobility();
-			else if (params.sget("Dynamics")=="Conserved Finite Diff"){
+			if(flags.contains("Write Config")) writeConfig();
+			if(dynamics=="Glauber") ising.simulateGlauber();
+			else if(dynamics=="Langevin")ising.simulate();
+			else if (dynamics=="Conserved") ising.simulateConserved();
+			else if (dynamics=="Conserved w mob") ising.simulateConservedWithMobility();
+			else if (dynamics=="Conserved Finite Diff"){
 //				ising.simulateConservedFiniteDiff();
 				ising.simulateConservedFiniteDiffMob();
 			}
-			else if (params.sget("Dynamics")=="Conserved semi imp") ising.simulateConseveredSemiImp();			
+			else if (dynamics=="Conserved semi imp") ising.simulateConseveredSemiImp();			
 			sf.accumulate(ising.phi);
 			Job.animate();
-			//SFPlot.setDataSet(0, sf.getAccumulator());
-			//fieldPlot.setDataSet(0, new PointSet(0, ising.dx, ising.phi));
 			
 		}
 	}
 	
 	
-	public void writeInputParams(String FileName){
-		try {
-			File inputFile = new File(FileName);
-			DataOutputStream dos = new DataOutputStream(new FileOutputStream(inputFile, true));
-			//System.out.println(params.fget("T"));
-			dos.writeDouble(params.fget("T"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("J"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("H"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("R"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("L/R"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("R/dx"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("dt"));
-			dos.writeChar('\t');
-			dos.writeDouble(params.fget("max Write Time"));
-			dos.writeChar('\n');
-			dos.close();
-		}catch(IOException ex){
-			ex.printStackTrace();
+	public void writeConfig(){
+		String writeDir;
+		String configFileName;
+		String paramsFile;
+		if(dynamics == "Conserved Finite Diff"){
+			writeDir = "/Users/erdomi/data/lraim/configs1dAutoConserved";
+			StringBuffer sb = new StringBuffer();
+			sb.append(writeDir); sb.append(File.separator); sb.append("L"); sb.append(ising.Lp);
+			int range = (int)(ising.Lp/params.fget("L/R")); sb.append("R"); sb.append(range);
+			sb.append("T"); sb.append(ising.T); sb.append("m"); sb.append(ising.DENSITY);
+			configFileName = sb.toString();
+		    sb.append("params"); paramsFile = sb.toString();
+		}else{
+			writeDir = "/Users/erdomi/data/lraim/configs1dAutoName";
+			StringBuffer sb = new StringBuffer();
+			sb.append(writeDir); sb.append(File.separator); sb.append("L"); sb.append(ising.Lp);
+			int range = (int)(ising.Lp/params.fget("L/R")); sb.append("R"); sb.append(range);
+			sb.append("T"); sb.append(ising.T); sb.append("h"); sb.append(ising.H);
+			configFileName = sb.toString();
+		    sb.append("params"); paramsFile = sb.toString();
 		}
+//		String configFileName = sb.toString();
+		FileUtil.deleteFile(paramsFile);
+		FileUtil.initFile(paramsFile, params);
+		FileUtil.deleteFile(configFileName);
+		FileUtil.writeConfigToFile(configFileName, ising.Lp, ising.phi);
 	}
 
-	public void writeConfigToFileWithTime(String FileName){
-		try {
-			File pathFile = new File(FileName);
-			DataOutputStream dos = new DataOutputStream(new FileOutputStream(pathFile, true));
-			for (int i = 0; i < ising.Lp; i ++){
-				dos.writeInt(timeCount);
-				dos.writeChar('\t');
-				dos.writeInt(i);
-				dos.writeChar('\t');
-				dos.writeDouble(ising.phi[i]);
-				dos.writeChar('\n');
-			}
-			dos.close();
-		} catch (IOException ex){
-			ex.printStackTrace();
-		}
-	}
 	
 }

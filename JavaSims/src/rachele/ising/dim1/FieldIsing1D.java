@@ -22,9 +22,8 @@ import static scikit.util.DoubleArray.*;
 public class FieldIsing1D{
 	public int Lp;
 	public double dt;
-	public double t, noiseParam, noiseTerm;
+	public double t, noiseParam, noiseTerm, DENSITY;
 	public double[] phi, F, phi_k, phi2, phi2_k;
-	double DENSITY;
 	double [] phi_bar, del_phi;
 	public double L, R, T, J, dx, H, ampFactor;
 	Random random = new Random();
@@ -144,7 +143,7 @@ public class FieldIsing1D{
 		convolveWithRange(phi, phi_bar, R);
 		for (int i = 0; i < Lp; i++) {
 			double Lambda = sqr(1 - phi[i]*phi[i]);	
-			del_phi[i] = - dt*Lambda*(phi_bar[i]-H+ T*atanh(phi[i]));
+			del_phi[i] = - dt*Lambda*(-phi_bar[i]-H+ T*atanh(phi[i]));
 			del_phi[i] += sqrt(Lambda*dt*2*T/dx)*random.nextGaussian()*noiseParam;
 		}
 		for (int i = 0; i < Lp; i++)
@@ -158,7 +157,7 @@ public class FieldIsing1D{
 		
 		convolveWithRange(phi, phi_bar, R);	
 		for (int i = 0; i < Lp; i++){
-			double arg = (phi_bar[i]/T + H/T);
+			double arg = (-phi_bar[i]/T + H/T);
 			double tanh = Math.tanh(arg);
 			double driftTerm = dt*(tanh-phi[i]);
 			double noisePre = sqrt(2-pow(Math.tanh(arg),2)-pow(phi[i],2));
@@ -178,7 +177,7 @@ public class FieldIsing1D{
 		double drift [] = new double [Lp];
 		for (int i = 0; i < Lp; i++) {
 			double dF_dPhi = 0;
-			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
 			drift[i] = - dt*dF_dPhi;
 		}
 
@@ -205,7 +204,7 @@ public class FieldIsing1D{
 		double drift [] = new double [Lp];
 		for (int i = 0; i < Lp; i++) {
 			double dF_dPhi = 0;
-			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
 			drift[i] =  dt*dF_dPhi;
 		}
 
@@ -228,7 +227,7 @@ public class FieldIsing1D{
 		double drift [] = new double [Lp];
 		for (int i = 0; i < Lp; i++) {
 			double dF_dPhi = 0;
-			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
 			drift[i] =  dt*dF_dPhi;
 		}
 
@@ -238,15 +237,19 @@ public class FieldIsing1D{
 			int ilf = (i-1+Lp)%Lp;
 			int rrt = (i+2)%Lp;
 			int llf = (i-2+Lp)%Lp;
-//			mgrad[i] = (1-phi[i]*phi[i])*(drift[irt] - drift[ilf])/2.0;
-			mgrad[i] = (1-phi[i]*phi[i])*(-drift[rrt]+8*drift[irt]-8*drift[ilf]+drift[llf])/12;
+			mgrad[i] = (-drift[rrt]+8*drift[irt]-8*drift[ilf]+drift[llf])/12;
 		}
+		
+		
+		for(int i = 0; i < Lp; i++){
+			mgrad[i] *= (1-phi[i]*phi[i]);
+		}
+		
 		for (int i = 0; i < Lp; i++) {
 			int irt = (i+1)%Lp;
 			int ilf = (i-1+Lp)%Lp;
 			int rrt = (i+2)%Lp;
 			int llf = (i-2+Lp)%Lp;
-//			del_phi[i] = (mgrad[irt] - mgrad[ilf])/2;
 			del_phi[i] = (-mgrad[rrt]+8*mgrad[irt]-8*mgrad[ilf]+mgrad[llf])/12;
 		}		
 		
@@ -263,7 +266,7 @@ public class FieldIsing1D{
 		double drift [] = new double [Lp];
 		for (int i = 0; i < Lp; i++) {
 			double dF_dPhi = 0;
-			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
 			drift[i] = - dt*dF_dPhi;
 		}
 
@@ -320,7 +323,7 @@ public class FieldIsing1D{
 		double drift [] = new double [Lp];
 		for (int i = 0; i < Lp; i++) {
 			double dF_dPhi = 0;
-			dF_dPhi = (phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
+			dF_dPhi = (-phi_bar[i] + T*scikit.numerics.Math2.atanh(phi[i]));
 			drift[i] = - dt*dF_dPhi;
 		}
 
@@ -407,7 +410,7 @@ public class FieldIsing1D{
 		convolveCircleInteraction(phi, phi_bar, R);
 		for (int i = 0; i < Lp; i++) {
 			double Lambda = sqr(1 - phi[i]*phi[i]);	
-			del_phi[i] = - dt*Lambda*(ampFactor*phi_bar[i]-H + T*atanh(phi[i]));
+			del_phi[i] = - dt*Lambda*(-ampFactor*phi_bar[i]-H + T*atanh(phi[i]));
 			del_phi[i] += noiseParam*sqrt(Lambda*dt*2*T/dx)*random.nextGaussian();
 		}
 		for (int i = 0; i < Lp; i++)

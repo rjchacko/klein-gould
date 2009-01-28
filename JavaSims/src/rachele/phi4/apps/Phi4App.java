@@ -12,7 +12,12 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
-
+/**
+* 
+* The purpose of this app is to investigate the results of a paper by 
+* Corberi, Coniglio, and Zanetti
+*
+*/
 public class Phi4App extends Simulation{
 
 	phi4 field;
@@ -35,7 +40,7 @@ public class Phi4App extends Simulation{
 
 	public void load(Control c) {
 		c.frameTogether("Grids", phiGrid, sfPlot, sfGrid);
-		params.add("Dynamics", new ChoiceValue("Phi4","Glauber","Conserved Finite Diff", "Conserved", "Langevin"));
+		params.add("Dynamics", new ChoiceValue("Phi4 NCOP","Phi4 COP","Phi4 corberi"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.add("Init Conditions", new ChoiceValue("Random Gaussian", "Read 1D Soln","Read From File", "Constant"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
@@ -43,15 +48,14 @@ public class Phi4App extends Simulation{
 		params.addm("H", 0.6);
 		params.addm("R", 1.0);
 		params.addm("Random seed", 0);
-		params.addm("Lp", 128);
 		params.addm("dx", 50000);
 		params.add("Magnetization", 0.0);
+		params.addm("Lp", 128);
 		params.addm("g", 1.0);
 		params.addm("r", -0.03);
-		params.addm("dt", 0.00000001);
+		params.addm("dt", 0.1);
 		params.add("mean phi");
 		params.add("Time");
-		params.add("Lp");
 		flags.add("Clear");
 	}
 
@@ -62,6 +66,7 @@ public class Phi4App extends Simulation{
 		phiGrid.setAutoScale(false);
 		phiGrid.registerData(Lp,Lp,field.phi);
 		sfGrid.registerData(Lp, Lp, sf);
+//		sfPlot.setLogScale(false, true);
 		sfPlot.registerPoints("sf", k0, Color.BLUE);
 
 		if(flags.contains("Clear")){
@@ -78,9 +83,15 @@ public class Phi4App extends Simulation{
 		clear();
 		initialize();
 		System.out.println("init");
+		String dynamics = params.sget("Dynamics");
 		while (true) {
 			field.readParams(params);
-			field.simulatePhi4();			
+			if (dynamics == "Phi4 corberi")	
+				field.simulatePhi4Corberi();
+			else if (dynamics == "Phi4 COP")
+				field.simulatePhi4COP();
+			else if (dynamics == "Phi4 NCOP")
+				field.simulatePhi4NCOP();
 			sf = fft.calculate2DSF(field.phi, false, false);
 //			k0.accum(field.time(), sf[Lp*Lp/2+Lp/2]);
 			k0.accum(field.t, sf[0]);

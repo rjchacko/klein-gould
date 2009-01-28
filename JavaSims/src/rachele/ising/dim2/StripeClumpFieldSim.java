@@ -261,7 +261,7 @@ public class StripeClumpFieldSim {
 			mobility1d[i] = ising.mobility[i+Lp*ky];
 			f2[i] = mobility1d[i]*ising.T/(1-phi0[i]*phi0[i]);
 		}
-		double [] mobility_k = fft.calculate1DFT(mobility1d);
+//		double [] mobility_k = fft.calculate1DFT(mobility1d);
 		double [] f2k = fft.calculate1DFT(f2);
 
 		int y1=ky;
@@ -269,7 +269,8 @@ public class StripeClumpFieldSim {
 			for (int x2 = -Lp/2; x2 < Lp/2; x2++) {
 				double kx = 2*Math.PI*x2/ising.L;
 				double ky = 2*Math.PI*y1/ising.L;
-				M[(x2+Lp)%Lp][(x1+Lp)%Lp] = (kx*kx+ky*ky)*(mobility_k[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kx*ising.R, ky*ising.R) - f2k[(x1-x2+Lp)%Lp]);
+				M[(x2+Lp)%Lp][(x1+Lp)%Lp] = (kx*kx+ky*ky)*(ising.J*ising.findVkSquare(kx*ising.R, ky*ising.R) - (1.0/ising.T)- f2k[(x1-x2+Lp)%Lp]) ;
+//				M[(x2+Lp)%Lp][(x1+Lp)%Lp] = (kx*kx+ky*ky)*(mobility_k[(x1-x2+Lp)%Lp]*ising.J*ising.findVkSquare(kx*ising.R, ky*ising.R) - f2k[(x1-x2+Lp)%Lp]);
 			}
 		}
 

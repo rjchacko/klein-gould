@@ -29,7 +29,8 @@ public class MCIsingApp extends Simulation{
 	IsingLR sim;
 	FourierTransformer fft;
 	Plot sf = new Plot("SF");
-	Plot sf2 = new Plot("SF");
+	Plot sf2 = new Plot("SF2");
+	Plot sfs = new Plot("Sfs");
 	boolean measure=false;
 	double [] ft;
 	Accumulator sfh = new Accumulator();
@@ -41,7 +42,7 @@ public class MCIsingApp extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("data",grid, sf, sf2);
+		c.frameTogether("data",grid, sf, sf2, sfs);
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
@@ -63,8 +64,11 @@ public class MCIsingApp extends Simulation{
 		grid.registerData(sim.L, sim.L, sim.getField(1));
 		sf.setAutoScale(true);
 		sf2.setAutoScale(true);
+		sfs.setAutoScale(true);
 		sf.registerPoints("sf h", sfh, Color.BLUE);
 		sf2.registerPoints("sf v", sfv, Color.RED);
+		sfs.registerPoints("sf h", sfh, Color.BLUE);
+		sfs.registerPoints("sf v", sfv, Color.RED);
 		params.set("time", format(sim.time()));
 		sim.setParameters(params);
 		if (flags.contains("Clear")){
