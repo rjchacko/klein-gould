@@ -5,6 +5,7 @@
 #include <sys/time.h>
 
 #include "ising.h"
+#include "nt.h"
 #include "tests.h"
 
 double mean (double * arr, int length)
@@ -202,103 +203,6 @@ void find_tc2 ()
     fclose (out);
 }
 
-void est_mean_m (IsingCuda & ic, double & mean, double & std)
-{
-    /**
-     * Estimate mean magentization. Used as a tool to help find nucleation
-     * time.
-     */
-
-    int relaxTime = 25;
-    int iters = 200; //int iters = 50;
-    int nucTestTime = 30; // int nucTestTime = 15;
-    double m, m2;
-
-    while (1)
-    {
-        ic.allSpinsUp (); ic.downH ();
-        m = m2 = 0.0;
-        for (int i=0; i<relaxTime; ++i) ic.update (); // Settle into metast.
-        for (int i=0; i<iters; ++i)
-        {
-            ic.update ();
-            double t = ic.magnetization ()/ic.n;
-            m += t; t *= t; m2 += t;
-        }
-        for (int i=0; i<nucTestTime; ++i) ic.update (); // Make sure no nuc.
-        if (ic.magnetization () * ic.h < 0) // Not nucleated
-        {
-            mean = m/iters;
-            std = sqrt (m2/iters - m*m/iters/iters );
-            return;
-        }
-    }
-}
-
-void nucleation_times ()
-{
-    // // 7d Tc ~ 12.8690191
-    // // 6d Tc ~ 10.8348231
-    // // 5d Tc ~ 8.77847518
-    const int l = 20;
-    const int d = 5;
-    const double h = 2.565;
-    const double T = 8.77847518*4/9;
-    //const int l = 12;
-    //const int d = 7;
-    //const double T = 4*12.8690191/9;
-    //const double h = 4.018;
-    //const double h = 4.023;
-
-    int ntrials = 250;
-    int relaxTime = 25;
-    int iters = 1000;
-
-    double mu_m, std_m; 
-
-    const int nbins = 25; //iters/25;
-    int * bins = new int [nbins];
-
-    double meanNucleation = 0;
-    int step;
-
-    IsingCuda ic = IsingCuda (l, d, h, T);
-    est_mean_m (ic, mu_m, std_m); // Get estimates of mean and std
-
-    for (int i=0; i<ntrials; ++i)
-    {
-        ic.allSpinsUp (); ic.downH (); // Prepare the lattice
-        for (int j=0; j<relaxTime; ++j) // Enter metastable state
-            ic.update ();
-        
-        step = 0;
-        while (fabs(ic.magnetization () / ic.n - mu_m) < 5*std_m)
-        {   
-            ic.update ();
-            ++step;
-        }
-        
-        meanNucleation += ((double) step)/ntrials;
-        
-        // Throw away trials which decayed before entering while loop 
-        //     (i.e. anything which did not enter the loop)
-        if (0 < step && step < iters+1) // Does not exceed histogram boundaries
-            ++ bins [(step-1)*nbins/iters]; 
-
-        if ( !(i%100) ) printf ("Finished %d/%d\n", i, ntrials);
-    }
-
-    FILE * out = fopen ("data/nt.dat", "w");
-    assert (out);
-    
-    printf ("Mean nucleation time: %.6e\n", meanNucleation);
-    //fprintf (out, "# Mean nucleation time: %.6e\n", meanNucleation);
-    //for (int i=0; i<nbins; ++i)
-    //    fprintf (out, "%d\t%d\n", iters*(i+1)/nbins, bins[i]);
-
-    fclose (out); delete [] bins;
-}
-
 void mgraph ()
 {
     const int l = 8;
@@ -443,6 +347,37 @@ void find_hs ()
     fclose (out);
 }
 
+void ntControl ()
+{    
+    // // 7d Tc ~ 12.8690191
+    // // 6d Tc ~ 10.8348231
+    // // 5d Tc ~ 8.77847518
+    
+    //const int l = 10;
+    //const int d = 5;
+    //const double h = 2.563;
+    //const double T = 8.77847518*4/9;
+    //nt n = nt (6, d, h, T);
+    //for (int l=8; l<=24; l+=2)
+    //{
+    //    n.lChange (l);
+    //    n.nucleationTimes ();
+    //}
+
+    //const int l = 12;
+    const int d = 7;
+    const double T = 4*12.8690191/9;
+    const double h = 4.018;
+    //const double h = 4.023;
+    nt n = nt (6, d, h, T);
+    for (int l=6; l<=12; l+=2)
+    {
+        n.lChange (l);
+        n.nucleationTimes ();
+    }
+
+}
+
 int main (int argc, char *argv[]) {
     initCuda(argc, argv);
    
@@ -455,9 +390,9 @@ int main (int argc, char *argv[]) {
     //test7 ();
     //find_tc ();
     //find_tc2 ();
-    nucleation_times ();
     //find_hs ();
     //mgraph ();
+    ntControl ();
     
     return 0;
 }
