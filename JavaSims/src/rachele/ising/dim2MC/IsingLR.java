@@ -19,6 +19,7 @@ public class IsingLR extends RewindableDynamics {
 	public Random random = new Random();
 	public static final double kRpeak = 4.4934092;
 
+	public double [] siteEnergy;
 	
 	public IsingLR(Parameters params) {
 		L = Integer.highestOneBit(params.iget("L"));
@@ -29,8 +30,10 @@ public class IsingLR extends RewindableDynamics {
 		spins = new SpinBlocks2D(L, R);
 		random.setSeed(params.iget("Random seed"));
 		setParameters(params);
-		jumpRange = R; //this will be changed for some applications.
-//		jumpRange = 1;
+//		jumpRange = R; //this will be changed for some applications.
+		jumpRange = 8;
+		
+		siteEnergy = new double [L*L];
 	}
 	
 	
@@ -52,6 +55,9 @@ public class IsingLR extends RewindableDynamics {
 
 	}
 	
+	public double get_dt(){
+		return dt;
+	}
 	
 	public RewindableDynamics clone() {
 		IsingLR ising = (IsingLR)super.clone();
@@ -122,7 +128,9 @@ public class IsingLR extends RewindableDynamics {
 			int x1 = random.nextInt(L);
 			int y1 = random.nextInt(L);
 			int s1 = spins.get(x1, y1);
-			double dE = 2*s1*(h + J*(spins.sumInRange(x1,y1)-s1)/(4*R*(R+1)));
+			int site = y1*L + x1;
+			siteEnergy[site] = -s1*(h + J*(spins.sumInRange(x1,y1)-s1)/(4*R*(R+1)));
+			double dE = -2*(siteEnergy[site]);
 			switch (dynamics) {
 				case METROPOLIS:
 				case GLAUBER:

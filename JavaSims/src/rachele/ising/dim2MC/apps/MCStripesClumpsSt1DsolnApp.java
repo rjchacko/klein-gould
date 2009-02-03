@@ -55,15 +55,15 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 	public void load(Control c) {
 
 		c.frameTogether("Data",grid,sfGrid,sftPlot,slicePlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/conservedOP_SC/testruns"));
-		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.08h0.65"));
-		params.add("Input 1D Unstable File",new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.661"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/conservedOP_SC/testruns"));
+		params.add("Input 1D File",new FileValue("/Users/erdomi/data/lraim/configs1dAutoName/L256R91T0.08h0.65"));
+		params.add("Input 1D Unstable File",new FileValue("/Users/erdomi/data/lraim/configs1dAutoName/L256R91T0.02h0.543"));
 		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Ising Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<7);
-		params.add("R", 46);//1<<6);
+		params.add("L", 256);//1<<9);
+		params.add("R", 92);//1<<6);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.04);
+		params.addm("T", 0.02);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
 		params.addm("dt", 1.0);//1/(double)(1<<1));

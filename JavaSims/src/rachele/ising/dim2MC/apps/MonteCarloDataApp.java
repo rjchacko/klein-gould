@@ -47,7 +47,7 @@ public class MonteCarloDataApp extends Simulation{
 	double [] sFactor;
 
 	int [] sfLabel;
-	int accNo = 1;
+	int accNo = 6;
 	Accumulator [] sf_tAveAcc = new Accumulator [accNo];
 	Accumulator [] sf_tAcc = new Accumulator [accNo];
 	Accumulator [] sf_kAcc = new Accumulator [accNo]; 
