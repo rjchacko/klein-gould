@@ -25,13 +25,13 @@ public class CoulombPairsApp  extends Simulation {
 		params.add("Seed", 0);
 		params.add("L", 16);
 		params.add("T", 0.0);
-		params.addm("dt", 1.0);
+		params.addm("dt", 0.1);
 		params.add("time");
 	}
 	
 	public void animate() {
 		params.set("time", Utilities.format(sim.time));
-		grid.registerData(sim.L, sim.L, sim.interaction);
+		grid.registerData(sim.L, sim.L, sim.spin);
 	}
 	
 	public void clear() {
@@ -80,8 +80,8 @@ class CoulombSim {
     	interaction = buildPairInteraction();
     	random.setSeed(seed);
     	
-    	for (int i = 0; i < L*L/4; i++)
-    		spin[i] = 1;
+    	for (int i = 0; i < L*L; i++)
+    		spin[i] = random.nextInt(2);
     }
     
     void mcsTrial() {
@@ -90,11 +90,25 @@ class CoulombSim {
     	int i = random.nextInt(L*L);
     	int j = randomNeighbor(i);
     	
-    	
     	// pair annihilation or creation
     	if (spin[i] == spin[j]) {
+    	}
+    	// particle move
+    	else {
+    		double dE = 0;
+    		dE += energyCostToFlip(i);
+    		flipSpin(i);
+    		dE += energyCostToFlip(j);
+    		flipSpin(j);
     		
-    		
+    		if (dE <= 0 || random.nextDouble() < Math.exp(- dE / T)) {
+    			// accept change
+    		}
+    		else {
+    			// revert change
+    			flipSpin(i);
+    			flipSpin(j);
+    		}
     	}
     }
     
@@ -103,6 +117,19 @@ class CoulombSim {
 			mcsTrial();
 		}
 		time += dt;
+	}
+	
+	double energyCostToFlip(int i) {
+		return -2*(1-2*spin[i])*dressedPhi(i);
+	}
+	
+	double dressedPhi(int i) {
+		return phi[i] - spin[i]*interaction[0];
+	}
+	
+	void flipSpin(int i) {
+		spin[i] = 1 - spin[i];
+		buildPhi();
 	}
 	
 	int randomNeighbor(int i) {
@@ -134,7 +161,7 @@ class CoulombSim {
 				
 				int dx = (xj-xi+L)%L;
 				int dy = (yj-yi+L)%L;
-				phi[i] += spin[i]*spin[j]*interaction[dy*L+dx];
+				phi[i] += spin[j]*interaction[dy*L+dx];
 			}
 		}
 	}
@@ -154,8 +181,7 @@ class CoulombSim {
 		
 		double ret[] = new double[L*L];
 		for (int i = 0; i < L*L; i++)
-			//ret[i] = scratch[2*i+1] / (L*L);
-			ret[i] = ((scratch[2*i])) / (L*L);
+			ret[i] = scratch[2*i] / (L*L);
 		return ret;
 	}
 }
