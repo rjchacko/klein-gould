@@ -1,8 +1,13 @@
-#!/bin/bash
+#!/usr/bin/python
 
-# Use the GTX
-if [ -z $1 ] ; then
-    ../../bin/linux/release/ising 0
-else
-    ../../bin/linux/release/ising $1
-fi
+import sys, os
+
+def run (c):
+    os.system ('../../bin/linux/release/ising '+c)
+
+if __name__ == '__main__':
+    if len(sys.argv) > 1:
+        run (sys.argv[1])
+    else:
+        run ('1')
+
