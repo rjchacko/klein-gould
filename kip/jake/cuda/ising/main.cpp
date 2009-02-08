@@ -355,7 +355,7 @@ void ntControl ()
     
     //const int l = 10;
     //const int d = 5;
-    //const double h = 2.563;
+    //const double h = 2.558;
     //const double T = 8.77847518*4/9;
     //nt n = nt (6, d, h, T);
     //for (int l=8; l<=24; l+=2)
@@ -367,15 +367,31 @@ void ntControl ()
     //const int l = 12;
     const int d = 7;
     const double T = 4*12.8690191/9;
-    const double h = 4.018;
+    const double h = 4.015;
     //const double h = 4.023;
     nt n = nt (6, d, h, T);
-    for (int l=6; l<=12; l+=2)
+    for (int l=6; l<=14; l+=2)
     {
         n.lChange (l);
-        n.nucleationTimes ();
+        n.sim ();
     }
+}
 
+void chi ()
+{
+    int l = 10;
+    int d = 7;
+    double T = 4*12.8690191/9;
+    double h = 4.017;
+
+    double delta_h = 0.0008;
+
+    nt n = nt (l, d, h, T);
+    for (int i=0; i<12; ++i)
+    {
+        n.hChange (h+i*delta_h);
+        n.sim (750);
+    }
 }
 
 int main (int argc, char *argv[]) {
@@ -392,7 +408,8 @@ int main (int argc, char *argv[]) {
     //find_tc2 ();
     //find_hs ();
     //mgraph ();
-    ntControl ();
+    //ntControl ();
+    chi ();
     
     return 0;
 }

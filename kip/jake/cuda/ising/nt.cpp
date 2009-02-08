@@ -15,15 +15,15 @@ nt::nt (int l, int d, double h, double T)
 
     mOut = fopen (mName, "wb"); assert (mOut);
     ntOut = fopen (ntName, "w"); assert (ntOut);
-    headFlag =  10000000.0f;
 
     // Initialize m header
-    head[0]      = headFlag;
-    head[HLEN-1] = headFlag;
+    head[0]      = HEADFLAG;
     head[1]      = (float) l;
     head[2]      = (float) d;
     head[3]      = (float) h;
     head[4]      = (float) T;
+    // Initialize m footer
+    foot[0]      = FOOTFLAG;
 }
 
 nt::~nt ()
@@ -41,6 +41,14 @@ void nt::lChange (int l)
     head[1] = (float) l;
 }
 
+void nt::hChange (double h)
+{
+    int d = ic->dim; int l = ic->len; double T = ic->T;
+    delete ic;
+    ic = new IsingCuda (l, d, h, T);
+    head[3] = (float) h;
+}
+
 void nt::estMean_m (double & mu_m, double & std_m)
 {
     /**
@@ -48,8 +56,8 @@ void nt::estMean_m (double & mu_m, double & std_m)
      * time.
      */
 
-    int relaxTime = 25;
-    int iters = 200; //int iters = 50;
+    int relaxTime = 35;
+    int iters = 250; //int iters = 50;
     int nucTestTime = 30; // int nucTestTime = 15;
     double m, m2;
 
@@ -71,7 +79,7 @@ void nt::estMean_m (double & mu_m, double & std_m)
             std_m = sqrt (m2/iters - m*m/iters/iters );
             return;
         }
-        else if (iters > 50) --iters; // Try shorter this time
+        else if (iters > 150) --iters; // Try shorter this time
         else
         {
             // handle case where we had nucleation too early
@@ -79,34 +87,41 @@ void nt::estMean_m (double & mu_m, double & std_m)
     }
 }
 
-void nt::nucleationTimes ()
+void nt::sim ()
+{
+    int ntrials = 1600;
+    sim (ntrials);
+}
+
+void nt::sim (int ntrials)
 {
     double mu_m, std_m;
 
-    int relaxTime = 25;
-    int afterTime = 25;
-    int ntrials = 1600;
+    int relaxTime = 35;
+    int afterTime = 15;
+    //int ntrials = 1600;
     int histSize = 1000;
 
     const int nbins = 25; //histSize/25;
     int * bins = new int [nbins];
 
-    double m;
+    float m;
 
     double meanNucleation = 0;
     double meanNucleationError = 0;
+    double r, rError;
     int step;
 
     int decays = 0;
 
     estMean_m (mu_m, std_m); // Get estimates of mean and std
 
-    #ifdef MOUT
-    fwrite (head, sizeof(float), HLEN, mOut);
-    #endif
-
     for (int i=0; i<ntrials; ++i)
     {
+        #ifdef MOUT
+        fwrite (head, sizeof(float), HLEN, mOut);
+        #endif
+
         ic->allSpinsUp (); ic->downH (); // Prepare the lattice
         for (int j=0; j<relaxTime; ++j) // Enter metastable state
             ic->update ();
@@ -116,36 +131,48 @@ void nt::nucleationTimes ()
         while (fabs(m - mu_m) < 5*std_m)
         {   
             ic->update ();
-            m = ic->magnetization () / ic->n;
+            m = (float) ic->magnetization () / ic->n;
             ++step;
-            #ifdef MOUT
-            fwrite (&m, sizeof(float), 1, mOut);
+            // All metastable data is good, so we do not filter any as is
+            // done with nucleation times.
+            #ifdef MOUT 
+            fwrite (&m, sizeof(float), 1, mOut); 
             #endif
         }
         
-        for (int j=0; j<afterTime; ++j) // Make sure metastable decayed
-            ic->update ();
-        
         // ignore premature decays and ones which were false positives
-        if (0 < step && ic->magnetization ()*ic->h > 0) 
+        if (0 < step) 
         {
-            ++decays;
-            meanNucleation += (double) step;
-            if (step < histSize+1) // Does not exceed histogram
-                ++ bins [(step-1)*nbins/histSize]; 
+            for (int j=0; j<afterTime; ++j) // Make sure metastable decayed
+                ic->update ();
+
+            if (ic->magnetization ()*ic->h > 0)
+            {
+                ++decays;
+                meanNucleation += (double) step;
+                if (step < histSize+1) // Does not exceed histogram
+                    ++ bins [(step-1)*nbins/histSize]; 
+            }
         }
         
-        printf ("\r                                                \r");
-        printf ("(L=%d, d=%d) Finished %d/%d", ic->len, ic->dim, i, ntrials);
+        printf ("\r                                                     \r");
+        printf ("(L=%d, d=%d) Trial %d/%d :: %d decays", 
+            ic->len, ic->dim, i+1, ntrials, decays);
         fflush (stdout);
+        
+        #ifdef MOUT
+        fwrite (foot, sizeof(float), FLEN, mOut);
+        #endif
     }
     printf ("\n");
 
     meanNucleation /= decays;
-    meanNucleationError = meanNucleation / sqrt(ntrials);
+    meanNucleationError = meanNucleation / sqrt(decays);
+    r = 1/meanNucleation;
+    rError = 1/(meanNucleation-meanNucleationError) - 1/meanNucleation;
     
-    fprintf (ntOut, "%d\t%.5e\t%.5e\n", 
-        ic->len, meanNucleation, meanNucleationError);
+    fprintf (ntOut, "%d\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\n", 
+        ic->len, ic->h, meanNucleation, meanNucleationError, r, rError);
     fflush (ntOut);
 
     delete [] bins;
