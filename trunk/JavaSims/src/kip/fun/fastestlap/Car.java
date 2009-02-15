@@ -1,4 +1,4 @@
-package kip.fastestlap;
+package kip.fun.fastestlap;
 
 import javax.media.opengl.GL;
 import javax.media.opengl.glu.GLU;
