@@ -244,6 +244,28 @@ public class PrintUtil {
 		}
 	}
 	
+	static public void printWalkerData(String fileName, double[] array, int N, double offSet, double binWidth){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii < N ; ii++){				
+				pw.print(ii);
+				pw.print("\t");
+				pw.print(offSet + ii*binWidth);
+				pw.print("\t");
+				pw.print(array[ii]);
+				pw.print("\t");
+				pw.print((double)(array[ii])/(offSet + ii*binWidth));
+				pw.println();
+			}
+			pw.close();
+		}
+		catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+
+	
 	static public void printWalkerData(String fileName, int[][] array, int N){
 		try{
 			File file = new File(fileName);
@@ -495,6 +517,8 @@ public class PrintUtil {
 			ex.printStackTrace();
 		}
 	}
+
+
 	
 	
 }

@@ -74,5 +74,54 @@ public class ReadInUtil {
 
 	}
 		
+	public void getData(int[] cns, int skip, double[] retX, double[] retY){
+		
+		int counter = 0;
+		
+		int xn = cns[0];
+		int yn = cns[1];
+		
+		try {
+			FileInputStream fis = new FileInputStream(fin);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			BufferedReader bir = new BufferedReader(new InputStreamReader(bis));
+
+			String rin;
+			int pd;
+
+			for (int jj = 0 ; jj < skip ; jj++){
+				rin = bir.readLine();
+			}
+
+			while ( (rin = bir.readLine()) != null ){
+			
+				pd = rin.indexOf('\t');
+				for(int jj = 1 ; jj < xn ; jj++){
+					rin = rin.substring(pd + 1);
+					pd = rin.indexOf('\t');
+				}
+				retX[counter] = Double.parseDouble(rin.substring(0,pd));
+				
+				for(int jj = (xn-1) ; jj < yn ; jj++){
+					rin = rin.substring(pd + 1);
+					pd = rin.indexOf('\t');
+				}
+				if(pd == -1){
+					retY[counter++] = Double.parseDouble(rin);
+				}
+				else{
+					retY[counter++] = Double.parseDouble(rin.substring(0,pd));	
+				}
+			}
+		} 
+		catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} 
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+	
+		return;
+	}
 	
 }

@@ -49,5 +49,18 @@ public class CopyArray {
 		
 	}
 	
+	public static double[] invertArray(double[] array, int length){
+		
+		if(length == 0) return null;
+		
+		double[] ret = new double[length];
+		
+		for (int jj = 0 ; jj < length; jj++){
+			ret[jj] = 1/array[jj];
+		}
+		
+		return ret;
+		
+	}
 	
 }
