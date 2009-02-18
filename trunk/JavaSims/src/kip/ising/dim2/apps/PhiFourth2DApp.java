@@ -23,8 +23,8 @@ public class PhiFourth2DApp extends Simulation {
 		c.frame(grid);
 		params.addm("Saddle", new ChoiceValue("No", "Yes"));
 		params.addm("Noise", new ChoiceValue("Yes", "No"));
-		params.addm("T", new DoubleValue(0.14, -1, 1).withSlider());
-		params.addm("h", new DoubleValue(0., -1, 1).withSlider());
+		params.addm("T", new DoubleValue(0.05, -0.2, 0.1).withSlider());
+		params.addm("h", new DoubleValue(0., -0.2, 0.2).withSlider());
 		params.addm("dt", 1.0);
 		params.add("R", 1000.0);
 		params.add("L", 8000.0);

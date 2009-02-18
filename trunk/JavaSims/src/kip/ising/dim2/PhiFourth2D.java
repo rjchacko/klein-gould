@@ -169,7 +169,7 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 		});
 		
 		for (int i = 0; i < Lp*Lp; i++) {
-			del_phi[i] = - dt*(phi_bar[i]+T*phi[i] + phi[i]*phi[i]*phi[i] - h);
+			del_phi[i] = - dt*(phi_bar[i]+(T+T_SP)*phi[i] + phi[i]*phi[i]*phi[i] - h);
 			if (!noiselessDynamics)
 				del_phi[i] += sqrt(dt/(dx*dx))*noise();
 		}
@@ -178,7 +178,7 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 		freeEnergyDensity = 0;
 		for (int i = 0; i < Lp*Lp; i++) {
 			rms_dF_dphi += sqr(del_phi[i] / dt);
-			freeEnergyDensity += phi[i]*phi_bar[i]/2 + T*phi[i]*phi[i]/2 + phi[i]*phi[i]*phi[i]*phi[i]/4;
+			freeEnergyDensity += phi[i]*phi_bar[i]/2 + (T+T_SP)*phi[i]*phi[i]/2 + phi[i]*phi[i]*phi[i]*phi[i]/4 - h*phi[i];
 			phi[i] += del_phi[i];
 		}
 		rms_dF_dphi = sqrt(rms_dF_dphi/(Lp*Lp));
