@@ -4,17 +4,27 @@
 #include "ising.h"
 #include "nt.h"
 
-nt::nt (int l, int d, double h, double T)
+nt::nt (int l, int d, double h, double T, char * base, int ovr)
 {
+    relaxTime = 40;
+
     ic = new IsingCuda (l, d, h, T);
 
     char mName [100];
     char ntName [100];
-    sprintf (mName, "./data/res/%dd_m.dat", d);
-    sprintf (ntName, "./data/res/%dd_nt.dat", d);
+    sprintf (mName, "./data/res/%s%dd_m.dat", base, d);
+    sprintf (ntName, "./data/res/%s%dd_nt.dat", base, d);
 
-    mOut = fopen (mName, "wb"); assert (mOut);
-    ntOut = fopen (ntName, "w"); assert (ntOut);
+    if (ovr)
+    {
+        mOut = fopen (mName, "wb"); assert (mOut);
+        ntOut = fopen (ntName, "w"); assert (ntOut);
+    }
+    else
+    {
+        ntOut = fopen (ntName, "a"); assert (ntOut);
+        mOut = fopen (mName, "ab"); assert (mOut);
+    }
 
     // Initialize m header
     head[0]      = HEADFLAG;
@@ -24,6 +34,11 @@ nt::nt (int l, int d, double h, double T)
     head[4]      = (float) T;
     // Initialize m footer
     foot[0]      = FOOTFLAG;
+}
+
+nt::nt (int l, int d, double h, double T)
+{
+    nt (l, d, h, T, "", 1);
 }
 
 nt::~nt ()
@@ -56,7 +71,6 @@ void nt::estMean_m (double & mu_m, double & std_m)
      * time.
      */
 
-    int relaxTime = 35;
     int iters = 250; //int iters = 50;
     int nucTestTime = 30; // int nucTestTime = 15;
     double m, m2;
@@ -79,7 +93,7 @@ void nt::estMean_m (double & mu_m, double & std_m)
             std_m = sqrt (m2/iters - m*m/iters/iters );
             return;
         }
-        else if (iters > 150) --iters; // Try shorter this time
+        else if (iters > 100) --iters; // Try shorter this time
         else
         {
             // handle case where we had nucleation too early
@@ -97,7 +111,6 @@ void nt::sim (int ntrials)
 {
     double mu_m, std_m;
 
-    int relaxTime = 35;
     int afterTime = 15;
     //int ntrials = 1600;
     int histSize = 1000;
@@ -172,7 +185,7 @@ void nt::sim (int ntrials)
     rError = 1/(meanNucleation-meanNucleationError) - 1/meanNucleation;
     
     fprintf (ntOut, "%d\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\n", 
-        ic->len, ic->h, meanNucleation, meanNucleationError, r, rError);
+        ic->len, fabs (ic->h), meanNucleation, meanNucleationError, r, rError);
     fflush (ntOut);
 
     delete [] bins;

@@ -24,6 +24,7 @@ class nt
 {
 public:
     nt (int, int, double, double);
+    nt (int, int, double, double, char *, int);
     ~nt ();
     void sim ();
     void sim (int);
@@ -31,6 +32,7 @@ public:
     void hChange (double);
 protected:
 private:
+    int relaxTime;
     IsingCuda * ic; // Need ptr, otherwise constructor is called
     FILE * mOut, * ntOut;
     float foot[FLEN];
