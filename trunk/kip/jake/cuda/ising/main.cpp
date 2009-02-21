@@ -379,18 +379,17 @@ void ntControl ()
 
 void chi ()
 {
-    int l = 10;
-    int d = 7;
-    double T = 4*12.8690191/9;
-    double h = 4.017;
-
-    double delta_h = 0.0008;
+    //int l = 10; int d = 7; double T = 4*12.869/9; 
+    //double h = 4.019; double delta_h = 0.0003;
+    
+    int l=16; int d=5; double T=8.778*4/9; 
+    double h=2.53; double delta_h=0.002;
 
     nt n = nt (l, d, h, T);
-    for (int i=0; i<12; ++i)
+    for (int i=0; i<30; ++i)
     {
         n.hChange (h+i*delta_h);
-        n.sim (750);
+        n.sim (3000);
     }
 }
 
