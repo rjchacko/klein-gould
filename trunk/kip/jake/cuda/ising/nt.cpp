@@ -1,5 +1,6 @@
 #include <cmath>
 #include <cstdio>
+#include <ctime>
 #include <assert.h>
 #include "ising.h"
 #include "nt.h"
