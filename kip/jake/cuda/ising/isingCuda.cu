@@ -261,7 +261,9 @@ IsingCuda::IsingCuda(int len, int dim, float h, float T) : Ising(len, dim, h, T)
     transferHostToDevice();
     
     rng = new Rand48();
-    rng->init(GRID_DIM*BLOCK_DIM, 0); // initialize random numbers
+    //rng->init(GRID_DIM*BLOCK_DIM, 0); // initialize random numbers
+    rng->init(GRID_DIM*BLOCK_DIM, time(NULL)); // initialize random numbers
+
 }
 
 IsingCuda::~IsingCuda() {

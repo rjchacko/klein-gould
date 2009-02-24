@@ -377,24 +377,32 @@ void ntControl ()
     }
 }
 
-void chi ()
+void chi (char * base, int ovr)
 {
-    //int l = 10; int d = 7; double T = 4*12.869/9; 
-    //double h = 4.019; double delta_h = 0.0003;
-    
-    int l=16; int d=5; double T=8.778*4/9; 
-    double h=2.53; double delta_h=0.002;
+    int l = 10; int d = 7; double T = 4*12.869/9; 
+    double h = 4.012; double delta_h = 0.0005; // 24 points, end at 4.024
+    //int l=16; int d=5; double T=8.778*4/9; 
+    //double h=2.53; double delta_h=0.002;
 
-    nt n = nt (l, d, h, T);
-    for (int i=0; i<30; ++i)
+    nt n = nt (l, d, h, T, base, ovr);
+    for (int i=0; i<24; ++i)
     {
         n.hChange (h+i*delta_h);
-        n.sim (3000);
+        //n.sim (50);
+        n.sim (1500+(i/24)*2000); // Run longer later
     }
 }
 
 int main (int argc, char *argv[]) {
-    initCuda(argc, argv);
+    if (argc > 1)
+    {
+        char * argvCuda[2] = {argv[0], argv[1]};
+        initCuda(2, argvCuda);
+    }
+    else
+    {
+        initCuda (argc, argv);
+    }
    
     //test1 ();
     //test2 ();
@@ -408,7 +416,15 @@ int main (int argc, char *argv[]) {
     //find_hs ();
     //mgraph ();
     //ntControl ();
-    chi ();
+
+    if (argc==3)
+        chi (argv[2], 1);
+    else if (argc>3)
+    {
+        chi (argv[2], atoi(argv[3]));
+    }
+    else
+        chi ("", 1);
     
     return 0;
 }
