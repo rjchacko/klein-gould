@@ -3,6 +3,8 @@
 
 // Leave this in if you want m output. WARNING: files could be large!
 #define MOUT
+// Leave this in if you want nt output.
+#define NTOUT
 
 #define HEADFLAG  10000000.0f
 #define FOOTFLAG -10000000.0f
