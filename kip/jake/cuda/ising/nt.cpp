@@ -111,24 +111,16 @@ void nt::sim ()
 void nt::sim (int ntrials)
 {
     double mu_m, std_m;
-
-    int afterTime = 15;
-    //int ntrials = 1600;
-    int histSize = 1000;
-
-    const int nbins = 25; //histSize/25;
-    int * bins = new int [nbins];
-
     float m;
-
-    double meanNucleation = 0;
-    double meanNucleationError = 0;
-    double r, rError;
-    int step;
-
+    int afterTime = 15;
+    float step;
     int decays = 0;
 
     estMean_m (mu_m, std_m); // Get estimates of mean and std
+
+    #ifdef NTOUT
+    fwrite (head, sizeof(float), HLEN, ntOut);
+    #endif
 
     for (int i=0; i<ntrials; ++i)
     {
@@ -140,7 +132,7 @@ void nt::sim (int ntrials)
         for (int j=0; j<relaxTime; ++j) // Enter metastable state
             ic->update ();
         
-        step = 0;
+        step = 0.0f;
         m = ic->magnetization () / ic->n;
         while (fabs(m - mu_m) < 5*std_m)
         {   
@@ -150,12 +142,12 @@ void nt::sim (int ntrials)
             // All metastable data is good, so we do not filter any as is
             // done with nucleation times.
             #ifdef MOUT 
-            fwrite (&m, sizeof(float), 1, mOut); 
+            fwrite (&m, sizeof(float), 1, mOut); fflush (mOut);
             #endif
         }
         
         // ignore premature decays and ones which were false positives
-        if (0 < step) 
+        if (0.0 < step) 
         {
             for (int j=0; j<afterTime; ++j) // Make sure metastable decayed
                 ic->update ();
@@ -163,9 +155,9 @@ void nt::sim (int ntrials)
             if (ic->magnetization ()*ic->h > 0)
             {
                 ++decays;
-                meanNucleation += (double) step;
-                if (step < histSize+1) // Does not exceed histogram
-                    ++ bins [(step-1)*nbins/histSize]; 
+                #ifdef NTOUT
+                fwrite (&step, sizeof(float), 1, ntOut); fflush (ntOut);
+                #endif
             }
         }
         
@@ -180,14 +172,16 @@ void nt::sim (int ntrials)
     }
     printf ("\n");
 
-    meanNucleation /= decays;
-    meanNucleationError = meanNucleation / sqrt(decays);
-    r = 1/meanNucleation;
-    rError = 1/(meanNucleation-meanNucleationError) - 1/meanNucleation;
-    
-    fprintf (ntOut, "%d\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\n", 
-        ic->len, fabs (ic->h), meanNucleation, meanNucleationError, r, rError);
-    fflush (ntOut);
+    #ifdef NTOUT
+    fwrite (foot, sizeof(float), FLEN, ntOut);
+    #endif
 
-    delete [] bins;
+    //meanNucleation /= decays;
+    //meanNucleationError = meanNucleation / sqrt(decays);
+    //r = 1/meanNucleation;
+    //rError = 1/(meanNucleation-meanNucleationError) - 1/meanNucleation;
+    //
+    //fprintf (ntOut, "%d\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\n", 
+    //    ic->len, fabs (ic->h), meanNucleation, meanNucleationError, r, rError);
+    //fflush (ntOut);
 }

@@ -380,16 +380,16 @@ void ntControl ()
 void chi (char * base, int ovr)
 {
     int l = 10; int d = 7; double T = 4*12.869/9; 
-    double h = 4.012; double delta_h = 0.0005; // 24 points, end at 4.024
+    double h = 4.0115; double delta_h = 0.0005; // 25 points, end at 4.024
     //int l=16; int d=5; double T=8.778*4/9; 
     //double h=2.53; double delta_h=0.002;
 
     nt n = nt (l, d, h, T, base, ovr);
-    for (int i=0; i<24; ++i)
+    for (int i=0; i<25; ++i)
     {
         n.hChange (h+i*delta_h);
         //n.sim (50);
-        n.sim (1500+(i/24)*2000); // Run longer later
+        n.sim (500+(i/25)*2500); // Run longer later
     }
 }
 
