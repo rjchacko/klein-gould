@@ -389,7 +389,7 @@ void chi (char * base, int ovr)
     {
         n.hChange (h+i*delta_h);
         //n.sim (50);
-        n.sim (500+(i/25)*2500); // Run longer later
+        n.sim (500+i*2500/25); // Run longer later
     }
 }
 
