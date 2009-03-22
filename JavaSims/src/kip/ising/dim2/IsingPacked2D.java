@@ -3,8 +3,7 @@ package kip.ising.dim2;
 //import kip.util.Random;
 
 public class IsingPacked2D {
-/*
-	public int spin[];
+/*	public int spin[];
 	private int packed[];
 	
 	public int L1, L2;
@@ -38,52 +37,58 @@ public class IsingPacked2D {
 		unpack();
 	}
 	
+	int indexSpin(int spins, int b) {
+		return 2*((spins>>>(31-b))&1)-1;
+	}
+	
 	public void unpack() {
 		for (int i = 0; i < N/32; i++) {
 			int x = (i*32) % L1;
 			int y = (i*32) / L1;
 			
-			for (int j = 0; j < 32; j++)
-				spin[y*L1+(x+j)] = 2 * ((packed[i] >>> j) & 1) - 1;
+			for (int b = 0; b < 32; b++)
+				spin[y*L1+(x+b)] = indexSpin(packed[i], b);
 		}
 	}
 	
-	private int neighborSum(int i) {
-		int x = i % L1;
-		int y = i / L1;
-		int acc = 0;
-		
-		if (openBoundary) {
-			if (y < L2-1)
-				acc += spin[i+L1];
-			if (y > 0)
-				acc += spin[i-L1];
-			if (x < L1-1)
-				acc += spin[i+1];
-			if (x > 0)
-				acc += spin[i-1];
-		}
-		else {
-			int yp = (y+1)%L2;
-			int ym = (y-1+L2)%L2;
-			int xp = (x+1)%L1;
-			int xm = (x-1+L1)%L1;
-			acc += spin[yp*L1+x];
-			acc += spin[ym*L1+x];
-			acc += spin[y*L1+xp];
-			acc += spin[y*L1+xm];
-		}
-		
-		return acc;
-	}
+	// unused
+//	private int neighborSum(int i) {
+//		int x = i % L1;
+//		int y = i / L1;
+//		int acc = 0;
+//		
+//		if (openBoundary) {
+//			if (y < L2-1)
+//				acc += spin[i+L1];
+//			if (y > 0)
+//				acc += spin[i-L1];
+//			if (x < L1-1)
+//				acc += spin[i+1];
+//			if (x > 0)
+//				acc += spin[i-1];
+//		}
+//		else {
+//			int yp = (y+1)%L2;
+//			int ym = (y-1+L2)%L2;
+//			int xp = (x+1)%L1;
+//			int xm = (x-1+L1)%L1;
+//			acc += spin[yp*L1+x];
+//			acc += spin[ym*L1+x];
+//			acc += spin[y*L1+xp];
+//			acc += spin[y*L1+xm];
+//		}
+//		
+//		return acc;
+//	}
 	
-	private void singleStep() {
-		int i = random.nextInt(N);
-		double dE = 2*spin[i]*neighborSum(i);
-		if (dE <= 0 || (T != 0 && random.nextDouble() < Math.exp(-dE/T))) {
-			spin[i] = -spin[i];
-		}
-	}
+	// unused
+//	private void singleStep() {
+//		int i = random.nextInt(N);
+//		double dE = 2*spin[i]*neighborSum(i);
+//		if (dE <= 0 || (T != 0 && random.nextDouble() < Math.exp(-dE/T))) {
+//			spin[i] = -spin[i];
+//		}
+//	}
 	
 	
 	
@@ -96,10 +101,10 @@ public class IsingPacked2D {
 		int yp = (y+1)%(L2);
 		int ym = (y-1)%(L2);
 		
-		ret[0] = y*(L1/32) + xp;
-		ret[1] = y*(L1/32) + xm;
-		ret[2] = yp*(L1/32) + x;
-		ret[3] = ym*(L1/32) + x;
+		ret[0] = y*(L1/32) + xp; // right
+		ret[1] = y*(L1/32) + xm; // left
+		ret[2] = yp*(L1/32) + x; // up
+		ret[3] = ym*(L1/32) + x; // down
 	}
 	
 	private void updateEven() {
@@ -108,8 +113,27 @@ public class IsingPacked2D {
 		int a1=0, a2=0;
 		for (int i = 0; i < N/32; i++) {
 			getNeighbors(i, n);
+			int here = packed[i];
+			int right = packed[n[0]];
+			int left = packed[n[1]];
+			int up = packed[n[2]];
+			int down = packed[n[3]];
 			
-			int EVEN_BITS = 0x55555555; // = 0b01010101 ...
+			int EVEN_BITS = 0x55555555; // = 0b0101...0101
+			int ODD_BITS = EVEN_BITS << 1; // = 0b1010...1010
+			int vert = EVEN_BITS&up + EVEN_BITS&down;
+			int horiz = ((ODD_BITS&here)>>>1) + ((ODD_BITS&here)<<1) + (right>>>31); 
+			
+			
+			for (int j = 1; j < 32; j += 2) {
+				// shift: 30, 2, 0
+				int shift = (31-j);
+//				int neighborSum = (vert >>> shift) & 0x3
+//				double dE = 2*indexSpin(packed[i], j)*neighborSum;
+//			if (dE <= 0 || (T != 0 && random.nextDouble() < Math.exp(-dE/T))) {
+//				spin[i] = -spin[i];
+//			}
+			}
 			
 		}
 	}
@@ -118,11 +142,10 @@ public class IsingPacked2D {
 	public void step(double mcs) {
 		long imcs = Math.round(mcs);
 		for (int i = 0; i < imcs; i++) {
-			update(0);
-			update(1);
+//			update(0);
+//			update(1);
 		}
 		time += mcs;
 		unpack();
-	}
-	*/
+	}*/
 }
