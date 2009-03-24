@@ -2,7 +2,7 @@ package kip.ising.dim2.apps;
 
 import kip.ising.PercolationSite2d;
 import kip.ising.dim2.Ising2D;
-import kip.ising.dim2.IsingPacked2D;
+import kip.ising.dim2.IsingZero2D;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
@@ -65,7 +65,7 @@ public class Ising2DApp extends Simulation {
 		int seed = params.iget("Seed");
 		int L2 = params.iget("L");
 		int L1 = (int) (L2 * params.fget("Ratio"));
-		sim = new IsingPacked2D(seed, L1, L2, params.fget("T"));
+		sim = new IsingZero2D(seed, L1, L2, params.fget("T"));
 		sim.openBoundary = params.sget("Boundary").equals("Open");
 		clusters = new double[L1*L2];
 		

@@ -28,7 +28,7 @@ public class Ising2D {
 			spin[i] = random.nextDouble() < 0.5 ? 1 : -1;
 	}
 	
-	private int neighborSum(int i) {
+	protected int neighborSum(int i) {
 		int x = i % L1;
 		int y = i / L1;
 		int acc = 0;
@@ -66,9 +66,13 @@ public class Ising2D {
 	}
 	
 	public void step(double mcs) {
-		int n = (int) (mcs * N);
+		int n = (int) Math.max(mcs * N, 0);
 		for (int i = 0; i < n; i++)
 			singleStep();
-		time += mcs;
+		time += (double)n / N;
+	}
+	
+	public void runUntil(double t) {
+		step(t - time);
 	}
 }
