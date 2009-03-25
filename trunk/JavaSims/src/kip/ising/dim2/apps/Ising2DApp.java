@@ -65,8 +65,7 @@ public class Ising2DApp extends Simulation {
 		int seed = params.iget("Seed");
 		int L2 = params.iget("L");
 		int L1 = (int) (L2 * params.fget("Ratio"));
-		sim = new IsingZero2D(seed, L1, L2, params.fget("T"));
-		sim.openBoundary = params.sget("Boundary").equals("Open");
+		sim = new IsingZero2D(seed, L1, L2, params.fget("T"), params.sget("Boundary").equals("Open"));
 		clusters = new double[L1*L2];
 		
         while (true) {

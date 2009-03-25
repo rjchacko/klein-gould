@@ -6,8 +6,8 @@ public class IsingZero2D extends Ising2D {
 	int activeSites[]; // active site indices
 	int activeSitesCnt; // number of active sites
 	
-	public IsingZero2D(int seed, int _L1, int _L2, double _T) {
-		super(seed, _L1, _L2, _T);
+	public IsingZero2D(int seed, int _L1, int _L2, double _T, boolean _openBoundary) {
+		super(seed, _L1, _L2, _T, _openBoundary);
 		
 		activityIndex = new int[N];
 		activeSites = new int[N];
