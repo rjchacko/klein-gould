@@ -74,9 +74,9 @@ public class FreezingCollectorApp extends Simulation {
 		
 		for (count = 0; count < cntMax; count++) {
 			if (params.sget("Client").equals("Ising2D"))
-				sim = new Ising2D(count, L1, L2, 0);
+				sim = new Ising2D(count, L1, L2, 0, openBoundary);
 			else
-				sim = new IsingZero2D(count, L1, L2, 0);
+				sim = new IsingZero2D(count, L1, L2, 0, openBoundary);
 			sim.openBoundary = openBoundary;
 			
 			for (int iter = 0; ; iter++) {

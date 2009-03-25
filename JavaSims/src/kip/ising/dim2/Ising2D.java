@@ -11,11 +11,12 @@ public class Ising2D {
 	public double time;
 	public boolean openBoundary = false;
 	
-	public Ising2D(int seed, int _L1, int _L2, double _T) {
+	public Ising2D(int seed, int _L1, int _L2, double _T, boolean _openBoundary) {
 		random.setSeed(seed);
 		L1 = _L1;
 		L2 = _L2;
 		T = _T;
+		openBoundary = _openBoundary;
 		N = L1*L2;
 		time = 0;
 		

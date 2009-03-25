@@ -17,13 +17,16 @@ public class IsingPacked2D extends Ising2D {
 	int EVN_MASK = ODD_MASK << 1; // = 0b1010...1010
 	
 	
-	public IsingPacked2D(int seed, int _L1, int _L2, double _T) {
-		super(seed, _L1, _L2, _T);
+	public IsingPacked2D(int seed, int _L1, int _L2, double _T, boolean _openBoundary) {
+		super(seed, _L1, _L2, _T, _openBoundary);
 		
 		if (L1 % 32 != 0) {
 			throw new IllegalArgumentException("System width must be multiple of 32");
 		}
-
+		if (_openBoundary) {
+			throw new IllegalArgumentException("Periodic boundary conditions only");
+		}
+		
 //		random.setSeed(seed);
 //		L1 = _L1;
 //		L2 = _L2;
