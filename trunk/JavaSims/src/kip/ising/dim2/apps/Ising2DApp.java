@@ -8,6 +8,7 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+//import scikit.util.DoubleArray;
 import scikit.util.Utilities;
 
 
@@ -54,6 +55,26 @@ public class Ising2DApp extends Simulation {
 				+ (nz.verticalHomology() ? "vert ":"")
 				+ (nz.crossHomology() ? "cross ":""));
 	}
+	
+//	private void colorSitesSpecial(double a[]) {
+//		double m = DoubleArray.max(a);
+//		for (int i = 0; i < a.length; i++) {
+//			if (a[i] == 0)
+//				;
+//			else if (a[i] == m)
+//				a[i] = 2;
+//			else
+//				a[i] = 1;
+//		}
+//	}
+	
+//	private void arrangeSpecial() {
+//		for (int i = 0; i < sim.N; i++) {
+//			int x = (i % sim.L1) / (sim.L1/2);
+//			int y = (i / sim.L1) / (sim.L2/2);
+//			sim.spin[i] = 2*((x+y)%2) - 1;  
+//		}
+//	}
 	
 	public void clear() {
 		grid.clear();
