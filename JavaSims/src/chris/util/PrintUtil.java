@@ -155,6 +155,26 @@ public class PrintUtil {
 		}
 	}
 	
+	static public void printlnToFile(String fileName, String s1, double d2, double d3, double d4, double d5){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(s1 + "\t" + d2 + "\t" + d3 + "\t" + d4 + "\t" + d5);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+
+	static public void printlnToFile(String fileName, String s1, double d2, double d3, double d4){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(s1 + "\t" + d2 + "\t" + d3 + "\t" + d4);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	static public void printlnToFile(String fileName, double d1, double d2, double d3, double d4, double d5, double d6){
 		try{
 			File file = new File(fileName);

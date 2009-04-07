@@ -327,7 +327,7 @@ public class fractalDim extends Simulation{
 			params.set("Files Left","Error!");
 		}
 		
-		disp = CopyArray.copyArray(cn, N);
+		disp = CopyUtil.copyArray(cn, N);
 		
 		return;
 	}

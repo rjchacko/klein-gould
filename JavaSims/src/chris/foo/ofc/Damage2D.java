@@ -7,7 +7,7 @@ import java.util.Random;
 import javax.imageio.ImageIO;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.params.Parameters;
-import chris.util.CopyArray;
+import chris.util.CopyUtil;
 import chris.util.DirUtil;
 import chris.util.LatticeNeighbors;
 import chris.util.PrintUtil;
@@ -303,7 +303,7 @@ public class Damage2D {
 		}
 		dt = Sf[imax] - stressMax;
 		
-		seeds = CopyArray.copyArray(imax,1);
+		seeds = CopyUtil.copyArray(imax,1);
 		
 		ManageLives(seeds);
 
@@ -459,7 +459,7 @@ public class Damage2D {
 			
 		}
 
-		return CopyArray.copyArray(toKill, toKillindex);
+		return CopyUtil.copyArray(toKill, toKillindex);
 	}
 	
 	protected void ResetPlate(int[] ds){
@@ -673,7 +673,7 @@ public class Damage2D {
 	}
 	
 	public int[] getLives(){
-		return CopyArray.copyArray(alive,(int)N);
+		return CopyUtil.copyArray(alive,(int)N);
 	}
 	
 	public double getTime(int t){

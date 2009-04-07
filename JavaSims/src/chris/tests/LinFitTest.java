@@ -69,7 +69,7 @@ public class LinFitTest extends Simulation{
 				fooY[jj] = width*rand.nextGaussian() + jj + 12;
 			}
 
-			double temp[] = fitter.fit(fooX, fooY, width);
+			double temp[] = fitter.fit(fooX, fooY, width,false);
 			
 			m    = temp[0];
 			b    = temp[1];

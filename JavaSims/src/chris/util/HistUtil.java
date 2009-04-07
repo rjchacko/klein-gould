@@ -20,9 +20,11 @@ import scikit.jobs.params.FileValue;
 
 public class HistUtil extends Simulation{
 
-	Histogram histGLOB;
-	Plot grid = new Plot("Histogram");
-	boolean loglog;
+	private Histogram histGLOB;
+	private DatasetBuffer hist;
+	private Plot grid = new Plot("Histogram");
+	private boolean loglog, semilog, done;
+	private static int dlength = 2000000;
 	
 	public static void main(String[] args) {
 		new Control(new HistUtil(), "Create 1D Histogram from TAB");
@@ -34,7 +36,7 @@ public class HistUtil extends Simulation{
 		params.add("Number of Header Rows / Rows to Skip", (int) 1);
 		params.add("Column Number", (int) 1);
 		params.add("Bin Width", (double) 1);
-		params.add("Log-Log", new ChoiceValue("Yes","No"));
+		params.add("Scaling Form", new ChoiceValue("Power Law","Exponential"));
 		params.add("Status");
 		
 		c.frame(grid);
@@ -42,58 +44,86 @@ public class HistUtil extends Simulation{
 	}
 	
 	public void animate() {
+		
+		if(!done) return;
 		if(loglog) grid.setLogScale(true,true);
+		if(semilog) grid.setLogScale(false,true);
 		grid.registerPoints("Histogram",histGLOB,Color.RED);
+		return;
 	}
 
 	public void clear() {
+		
 		grid.clear();
+		return;
 	}
 
 	public void run() {
 		
-		params.set("Status","Initializing . . .");
+		while(true){
 		
-		if(params.sget("Log-Log").equals("Yes")){
-			loglog = true;
-		}
-		else{
-			loglog = false;
-		}
+			done = false;
+		
+			params.set("Status","Initializing . . .");
 
-		int cn = params.iget("Column Number");
-		int skip = params.iget("Number of Header Rows / Rows to Skip");
-		double bw = params.fget("Bin Width");
-		
-		String finSTRING = params.sget("TAB File");
-		File fin = new File(finSTRING);		
-		String fout = setupOutFile(finSTRING);
+			if(params.sget("Scaling Form").equals("Power Law")){
+				loglog  = true;
+				semilog = false;
+			}
+			else if(params.sget("Scaling Form").equals("Exponential")){
+				loglog  = false;
+				semilog = true;
+			}
+			else{
 
-		params.set("Status","Fetching Data . . .");
-		double[] data = ReadIn(fin, cn, skip);
-		
-		params.set("Status","Filling Histogram . . .");
-		DatasetBuffer hist = fillHist(data,bw);
-	
-		if(loglog){
-			params.set("Status","Writing Histogram . . .");
-			PrintUtil.printlnToFile(fout,"Coordinate","Number","Log[coord]","Log[#]");
-			for (int jj = 0 ; jj < hist.size() ; jj++){
-				double coord = hist.x(jj);
-				double num = hist.y(jj);
-				PrintUtil.printlnToFile(fout,coord,num,Math.log(coord),Math.log(num));
 			}
-		}
-		else{
+
+			int cn    = params.iget("Column Number");
+			int skip  = params.iget("Number of Header Rows / Rows to Skip");
+			double bw = params.fget("Bin Width");
+			histGLOB  = new Histogram(bw);
+
+			String finSTRING = params.sget("TAB File");
+			File fin = new File(finSTRING);		
+			String fout = setupOutFile(finSTRING);
+
+			params.set("Status","Fetching and Binning Data . . .");
+			Job.animate();
+			ReadIn(fin, cn, skip, bw);
+			
 			params.set("Status","Writing Histogram . . .");
-			PrintUtil.printlnToFile(fout,"Coordinate","Number");
-			for (int jj = 0 ; jj < hist.size() ; jj++){
-				PrintUtil.printlnToFile(fout,hist.x(jj),hist.y(jj));
+			Job.animate();
+			hist = histGLOB.copyData();
+			if(loglog){
+				PrintUtil.printlnToFile(fout,"Coordinate","Number","Log[coord]","Log[#]");
+				for (int jj = 0 ; jj < hist.size() ; jj++){
+					double coord = hist.x(jj);
+					double num = hist.y(jj);
+					PrintUtil.printlnToFile(fout,coord,num,Math.log(coord),Math.log(num));
+				}
 			}
+			else if (semilog){
+				PrintUtil.printlnToFile(fout,"Coordinate","Number","Log[#]");
+				for (int jj = 0 ; jj < hist.size() ; jj++){
+					double coord = hist.x(jj);
+					double num = hist.y(jj);
+					PrintUtil.printlnToFile(fout,coord,num,Math.log(num));
+				}
+			}
+			else{
+				PrintUtil.printlnToFile(fout,"Coordinate","Number");
+				for (int jj = 0 ; jj < hist.size() ; jj++){
+					PrintUtil.printlnToFile(fout,hist.x(jj),hist.y(jj));
+				}
+			}
+			
+			done = true;
+			params.set("Status","Done");
+			Job.animate();	
+			
+			Job.manualStop();
+			
 		}
-		Job.animate();
-		
-		params.set("Status","Done");
 	}
 	
 	private String setupOutFile(String fin){
@@ -114,20 +144,17 @@ public class HistUtil extends Simulation{
 		return ret;
 	}
 	
-	private DatasetBuffer fillHist(double[] data, double bw){
-		histGLOB = new Histogram(bw);
+	private void fillHist(double[] data, double bw){
+		
 		for (int jj = 0 ; jj < data.length ; jj++){
 			histGLOB.accum(data[jj]);
 		}
-		
-		return histGLOB.copyData();
-		
-		
+		return;	
 	}
 	
-	private double[] ReadIn(File fin, int cn, int skip){
+	private void ReadIn(File fin, int cn, int skip, double bw){
 		
-		double[] values = new double[2000000];
+		double[] values = new double[dlength];
 		int counter = 0;
 		
 		try {
@@ -155,25 +182,26 @@ public class HistUtil extends Simulation{
 				else{
 					values[counter++] = Double.parseDouble(rin.substring(0,pd));	
 				}
+				if(counter%dlength == 0){
+					fillHist(values,bw);
+					counter = 0;
+				}
 			}
-			
-			params.set("Status","Done");
-			
-		} catch (FileNotFoundException e) {
+			if(counter != 0){
+				double[] foo = CopyUtil.copyArray(values,counter);
+				fillHist(foo,bw);
+			}
+		} 
+		catch (FileNotFoundException e) {
 			e.printStackTrace();
 			params.set("Status","Error!");
-		} catch (IOException e) {
+		} 
+		catch (IOException e) {
 			e.printStackTrace();
 			params.set("Status","Error!");
 		}
 		
-		double[] ret = new double[counter];
-		
-		for (int jj = 0 ; jj < counter ; jj++){
-			ret[jj] = values[jj];
-		}
-		
-		return ret;
+		return;
 
 	}
 	

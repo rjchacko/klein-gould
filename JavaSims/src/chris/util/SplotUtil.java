@@ -75,7 +75,7 @@ public class SplotUtil extends Simulation{
 				
 				//System.out.println(rin);
 				//values[counter++] = Double.parseDouble(rin);
-				double[] pout = CopyArray.copyArray(values, counter);
+				double[] pout = CopyUtil.copyArray(values, counter);
 				
 				printRow(fout,pout);
 

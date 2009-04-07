@@ -168,7 +168,7 @@ public void load(Control c) {
 				toty[kk+jj*Dlength] = tempy[kk];
 			}
 			
-			temp = fitter.fit(tempx, tempy, 1);
+			temp = fitter.fit(tempx, tempy, 1,false);
 			slopes[jj] = temp[0];
 			chi2[jj]   = temp[4];
 			mbar += slopes[jj];
@@ -176,7 +176,7 @@ public void load(Control c) {
 		}
 		
 		fitter = new FitUtil(totx.length);
-		temp = fitter.fit(totx, toty, 1);
+		temp = fitter.fit(totx, toty, 1,false);
 		System.out.println(temp[0]);
 		PrintUtil.printlnToFile(fout, -7, temp[0], temp[4]/(totx.length-2));
 

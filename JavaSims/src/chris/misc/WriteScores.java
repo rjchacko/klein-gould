@@ -37,30 +37,24 @@ public class WriteScores extends Simulation{
 		int score, pm;
 		int hole = 1;
 		
-		params.set("Hole",hole++);
 
-		Job.animate();
-
-		score = params.iget("Score");
-		pm    = params.iget("+/-");
-		
-		PrintUtil.printlnToFile("/home/cserino/Desktop/test.txt","\\addscore{"+(hole-1)+"}{"+score+"}{"+pm+"}");
-		
-		clear();
-		params.set("Hole",hole++);	
-		Job.animate();
-
-		while(hole <= 19){
+		while(hole < 19){
+			
+			params.set("Hole",hole++);
+			Job.animate();
 			
 			score = params.iget("Score");
 			pm    = params.iget("+/-");
 			
-			PrintUtil.printlnToFile("/home/cserino/Desktop/test.txt","\\addscore{"+(hole-1)+"}{"+score+"}{"+pm+"}");	
+			PrintUtil.printlnToFile("/Users/cserino/Desktop/test2.txt","\\addscore{"+(hole-1)+"}{"+score+"}{"+pm+"}");	
 
 			clear();
-			params.set("Hole",hole++);	
-			if(hole > 19) params.set("Hole","Done");	
-			Job.animate();
+			params.set("Hole",hole);	
+			if(hole > 18){
+				params.set("Hole","Done");	
+				Job.animate();
+				return;
+			}
 			
 		}
 		

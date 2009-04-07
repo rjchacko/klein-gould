@@ -9,13 +9,13 @@ import scikit.jobs.params.DirectoryValue;
 import chris.foo.ofc.Damage2D;
 import chris.ofcdamage.damage;
 
-public class nnErgodicPDApp extends Simulation {
+public class nnErgodicApp extends Simulation {
 
 	private damage model;
 	private int pt, ptmax;
 	
 	public static void main(String[] args) {
-		new Control(new nnErgodicPDApp(), "OFC Parameters");
+		new Control(new nnErgodicApp(), "OFC Parameters");
 	}
 	
 	
@@ -49,8 +49,8 @@ public class nnErgodicPDApp extends Simulation {
 		params.set("Intitial Stess","Random");
 		params.set("Min Lives", 20);	
 		params.set("Max Lives", 20);
-		params.set("Equil Time", (int)(1e6));	// 1e6
-		params.set("Trend Time", (int)(1e7));	// 1e7
+		params.set("Equil Time", (int)(2e5));	// 1e6
+		params.set("Trend Time", (int)(2e5));	// 1e7
 		params.set("Animation", "Off");
 		params.set("Record", "Off");
 		params.set("Failure Stress (\u03C3_f)",2.0);

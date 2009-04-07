@@ -113,34 +113,63 @@ public class LatticeNeighbors {
 			
 			return ret;
 			
-			case PERIODIC:
+		case PERIODIC:
 					
-				int[] retP = new int[Nsites];
+			int[] retP = new int[Nsites];
 
-				for (int jj = 0 ; jj < Nsites ; jj++){
-					int xn = nbs0[jj]%Nx;
-					int yn = (int)(nbs0[jj]/Ny);
-					retP[jj] = (xn+dx)%Nx + ((yn + dy)%Ny)*Ny;
-					if(retP[jj] < 0){
-						System.out.print(yn);
-						System.out.print("\t");
-						System.out.print(dy);
-						System.out.print("\t");
-						System.out.print(Ny);
-						System.out.print("\t");
-						System.out.println((yn + dy)%Ny);
-					}
-				}
+			for (int jj = 0 ; jj < Nsites ; jj++){
+				int xn = nbs0[jj]%Nx;
+				int yn = (int)(nbs0[jj]/Ny);
+				retP[jj] = (xn+dx)%Nx + ((yn + dy)%Ny)*Ny;
+			}
 
-				return retP;
+			return retP;
 			
-			default:
+		default:
 			
-				return null;
+			return null;
 			
 		}
 		
 	}
+	
+	/**
+	 * Returns the Jth element of the neighbor list array
+	 * using the method of translation.
+	 * 
+	 **/
+	
+	
+	public int getJ(int i, int i0, int[] nbs0, int J){
+		
+		if(shape == LatticeNeighbors.Shape.All) return (J == i) ? -1 : J;
+		
+		switch (type) {
+		
+		case BORDERED:
+			
+			int dx = i%Nx - i0%Nx;
+			int dy = (int)(i/Ny) - (int)(i0/Ny);
+			int xn = nbs0[J]%Nx;
+			int yn = (int)(nbs0[J]/Ny);
+			int xx = xn + dx;
+			int yy = yn + dy;
+				
+			return (xx >= 0 && xx < Nx && yy >= 0 && yy < Ny) ?  xx + yy*Ny : -1;
+	
+		case PERIODIC:
+			
+			
+			return ((nbs0[J]%Nx)+(i%Nx - i0%Nx))%Nx + ((int)(nbs0[J]/Ny)+((int)(i/Ny) - (int)(i0/Ny)))*Ny;			
+			
+		default:
+
+
+		}
+		
+		return -77; // only get here via default
+	}
+	
 
 	/**
 	 * Returns a static neighbor list array, terminated by index -1.
@@ -183,6 +212,7 @@ public class LatticeNeighbors {
 				case BORDERED:
 					for (int jy = Math.max(0, iy-_r); jy <= Math.min(Ny-1, iy+_r); jy++) {
 						for (int jx = Math.max(0, ix-_r); jx <= Math.min(Nx-1, ix+_r); jx++) {
+							if((jy*Nx + jx)==i) continue;
 							double d2 = sqr(jx-ix) + sqr(jy-iy);
 							if (sqr(r_lo) <= d2 && d2 <= sqr(r_hi))
 								list[num++] = jy*Nx + jx;
@@ -202,6 +232,7 @@ public class LatticeNeighbors {
 			
 					for (int jy = ylo; jy <= yhi; jy++) {
 						for (int jx = xlo; jx <= xhi; jx++) {
+							if((jy*Nx + jx)==i) continue;
 							double d2 = sqr(jx-ix) + sqr(jy-iy);
 							if (sqr(r_lo) <= d2 && d2 <= sqr(r_hi)) {
 								int _jy = (jy + Ny) % Ny;
@@ -221,6 +252,7 @@ public class LatticeNeighbors {
 				case BORDERED:
 					for (int jy = Math.max(0, iy-_r); jy <= Math.min(Ny-1, iy+_r); jy++) {
 						for (int jx = Math.max(0, ix-_r); jx <= Math.min(Nx-1, ix+_r); jx++) {
+							if((jy*Nx + jx)==i) continue;
 							double d2 = sqr(jx-ix) + sqr(jy-iy)/(1-eps2);
 							if (sqr(r_lo) <= d2 && d2 <= sqr(r_hi))
 								list[num++] = jy*Nx + jx;
@@ -240,6 +272,7 @@ public class LatticeNeighbors {
 			
 					for (int jy = ylo; jy <= yhi; jy++) {
 						for (int jx = xlo; jx <= xhi; jx++) {
+							if((jy*Nx + jx)==i) continue;
 							double d2 = sqr(jx-ix) + sqr(jy-iy)/(1-eps2);
 							if (sqr(r_lo) <= d2 && d2 <= sqr(r_hi)) {
 								int _jy = (jy + Ny) % Ny;
@@ -259,7 +292,7 @@ public class LatticeNeighbors {
 			case BORDERED:
 				for (int jx = Math.max(0,ix-_r); jx <= Math.min(Nx-1,ix+_r); jx++){
 					for (int jy = Math.max(0,iy-_r); jy <= Math.min(Ny-1,iy+_r); jy++){
-						
+						if((jy*Nx + jx)==i) continue;
 						if( (int)(r_lo) <= Math.abs(jx-ix) || (int)(r_lo) <= Math.abs(jy-iy) ) list[num++] = jy*Nx + jx;
 					}
 				}
@@ -275,9 +308,9 @@ public class LatticeNeighbors {
 				
 				for (int jy = ylo; jy <= yhi; jy++) {
 					for (int jx = xlo; jx <= xhi; jx++) {
+						if((jy*Nx + jx)==i) continue;
 						int _jy = (jy + Ny) % Ny;
 						int _jx = (jx + Nx) % Nx;
-						
 						if( (int)(r_lo) <= Math.abs(_jx-ix) || (int)(r_lo) <= Math.abs(_jy-iy) ) list[num++] = _jy*Nx + _jx;			
 					}
 				}
@@ -296,7 +329,7 @@ public class LatticeNeighbors {
 			case BORDERED:
 				for (int jx = Math.max(0,ix-_r); jx <= Math.min(Nx-1,ix+_r); jx++){
 					for (int jy = Math.max(0,iy-_r); jy <= Math.min(Ny-1,iy+_r); jy++){
-				
+						if((jy*Nx + jx)==i) continue;
 						if ( rmin <= (Math.abs(jx-ix) + Math.abs(jy-iy)) && _r >= (Math.abs(jx-ix) + Math.abs(jy-iy)) ) list[num++] = jy*Nx + jx;
 						
 					}
@@ -314,6 +347,7 @@ public class LatticeNeighbors {
 				
 				for (int jy = ylo; jy <= yhi; jy++) {
 					for (int jx = xlo; jx <= xhi; jx++) {
+						if((jy*Nx + jx)==i) continue;
 						int _jy = (jy + Ny) % Ny;
 						int _jx = (jx + Nx) % Nx;
 												
@@ -329,6 +363,7 @@ public class LatticeNeighbors {
 		case All:
 
 			for (int jj = 0 ; jj < Nx*Ny ; jj++){
+				if(jj==i) continue;
 				list[num++] = jj;
 			}
 			

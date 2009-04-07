@@ -1,6 +1,6 @@
 package chris.foo.ofc;
 
-import chris.util.CopyArray;
+import chris.util.CopyUtil;
 import scikit.jobs.params.Parameters;
 
 public class LowerSr extends Damage2D{
@@ -94,7 +94,7 @@ public class LowerSr extends Damage2D{
 			Sf[jj] = getSr(jj) + (Sf[jj] - getSr(jj))*rand.nextDouble();
 		}
 		
-		seeds = CopyArray.copyArray(jj,1);
+		seeds = CopyUtil.copyArray(jj,1);
 		ManageLives(seeds);	
 		adjustNF(seeds);
 		

@@ -38,34 +38,25 @@ public class WriteCourse extends Simulation{
 		int dist, par, hcp;
 		int hole = 1;
 		
-		params.set("Hole",hole++);
 
-		Job.animate();
-
-		
-		dist = params.iget("Distance");
-		par  = params.iget("Par");
-		hcp  = params.iget("HCP");
-		
-		PrintUtil.printlnToFile("/home/cserino/Desktop/test2.txt","\\addscore{"+(hole-1)+"}{"+dist+"}{"+par+"}{"+hcp+"}");	
-
-		clear();
-		params.set("Hole",hole++);	
-		Job.animate();
-
-		while(hole <= 19){
+		while(hole < 19){
+			
+			params.set("Hole",hole++);
+			Job.animate();
 			
 			dist = params.iget("Distance");
 			par  = params.iget("Par");
 			hcp  = params.iget("HCP");
 
-			PrintUtil.printlnToFile("/home/cserino/Desktop/test2.txt","\\addscore{"+(hole-1)+"}{"+dist+"}{"+par+"}{"+hcp+"}");	
+			PrintUtil.printlnToFile("/Users/cserino/Desktop/test.txt","\\addscore{"+(hole-1)+"}{"+dist+"}{"+par+"}{"+hcp+"}");	
 			
 			clear();
-			params.set("Hole",hole++);	
-			if(hole > 19) params.set("Hole","Done");	
-			Job.animate();
-			
+			params.set("Hole",hole);	
+			if(hole > 18){
+				params.set("Hole","Done");
+				Job.animate();
+				return;
+			}			
 		}
 		
 		return;

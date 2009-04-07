@@ -76,6 +76,8 @@ public class ReadInUtil {
 		
 	public void getData(int[] cns, int skip, double[] retX, double[] retY){
 		
+		int overflow = retX.length;
+		
 		int counter = 0;
 		
 		int xn = cns[0];
@@ -91,10 +93,15 @@ public class ReadInUtil {
 
 			for (int jj = 0 ; jj < skip ; jj++){
 				rin = bir.readLine();
+				overflow--;
 			}
 
 			while ( (rin = bir.readLine()) != null ){
-			
+
+				if(overflow-- <= 0){
+					break;
+				}
+				
 				pd = rin.indexOf('\t');
 				for(int jj = 1 ; jj < xn ; jj++){
 					rin = rin.substring(pd + 1);
