@@ -1,19 +1,16 @@
 package chris.ofcdamage;
 
-import java.util.Arrays;
 import java.util.Random;
-
-import chris.util.CopyUtil;
 import chris.util.LatticeNeighbors;
-import chris.util.SortUtil;
-
 import scikit.jobs.params.Parameters;
 
 public class ofc2Dfast {
 
+	@SuppressWarnings("unused")
 	private double sr0, sf0, a0, dsr, dsf, da, sr[], sf[], stress[], sbar[], data[][];
 	private int L, N, R, nbArray[], nbSeed, fs[], GR, qN;
 	private boolean srn, sfn, an;
+	@SuppressWarnings("unused")
 	private String outdir, bcs;
 	private Random rand;
 	private LatticeNeighbors nbs;
