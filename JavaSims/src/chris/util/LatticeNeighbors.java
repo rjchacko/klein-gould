@@ -144,14 +144,16 @@ public class LatticeNeighbors {
 		
 		if(shape == LatticeNeighbors.Shape.All) return (J == i) ? -1 : J;
 		
-		switch (type) {
+		int xn, yn;
+		int dx = i%Nx - i0%Nx;
+		int dy = (int)(i/Ny) - (int)(i0/Ny);
 		
+		switch (type) {
+
 		case BORDERED:
 			
-			int dx = i%Nx - i0%Nx;
-			int dy = (int)(i/Ny) - (int)(i0/Ny);
-			int xn = nbs0[J]%Nx;
-			int yn = (int)(nbs0[J]/Ny);
+			xn = nbs0[J]%Nx;
+			yn = (int)(nbs0[J]/Ny);
 			int xx = xn + dx;
 			int yy = yn + dy;
 				
@@ -159,8 +161,10 @@ public class LatticeNeighbors {
 	
 		case PERIODIC:
 			
+			xn = nbs0[J]%Nx;
+			yn = (int)(nbs0[J]/Ny);
 			
-			return ((nbs0[J]%Nx)+(i%Nx - i0%Nx))%Nx + ((int)(nbs0[J]/Ny)+((int)(i/Ny) - (int)(i0/Ny)))*Ny;			
+			return  (xn+dx)%Nx + ((yn + dy)%Ny)*Ny;		
 			
 		default:
 
