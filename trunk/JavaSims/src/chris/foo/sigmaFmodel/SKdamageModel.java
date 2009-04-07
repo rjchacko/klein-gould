@@ -9,7 +9,7 @@ import javax.imageio.ImageIO;
 
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.params.Parameters;
-import chris.util.CopyArray;
+import chris.util.CopyUtil;
 import chris.util.DirUtil;
 import chris.util.LatticeNeighbors;
 import chris.util.PrintUtil;
@@ -208,7 +208,7 @@ public class SKdamageModel {
 		t2 += dt2;
 		t3+= dt3;
 		
-		return CopyArray.copyArray(trialsite,1);
+		return CopyUtil.copyArray(trialsite,1);
 	}
 	
 	private boolean sysFail(){
@@ -255,7 +255,7 @@ public class SKdamageModel {
 		Nrichter += counter;
 		resetSites(sites);
 		
-		return CopyArray.copyArray(newlykilled,counter);
+		return CopyUtil.copyArray(newlykilled,counter);
 	}
 	
 	private void resetSites(int[] sites){

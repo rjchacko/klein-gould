@@ -168,10 +168,12 @@ public void load(Control c) {
 			cGradient = new ColorGradient();
 
 			int MostLives = model.maxLives();
-			Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};		
+			//Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};		
 			palette1.setColor(0,Color.BLACK);
 			for (int jj = 1 ; jj <= MostLives ; jj++){
-				palette1.setColor(jj,Carray[jj%5]);
+				// CHANGE BACK -- FOR APS TALK/
+				//palette1.setColor(jj,Carray[jj%5]);
+				palette1.setColor(jj,Color.WHITE);
 			}
 
 			gridL.setColors(palette1);
@@ -200,8 +202,6 @@ public void load(Control c) {
 			int L = model.getL();
 			int N = L*L;
 			
-			int[] foo = model.getLives();
-
 			double[] copyStress = model.getStress();
 			
 			for (int jj=0 ; jj < N ; jj++){
@@ -210,7 +210,7 @@ public void load(Control c) {
 
 			gridS.setColors(cGradient);
 			gridS.registerData(L,L,copyStress);
-			gridL.registerData(L, L, foo);
+			gridL.registerData(L, L, model.getLives());
 			
 		}
 	

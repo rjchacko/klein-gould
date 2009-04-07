@@ -1,6 +1,6 @@
 package chris.foo.ofc;
 
-import chris.util.CopyArray;
+import chris.util.CopyUtil;
 import scikit.jobs.params.Parameters;
 
 public class ForceSf extends Damage2D{
@@ -64,7 +64,7 @@ public class ForceSf extends Damage2D{
 			}
 		}
 		
-		seeds = CopyArray.copyArray(temp,tempC);
+		seeds = CopyUtil.copyArray(temp,tempC);
 		
 		ManageLives(seeds);
 		setT1T2();	// for purposes of measuring the metric

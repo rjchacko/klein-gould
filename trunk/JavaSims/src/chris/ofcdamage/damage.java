@@ -4,10 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.Random;
+
 import javax.imageio.ImageIO;
+
 import scikit.graphics.dim2.Grid;
+import scikit.jobs.Job;
 import scikit.jobs.params.Parameters;
-import chris.util.CopyArray;
+import chris.util.CopyUtil;
 import chris.util.DirUtil;
 import chris.util.LatticeNeighbors;
 import chris.util.PrintUtil;
@@ -28,7 +31,7 @@ public class damage {
 	private String outdir, datafile1, picdir;
 	
 	// I/O Parameters
-	private DecimalFormat fmtI = new DecimalFormat("00000000");
+	private DecimalFormat fmtI = new DecimalFormat("000000");
 	
 	
 	
@@ -214,7 +217,7 @@ public class damage {
 			t2 += dt2;
 		}
 
-		return CopyArray.copyArray(imax,1);
+		return CopyUtil.copyArray(imax,1);
 	}
 	
 	
@@ -262,7 +265,9 @@ public class damage {
 		Nrichter += counter;
 		resetSites(sites);
 		
-		return CopyArray.copyArray(newlykilled,counter);
+		Job.animate(); 	// REMOVE ME!!!!!!
+		
+		return CopyUtil.copyArray(newlykilled,counter);
 	}
 	
 	private void resetSites(int[] sites){
@@ -370,7 +375,7 @@ public class damage {
 		
 		if(!display) return;
 
-		String SaveAs = picdir + File.separator + grid.getTitle()+fmtI.format(t1)+".png";
+		String SaveAs = picdir + File.separator + grid.getTitle()+fmtI.format(t1)+"_"+fmtI.format(Nrichter)+".png";	// RESET ME!!!!
 		try {
 			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {

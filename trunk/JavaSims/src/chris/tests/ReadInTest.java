@@ -53,7 +53,7 @@ public class ReadInTest extends Simulation{
 		
 		fitter = new FitUtil(rin[1].length);
 		
-		ret = fitter.fit(tempx,tempy,30*30);
+		ret = fitter.fit(tempx,tempy,30*30,false);
 		
 		System.out.print("chi2 = ");
 		System.out.println(ret[4]);

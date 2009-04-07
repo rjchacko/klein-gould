@@ -4,7 +4,7 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.FileValue;
-import chris.util.CopyArray;
+import chris.util.CopyUtil;
 import chris.util.FitUtil;
 import chris.util.ReadInUtil;
 
@@ -53,12 +53,12 @@ public class CalibrateErgFit extends Simulation{
 		}
 		
 		// copy data without zero padding
-		xvals = CopyArray.copyArray(foox,count);		
-		yvals = CopyArray.invertArray(fooy,count);
+		xvals = CopyUtil.copyArray(foox,count);		
+		yvals = CopyUtil.invertAndScaleArray(fooy,count,1);
 		
 		// fit data
 		fitter = new FitUtil(count);
-		double temp[] = fitter.fit(xvals, yvals, 1);
+		double temp[] = fitter.fit(xvals, yvals, 1,false);
 		
 		// fit params
 		m    = temp[0];
