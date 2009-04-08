@@ -4,30 +4,36 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.DecimalFormat;
 import java.util.Random;
 
 import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
+import chris.util.MathUtil;
+import chris.util.PrintUtil;
 
 public class ofc2Dfast {
 
-	private double sr0, sf0, a0, dsr, dsf, da, sr[], sf[], stress[], sbar[], data[][], Omega;
-	private int L, N, R, nbArray[], nbSeed, fs[], GR, qN;
-	private boolean srn, sfn, an, failed[];
+	private double sr0, sf0, a0, dsr, dsf, da;
+	protected double Omega, sr[], sf[], stress[],sbar[], data[][];
+	private int L, R, nbArray[], nbSeed;
+	protected int N, qN, fs[], GR;
+	private boolean srn, sfn, an;
+	protected boolean failed[];
 	private String outdir, bcs, bname;
 	private Random rand;
 	private LatticeNeighbors nbs;
 	public static int dlength = 150000;
-	private static int dcat = 2;
-	
+	private static int dcat = 3;
+	private static DecimalFormat fmtI = new DecimalFormat("0000");
 	
 	public ofc2Dfast(Parameters params){
 		
-		constructor(params);
+		constructor_ofc2Dfast(params);
 		return;
 	}
 	
-	public void constructor(Parameters params){
+	public void constructor_ofc2Dfast(Parameters params){
 		// constructor for ofc2Dfast object
 		
 		int seed;
@@ -50,10 +56,9 @@ public class ofc2Dfast {
 		
 		// initialize variables
 		rand = new Random(seed);
-		
-		srn = (dsr > 0);
-		sfn = (dsf > 0);
-		an  = (da > 0);
+		srn  = (dsr > 0);
+		sfn  = (dsf > 0);
+		an   = (da > 0);
 		
 		N = L*L;
 		
@@ -67,9 +72,9 @@ public class ofc2Dfast {
 		failed  = new boolean[N];
 		
 		for(int jj = 0 ; jj < N ; jj++){
-			sr[jj]     = srn ? sr0+2*dsr*(rand.nextDouble()-0.5) : sr0;
-			sf[jj]     = sfn ? sf0+2*dsf*(rand.nextDouble()-0.5) : sf0;
-			stress[jj] = sr[jj] + (sf[jj]-sr[jj])*rand.nextDouble();
+			sr[jj]     = srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
+			sf[jj]     = sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
+			stress[jj] = sr[jj] + (sf[jj]-sr[jj])*getRand().nextDouble();
 			failed[jj] = false;
 		}
 
@@ -162,7 +167,7 @@ public class ofc2Dfast {
 			if(mct%dlength == 0 && mct > 0){
 				writeData(mct);
 			}
-			saveData(mct);
+			saveData(mct, true);
 			
 		}
 		else{
@@ -190,7 +195,7 @@ public class ofc2Dfast {
 				tmpfail = fs[jj];
 				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
 				for(int kk = 0 ; kk < qN ; kk++){
-					tmpnb = nbs.getJ(fs[jj],nbSeed,nbArray,kk);
+					tmpnb = getNbr(fs[jj],kk);
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
 					stress[tmpnb] += release;
 					if(stress[tmpnb] > sf[tmpnb]){
@@ -205,15 +210,15 @@ public class ofc2Dfast {
 		return;
 	}
 	
-	private double nextAlpha(){
+	protected double nextAlpha(){
 		
-		return an ? a0 + 2*da*(rand.nextDouble()-0.5) : a0;
+		return an ? a0 + 2*da*(getRand().nextDouble()-0.5) : a0;
 	}
 	
-	private void resetSite(int site){
+	protected void resetSite(int site){
 		
-		sr[site]     = srn ? sr0+2*dsr*(rand.nextDouble()-0.5) : sr0;
-		sf[site]     = sfn ? sf0+2*dsf*(rand.nextDouble()-0.5) : sf0;
+		sr[site]     = srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
+		sf[site]     = sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
 		stress[site] = sr[site];
 		failed[site] = false;
 		return;
@@ -248,10 +253,11 @@ public class ofc2Dfast {
 		return;
 	}
 	
-	private void saveData(int mct){
+	protected void saveData(int mct, boolean EQ){
 		
 		data[0][mct%dlength] = Omega;
 		data[1][mct%dlength] = GR;
+		data[2][mct%dlength] = MathUtil.bool2bin(EQ);
 		return;
 	}
 	
@@ -263,6 +269,8 @@ public class ofc2Dfast {
 			pw.print("Time");
 			pw.print("\t");
 			pw.print("Metric");
+			pw.print("\t");
+			pw.print("EQ Mode");
 			pw.println();
 			pw.close();
 		}
@@ -273,5 +281,30 @@ public class ofc2Dfast {
 		return;
 	}
 	
+	public void PrintParams(String fout, Parameters prms){
+		
+		PrintUtil.printlnToFile(fout,prms.toString());
+		PrintUtil.printlnToFile(fout,"Neighbors = " + fmtI.format(qN));
+		return;
+	}
 	
+	public String getOutdir(){
+		
+		return outdir;
+	}
+	
+	public String getBname(){
+		
+		return bname;
+	}
+
+	protected Random getRand() {
+	
+		return rand;
+	}
+	
+	protected int getNbr(int ffs, int nbindex){
+		
+		return nbs.getJ(ffs,nbSeed,nbArray,nbindex);
+	}
 }

@@ -18,5 +18,15 @@ public class MathUtil {
 		return ret;
 	}
 	
+	public static int bool2bin(boolean bool){
+		
+		return (bool) ? 1 : 0;
+	}
+	
+	public static boolean bin2bool(int bin){
+		
+		return (bin == 1);
+	}
+	
 
 }

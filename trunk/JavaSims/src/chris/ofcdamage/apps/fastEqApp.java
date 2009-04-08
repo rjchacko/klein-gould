@@ -1,11 +1,13 @@
 package chris.ofcdamage.apps;
 
-import chris.ofcdamage.ofc2Dfast;
+import java.io.File;
+
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
+import chris.ofcdamage.ofc2Dfast;
 
 public class fastEqApp extends Simulation{
 
@@ -37,25 +39,17 @@ public class fastEqApp extends Simulation{
 		
 	}
 	
-	/*
-	 * 
-	 * 
-	 * 
-	 * PRINT PARAMETERS TO FILE !!!!!!!
-	 * 
-	 * 
-	 */
-	
-	
 	public void run() {
 		
 		// Setup model
 		params.set("Status", "Intializing");
 		Job.animate();
 		model = new ofc2Dfast(params);
+		model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);	
 		eqt   = params.iget("Equil Time");
 		simt  = params.iget("Sim Time");
-		
+		params.set("Status", "Ready");
+		Job.animate();
 		
 		// Equilibrate the system
 		for (int jj = 0 ; jj < eqt ; jj++){
