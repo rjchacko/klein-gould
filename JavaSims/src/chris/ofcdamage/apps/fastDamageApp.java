@@ -18,7 +18,7 @@ import chris.util.DirUtil;
 
 public class fastDamageApp extends Simulation{
 
-	private int simt, eqt, dmt, Nalive, L;
+	private int simt, eqt, dmt, Ndead, L, N;
 	private boolean draw, record;
 	private String PicDir;
 	private Grid gridS, gridD;
@@ -51,37 +51,33 @@ public class fastDamageApp extends Simulation{
 		params.add("\u03B1 width", 0.);
 		params.add("Animate", new ChoiceValue("Off","Draw","Record"));
 		params.add("Status");
+		params.add("Dead Sites");
 		
 		gridS = new Grid("Stress");
-		gridD = new Grid("Dead / Alive");
+		gridD = new Grid("Damage");
 		c.frameTogether("Damage Model",gridS,gridD);
 		
 		return;
 	}
 	
 	public void run() {
-		
-		// Setup simulation
-		if(params.sget("Animate").equals("Draw")){
-			setupIO(false);
-		}
-		else if (params.sget("Animate").equals("Record")){
-			setupIO(true);
-		}
-		
+				
 		// Setup model
 		params.set("Status", "Intializing");
+		params.set("Dead Sites", "-");
 		Job.animate();
 		L      = params.iget("Lattice Size");
+		N      = L*L;
 		model  = new damage2Dfast(params);
 		model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);	
 		eqt    = params.iget("Equil Time");
 		simt   = params.iget("Sim Time");
-		dmt    = 0;
-		Nalive = model.getN();
+		dmt    = simt;
+		Ndead  = 0;
 		params.set("Status", "Ready");
 		Job.animate();
 		
+		draw = false;
 		// Equilibrate the system
 		for (int jj = 0 ; jj < eqt ; jj++){
 			model.evolve(jj,false);
@@ -89,6 +85,14 @@ public class fastDamageApp extends Simulation{
 				params.set("Status", (jj-eqt));
 				Job.animate();
 			}
+		}
+		
+		// Setup I/O
+		if(params.sget("Animate").equals("Draw")){
+			setupIO(false);
+		}
+		else if (params.sget("Animate").equals("Record")){
+			setupIO(true);
 		}
 		
 		// Simulate the model without damage
@@ -102,15 +106,18 @@ public class fastDamageApp extends Simulation{
 		}
 		
 		// Simulate the model with damage
-		while(Nalive > 0){
-			Nalive = model.evolveD(simt+dmt,true);
-			params.set("Status", Nalive);
+		while(Ndead < N){
+			Ndead = model.evolveD(dmt,true);
+			if(dmt%500 == 0){
+				params.set("Status", (dmt));
+			}
+			params.set("Dead Sites", Ndead);
 			Job.animate();
-			if(record) takePicture(simt+dmt);
+			if(record) takePicture(dmt);
 			dmt++;
 		}
 
-		if((simt-1)%damage2Dfast.dlength != 0) model.writeData(simt);
+		if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(simt);
 		
 		params.set("Status", "Done");
 		Job.animate();
@@ -139,22 +146,24 @@ public class fastDamageApp extends Simulation{
 		
 		double sr0, dsr, sf0, dsf, clr, N;
 		
-		N = L*L;
+		draw = true;
+		N    = L*L;
 		
 		if(rec){
 			PicDir = params.sget("Data Directory") + "/GridPics"; 
 			DirUtil.MkDir(PicDir);
+			record = true;
 		}
 		
 		gridS.setAutoScale(false);
 		gridD.setAutoScale(false);
 		
-		sf0 = params.fget("Failure Stress (\u03C3_r)");
+		sf0 = params.fget("Failure Stress (\u03C3_f)");
 		dsf = params.fget("\u03C3_f width");
 		sr0 = params.fget("Residual Stress (\u03C3_r)");
 		dsr = params.fget("\u03C3_r width");
 
-		
+		gridD.setScale(0,1);
 		gridS.setScale(sr0-dsr,sf0+dsf);
 		for (int jj = 0 ; jj <= N ; jj++){
 			clr = sr0-dsr + jj*(sf0+dsf-sr0+dsr)/N;

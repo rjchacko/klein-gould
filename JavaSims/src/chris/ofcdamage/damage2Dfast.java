@@ -26,7 +26,7 @@ public class damage2Dfast extends ofc2Dfast{
 		liveNbs = new int[N];
 		Lives   = new int[N];
 		
-		if(Nl0 - dN > 0){	// cannot have negative lives
+		if(Nl0 - dN < 0){	// cannot have negative lives
 			dN = Nl0;
 			params.set("Full width of NL", dN);
 		}
@@ -123,12 +123,11 @@ public class damage2Dfast extends ofc2Dfast{
 			for (int jj = a ; jj < b ; jj++){
 				tmpfail = fs[jj];
 				if(liveNbs[tmpfail] == 0){
-					// NOT QUITE -- FIX ME!
 					if(Lives[tmpfail] == 1){
 						killSite(tmpfail);
 					}
 					else{
-						resetSite(tmpfail);
+						resetSiteD(tmpfail);
 					}
 					continue;
 				}
@@ -136,13 +135,13 @@ public class damage2Dfast extends ofc2Dfast{
 				if(Lives[tmpfail] == 1) lastlife = true;
 				for(int kk = 0 ; kk < qN ; kk++){
 					tmpnb = getNbr(fs[jj],kk);
+					if(lastlife) liveNbs[tmpnb]--;	
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
 					stress[tmpnb] += release;
-					if(stress[tmpnb] > sf[tmpnb]){
+					if((stress[tmpnb] > sf[tmpnb])){
 						fs[newindex++] = tmpnb;	
 						failed[tmpnb] = true;
 					}
-					if(lastlife) liveNbs[tmpnb]--;
 				}
 				GR += newindex - index;
 				if(lastlife){
@@ -150,7 +149,7 @@ public class damage2Dfast extends ofc2Dfast{
 					killSite(tmpfail);
 				}
 				else{
-					resetSite(tmpfail);
+					resetSiteD(tmpfail);
 				}
 			}
 		}
@@ -161,11 +160,20 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		Ndead++;
 		sr[site]     = 0;
-		sf[site]     = 0;
+		sf[site]     = 1;
 		stress[site] = 0;
+		Lives[site]  = 0;
 		failed[site] = true;
 		return;
 	}
+	
+	protected void resetSiteD(int site){
+		
+		super.resetSite(site);
+		Lives[site]--;
+		return;
+	}
+	
 	
 	public int getN(){
 		
