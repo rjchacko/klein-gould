@@ -131,8 +131,8 @@ public class DamageMovieApp extends Simulation{
 
 			// end
 			params.set("Status","Done");
+			Job.signalStop();
 			Job.animate();
-			Job.manualStop();
 
 		}
 				

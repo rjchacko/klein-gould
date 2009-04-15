@@ -131,8 +131,8 @@ public class HealingTestApp extends Simulation{
 			// end
 			writeData(mct%dlength);
 			params.set("Status","Done");
+			Job.signalStop();
 			Job.animate();
-			Job.manualStop();
 
 		}
 				
