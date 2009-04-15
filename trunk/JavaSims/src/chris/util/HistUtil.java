@@ -119,9 +119,9 @@ public class HistUtil extends Simulation{
 			
 			done = true;
 			params.set("Status","Done");
-			Job.animate();	
 			
-			Job.manualStop();
+			Job.signalStop();
+			Job.animate();	
 			
 		}
 	}
