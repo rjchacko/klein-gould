@@ -62,6 +62,10 @@ public class NewmanZiff {
 		}
 	}
 	
+	public boolean isBonded(int i, int j) {
+		return isOccupied(i) && isOccupied(j) && findRoot(i) == findRoot(j);
+	}
+	
 	public boolean isOccupied(int i) {
 		return parent[i] != EMPTY;
 	}
