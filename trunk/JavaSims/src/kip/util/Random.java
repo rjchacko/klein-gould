@@ -453,24 +453,23 @@ public int nextInt(int n)
     return v1 * norm;
   }
   
-  /*
-  public int nextPoisson(double mu) {
-	if (mu > 10)
-		throw new IllegalArgumentException();
-		
-    double r = nextDouble();
-	double g = Math.exp(-mu);
-	r -= g;
-	if (r < 0) return 0;
-	
-	for (double i = 1; i < 40; i++) {
-		g = g * mu / i;
-		r -= g;
-		if (r < 0) return i;
-	}
-	
-	assert (false);
-	return -1;
+
+   
+  /**
+   * Generates the next pseudorandom, Poisson distributed
+   * integer value k which is distributed according to: P(k, lambda) = (lambda^k exp(-lambda) / k!)
+   * Note that <k> = <k^2>-<k>^2 = lambda
+   * 
+   * A simple algorithm is used which has complexity linear in lambda (Knuth).
+   */
+  public int nextPoisson(double lambda) {
+	  double l = Math.exp(-lambda);
+	  double p = 1;
+	  int k = 0;
+	  do {
+		  k++;
+		  p *= nextDouble();
+	  } while (p >= l);
+	  return k-1;
   }
-  */
 }
