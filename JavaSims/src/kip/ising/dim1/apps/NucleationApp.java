@@ -60,7 +60,7 @@ public class NucleationApp extends Simulation {
 		sim.setParameters(params);
 		
 		double bw = params.fget("Bin width");
-		nucTimes.registerBars("Nucleation times", nucTimesAcc.rebin(bw), Color.RED);
+		nucTimes.registerBars("Nucleation times", new Histogram(nucTimesAcc, bw), Color.RED);
         
 		double dx_R = (double)sim.dx/sim.R;
 		double N_R = (double)sim.N/sim.R;

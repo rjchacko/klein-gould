@@ -3,9 +3,9 @@ package kip.percolation.apps;
 import java.awt.Color;
 
 import kip.ising.NewmanZiff;
-import kip.util.Bin;
 import kip.util.Random;
 import scikit.dataset.Accumulator;
+import scikit.dataset.Bin;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
