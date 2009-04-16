@@ -38,7 +38,7 @@ public class OFCApp extends Simulation {
 	public void animate() {
 		grid.registerData(L, L, stress);
 		grid.setScale(0, Fc);
-		plot.registerBars("dist", histogram.rebin(params.iget("Bin width")), Color.RED);
+		plot.registerBars("dist", new Histogram(histogram, params.iget("Bin width")), Color.RED);
 		
 		if (range != params.fget("Interaction radius (R)")) {
 			range = params.fget("Interaction radius (R)");
