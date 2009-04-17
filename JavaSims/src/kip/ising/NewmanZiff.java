@@ -42,7 +42,7 @@ public class NewmanZiff {
 		compressPath(i);
 		compressPath(j);
 
-		if (findRoot(i) == findRoot(j)) {
+		if (clusterIndex(i) == clusterIndex(j)) {
 			// i and j are neighor sites.  if their displacements to their
 			// (shared) root differs, then the cluster has wrapped
 			boolean horiz = dx[i] != dx_i2j + dx[j];
@@ -63,7 +63,7 @@ public class NewmanZiff {
 	}
 	
 	public boolean isBonded(int i, int j) {
-		return isOccupied(i) && isOccupied(j) && findRoot(i) == findRoot(j);
+		return isOccupied(i) && isOccupied(j) && clusterIndex(i) == clusterIndex(j);
 	}
 	
 	public boolean isOccupied(int i) {
@@ -71,9 +71,13 @@ public class NewmanZiff {
 	}
 	
 	public int clusterSize(int i) {
-		return isOccupied(i) ? -parent[findRoot(i)] : 0;
+		return isOccupied(i) ? -parent[clusterIndex(i)] : 0;
 	}
 	
+	public int clusterIndex(int i) {
+		return (parent[i] < 0) ? i : clusterIndex(parent[i]);
+	}
+
 	public boolean horizontalHomology() {
 		return wrap_horizontal && !wrap_vertical && !wrap_diagonal;
 	}
@@ -93,13 +97,9 @@ public class NewmanZiff {
 			(wrap_vertical && wrap_diagonal);
 	}
 	
-	protected int findRoot(int i) {
-		return (parent[i] < 0) ? i : findRoot(parent[i]);
-	}
-	
 	private void mergeRoots(int i, int j, int dx_i2j, int dy_i2j) {
-		int r_i = findRoot(i);
-		int r_j = findRoot(j);
+		int r_i = clusterIndex(i);
+		int r_j = clusterIndex(j);
 		assert (r_i != r_j);
 		
 		parent[r_j] += parent[r_i]; // r_j is root for i and j clusters 
@@ -115,6 +115,6 @@ public class NewmanZiff {
 			dy[i] += dy[parent[i]];
 			parent[i] = parent[parent[i]];
 		}
-		assert (i == findRoot(i) || parent[i] == findRoot(i));
+		assert (i == clusterIndex(i) || parent[i] == clusterIndex(i));
 	}
 }
