@@ -56,12 +56,12 @@ public class PercolationSite2d extends NewmanZiff {
 			HashSet<Integer> top = new HashSet<Integer>();
 
 			for (int y = 0; y < ly; y++) {
-				left.add(findRoot(y*lx+0));
-				right.add(findRoot(y*lx+(lx-1)));
+				left.add(clusterIndex(y*lx+0));
+				right.add(clusterIndex(y*lx+(lx-1)));
 			}
 			for (int x = 0; x < lx; x++) {
-				bottom.add(findRoot(0*lx+x));
-				top.add(findRoot((ly-1)*lx+x));
+				bottom.add(clusterIndex(0*lx+x));
+				top.add(clusterIndex((ly-1)*lx+x));
 			}
 
 			left.retainAll(right);

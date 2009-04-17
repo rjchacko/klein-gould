@@ -48,8 +48,7 @@ public class MeanFieldPercolationApp extends Simulation {
 		params.set("Random seed", randomSeed);
 		params.set("R", R);
 		params.set("p*(2*R)", p*(2*R));
-//		params.set("Max cluster size", maxClusterSizeBin.average() / (((double)L/R) * Math.pow(2*R, 2./3.)));
-		params.set("Max cluster size", maxClusterSizeBin.average() / Math.pow(L, 2./3.));
+		params.set("Max cluster size", maxClusterSizeBin.average());
 	}
     
 	public void clear() {
@@ -59,24 +58,25 @@ public class MeanFieldPercolationApp extends Simulation {
 	public void run() {
 		maxClusterSizeBin = new Bin();
 		randomSeed = params.iget("Random seed");
+
+		L = params.iget("System size");
+		sites = new int[L];
+		populateSites(params.sget("Profile type"));
+		p *= params.fget("Probability modifier");
+		double binWidth = R/50.;
+		siteProfile = new Accumulator(binWidth);
+		clusterProfile = new Accumulator(binWidth);
+		
 		while (true) {
 			random = new Random(++randomSeed);
 			
-			L = params.iget("System size");
-			sites = new int[L];
-			populateSites(params.sget("Profile type"));
-			p *= params.fget("Probability modifier");
-
 			bondSites();
-			double maxClusterSize = getMaxClusterSize();
-			maxClusterSizeBin.accum(maxClusterSize);
+			int maxCluster = getMaxCluster();
+			maxClusterSizeBin.accum(nz.clusterSize(maxCluster) / Math.pow(L, 2./3.));
 			
-			double binWidth = R/10.;
-			siteProfile = new Accumulator(binWidth);
-			clusterProfile = new Accumulator(binWidth);
 			for (int i = 0; i < L; i++) {
 				siteProfile.accum(i, sites[i]);
-				clusterProfile.accum(i, nz.clusterSize(i) == maxClusterSize ? 1 : 0);
+				clusterProfile.accum(i, nz.clusterIndex(i) == maxCluster ? 1 : 0);
 			}
 			
 			Job.animate();
@@ -88,19 +88,11 @@ public class MeanFieldPercolationApp extends Simulation {
 
 		switch (0) {
 		case 0:
-			// the probability that two sites bond is given by p.
-			// every two sites will attempt to bond twice (double counting).
-			// each of the two bonding attempts will succeed with probability
-			//     peff = 1 - sqrt(1-p),
-			// which satisfies the equation: (1 - p) = (1 - peff)^2
-			// 
-			double peff = 1 - Math.sqrt(1 - p);
-
 			for (int i = 0; i < L; i++) {
 				if (sites[i] != 0) {
-					int nbonds = random.nextPoisson((2*R+1)*peff);
+					int nbonds = random.nextPoisson(R*p);
 					for (int c = 0; c < nbonds; c++) {
-						int j = (i + (random.nextInt(2*R+1)-R) + L) % L;
+						int j = (i + random.nextInt(R) + 1 + L) % L;
 						if (sites[j] != 0)
 							nz.addBond(i, j, 0, 0);
 					}
@@ -122,35 +114,38 @@ public class MeanFieldPercolationApp extends Simulation {
 		case 2:
 			// throw bonds for mean field model, fixed edge number G(n,m=n/2)
 			for (int b = 0; b < L/2; b++) {
-				int i, j;
-				do {
-					i = random.nextInt(L);
-					j = random.nextInt(L);
-				} while (!(sites[i] == 1 && sites[j] == 1 && !nz.isBonded(i,j))); 
-				nz.addBond(i, j, 0, 0);
+				while (true) {
+					int i = random.nextInt(L);
+					int j = random.nextInt(L);
+					if (sites[i] == 1 && sites[j] == 1 && i != j && !nz.isBonded(i,j)) {
+						nz.addBond(i, j, 0, 0);
+						break;
+					}
+				}
 			}
 			break;
 		}
 
 	}
 	
-	private int getMaxClusterSize() {
+	private int getMaxCluster() {
 		int ret = 0;
-		for (int i = 0; i < L; i++)
-			ret = Math.max(ret, nz.clusterSize(i));
-		return ret;
+		for (int i = 1; i < L; i++)
+			if (nz.clusterSize(ret) < nz.clusterSize(i))
+				ret = i;
+		return nz.clusterIndex(ret);
 	}
 	
 	private void populateSites(String profileType) {
 		if (profileType.equals("Square1")) {
-			R = L / 8;
-			p = 1. / (2*R);
+			R = L / 2;
+			p = 0.5 / R;
 			for (int i = 0; i < L; i++)
 				sites[i] = 1;
 		}
 		else if (profileType.equals("Square2")) {
 			R = L / 4;
-			p = 1. / (2*R);
+			p = 2 * Math.atan(1./3.) / R;
 			for (int i = 0; i < L; i++) {
 				sites[i] = (L/4 < i && i < 3*L/4) ? 1 : 0;
 			}
