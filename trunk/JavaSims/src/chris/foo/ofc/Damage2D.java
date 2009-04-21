@@ -478,7 +478,6 @@ public class Damage2D {
 				for (int jj = 0 ; jj < length; jj++){
 					stress[ds[jj]] = Sr[ds[jj]];
 					alive[ds[jj]+(int)N] = 1;
-	
 				}
 			}
 		}

@@ -15,8 +15,6 @@ import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.foo.ofc.Damage2D;
 import chris.ofcdamage.damage;
-import chris.util.FitUtil;
-import chris.util.PrintUtil;
 import chris.util.ReadInUtil;
 
 public class ergodicDiagramApp extends Simulation{
@@ -35,7 +33,7 @@ public class ergodicDiagramApp extends Simulation{
 	private Boolean pretime;
 	private int pt, ptmax;
 	private boolean draw;
-	private FitUtil fitter;
+//	private FitUtil fitter;
 	private ReadInUtil imprt;
 	
 	public static void main(String[] args) {
@@ -154,31 +152,31 @@ public void load(Control c) {
 		totx    = new double[Dlength];
 		toty    = new double[Dlength];		
 		Dlength = Dlength / 10;
-		fitter  = new FitUtil(Dlength);
-		mbar    = 0;
-		
-		for (int jj = 0 ; jj < 10 ; jj++){
-			
-			tempx = new double [Dlength];
-			tempy = new double [Dlength];
-			for (int kk = 0 ; kk < Dlength ; kk++){
-				tempx[kk] = tofit[0][kk+jj*Dlength];
-				tempy[kk] = 1/tofit[1][kk+jj*Dlength];
-				totx[kk+jj*Dlength] = tempx[kk];
-				toty[kk+jj*Dlength] = tempy[kk];
-			}
-			
-			temp = fitter.fit(tempx, tempy, 1,false);
-			slopes[jj] = temp[0];
-			chi2[jj]   = temp[4];
-			mbar += slopes[jj];
-			PrintUtil.printlnToFile(fout, jj, slopes[jj], chi2[jj]/(Dlength-2));
-		}
-		
-		fitter = new FitUtil(totx.length);
-		temp = fitter.fit(totx, toty, 1,false);
-		System.out.println(temp[0]);
-		PrintUtil.printlnToFile(fout, -7, temp[0], temp[4]/(totx.length-2));
+//		fitter  = new FitUtil(Dlength);
+//		mbar    = 0;
+//		
+//		for (int jj = 0 ; jj < 10 ; jj++){
+//			
+//			tempx = new double [Dlength];
+//			tempy = new double [Dlength];
+//			for (int kk = 0 ; kk < Dlength ; kk++){
+//				tempx[kk] = tofit[0][kk+jj*Dlength];
+//				tempy[kk] = 1/tofit[1][kk+jj*Dlength];
+//				totx[kk+jj*Dlength] = tempx[kk];
+//				toty[kk+jj*Dlength] = tempy[kk];
+//			}
+//			
+//			temp = fitter.fit(tempx, tempy, 1,false);
+//			slopes[jj] = temp[0];
+//			chi2[jj]   = temp[4];
+//			mbar += slopes[jj];
+//			PrintUtil.printlnToFile(fout, jj, slopes[jj], chi2[jj]/(Dlength-2));
+//		}
+//		
+//		fitter = new FitUtil(totx.length);
+//		temp = fitter.fit(totx, toty, 1,false);
+//		System.out.println(temp[0]);
+//		PrintUtil.printlnToFile(fout, -7, temp[0], temp[4]/(totx.length-2));
 
 		
 

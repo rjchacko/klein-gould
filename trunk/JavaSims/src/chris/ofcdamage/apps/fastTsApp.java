@@ -16,9 +16,10 @@ import scikit.jobs.params.DirectoryValue;
 import chris.ofcdamage.damage2Dfast;
 import chris.util.DirUtil;
 
-public class fastDamageApp extends Simulation{
+public class fastTsApp extends Simulation{
 
 	private int simt, eqt, dmt, Ndead, L, N;
+	private double m, b, db;
 	private boolean draw, record;
 	private String PicDir;
 	private Grid gridS, gridD;
@@ -27,7 +28,7 @@ public class fastDamageApp extends Simulation{
 	private damage2Dfast model;
 	
 	public static void main(String[] args) {
-		new Control(new fastDamageApp(), "Damage Parameters");
+		new Control(new fastTsApp(), "Damage Parameters");
 	}
 	
 	public void load(Control c) {
@@ -104,10 +105,16 @@ public class fastDamageApp extends Simulation{
 				if(record) takePicture(jj);
 			}
 		}
+		if((simt-1)%damage2Dfast.dlength != 0) model.writeData(simt);
+
+		// fit a trend line to the metric and 
+		// establish a LB and UB trend line
+		getAllowedRegion();
 		
 		// Simulate the model with damage
 		while(Ndead < N){
 			Ndead = model.evolveD(dmt,true);
+			if(((1./model.getData(dmt,0)) > (m*dmt + b + db)) || ((1./model.getData(dmt,0)) < (m*dmt + b - db))) break;
 			if(dmt%500 == 0){
 				params.set("Status", (dmt));
 			}
@@ -119,12 +126,44 @@ public class fastDamageApp extends Simulation{
 
 		if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(dmt);
 		
+		model.printFitParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",m,b,db);
+		
 		params.set("Status", "Done");
 		Job.animate();
 		
 		return;
 	}
 
+	private void getAllowedRegion(){
+		
+		// copy from t = 20% simt --> 100% simt
+		// data into tmp array
+		
+		int LBindex = (int)(0.2*simt);
+		double time[], invmet[];
+	
+		time   = new double[simt-LBindex];
+		invmet = new double[simt-LBindex];
+		for (int jj = LBindex ; jj < simt ; jj++){
+			time[jj-LBindex]   = jj;
+			invmet[jj-LBindex] = 1./model.getData(jj,0);
+		}
+
+//		
+//		double[] dummy = fitter.fit(time, invmet, 1, false);
+//		
+//		m = dummy[0];
+//		b = dummy[1];
+//		
+//		db = 0;
+//		for (int jj = 0 ; jj < (simt-LBindex) ; jj++){
+//			check = Math.abs((m*time[jj]+b) - invmet[jj]);
+//			if(check > db) db = check;
+//		}
+
+		return;
+	}
+	
 	public void animate() {
 		
 		if(!draw) return;

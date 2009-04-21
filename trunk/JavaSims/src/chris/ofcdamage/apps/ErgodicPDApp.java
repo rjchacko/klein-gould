@@ -11,8 +11,6 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 import chris.ofcdamage.basicOFC;
-import chris.util.CopyUtil;
-import chris.util.FitUtil;
 import chris.util.PrintUtil;
 
 public class ErgodicPDApp extends Simulation {
@@ -23,7 +21,7 @@ public class ErgodicPDApp extends Simulation {
 	private int pt, ptmax;
 	private double aMin, time[], Metric[], dAA;
 	private String dir, bname, fitfile;
-	private FitUtil fitter;
+	//private FitUtil fitter;
 	private DecimalFormat fmt = new DecimalFormat("0.000");
 
 	
@@ -125,15 +123,15 @@ public class ErgodicPDApp extends Simulation {
 		
 		saveMetricData();
 		// Fit and check for erdodicity
-		Metric = CopyUtil.invertAndScaleArray(Metric,Metric.length,1);
-		
-		fitter = new FitUtil(Metric.length);
-		
-		double[] foo = fitter.fit(time,Metric,1,false);
-		saveFitData(foo);
+//		Metric = CopyUtil.invertAndScaleArray(Metric,Metric.length,1);
+//		
+//		fitter = new FitUtil(Metric.length);
+//		
+//		double[] foo = fitter.fit(time,Metric,1,false);
+//		saveFitData(foo);
 		
 		// Fix This (check)
-		return (foo[4] < chiTOL);
+		return (0 < chiTOL);
 		//return true;
 	}
 	
@@ -167,6 +165,7 @@ public class ErgodicPDApp extends Simulation {
 		return;
 	}
 	
+	@SuppressWarnings("unused")
 	private void saveFitData(double[] fitparams){
 
 		PrintUtil.printlnToFile(fitfile,params.iget("Interaction Radius (R)"),params.fget("\u03C3_r width"),fitparams[4]);

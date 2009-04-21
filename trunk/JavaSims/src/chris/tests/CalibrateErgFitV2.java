@@ -7,14 +7,13 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 import chris.util.CopyUtil;
-import chris.util.FitUtil;
 import chris.util.PrintUtil;
 import chris.util.ReadInUtil;
 
 public class CalibrateErgFitV2 extends Simulation{
 
 	private ReadInUtil rin;
-	private FitUtil fitter;
+	//private FitUtil fitter;
 	private static String[] fins = new String[]{"0p","1p","10p","15p","16p","17p","18p","20p","30p","50p"};
 	//private static String[] fins = new String[]{"16p"};
 	private String din, fin, fout;
@@ -80,11 +79,11 @@ public class CalibrateErgFitV2 extends Simulation{
 			}
 
 			// fit data
-			fitter = new FitUtil(count);
-			double temp[] = fitter.fit(foox, fooy, 1, false);
-
-			// fit params
-			PrintUtil.printlnToFile(fout,fins[jj],temp[0],temp[1],temp[4]);
+//			fitter = new FitUtil(count);
+//			double temp[] = fitter.fit(foox, fooy, 1, false);
+//
+//			// fit params
+//			PrintUtil.printlnToFile(fout,fins[jj],temp[0],temp[1],temp[4]);
 	
 		}
 		
