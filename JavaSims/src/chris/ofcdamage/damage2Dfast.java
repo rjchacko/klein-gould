@@ -1,5 +1,7 @@
 package chris.ofcdamage;
 
+import chris.util.MathUtil;
+import chris.util.PrintUtil;
 import scikit.jobs.params.Parameters;
 
 public class damage2Dfast extends ofc2Dfast{
@@ -21,6 +23,7 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		Nl0 = params.iget("Number of Lives");
 		dN  = params.iget("Full width of NL");
+		fs  = new int[3*N];
 		
 		Ndead   = 0;
 		liveNbs = new int[N];
@@ -60,10 +63,59 @@ public class damage2Dfast extends ofc2Dfast{
 		//
 		// takedata specifies whether or not to record data
 		
-		
-		double dsigma, release, tmpbar;
-		int jjmax, index, newindex, a, b, tmpfail, tmpnb;
+		double release;
+		int a, b, tmpfail, tmpnb;
 		boolean lastlife = false;
+		
+		// force failure
+		forceFailure(mct, takedata);
+		
+		// discharge forced site(s) and repeat until lattice is stable
+		while(newindex > index){
+			a     = index;
+			b     = newindex;
+			index = newindex;
+			for (int jj = a ; jj < b ; jj++){
+				tmpfail = fs[jj];
+				if(liveNbs[tmpfail] == 0){
+					if(Lives[tmpfail] == 1){
+						killSite(tmpfail);
+					}
+					else{
+						resetSiteD(tmpfail);
+					}
+					continue;
+				}
+				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/liveNbs[tmpfail];
+				if(Lives[tmpfail] == 1) lastlife = true;
+				for(int kk = 0 ; kk < qN ; kk++){
+					tmpnb = getNbr(fs[jj],kk);
+					if(lastlife) liveNbs[tmpnb]--;	
+					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
+					stress[tmpnb] += release;
+					if((stress[tmpnb] > sf[tmpnb])){
+						fs[newindex++] = tmpnb;	
+						failed[tmpnb] = true;
+					}
+				}
+				GR += newindex - index;
+				if(lastlife){
+					lastlife = false;
+					killSite(tmpfail);
+				}
+				else{
+					resetSiteD(tmpfail);
+				}
+			}
+		}
+		return Ndead;
+	}
+	
+	protected void forceFailure(int mct, boolean takedata){
+		// force failure in the zero velocity limit
+
+		double dsigma, tmpbar;
+		int jjmax;
 		index = 0;
 		newindex = index;
 		
@@ -114,47 +166,10 @@ public class damage2Dfast extends ofc2Dfast{
 		fs[newindex++] = jjmax;
 		failed[jjmax]  = true;
 		GR             = 1;
-				
-		// discharge site and repeat until lattice is stable
-		while(newindex > index){
-			a     = index;
-			b     = newindex;
-			index = newindex;
-			for (int jj = a ; jj < b ; jj++){
-				tmpfail = fs[jj];
-				if(liveNbs[tmpfail] == 0){
-					if(Lives[tmpfail] == 1){
-						killSite(tmpfail);
-					}
-					else{
-						resetSiteD(tmpfail);
-					}
-					continue;
-				}
-				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/liveNbs[tmpfail];
-				if(Lives[tmpfail] == 1) lastlife = true;
-				for(int kk = 0 ; kk < qN ; kk++){
-					tmpnb = getNbr(fs[jj],kk);
-					if(lastlife) liveNbs[tmpnb]--;	
-					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
-					stress[tmpnb] += release;
-					if((stress[tmpnb] > sf[tmpnb])){
-						fs[newindex++] = tmpnb;	
-						failed[tmpnb] = true;
-					}
-				}
-				GR += newindex - index;
-				if(lastlife){
-					lastlife = false;
-					killSite(tmpfail);
-				}
-				else{
-					resetSiteD(tmpfail);
-				}
-			}
-		}
-		return Ndead;
+		
+		return;
 	}
+	
 	
 	private void killSite(int site){
 		
@@ -193,6 +208,30 @@ public class damage2Dfast extends ofc2Dfast{
 			ret[jj] = (Lives[jj] > 0) ? 1 : 0;
 		}
 		return ret;
+	}
+	
+	protected void saveData(int mct, boolean EQ){
+		
+		data[0][mct%dlength] = Omega;
+		data[1][mct%dlength] = GR;
+		data[2][mct%dlength] = MathUtil.bool2bin(EQ);
+		data[3][mct%dlength] = Ndead; 
+		return;
+	}
+	
+	public double getData(int mct, int dindex){
+		
+		if(dindex >= ofc2Dfast.dcat) return -77;
+		
+		return data[dindex][mct%dlength];
+	}
+	
+	public void printFitParams(String fout, double slope, double offset, double width){
+		
+		PrintUtil.printlnToFile(fout,"slope = ", slope);
+		PrintUtil.printlnToFile(fout,"intercept = ", offset);
+		PrintUtil.printlnToFile(fout,"width = ", width);
+		return;
 	}
 	
 }

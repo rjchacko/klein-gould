@@ -5,14 +5,14 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.FileValue;
 import chris.util.CopyUtil;
-import chris.util.FitUtil;
 import chris.util.ReadInUtil;
 
 public class CalibrateErgFit extends Simulation{
 
+	@SuppressWarnings("unused")
 	private double xvals[], yvals[], m, b, chi2;
 	private ReadInUtil rin;
-	private FitUtil fitter;
+	//private FitUtil fitter;
 
 	
 	public static void main(String[] args) {
@@ -57,17 +57,17 @@ public class CalibrateErgFit extends Simulation{
 		yvals = CopyUtil.invertAndScaleArray(fooy,count,1);
 		
 		// fit data
-		fitter = new FitUtil(count);
-		double temp[] = fitter.fit(xvals, yvals, 1,false);
-		
-		// fit params
-		m    = temp[0];
-		b    = temp[1];
-		chi2 = temp[4];
-		
-		System.out.println(m);
-		System.out.println(b);
-		System.out.println(chi2);
+//	//	fitter = new FitUtil(count);
+//		//double temp[] = fitter.fit(xvals, yvals, 1,false);
+//		
+//		// fit params
+//		//m    = temp[0];
+//		b    = temp[1];
+//		chi2 = temp[4];
+//		
+//		System.out.println(m);
+//		System.out.println(b);
+//		System.out.println(chi2);
 		
 		Job.animate();
 		

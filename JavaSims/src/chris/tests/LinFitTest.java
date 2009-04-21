@@ -1,36 +1,37 @@
 package chris.tests;
 
-import java.awt.Color;
 import java.util.Random;
-
-import chris.util.PrintUtil;
-import chris.util.FitUtil;
 
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
+import chris.util.FitUtil;
+import chris.util.PrintUtil;
 
 public class LinFitTest extends Simulation{
 
 	
+	@SuppressWarnings("unused")
 	private double fooX[], fooY[], m, b, dm, db, chis, fitY[], width;
 	private int N;
 	private Random rand;
 	private FitUtil fitter;
+	@SuppressWarnings("unused")
 	private Histogram hData, hFit;
 	private Plot graphD = new Plot("Data");
 	private Plot graphF = new Plot("Fit");
+	
 	
 	public static void main(String[] args) {
 		new Control(new LinFitTest(), "Test LinFit");
 	}
 	
 	public void animate() {
-		graphF.registerLines("Data",hFit,Color.BLUE);
-		graphD.registerPoints("Data",hData,Color.RED);
-		record();
+//		graphF.registerLines("Data",hFit,Color.BLUE);
+//		graphD.registerPoints("Data",hData,Color.RED);
+//		record();
 		return;
 	}
 
@@ -48,43 +49,67 @@ public class LinFitTest extends Simulation{
 
 	public void run() {
 			
+		
 		PrintUtil.printlnToFile("/Users/cserino/Desktop/TestLinFit.txt","slope","d(slope)","intercept", "d(intercept)", "chi^2", "width");
-		rand = new Random(0);
+		rand   = new Random(0);
+		fitter = new FitUtil();
+		
+		double m0, b0, chi2;
 		
 		while(true){
 		
-			N = 200;
+			N = 10000;
 			
 			fooX  = new double[N];
 			fooY  = new double[N];
 			fitY  = new double[N];
 			hData = new Histogram(0.5);
 			hFit  = new Histogram(0.5);
+			width = 10;
 			
-			fitter = new FitUtil(N);
-			width = 50;
+			m0 = 2;
+			b0 = 20;
+			m  = 0;
+			b  = 0;
+			
+			
+//			for (int jj = 0 ; jj < N ; jj++){
+//				fooX[jj] = jj;
+//				fooY[jj] = m0*jj + b0 + width*rand.nextGaussian();
+//			}
 
-			for (int jj = 0 ; jj < N ; jj++){
-				fooX[jj] = jj;
-				fooY[jj] = width*rand.nextGaussian() + jj + 12;
-			}
+			generateDataFile(m0,b0,rand,"/Users/cserino/Desktop/FitData.txt");
+			
 
-			double temp[] = fitter.fit(fooX, fooY, width,false);
+			fitter.fit("/Users/cserino/Desktop/FitData.txt",1,1,2,width);
 			
-			m    = temp[0];
-			b    = temp[1];
-			dm   = temp[2];
-			db   = temp[3];
-			chis = temp[4];
+			m    = fitter.getSlope();
+			b    = fitter.getIntercept();
+			chi2 = fitter.getChis();
 			
-			for (int jj = 0 ; jj < N ; jj++){
-				fitY[jj] = m*fooX[jj]+b;
-				hData.accum(fooX[jj],fooY[jj]);
-				hFit.accum(fooX[jj],fitY[jj]);
-			}
+//			for (int jj = 0 ; jj < N ; jj++){
+//				fitY[jj] = m*fooX[jj]+b;
+//				hData.accum(fooX[jj],fooY[jj]);
+//				hFit.accum(fooX[jj],fitY[jj]);
+//			}
+			
+			System.out.print("m ="+"\t");
+			System.out.println(m);
+			System.out.print("b ="+"\t");
+			System.out.println(b);
+			System.out.print("chis / N ="+"\t");
+			System.out.println(chi2/N);		
 			
 			Job.animate();
 			
+		}
+	}
+	
+	private void generateDataFile(double m0, double b0, Random rand, String fout){
+		
+		PrintUtil.printlnToFile(fout,"x","y");
+		for (int jj = 0 ; jj < N ; jj++){
+			PrintUtil.printlnToFile(fout,jj,m0*jj + b0 + width*rand.nextGaussian());
 		}
 	}
 	

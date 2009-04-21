@@ -17,14 +17,14 @@ public class ofc2Dfast {
 	private double sr0, sf0, a0, dsr, dsf, da;
 	protected double Omega, sr[], sf[], stress[],sbar[], data[][];
 	private int L, R, nbArray[], nbSeed;
-	protected int N, qN, fs[], GR;
+	protected int N, qN, fs[], GR, index, newindex;
 	private boolean srn, sfn, an;
 	protected boolean failed[];
 	private String outdir, bcs, bname;
 	private Random rand;
 	private LatticeNeighbors nbs;
 	public static int dlength = 150000;
-	private static int dcat = 3;
+	public static int dcat = 4;
 	private static DecimalFormat fmtI = new DecimalFormat("0000");
 	
 	public ofc2Dfast(Parameters params){
@@ -67,7 +67,7 @@ public class ofc2Dfast {
 		stress  = new double[N];
 		sbar    = new double[N];
 		nbArray = new int[N];
-		fs      = new int[3*N];
+		fs      = new int[2*N];
 		data    = new double[dcat][dlength];
 		failed  = new boolean[N];
 		
@@ -132,12 +132,44 @@ public class ofc2Dfast {
 		//
 		// takedata specifies whether or not to record data
 		
-		double dsigma, release, tmpbar;
-		int jjmax, index, newindex, a, b, tmpfail, tmpnb;
+		int a,b, tmpfail, tmpnb;
+		double release;
+	
+		// force failure in the zero velocity limit
+		forceZeroVel(mct, takedata);
+		
+		// discharge site and repeat until lattice is stable
+		while(newindex > index){
+			a     = index;
+			b     = newindex;
+			index = newindex;
+			for (int jj = a ; jj < b ; jj++){
+				tmpfail = fs[jj];
+				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
+				for(int kk = 0 ; kk < qN ; kk++){
+					tmpnb = getNbr(fs[jj],kk);
+					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
+					stress[tmpnb] += release;
+					if(stress[tmpnb] > sf[tmpnb]){
+						fs[newindex++] = tmpnb;	
+						failed[tmpnb] = true;
+					}
+				}
+				GR += newindex - index;
+				resetSite(tmpfail);
+			}
+		}
+		return;
+	}
+	
+	private void forceZeroVel(int mct, boolean takedata){
+		// force failure in the zero velocity limit
+
+		double dsigma, tmpbar;
+		int jjmax;
 		index = 0;
 		newindex = index;
 		
-		// force failure in the zero velocity limit
 		jjmax = 0;
 		if(takedata){
 			tmpbar = 0;
@@ -186,29 +218,10 @@ public class ofc2Dfast {
 		failed[jjmax]  = true;
 		GR             = 1;
 				
-		// discharge site and repeat until lattice is stable
-		while(newindex > index){
-			a     = index;
-			b     = newindex;
-			index = newindex;
-			for (int jj = a ; jj < b ; jj++){
-				tmpfail = fs[jj];
-				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
-				for(int kk = 0 ; kk < qN ; kk++){
-					tmpnb = getNbr(fs[jj],kk);
-					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
-					stress[tmpnb] += release;
-					if(stress[tmpnb] > sf[tmpnb]){
-						fs[newindex++] = tmpnb;	
-						failed[tmpnb] = true;
-					}
-				}
-				GR += newindex - index;
-				resetSite(tmpfail);
-			}
-		}
+		
 		return;
 	}
+
 	
 	protected double nextAlpha(){
 		
@@ -216,14 +229,24 @@ public class ofc2Dfast {
 	}
 	
 	protected void resetSite(int site){
-		
-		sr[site]     = srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
-		sf[site]     = sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
+
 		stress[site] = sr[site];
+		sr[site]     = nextSr(site);
+		sf[site]     = nextSf(site);
 		failed[site] = false;
 		return;
 	}
+	
+	protected double nextSr(int site){
+	
+		return srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
+	}
+	
+	protected double nextSf(int site){
 
+		return sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
+	}
+	
 	public void writeData(int mct){
 		
 		int ub;
@@ -258,6 +281,7 @@ public class ofc2Dfast {
 		data[0][mct%dlength] = Omega;
 		data[1][mct%dlength] = GR;
 		data[2][mct%dlength] = MathUtil.bool2bin(EQ);
+		data[3][mct%dlength] = 0; 
 		return;
 	}
 	
@@ -270,7 +294,11 @@ public class ofc2Dfast {
 			pw.print("\t");
 			pw.print("Metric");
 			pw.print("\t");
+			pw.print("Shower Size");
+			pw.print("\t");
 			pw.print("EQ Mode");
+			pw.print("\t");
+			pw.print("Dead Sites");
 			pw.println();
 			pw.close();
 		}

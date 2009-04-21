@@ -14,34 +14,37 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import chris.ofcdamage.damage2Dfast;
+import chris.ofcdamage.forceSf2Dfast;
 import chris.util.DirUtil;
 
-public class fastDamageApp extends Simulation{
+public class fastSfApp extends Simulation{
 
 	private int simt, eqt, dmt, Ndead, L, N;
+	private double srth; 
 	private boolean draw, record;
-	private String PicDir;
+	private String PicDir, mode;
 	private Grid gridS, gridD;
 	private ColorGradient cg = new ColorGradient();
 	private DecimalFormat fmt = new DecimalFormat("0000000");
-	private damage2Dfast model;
+	private forceSf2Dfast model;
 	
 	public static void main(String[] args) {
-		new Control(new fastDamageApp(), "Damage Parameters");
+		new Control(new fastSfApp(), "Damage Parameters");
 	}
 	
 	public void load(Control c) {
 		
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Data File", "default");
+		params.add("Mode",new ChoiceValue("F Failures","Sr Threshold"));
 		params.add("Random Seed", (int) 0);
 		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
 		params.add("Interaction Radius (R)", (int) 10);
 		params.add("Lattice Size", (int) 256);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
 		params.add("Equil Time", 500000);
-		params.add("Sim Time", 500000);
-		params.add("Number of Lives",(int) 5);
+		params.add("Sim Time", 0);
+		params.add("Number of Lives",(int) 50);
 		params.add("Full width of NL", (int) 0);
 		params.add("Failure Stress (\u03C3_f)", 2.);
 		params.add("\u03C3_f width", 0.);
@@ -63,13 +66,17 @@ public class fastDamageApp extends Simulation{
 	public void run() {
 				
 		// Setup model
+		double d0;
+		
 		params.set("Status", "Intializing");
 		params.set("Dead Sites", "-");
 		Job.animate();
 		L      = params.iget("Lattice Size");
 		N      = L*L;
-		model  = new damage2Dfast(params);
-		model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);	
+		model  = new forceSf2Dfast(params);
+		model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
+		mode   = params.sget("Mode");
+		srth   = params.fget("Residual Stress (\u03C3_r)") + params.fget("\u03C3_r width");
 		eqt    = params.iget("Equil Time");
 		simt   = params.iget("Sim Time");
 		dmt    = simt;
@@ -105,16 +112,33 @@ public class fastDamageApp extends Simulation{
 			}
 		}
 		
-		// Simulate the model with damage
-		while(Ndead < N){
-			Ndead = model.evolveD(dmt,true);
-			if(dmt%500 == 0){
-				params.set("Status", (dmt));
+		if(mode.equals("F Failures")){
+			// Simulate the model with damage
+			while(Ndead < N){
+				Ndead = model.evolveD(dmt,true);
+				if(dmt%500 == 0){
+					params.set("Status", (dmt));
+				}
+				params.set("Dead Sites", Ndead);
+				Job.animate();
+				if(record) takePicture(dmt);
+				dmt++;
 			}
-			params.set("Dead Sites", Ndead);
-			Job.animate();
-			if(record) takePicture(dmt);
-			dmt++;
+		}
+		else if (mode.equals("Sr Threshold")){
+			// Simulate model until failure threshold comes with 1E-4*(Sf-Sr) of Sr
+			srth = srth + (1.e-5)*(model.sfNow()-srth);
+			d0 = model.sfNow() - srth;
+			while(model.sfNow() > srth){
+				model.evolveCO(dmt,true);
+				if(dmt%500 == 0){
+					params.set("Status", (dmt));
+					params.set("Dead Sites", (d0-(model.sfNow()-srth))/d0);
+					Job.animate();
+				}
+				if(record) takePicture(dmt);
+				dmt++;
+			}
 		}
 
 		if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(dmt);

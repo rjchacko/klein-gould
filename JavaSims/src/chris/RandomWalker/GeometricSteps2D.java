@@ -15,10 +15,10 @@ import scikit.jobs.params.StringValue;
 
 public class GeometricSteps2D extends Simulation{
 
-	private int seed, walkers, steps, pdf[], bins;
-	private double lambda, drmax, binsize;
+	private int seed, walkers, steps, pdfR[], pdfX[], pdfY[], bins;
+	private double lambda, drmax, binsize, gsum;
 	//private double local[][];
-	private String outdir, fout, pfile;
+	private String outdir, foutR, foutX, foutY, pfile;
 	private Random rand;
 	private boolean r2o;
 	
@@ -30,13 +30,13 @@ public class GeometricSteps2D extends Simulation{
 	
 	public void load(Control c) {
 	
-		params.add("Data Directory",new DirectoryValue("/Users/cserino/CurrentSemester/PY542/Final"));
-		params.add("File Name", new StringValue("foo"));
+		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop"));
+		params.add("File Name", new StringValue("default"));
 		params.add("Random Seed",(int) 0);
-		params.add("Bins", (int) 500);
-		params.add("Walkers", (int) 10);
+		params.add("Resolution", (double) 0.01);
+		params.add("Walkers", (int) 1e8);
 		params.add("Steps", (int) 10);
-		params.add("lambda", new DoubleValue(0.01, 0., 1.));
+		params.add("lambda", new DoubleValue(0.5, 0., 1.));
 		params.add("Status");
 	}
 
@@ -70,53 +70,52 @@ public class GeometricSteps2D extends Simulation{
 		String tmp;
 		
 		seed    = params.iget("Random Seed");
-		bins    = params.iget("Bins");
+		binsize = params.fget("Resolution");
 		walkers = params.iget("Walkers");
 		steps   = params.iget("Steps");
-		lambda  = params.fget("lambda");
+		lambda   = params.fget("lambda");
 		outdir  = params.sget("Data Directory");
 		tmp     = params.sget("File Name");
-		
-//		local = new double[walkers][2];
-		fout  = outdir + File.separator + tmp + ".txt";
-		pfile = outdir + File.separator + "Params_" + tmp + ".txt";
-		rand  = new Random(seed); 
-		pdf   = new int[bins];
+		pfile   = outdir + File.separator + "Params_" + tmp + ".txt";
 		
 		PrintUtil.printlnToFile(pfile, params.toString());
 		
 		drmax = 1;
-		for(int jj = 0 ; jj < bins ; jj++){	// do we ever have fewer bins than steps????
-			pdf[jj] = 0;
-			if (jj < steps){
-				drmax = drmax*lambda;
-			}
+		for(int jj = 0 ; jj < bins ; jj++){	
+			pdfR[jj] = 0;
 		}
 		
-		
 		if(lambda != 1){
-			drmax   = (lambda - drmax)/(1-lambda);
-			if( drmax < 1){
-				binsize = 2*drmax/bins; 
+			gsum = 1./(1.-lambda);
+			if(lambda < 0.5){
 				r2o = false;
-				PrintUtil.printlnToFile(pfile, "bin 0 corresponds to r = 1 - dr_max = ", 1-drmax);
-				PrintUtil.printlnToFile(pfile, "binsize = ", binsize);
+				bins = (int)((2*lambda/(1-lambda))/binsize);  
 			}
 			else{
-				binsize = (1.+drmax)/bins; 
-				r2o = true;
-				PrintUtil.printlnToFile(pfile, "bin 0 corresponds to r = 0 = ", 0.);
-				PrintUtil.printlnToFile(pfile, "binsize = ", binsize);
+				r2o  = true;
+				bins = (int)((1+(lambda/(1-lambda)))/binsize);  
 			}
 		}
 		else{
-			drmax = steps;
-			binsize = drmax/bins;
 			r2o = true;
-			PrintUtil.printlnToFile(pfile, "bin 0 corresponds to r = 0 = ", 0.);
-			PrintUtil.printlnToFile(pfile, "binsize = ", binsize);
+			bins = (int)(steps/binsize);
+			gsum = steps;
 		}
+		PrintUtil.printlnToFile(pfile, "binsize = ", binsize);
 
+		foutR = outdir + File.separator + tmp + "_R.txt";
+		foutX = outdir + File.separator + tmp + "_X.txt";
+		foutY = outdir + File.separator + tmp + "_Y.txt";
+		rand  = new Random(seed); 
+		pdfR  = new int[bins];
+		pdfX  = new int[2*bins];
+		pdfY  = new int[2*bins];
+		
+		
+		
+		
+		
+		
 		return;
 	}
 	
@@ -159,10 +158,12 @@ public class GeometricSteps2D extends Simulation{
 		 * 
 		 */
 		if(r2o){
-			pdf[(int)(Math.sqrt(rr[0]*rr[0] + rr[1]*rr[1])/binsize)]++;	
+			pdfR[(int)(Math.sqrt(rr[0]*rr[0] + rr[1]*rr[1])/binsize)]++;	
+			pdfX[(int)((rr[0]+gsum)/binsize)]++;
+			pdfY[(int)((rr[1]+gsum)/binsize)]++;
 		}
 		else{
-			pdf[(int)((Math.sqrt(rr[0]*rr[0] + rr[1]*rr[1])-1.+drmax)/binsize)]++;	
+			pdfR[(int)((Math.sqrt(rr[0]*rr[0] + rr[1]*rr[1])-1.+drmax)/binsize)]++;	
 		}
 		return;
 	}
@@ -170,10 +171,12 @@ public class GeometricSteps2D extends Simulation{
 	private void savedata(){
 
 		if(r2o){
-			PrintUtil.printWalkerData(fout,pdf,bins,0,binsize);
+			PrintUtil.printWalkerData(foutR,pdfR,bins,0,binsize);
+			PrintUtil.printWalkerData(foutX,pdfX,2*bins,-gsum,binsize);
+			PrintUtil.printWalkerData(foutY,pdfY,2*bins,-gsum,binsize);
 		}
 		else{
-			PrintUtil.printWalkerData(fout,pdf,bins,1-drmax,binsize);
+			PrintUtil.printWalkerData(foutR,pdfR,bins,1-drmax,binsize);
 		}
 		return;
 	}
