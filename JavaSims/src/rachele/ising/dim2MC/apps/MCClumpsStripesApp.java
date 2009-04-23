@@ -25,7 +25,7 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
-import scikit.jobs.params.FileValue;
+//import scikit.jobs.params.FileValue;
 
 /**
 * 
@@ -74,9 +74,9 @@ public class MCClumpsStripesApp extends Simulation{
 //			c.frame(grid);
 			c.frameTogether("Plots",sftAvePlot, sftAveParaPlot, grid, sftPlot, sftParaPlot, compare,histogramPlot, normHistPlot);
 			params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/noConservedOP/testRuns"));
-			params.add("Input 1D File",new FileValue("/Users/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
+//			params.add("Input 1D File",new FileValue("/Users/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
 			params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
-			params.addm("init", new ChoiceValue( "Use 1D Soln", "Init Stripes from random"));
+//			params.addm("init", new ChoiceValue( "Init Clumps from random"));
 			params.add("Random seed", 0);
 			params.add("L", 1<<7);
 			params.add("R", 46);//1<<6);
@@ -385,7 +385,7 @@ public class MCClumpsStripesApp extends Simulation{
 			hist = new Histogram(params.iget("Bin Size"));			
 			sim.randomizeField(params.fget("Initial magnetization"));		
 			dx = 1;
-			if(params.sget("init") == "Read From File") readInitialConfiguration();
+		
 		}
 		
 		public void writeConfigToFile(){

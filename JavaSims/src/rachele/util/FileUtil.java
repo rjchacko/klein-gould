@@ -1,5 +1,6 @@
 package rachele.util;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.EOFException;
@@ -7,6 +8,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -232,7 +234,7 @@ public class FileUtil {
 		int noData = 0;
 		try{
 			File myFile = new File(FileName);
-			DataInputStream dis = new DataInputStream(new FileInputStream(myFile));
+			BufferedReader dis = new BufferedReader(new FileReader(myFile));
 			int ct = 0;
 			try{
 				while(true){
