@@ -59,11 +59,11 @@ public class IsingField1DApp extends Simulation{
 
 //		params.add("Config Directory",new DirectoryValue("/Users/erdomi/data/lraim/configs1dAutoName"));
 		params.addm("Noise", new DoubleValue(1.0, 0, 1.0).withSlider());
-		params.addm("Dynamics", new ChoiceValue("Conserved Finite Diff", "Conserved semi imp",  "Langevin","Conserved","Conserved w mob", "Glauber"));
+		params.addm("Dynamics", new ChoiceValue("Langevin", "Conserved Finite Diff", "Conserved semi imp", "Conserved","Conserved w mob", "Glauber"));
 		params.addm("Random Seed", 0);
 		params.addm("T", new DoubleValue(0.08, 0, 0.2).withSlider());
 		params.addm("J", -1.0);
-		params.addm("H", 0.0);
+		params.addm("H", 0.65);
 		params.addm("R", 4600000);
 		params.add("L/R", 2.7826087);
 		params.add("R/dx", 46.0);
