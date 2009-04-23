@@ -40,19 +40,19 @@ public class Phi4App extends Simulation{
 
 	public void load(Control c) {
 		c.frameTogether("Grids", phiGrid, sfPlot, sfGrid);
-		params.add("Dynamics", new ChoiceValue("Phi4 NCOP","Phi4 COP","Phi4 corberi"));
-		params.addm("Zoom", new ChoiceValue("Yes", "No"));
+		params.add("Dynamics", new ChoiceValue("Phi4 corberi","Phi4 NCOP","Phi4 COP"));
+		params.addm("Zoom", new ChoiceValue("No", "Yes"));
 		params.add("Init Conditions", new ChoiceValue("Random Gaussian", "Read 1D Soln","Read From File", "Constant"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("T", 0.1);
 		params.addm("H", 0.6);
 		params.addm("R", 1.0);
 		params.addm("Random seed", 0);
-		params.addm("dx", 50000);
+		params.addm("dx", 50);
 		params.add("Magnetization", 0.0);
 		params.addm("Lp", 128);
 		params.addm("g", 1.0);
-		params.addm("r", -0.03);
+		params.addm("r", -0.000003);
 		params.addm("dt", 0.1);
 		params.add("mean phi");
 		params.add("Time");
@@ -67,6 +67,7 @@ public class Phi4App extends Simulation{
 		phiGrid.registerData(Lp,Lp,field.phi);
 		sfGrid.registerData(Lp, Lp, sf);
 //		sfPlot.setLogScale(false, true);
+		sfPlot.setAutoScale(true);
 		sfPlot.registerPoints("sf", k0, Color.BLUE);
 
 		if(flags.contains("Clear")){
