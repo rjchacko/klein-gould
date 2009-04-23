@@ -46,16 +46,20 @@ public class IsingField2DApp extends Simulation {
 	Plot ring = new Plot("Circle SF Ring");
 	Plot ringInput = new Plot("Input for Ring");
 	Plot dS_dtPlot = new Plot("SF change");
+	
 	StructureFactor sf;
     IsingField2D ising;
     SteepestDescentMin opt;
     ConjugateGradientMin min;
+    
     boolean cgInitialized = false;
 	boolean initFile = false;
-    Accumulator landscapeFiller;
+    
+	Accumulator landscapeFiller;
     Accumulator brLandscapeFiller;
     Accumulator sfChange;
     Accumulator sfSliceAcc;
+    
     public double [] inputSlice;
     public int lastClear;
     public int maxi=0;
