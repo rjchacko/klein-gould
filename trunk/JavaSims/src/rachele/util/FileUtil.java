@@ -13,6 +13,7 @@ import java.io.PrintWriter;
 
 import scikit.dataset.Accumulator;
 import scikit.dataset.DatasetBuffer;
+import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
 
 public class FileUtil {
@@ -109,6 +110,20 @@ public class FileUtil {
 		}
 	}
 
+	static public void printHistToFile(String fileName, Histogram hist){
+		DatasetBuffer data = hist.copyData();
+		int size = data.size();
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int i = 0; i < size; i++){
+				pw.println(data.x(i) + " " + data.y(i));
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	static public void printAccumToFile(String fileName, Accumulator acc, boolean errorBars){
 		DatasetBuffer data = acc.copyData();
 		int size = data.size();
