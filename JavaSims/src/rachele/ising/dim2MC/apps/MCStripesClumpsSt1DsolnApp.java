@@ -62,6 +62,7 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		params.add("Random seed", 0);
 		params.add("L", 256);//1<<9);
 		params.add("R", 92);//1<<6);
+		params.add("Jump Range", 1);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.02);
 		params.addm("J", -1.0);

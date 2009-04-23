@@ -58,8 +58,8 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 
 		c.frame(grid);
 		c.frame(sftPlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/OO_Svt/r100"));
-		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/noConservedOP/r100"));
+		params.add("Input 1D File",new FileValue("/Users/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Use 1D Soln", "Init Stripes from random"));
 		params.add("Random seed", 0);
