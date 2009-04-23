@@ -52,7 +52,7 @@ public class MCDisorderStripesApp extends Simulation{
 		
 		c.frame(grid);
 		c.frameTogether("plots", sftPlot, absMag);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/Stripe_Clump_Compare/testRuns"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/noConservedOP/testRuns"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
 		params.add("L", 1<<8);
