@@ -3,7 +3,9 @@ package kip.ising;
 public class NewmanZiff {
 	// number of sites
 	public int n;
-
+	
+	public enum Topology {HORIZONTAL, VERTICAL, CROSS, POINT};
+	
 	protected boolean wrap_horizontal = false;
 	protected boolean wrap_vertical = false;
 	protected boolean wrap_diagonal = false;
@@ -95,6 +97,14 @@ public class NewmanZiff {
 			(wrap_horizontal && wrap_vertical) ||
 			(wrap_horizontal && wrap_diagonal) ||
 			(wrap_vertical && wrap_diagonal);
+	}
+	
+	public Topology getTopology() {
+		if (horizontalHomology()) return Topology.HORIZONTAL;
+		if (verticalHomology()) return Topology.VERTICAL;
+		if (crossHomology()) return Topology.CROSS;
+		if (pointHomology()) return Topology.POINT;
+		return null;
 	}
 	
 	private void mergeRoots(int i, int j, int dx_i2j, int dy_i2j) {
