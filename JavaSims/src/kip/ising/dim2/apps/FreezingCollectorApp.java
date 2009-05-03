@@ -12,14 +12,18 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DirectoryValue;
+import scikit.util.FileUtil;
 import scikit.util.Utilities;
 
 
 public class FreezingCollectorApp extends Simulation {
     Grid grid = new Grid("Ising spins");
     Plot homPlot = new Plot("Homology");
-    Accumulator horz, vert, cross;
+    Plot eventsPlot = new Plot("Topological events");
+    Accumulator horz, vert, cross, topologicalEvents;
 	Ising2D sim;
+	double ratio;
 	int count;
 	
 	public static void main(String[] args) {
@@ -27,20 +31,21 @@ public class FreezingCollectorApp extends Simulation {
 	}
 
 	public void load(Control c) {
-		c.frame(grid, homPlot);
+		c.frame(grid, homPlot, eventsPlot);
 		
-		params.add("Client", new ChoiceValue("IsingZero2D", "Ising2D"));
-		params.add("Log samples", new ChoiceValue("Yes", "No"));
+		params.add("Write to disk", new ChoiceValue("No", "Yes"));
+		params.add("Output directory", new DirectoryValue());
 		params.add("Boundary", new ChoiceValue("Open", "Periodic"));
 		params.add("L", 256);
-		params.add("Ratio", 1.0);
 		params.add("Count max", 10000);
-		params.add("Time max", 5000);
+		
+		params.add("ratio");
 		params.add("count");
 		params.add("time");
 	}
 	
 	public void animate() {
+		params.set("ratio", ratio);
 		params.set("count", count);
 		params.set("time", Utilities.format(sim.time));
 		
@@ -48,58 +53,80 @@ public class FreezingCollectorApp extends Simulation {
 		homPlot.registerPoints("Horiz", horz, Color.BLUE);
 		homPlot.registerPoints("Vert", vert, Color.RED);
 		homPlot.registerPoints("Cross", cross, Color.BLACK);
+		eventsPlot.registerPoints("Events", topologicalEvents, Color.BLACK);
 	}
 	
 	public void clear() {
 		grid.clear();
 		homPlot.clear();
+		eventsPlot.clear();
 	}
 	
 	
 	public void run() {
+		boolean writeToDisk = params.sget("Write to disk").equals("Yes");
+		String outputDir = params.sget("Output directory");
+		System.out.println(outputDir);
+		
 		boolean openBoundary = params.sget("Boundary").equals("Open");
-		int L2 = params.iget("L");
-		int L1 = (int) (L2 * params.fget("Ratio"));
+		int L = params.iget("L");
 		
 		int cntMax = params.iget("Count max");
-		int timeMax = params.iget("Time max");
-		boolean logscale = params.sget("Log samples").equals("Yes");
 		
-		horz = new Accumulator();
-		vert = new Accumulator();
-		cross = new Accumulator();
-		horz.enableErrorBars(true);
-		vert.enableErrorBars(true);
-		cross.enableErrorBars(true);
+		double[] targetTimes = {50., 100., 200., 500., 2000.};
+		double[] aspectRatios = {1.};
 		
-		for (count = 0; count < cntMax; count++) {
-			if (params.sget("Client").equals("Ising2D"))
-				sim = new Ising2D(count, L1, L2, 0, openBoundary);
-			else
-				sim = new IsingZero2D(count, L1, L2, 0, openBoundary);
-			sim.openBoundary = openBoundary;
+//		double[] targetTimes = {200.};
+//		double[] aspectRatios = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.};
+		
+		for (double r : aspectRatios) {
+			ratio = r;
+			int L1 = L;
+			int L2 = (int) (L/r);
+		    
+			horz = new Accumulator();
+			vert = new Accumulator();
+			cross = new Accumulator();
+			horz.enableErrorBars(true);
+			vert.enableErrorBars(true);
+			cross.enableErrorBars(true);
+			topologicalEvents = new Accumulator();
 			
-			for (int iter = 0; ; iter++) {
-				double targetTime = targetTime(iter, logscale);
-				if (targetTime > timeMax)
-					break;
-				sim.runUntil(targetTime);
-				Job.animate();
-				sampleHomology(targetTime);
+			for (count = 0; count < cntMax; count++) {
+				// sim = new Ising2D(count, L1, L2, 0, openBoundary);
+				sim = new IsingZero2D(count, L1, L2, 0, openBoundary);
+
+				PercolationSite2d.Topology top1=null, top2;
+
+				for (double t : targetTimes) {
+					sim.runUntil(t);
+
+					top2 = sampleHomology(t);
+					if (top1 != null)
+						topologicalEvents.accum(t, top1.equals(top2) ? 0 : 1);
+					top1 = top2;
+
+					Job.animate();
+				}
+			}
+			
+			if (writeToDisk) {
+				String fname = FileUtil.getEmptyDirectory(outputDir, ""+r).toString();
+				System.out.println("Writing to : " + fname);
+				FileUtil.dumpColumns(fname+"/horiz.txt", horz.copyData().columns());
+				FileUtil.dumpColumns(fname+"/vert.txt", vert.copyData().columns());
+				FileUtil.dumpColumns(fname+"/cross.txt", cross.copyData().columns());
 			}
 		}
 	}
 	
-	private double targetTime(int iter, boolean logscale) {
-		return logscale ? Math.exp(iter*0.5) : iter*10;
-	}
-	
-	private void sampleHomology(double targetTime) {
+	private PercolationSite2d.Topology sampleHomology(double targetTime) {
 		PercolationSite2d nz = new PercolationSite2d(sim.L1, sim.L2, sim.openBoundary);
 		nz.occupyAndBondSites(sim.spin, 1);
 		nz.findHomologies();
 		horz.accum(targetTime, nz.horizontalHomology() ? 1 : 0);
 		vert.accum(targetTime, nz.verticalHomology() ? 1 : 0);
 		cross.accum(targetTime, (nz.crossHomology() || nz.pointHomology()) ? 1 : 0);
+		return nz.getTopology();
 	}
 }
