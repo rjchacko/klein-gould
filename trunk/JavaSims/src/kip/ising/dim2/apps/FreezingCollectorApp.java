@@ -67,18 +67,20 @@ public class FreezingCollectorApp extends Simulation {
 		boolean writeToDisk = params.sget("Write to disk").equals("Yes");
 		String outputDir = params.sget("Output directory");
 		System.out.println(outputDir);
+		String results = "";
 		
 		boolean openBoundary = params.sget("Boundary").equals("Open");
 		int L = params.iget("L");
 		
 		int cntMax = params.iget("Count max");
 		
-		double[] targetTimes = {50., 100., 200., 500., 2000.};
-		double[] aspectRatios = {1.};
+//		double[] targetTimes = {50., 100., 200., 500., 2000.};
+//		double[] aspectRatios = {1.};
 		
-//		double[] targetTimes = {200.};
-//		double[] aspectRatios = {0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.};
+		double[] targetTimes = {200.};
+		double[] aspectRatios = {0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.};
 		
+		int seed = 0;
 		for (double r : aspectRatios) {
 			ratio = r;
 			int L1 = L;
@@ -94,7 +96,7 @@ public class FreezingCollectorApp extends Simulation {
 			
 			for (count = 0; count < cntMax; count++) {
 				// sim = new Ising2D(count, L1, L2, 0, openBoundary);
-				sim = new IsingZero2D(count, L1, L2, 0, openBoundary);
+				sim = new IsingZero2D(seed++, L1, L2, 0, openBoundary);
 
 				PercolationSite2d.Topology top1=null, top2;
 
@@ -116,7 +118,21 @@ public class FreezingCollectorApp extends Simulation {
 				FileUtil.dumpColumns(fname+"/horiz.txt", horz.copyData().columns());
 				FileUtil.dumpColumns(fname+"/vert.txt", vert.copyData().columns());
 				FileUtil.dumpColumns(fname+"/cross.txt", cross.copyData().columns());
+				results +=
+					r+" "+
+					horz.eval(horz.maxKey())+" "+
+					horz.evalError(horz.maxKey())+" "+
+					vert.eval(vert.maxKey())+" "+
+					vert.evalError(vert.maxKey())+" "+
+					cross.eval(cross.maxKey())+" "+
+					cross.evalError(cross.maxKey())+"\n";
 			}
+		}
+		
+		if (writeToDisk) {
+			String fname = outputDir + "/collected.txt";
+			System.out.println("Writing to : " + fname);
+			FileUtil.dumpString(fname, results);
 		}
 	}
 	
