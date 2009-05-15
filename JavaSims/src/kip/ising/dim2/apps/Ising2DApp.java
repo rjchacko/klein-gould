@@ -3,12 +3,14 @@ package kip.ising.dim2.apps;
 import kip.ising.PercolationSite2d;
 import kip.ising.dim2.Ising2D;
 import kip.ising.dim2.IsingZero2D;
+import scikit.graphics.GrayScale;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 //import scikit.util.DoubleArray;
+import scikit.util.DoubleArray;
 import scikit.util.Utilities;
 
 
@@ -26,12 +28,12 @@ public class Ising2DApp extends Simulation {
 	public void load(Control c) {
 		c.frame(grid, perc);
 		
-		params.add("Seed", 0);
+		params.add("Seed", 69);
 		params.add("Boundary", new ChoiceValue("Periodic", "Open"));
-		params.add("L", 256);
+		params.add("L", 1024);
 		params.add("Ratio", 1.0);
 		params.add("T", 0.0);
-		params.addm("dt", 1.0);
+		params.addm("dt", 100.0);
 		params.add("time");
 		params.add("homology");
 	}
@@ -48,6 +50,8 @@ public class Ising2DApp extends Simulation {
 		
 		for (int i = 0; i < clusters.length; i++)
 			clusters[i] = nz.clusterSize(i);
+		colorSitesSpecial(clusters);
+		perc.setColors(new GrayScale());
 		perc.registerData(sim.L1, sim.L2, clusters);
 		
 		nz.findHomologies();
@@ -56,17 +60,17 @@ public class Ising2DApp extends Simulation {
 				+ (nz.crossHomology() ? "cross ":""));
 	}
 	
-//	private void colorSitesSpecial(double a[]) {
-//		double m = DoubleArray.max(a);
-//		for (int i = 0; i < a.length; i++) {
-//			if (a[i] == 0)
-//				;
-//			else if (a[i] == m)
-//				a[i] = 2;
-//			else
-//				a[i] = 1;
-//		}
-//	}
+	private void colorSitesSpecial(double a[]) {
+		double m = DoubleArray.max(a);
+		for (int i = 0; i < a.length; i++) {
+			if (a[i] == 0)
+				;
+			else if (a[i] == m)
+				a[i] = 2;
+			else
+				a[i] = 1;
+		}
+	}
 	
 //	private void arrangeSpecial() {
 //		for (int i = 0; i < sim.N; i++) {
