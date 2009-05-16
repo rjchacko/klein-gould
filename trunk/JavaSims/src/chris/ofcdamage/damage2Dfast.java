@@ -22,7 +22,7 @@ public class damage2Dfast extends ofc2Dfast{
 		int dN;
 		
 		Nl0 = params.iget("Number of Lives");
-		dN  = params.iget("Full width of NL");
+		dN  = params.iget("NL Width");
 		fs  = new int[3*N];
 		
 		Ndead   = 0;
@@ -36,7 +36,7 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		for (int jj = 0 ; jj < N ; jj++){
 			liveNbs[jj] = qN;
-			Lives[jj]   = (dN > 0) ? Nl0 + getRand().nextInt(2*dN)-dN : Nl0;
+			Lives[jj]   = (dN > 0) ? Nl0 + getRand().nextInt(2*dN+1)-dN : Nl0; // rand in [0 , 2*dN]
 		}
 		
 		if(dN == Nl0){
@@ -66,7 +66,7 @@ public class damage2Dfast extends ofc2Dfast{
 		double release;
 		int a, b, tmpfail, tmpnb;
 		boolean lastlife = false;
-		
+		GR = 0;
 		// force failure
 		forceFailure(mct, takedata);
 		
@@ -95,10 +95,9 @@ public class damage2Dfast extends ofc2Dfast{
 					stress[tmpnb] += release;
 					if((stress[tmpnb] > sf[tmpnb])){
 						fs[newindex++] = tmpnb;	
-						failed[tmpnb] = true;
+						failSite(tmpnb);
 					}
 				}
-				GR += newindex - index;
 				if(lastlife){
 					lastlife = false;
 					killSite(tmpfail);
@@ -114,10 +113,11 @@ public class damage2Dfast extends ofc2Dfast{
 	protected void forceFailure(int mct, boolean takedata){
 		// force failure in the zero velocity limit
 
-		double dsigma, tmpbar;
+		double dsigma, tmpbar, dsmin;
 		int jjmax;
 		index = 0;
 		newindex = index;
+		dsmin    = 1e5;
 		
 		// force failure in the zero velocity limit
 		jjmax = 0;
@@ -125,25 +125,26 @@ public class damage2Dfast extends ofc2Dfast{
 			tmpbar = 0;
 			Omega  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
-				// find next site to fail
-				if( (sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) jjmax = jj;
-				
+				// find next site to fail (NB, must be alive)
+				if( (sf[jj]-stress[jj]) < dsmin && !failed[jj]){
+					jjmax = jj;
+					dsmin = sf[jj]-stress[jj];
+				}
 				// calculate metric (PART 1)
-				sbar[jj] += stress[jj];
-				tmpbar   += sbar[jj];
+				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
+				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
 			}
 			dsigma = sf[jjmax]-stress[jjmax];
-			tmpbar = tmpbar / N;
+			tmpbar = tmpbar / (N-Ndead);
 			Omega  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
 				// add stress to fail site
-				stress[jj] += dsigma;
-				
+				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 				//calculate metric (PART 2)
-				Omega += (sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
 			}
 			//calculate metric (PART 3)
-			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N));
+			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
 
 			// save and/or write data
 			if(mct%dlength == 0 && mct > 0){
@@ -154,19 +155,28 @@ public class damage2Dfast extends ofc2Dfast{
 		else{
 			for (int jj = 0 ; jj < N ; jj++){
 				// find next site to fail
-				if( (sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) jjmax = jj;
+				if( (sf[jj]-stress[jj]) < dsmin && !failed[jj]){
+					jjmax = jj;
+					dsmin = sf[jj]-stress[jj];
+				}
 			}
 			// add stress to fail site
 			dsigma = sf[jjmax]-stress[jjmax];
 			for (int jj = 0 ; jj < N ; jj++){
-				stress[jj] += dsigma;
+				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 			}
 		}
 				
 		fs[newindex++] = jjmax;
-		failed[jjmax]  = true;
-		GR             = 1;
+		failSite(jjmax);
 		
+		return;
+	}
+	
+	protected void failSite(int index){
+		
+		GR++;
+		failed[index]  = true;
 		return;
 	}
 	
@@ -212,10 +222,10 @@ public class damage2Dfast extends ofc2Dfast{
 	
 	protected void saveData(int mct, boolean EQ){
 		
-		data[0][mct%dlength] = Omega;
+		data[0][mct%dlength] = 1./Omega;
 		data[1][mct%dlength] = GR;
 		data[2][mct%dlength] = MathUtil.bool2bin(EQ);
-		data[3][mct%dlength] = Ndead; 
+		data[3][mct%dlength] = 1. - (double)(Ndead)/(double)(N); 
 		return;
 	}
 	
