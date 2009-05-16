@@ -25,7 +25,6 @@ public class grScalingApp extends Simulation{
 	private Grid gridS, gridD;
 	private ColorGradient cg = new ColorGradient();
 	private DecimalFormat fmt = new DecimalFormat("0000000");
-	@SuppressWarnings("unused")
 	private DecimalFormat cfmt = new DecimalFormat("00");
 	private damage2Dfast model;
 	
@@ -64,97 +63,37 @@ public class grScalingApp extends Simulation{
 	}
 	
 	public void run() {
-	
-	ccl  = 0;
-	while(true){	
 
-		ccl++;
-		phis = 0.05;		
+		ccl  = 0;
+		while(ccl < 25){	
 
-		// Setup model
-		params.set("Status", "Intializing");
-		params.set("Dead Sites", "-");
-		Job.animate();
-		L      = params.iget("Lattice Size");
-		N      = L*L;
-		model  = new damage2Dfast(params);
-		eqt    = params.iget("Equil Time");
-		simt   = params.iget("Sim Time");
-		dmt    = simt;
-		Ndead  = 0;
+			ccl++;
+			phis = 0.05;		
 
-	//	model.setBN(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(0.));
-		model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
+			// Setup model
+			params.set("Status", "Intializing");
+			params.set("Dead Sites", "-");
+			Job.animate();
+			L      = params.iget("Lattice Size");
+			N      = L*L;
+			model  = new damage2Dfast(params);
+			eqt    = params.iget("Equil Time");
+			simt   = params.iget("Sim Time");
+			dmt    = simt;
+			Ndead  = 0;
 
-
-		params.set("Status", "Ready");
-		Job.animate();
-
-		
-		draw = false;
-
-		// Equilibrate the system
-
-		for (int jj = 0 ; jj < eqt ; jj++){
-			model.evolve(jj,false);
-			if(jj%500 == 0){
-				params.set("Status", (jj-eqt));
-				Job.animate();
-			}
-		}
-		
-		// Setup I/O
-		if(params.sget("Animate").equals("Draw")){
-			setupIO(false);
-		}
-		else if (params.sget("Animate").equals("Record")){
-			setupIO(true);
-		}
-		
-		// Simulate the model without damage
-		for (int jj = 0 ; jj < simt ; jj++){
-			model.evolve(jj,true);
-			if(jj%500 == 0){
-				params.set("Status", jj);
-				Job.animate();
-				if(record) takePicture(jj);
-			}
-		}
-		
-		// Simulate the model with damage
-		
-		while(Ndead < N){
-
-			while(Ndead < phis*N){
-				Ndead = model.evolveD(dmt,true);
-				if(dmt%500 == 0){
-					params.set("Status", (dmt));
-				}
-				params.set("Dead Sites", Ndead);
-				Job.animate();
-				if(record) takePicture(dmt);
-				dmt++;
-			}
-	
-			// CHECK IF N = NDEAD
-
-			// now phi != 0
-			if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(dmt);
-
-	
-			// CLEAR DATA NOW !!!!!!!!!!!
-			// FIND updated files with better metric calculations
-			// clear data just needs to reset sbar
-			// add setBname method
-
-
-			// change save file name
-		//	model.setBN(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(10*phis));
+			model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(0.));
 			model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
 
-			// re-equilibrate
+
+			params.set("Status", "Ready");
+			Job.animate();
+
 
 			draw = false;
+
+			// Equilibrate the system
+
 			for (int jj = 0 ; jj < eqt ; jj++){
 				model.evolve(jj,false);
 				if(jj%500 == 0){
@@ -162,9 +101,8 @@ public class grScalingApp extends Simulation{
 					Job.animate();
 				}
 			}
-			
-			// Setup I/O
 
+			// Setup I/O
 			if(params.sget("Animate").equals("Draw")){
 				setupIO(false);
 			}
@@ -172,8 +110,7 @@ public class grScalingApp extends Simulation{
 				setupIO(true);
 			}
 
-			// simulate system in EQ mode with phi != 0 
-			
+			// Simulate the model without damage
 			for (int jj = 0 ; jj < simt ; jj++){
 				model.evolve(jj,true);
 				if(jj%500 == 0){
@@ -182,21 +119,74 @@ public class grScalingApp extends Simulation{
 					if(record) takePicture(jj);
 				}
 			}
-			phis += 0.05;
-			dmt    = simt;	
-			// reset all data collection !!!!!	
-			
+
+			// Simulate the model with damage
+
+			while(Ndead < N){
+
+				// simulate with damage until phi >= phis
+				while(Ndead < phis*N){
+					Ndead = model.evolveD(dmt,true);
+					if(dmt%500 == 0){
+						params.set("Status", (dmt));
+					}
+					params.set("Dead Sites", Ndead);
+					Job.animate();
+					if(record) takePicture(dmt);
+					dmt++;
+				}
+
+				// write and clear data
+				if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(dmt);
+
+				if(Ndead >= N) break;
+
+				model.clearData();
+
+				// change save file name
+				model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(10*phis));
+				model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
+
+				// re-equilibrate
+				draw = false;
+				for (int jj = 0 ; jj < eqt ; jj++){
+					model.evolve(jj,false);
+					if(jj%500 == 0){
+						params.set("Status", (jj-eqt));
+						Job.animate();
+					}
+				}
+
+				// Setup I/O
+				if(params.sget("Animate").equals("Draw")){
+					setupIO(false);
+				}
+				else if (params.sget("Animate").equals("Record")){
+					setupIO(true);
+				}
+
+				// simulate system in EQ mode with phi != 0 
+				for (int jj = 0 ; jj < simt ; jj++){
+					model.evolve(jj,true);
+					if(jj%500 == 0){
+						params.set("Status", jj);
+						Job.animate();
+						if(record) takePicture(jj);
+					}
+				}
+				phis += 0.05;
+				dmt    = simt;				
+			}
+
+			if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(dmt);
+
+			params.set("Status", "Done");
+			Job.animate();
+
+
 		}
-
-		if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(dmt);
 		
-		params.set("Status", "Done");
-		Job.animate();
-
-
-	}
-		
-	//	return;
+		return;
 	}
 
 	public void animate() {
