@@ -6,7 +6,7 @@ import scikit.jobs.params.Parameters;
 
 public class damage2Dfast extends ofc2Dfast{
 	
-	private int Ndead, liveNbs[], Nl0, Lives[];
+	private int liveNbs[], Nl0, Lives[];
 	
 	
 	public damage2Dfast(Parameters params){

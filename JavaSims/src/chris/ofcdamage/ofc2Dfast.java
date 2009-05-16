@@ -17,7 +17,7 @@ public class ofc2Dfast {
 	private double sr0, sf0, a0, dsr, dsf, da;
 	protected double Omega, sr[], sf[], stress[],sbar[], data[][];
 	private int L, R, nbArray[], nbSeed;
-	protected int N, qN, fs[], GR, index, newindex;
+	protected int N, qN, fs[], GR, index, newindex, Ndead;
 	private boolean srn, sfn, an;
 	protected boolean failed[];
 	private String outdir, bcs, bname;
@@ -60,7 +60,8 @@ public class ofc2Dfast {
 		sfn  = (dsf > 0);
 		an   = (da > 0);
 		
-		N = L*L;
+		N     = L*L;
+		Ndead = 0;
 		
 		sr      = new double[N];
 		sf      = new double[N];
@@ -190,10 +191,10 @@ public class ofc2Dfast {
 				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 				
 				//calculate metric (PART 2)
-				Omega += (sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
 			}
 			//calculate metric (PART 3)
-			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N));
+			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
 
 			// save and/or write data
 			if(mct%dlength == 0 && mct > 0){
@@ -337,6 +338,12 @@ public class ofc2Dfast {
 		
 		return bname;
 	}
+	
+	public void setBname(String bn){
+		
+		bname = bn;
+		return;
+	}
 
 	protected Random getRand() {
 	
@@ -346,5 +353,16 @@ public class ofc2Dfast {
 	protected int getNbr(int ffs, int nbindex){
 		
 		return nbs.getJ(ffs,nbSeed,nbArray,nbindex);
+	}
+	
+	public void clearData(){
+		
+		for(int jj = 0 ; jj < N ; jj++){
+			for (int kk = 0 ; kk < dcat ; kk++){
+				data[kk][jj] = 0;
+			}
+			sbar[jj] = 0;
+		}
+		return;
 	}
 }
