@@ -66,9 +66,10 @@ public class damage2Dfast extends ofc2Dfast{
 		double release;
 		int a, b, tmpfail, tmpnb;
 		boolean lastlife = false;
-		GR = 0;
+		
 		// force failure
 		forceFailure(mct, takedata);
+		GR = 1; // the seed site
 		
 		// discharge forced site(s) and repeat until lattice is stable
 		while(newindex > index){

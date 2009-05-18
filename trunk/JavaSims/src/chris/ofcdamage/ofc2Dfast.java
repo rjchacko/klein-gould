@@ -135,10 +135,10 @@ public class ofc2Dfast {
 		
 		int a,b, tmpfail, tmpnb;
 		double release;
-		GR = 0;
 	
 		// force failure in the zero velocity limit
 		forceZeroVel(mct, takedata);
+		GR = 1; // the seed site
 		
 		// discharge site and repeat until lattice is stable
 		while(newindex > index){
@@ -342,6 +342,7 @@ public class ofc2Dfast {
 	public void setBname(String bn){
 		
 		bname = bn;
+		configOF();
 		return;
 	}
 
