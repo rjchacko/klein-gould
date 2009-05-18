@@ -357,12 +357,25 @@ public class ofc2Dfast {
 	
 	public void clearData(){
 		
-		for(int jj = 0 ; jj < N ; jj++){
-			for (int kk = 0 ; kk < dcat ; kk++){
-				data[kk][jj] = 0;
-			}
-			sbar[jj] = 0;
+		if (N > dlength){
+			for (int jj = 0 ; jj < N ; jj++){
+				if(jj < dlength){
+					for (int kk = 0 ; kk < dcat ; kk++){
+						data[kk][jj] = 0;
+					}
+				}
+				sbar[jj] = 0;
+			}	
 		}
+		else{
+			for (int jj = 0 ; jj < dlength ; jj++){
+				for (int kk = 0 ; kk < dcat ; kk++){
+					data[kk][jj] = 0;
+				}
+				if(jj < N) sbar[jj] = 0;
+			}	
+		}
+
 		return;
 	}
 }
