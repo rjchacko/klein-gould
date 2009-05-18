@@ -69,7 +69,8 @@ public class grScalingApp extends Simulation{
 		while(ccl < 25){	
 
 			ccl++;
-			phis = 0.05;		
+			phis = 0.05;	
+			params.set("Random Seed", params.iget("Random Seed")+1);
 
 			// Setup model
 			params.set("Status", "Intializing");
