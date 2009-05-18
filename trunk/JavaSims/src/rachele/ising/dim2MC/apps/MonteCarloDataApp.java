@@ -82,6 +82,7 @@ public class MonteCarloDataApp extends Simulation{
 		//params.add("N", 1<<8);
 		params.add("R", 92);//1<<6);
 		params.add("Initial magnetization", 0.0);
+		params.addm("Jump Range", 46);
 		params.addm("T", 0.03);
 		params.addm("J", -1.0);
 		params.addm("h", 0.8);

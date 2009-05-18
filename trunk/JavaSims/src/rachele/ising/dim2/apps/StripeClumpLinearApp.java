@@ -38,18 +38,19 @@ public class StripeClumpLinearApp extends Simulation{
 	}
 	
 	public void load(Control c) {
-		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/config"));
+		params.add("1D Input File", new FileValue("/Users/erdomi/data/lraim/configs1dAutoName/L128R45T0.02h0.6"));
 		params.add("Data Dir", new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/StripeClumpLinearApp"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation"));
+		params.addm("Dynamics", new ChoiceValue("Glauber", "Langevin", "Conserved"));
 		params.add("Init Conditions", new ChoiceValue("Read 1D Soln", "Read From File","Random Gaussian"));
 		params.addm("Approx", new ChoiceValue("None", "Modified Dynamics"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
-		params.addm("T", 0.04);
-		params.addm("H", 0.80);
+		params.addm("T", 0.02);
+		params.addm("H", 0.60);
 		params.addm("tolerance", 0.0001);
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
@@ -72,5 +73,6 @@ public class StripeClumpLinearApp extends Simulation{
 		ising = new IsingField2D(params);
 		sc = new StripeClumpFieldSim(ising, params);
 		Job.animate();
+//		System.out.println("Lp = "  + ising.Lp);
 	}
 }

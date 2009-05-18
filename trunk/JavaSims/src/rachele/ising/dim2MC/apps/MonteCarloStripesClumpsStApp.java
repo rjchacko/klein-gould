@@ -65,6 +65,7 @@ public class MonteCarloStripesClumpsStApp extends Simulation{
 		params.add("Random seed", 0);
 		params.add("L", 1<<7);
 		params.add("R", 46);//1<<6);
+		params.addm("Jump Range", 46);
 		params.add("Initial magnetization", 0.0);
 		params.addm("T", 0.04);
 		params.addm("J", -1.0);

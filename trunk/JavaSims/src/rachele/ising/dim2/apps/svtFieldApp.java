@@ -49,12 +49,14 @@ public class svtFieldApp extends Simulation{
 	int ky;
 	double kRChunk; //=2piR/L
 	public String writeDir;
+	String hFileName, vFileName, nFileName, dFileName, nAbsFileName, dAbsFileName;
+	String q1DriftFileName, q2DriftFileName;
 
 	//RUN OPTIONS
 	boolean writeToFile = false;
 	boolean accumsOn = false;
-	boolean calcContribs = false;
-	int accNo = 1;
+	boolean calcContribs = true;
+	int accNo = 6;
 	
 	Accumulator [] etaAcc = new Accumulator [accNo];
 	Accumulator [] etaLTAcc = new Accumulator [accNo];
@@ -104,21 +106,21 @@ public class svtFieldApp extends Simulation{
 		c.frameTogether("Grids", phiGrid, vSlice, hSlice, contribPlot, absContribPlot, contribPlotK, driftGrid, plotSF);
 //		c.frame(EtavTime);
 //		c.frameTogether("etas", etaDot, eta2);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/stage1/constantH/"));
-		params.add("2D Input File", new FileValue("/home/erdomi/data/lraim/configs/inputConfig"));
-		params.add("1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
-		params.add("New 1D Input File", new FileValue("/home/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
-		params.add("Dynamics", new ChoiceValue("Glauber","Conserved Finite Diff", "Phi4","Conserved", "Langevin"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/testruns"));//data/lraim/stripeToClumpInvestigation/ftResults/svtFieldApp/stage1/constantH/"));
+		params.add("2D Input File", new FileValue("/Users/erdomi/data/lraim/configs/inputConfig"));
+		params.add("1D Input File", new FileValue("/Users/erdomi/data/lraim/configs1dAutoName/L128R45T0.08h0.6"));
+		params.add("New 1D Input File", new FileValue("/Users/erdomi/data/lraim/configs1dAutoName/L128R45T0.04h0.8"));
+		params.add("Dynamics", new ChoiceValue( "Langevin", "Glauber","Conserved Finite Diff", "Phi4","Conserved"));
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
 		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M"));
-		params.add("Init Conditions", new ChoiceValue("Random Gaussian", "Read 1D Soln","Read From File", "Constant"));
+		params.add("Init Conditions", new ChoiceValue("Read 1D Soln","Random Gaussian", "Read From File", "Constant"));
 		params.addm("Approx", new ChoiceValue( "Modified Dynamics", "None"));
 		params.addm("Noise", new DoubleValue(1.0, 0.0, 1.0).withSlider());
 		params.addm("Horizontal Slice", new DoubleValue(0.42, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
-		params.addm("T", 0.1);
+		params.addm("T", 0.02);
 		params.addm("H", 0.6);
 		params.addm("dT", 1.0);
 		params.addm("tolerance", 0.01);
@@ -264,23 +266,38 @@ public class svtFieldApp extends Simulation{
 				}else if(dynamics == "Conserved"){
 					ising.simulateConserved();
 				}else if (dynamics == "Conserved Finite Diff"){
-					ising.simulateConservedFiniteDiffMob();
+					ising.simulateConservedFiniteDiff();
+//					ising.simulateConservedFiniteDiffMob();
 				}
-				driftAcc.accum(ising.time(),ising.driftContrib);
-				noiseAcc.accum(ising.time(),1.0-ising.driftContrib);
-				absDriftAcc.accum(ising.time(),ising.absDriftContrib);
-				absNoiseAcc.accum(ising.time(),ising.absNoiseContrib);
+				if(accumsOn){
+					driftAcc.accum(ising.time(),ising.driftContrib);
+					noiseAcc.accum(ising.time(),1.0-ising.driftContrib);
+					absDriftAcc.accum(ising.time(),ising.absDriftContrib);
+					absNoiseAcc.accum(ising.time(),ising.absNoiseContrib);
+				}else{
+					FileUtil.printlnToFile(dFileName, ising.time(), ising.driftContrib);
+					FileUtil.printlnToFile(nFileName, ising.time(), 1.0-ising.driftContrib);
+					FileUtil.printlnToFile(dAbsFileName, ising.time(), ising.absDriftContrib);
+					FileUtil.printlnToFile(nAbsFileName, ising.time(), ising.absNoiseContrib);
+				}
 //				double [] noiseFT = fft.calculate2DSF(ising.noiseTermC, false, false);
 				double [] driftFT = fft.calculate2DSF(ising.driftTermC, false, false);
 				int modeNo = params.iget("ky");
 				System.out.println("k mag = " + 2*Math.PI*ising.R*modeNo/ising.L);
-				drift0acc.accum(ising.time(),driftFT[0]/(Lp*Lp*ising.mean(driftFT)));
-				drift2sumAcc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo]+driftFT[modeNo*Lp]+driftFT[Lp*Lp-Lp*modeNo])/(Lp*Lp*ising.mean(driftFT)));
-				drift2acc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo])/(Lp*Lp*ising.mean(driftFT)));
+				if(accumsOn){
+					drift0acc.accum(ising.time(),driftFT[0]/(Lp*Lp*ising.mean(driftFT)));
+					drift2sumAcc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo]+driftFT[modeNo*Lp]+driftFT[Lp*Lp-Lp*modeNo])/(Lp*Lp*ising.mean(driftFT)));
+					drift2acc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo])/(Lp*Lp*ising.mean(driftFT)));
+				}
 				double [] sf = fft.calculate2DSF(ising.phi, false, false);
-				sf_hAcc.accum(ising.time(),sf[modeNo]+sf[Lp-modeNo]);
-				sf_vAcc.accum(ising.time(),sf[modeNo*Lp]+sf[Lp*Lp-Lp*modeNo]);
-				writeAccumsToFile();
+				if(accumsOn){
+					sf_hAcc.accum(ising.time(),sf[modeNo]+sf[Lp-modeNo]);
+					sf_vAcc.accum(ising.time(),sf[modeNo*Lp]+sf[Lp*Lp-Lp*modeNo]);
+					writeAccumsToFile();
+				}else{
+					FileUtil.printlnToFile(hFileName, ising.time(), (sf[modeNo]+sf[Lp-modeNo])/2.0);
+					FileUtil.printlnToFile(vFileName, ising.time(), (sf[modeNo*Lp]+sf[Lp*Lp-Lp*modeNo])/2.0);
+				}
 //				recordContribToFile();
 			}else{
 				if (dynamics == "Langevin"){
@@ -486,6 +503,30 @@ public class svtFieldApp extends Simulation{
 		phi0 = ising.getSymmetricSlice(fileName);
 		fileName = params.sget("New 1D Input File");
 		unstableSoln = ising.getSymmetricSlice(fileName);
+		
+		hFileName = params.sget("Data Dir")+ File.separator + "h";
+		FileUtil.initFile(hFileName, params, "horizontal structure factor");
+		
+		vFileName = params.sget("Data Dir") + File.separator + "v";
+		FileUtil.initFile(vFileName, params, "vertical structure factor");
+		
+		dFileName = params.sget("Data Dir") + File.separator + "d";
+		FileUtil.initFile(dFileName, params, "normalized drift term contribution");
+		
+		nFileName = params.sget("Data Dir") + File.separator + "n";
+		FileUtil.initFile(nFileName, params, "normalized noise term contribution");
+		
+		dAbsFileName = params.sget("Data Dir") + File.separator + "dA";
+		FileUtil.initFile(dAbsFileName, params, "absolute drift term contribution");
+		
+		nAbsFileName = params.sget("Data Dir") + File.separator + "nA";
+		FileUtil.initFile(nAbsFileName, params, "absolute noise term contribution");
+		
+		q1DriftFileName = params.sget("Data Dir") + File.separator + "q1";
+		FileUtil.initFile(q1DriftFileName, params, "contribution to the drift term from one q value");
+		
+		q2DriftFileName = params.sget("Data Dir") + File.separator + "q2";
+		FileUtil.initFile(q1DriftFileName, params, "contribution to the drift term from one q value");
 	}	
 
     private void write1Dconfig(){
