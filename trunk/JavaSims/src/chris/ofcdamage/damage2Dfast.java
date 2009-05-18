@@ -22,7 +22,7 @@ public class damage2Dfast extends ofc2Dfast{
 		int dN;
 		
 		Nl0 = params.iget("Number of Lives");
-		dN  = params.iget("NL Width");
+		dN  = params.iget("NL width");
 		fs  = new int[3*N];
 		
 		Ndead   = 0;

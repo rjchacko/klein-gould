@@ -29,7 +29,7 @@ public class grScalingApp extends Simulation{
 	private damage2Dfast model;
 	
 	public static void main(String[] args) {
-		new Control(new fastDamageApp(), "Damage Parameters");
+		new Control(new grScalingApp(), "Damage Parameters");
 	}
 	
 	public void load(Control c) {
@@ -43,17 +43,18 @@ public class grScalingApp extends Simulation{
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
 		params.add("Equil Time", 500000);
 		params.add("Sim Time", 500000);
-		params.add("Number of Lives",(int) 5);
-		params.add("Full width of NL", (int) 0);
+		params.add("Number of Lives",(int) 10);
+		params.add("NL width", (int) 8);
 		params.add("Failure Stress (\u03C3_f)", 2.);
 		params.add("\u03C3_f width", 0.);
 		params.add("Residual Stress (\u03C3_r)", 1.);
-		params.add("\u03C3_r width", 0.05);
-		params.add("Dissipation (\u03B1)", 0.05);
+		params.add("\u03C3_r width", 0.2);
+		params.add("Dissipation (\u03B1)", 0.1);
 		params.add("\u03B1 width", 0.);
 		params.add("Animate", new ChoiceValue("Off","Draw","Record"));
 		params.add("Status");
 		params.add("Dead Sites");
+		params.add("Mode");
 		
 		gridS = new Grid("Stress");
 		gridD = new Grid("Damage");
@@ -87,6 +88,7 @@ public class grScalingApp extends Simulation{
 
 
 			params.set("Status", "Ready");
+			params.set("Mode","Equilibrate");
 			Job.animate();
 
 
@@ -110,6 +112,7 @@ public class grScalingApp extends Simulation{
 				setupIO(true);
 			}
 
+			params.set("Mode","Earthquake");
 			// Simulate the model without damage
 			for (int jj = 0 ; jj < simt ; jj++){
 				model.evolve(jj,true);
@@ -125,6 +128,7 @@ public class grScalingApp extends Simulation{
 			while(Ndead < N){
 
 				// simulate with damage until phi >= phis
+				params.set("Mode","Damage");
 				while(Ndead < phis*N){
 					Ndead = model.evolveD(dmt,true);
 					if(dmt%500 == 0){
@@ -134,6 +138,7 @@ public class grScalingApp extends Simulation{
 					Job.animate();
 					if(record) takePicture(dmt);
 					dmt++;
+					if(Ndead >= N) break;
 				}
 
 				// write and clear data
@@ -144,10 +149,11 @@ public class grScalingApp extends Simulation{
 				model.clearData();
 
 				// change save file name
-				model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(10*phis));
+				model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(100*phis));
 				model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
 
 				// re-equilibrate
+				params.set("Mode","Equilibrate");
 				draw = false;
 				for (int jj = 0 ; jj < eqt ; jj++){
 					model.evolve(jj,false);
@@ -165,7 +171,8 @@ public class grScalingApp extends Simulation{
 					setupIO(true);
 				}
 
-				// simulate system in EQ mode with phi != 0 
+				// simulate system in EQ mode with phi != 0
+				params.set("Mode","Earthquake");
 				for (int jj = 0 ; jj < simt ; jj++){
 					model.evolve(jj,true);
 					if(jj%500 == 0){
