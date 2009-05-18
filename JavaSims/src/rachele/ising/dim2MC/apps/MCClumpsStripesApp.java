@@ -78,16 +78,16 @@ public class MCClumpsStripesApp extends Simulation{
 			params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 //			params.addm("init", new ChoiceValue( "Init Clumps from random"));
 			params.add("Random seed", 0);
-			params.add("L", 1<<7);
-			params.add("R", 46);//1<<6);
+			params.add("L", 1<<6);
+			params.add("R", 23);//1<<6);
 			params.add("Initial magnetization", 0.0);
-			params.addm("T", 0.02);
+			params.addm("T", 0.04);
 			params.addm("J", -1.0);
 			params.addm("h_i", 0.8);
-			params.addm("h_f", 0.4);
+			params.addm("h_f", 0.0);
 			params.addm("dt", 1/(double)(1<<3));
-			params.addm("maxTime", 30.0);
-			params.addm("Bin Size", 1);
+			params.addm("maxTime", 20.0);
+			params.addm("Bin Size", 1.0);
 //			params.addm("sfLabel", 2);
 			params.add("h", 0.0);
 			params.add("time");
@@ -146,7 +146,7 @@ public class MCClumpsStripesApp extends Simulation{
 			fft = new FourierTransformer((int)(sim.L/dx));
 			sFactor = new double [sim.L/dx*sim.L/dx];
 			double step = 0.20;
-			double initTime = 50.0;
+			double initTime = 30.0;
 			double maxTime = params.fget("maxTime");//max time after quench time
 			double quenchH = params.fget("h_f");// ext field after quench (initialized at h=0)
 			double initH = params.fget("h_i");

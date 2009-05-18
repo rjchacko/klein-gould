@@ -24,8 +24,9 @@ import scikit.jobs.params.FileValue;
 
 /**
 * 
-* Monte Carlo Simulation to produce structure factor vs time averages.
-* This should take an average of horizontal and vertical structure factor info.
+* Monte Carlo Simulation to produce structure factor vs time averages
+* for stripe to clump transitions.  Averages various structure factor modes
+* for a given ky value and several kx values.
 * 
 */
 public class MCStripesClumpsSt1DsolnApp extends Simulation{
@@ -58,17 +59,19 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/conservedOP_SC/testruns"));
 		params.add("Input 1D File",new FileValue("/Users/erdomi/data/lraim/configs1dAutoName/L256R91T0.08h0.65"));
 		params.add("Input 1D Unstable File",new FileValue("/Users/erdomi/data/lraim/configs1dAutoName/L256R91T0.02h0.543"));
-		params.addm("Dynamics", new ChoiceValue("Kawasaki Glauber", "Ising Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
+		params.addm("Dynamics", new ChoiceValue("Ising Glauber", "Kawasaki Glauber",  "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.add("Random seed", 0);
-		params.add("L", 256);//1<<9);
-		params.add("R", 92);//1<<6);
+		params.add("L", 128);//1<<9);
+		params.add("R", 46);//1<<6);
 		params.add("Jump Range", 1);
 		params.add("Initial magnetization", 0.0);
+//		params.addm("T", 0.096548);
+//		params.addm("T", 0.07952444);
 		params.addm("T", 0.02);
 		params.addm("J", -1.0);
-		params.addm("h", 0.0);
+		params.addm("h", 0.6);
 		params.addm("dt", 1.0);//1/(double)(1<<1));
-		params.addm("maxTime", 30.0);
+		params.addm("maxTime", 50.0);
 		params.addm("ky", 2);
 		params.addm("kx int", 1);
 		params.add("time");
@@ -116,13 +119,14 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		double maxTime = params.fget("maxTime");//max time after quench time
 		//double quenchH = 0.9;
 		int repNo = 0;
-		int sfLabel = findBestkR();
+//		int sfLabel = findBestkR();
 		System.out.println(sfLabel);
 
 		while (true) {
 			for (int i = 0; i < accNo; i ++)
 				sf_tAcc[i].clear();
 			initializeStripes();
+//			sim.randomizeField(params.fget("Initial magnetization"));
 			sim.restartClock();
 			sFactor = fft.calculate2DSF(sim.getField(dx), false, true);
 			sim.restartClock();
@@ -146,7 +150,7 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		}
 	}
 
-	private void collect(double [] sFactor, int sfLabelHor){
+	private void collect(double [] sFactor, int [] sfLabelHor){
 		for (int i = 0; i < accNo; i ++){
 			sf_tAveAcc[i].accum(sim.time(),sFactor[sfLabel[i]]);			
 			sf_tAcc[i].accum(sim.time(),sFactor[sfLabel[i]]);

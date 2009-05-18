@@ -36,7 +36,7 @@ public class IsingKawJumpApp extends Simulation{
     boolean takeAverages;
    	double [] sfTimeArray;
    	
-	Accumulator sf_k, sf_tv, sf_th;//, sf_th2, sf_tv2;
+	Accumulator sf_k, sf_tv, sf_th, sf_th2, sf_tv2, sf_tv3, sf_th3;
 	Accumulator sfTheoryAcc, sfTheory2Acc;
    	
 	public static void main(String[] args) {
@@ -51,10 +51,10 @@ public class IsingKawJumpApp extends Simulation{
 		params.add("L", 1<<7);
 		params.add("R", 46);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.1);
+		params.addm("T", 0.01);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
-		params.addm("dt", 1/(double)(1<<3));
+		params.addm("dt", 1.0);//1/(double)(1<<3));
 		params.addm("Jump Range", 1);
 		params.addm("kx", 2);
 		params.addm("ky", 2);
@@ -65,8 +65,10 @@ public class IsingKawJumpApp extends Simulation{
 		sfTheoryAcc = new Accumulator();
 		sf_th = new Accumulator();
 		sf_tv = new Accumulator();
-//		sf_th2 = new Accumulator();
-//		sf_tv2 = new Accumulator();		
+		sf_th2 = new Accumulator();
+		sf_tv2 = new Accumulator();	
+		sf_th3 = new Accumulator();
+		sf_tv3 = new Accumulator();	
 	}	
 	
 	public void animate() {
@@ -78,8 +80,10 @@ public class IsingKawJumpApp extends Simulation{
 		sfGrid.registerData(sim.L/dx, sim.L/dx, sFactor);
 		sfPlot.registerPoints("sf_h", sf_th, Color.BLUE);
 		sfPlot.registerPoints("sf_v", sf_tv, Color.RED);
-//		sfPlot.registerPoints("sf_h2", sf_th2, Color.GREEN);
-//		sfPlot.registerPoints("sf_v2", sf_tv2, Color.ORANGE);
+		sfPlot.registerPoints("sf_h2", sf_th2, Color.GREEN);
+		sfPlot.registerPoints("sf_v2", sf_tv2, Color.ORANGE);
+		sfPlot.registerPoints("sf_h3", sf_th3, Color.PINK);
+		sfPlot.registerPoints("sf_v3", sf_tv3, Color.CYAN);
 		
 		if(flags.contains("Write Config")) writeConfigToFile();
 		if(flags.contains("Clear")){
@@ -92,6 +96,10 @@ public class IsingKawJumpApp extends Simulation{
 	public void clear() {
 		sf_tv.clear();
 		sf_th.clear();
+		sf_th2.clear();
+		sf_tv2.clear();
+		sf_th3.clear();
+		sf_tv3.clear();
 	}
 	
 	public void run() {
@@ -102,7 +110,8 @@ public class IsingKawJumpApp extends Simulation{
 		int recordStep = 0;
 		int kx = params.iget("kx");
 		int ky = params.iget("ky");
-//		int k2 = 5;
+		int k2 = 5;
+		int k3 = 10;
 		while (true) {
 			sim.step();
 			if (sim.time() > recordStep){
@@ -111,10 +120,14 @@ public class IsingKawJumpApp extends Simulation{
 				sf_th.accum(sim.time(), sFactor[sim.L-kx]);
 				sf_tv.accum(sim.time(), sFactor[ky*sim.L]);
 				sf_tv.accum(sim.time(), sFactor[(sim.L-ky)*sim.L]);
-//				sf_th2.accum(sim.time(), sFactor[k2]);
-//				sf_th2.accum(sim.time(), sFactor[sim.L-k2]);
-//				sf_tv2.accum(sim.time(), sFactor[k2*sim.L]);
-//				sf_tv2.accum(sim.time(), sFactor[(sim.L-k2)*sim.L]);
+				sf_th2.accum(sim.time(), sFactor[k2]);
+				sf_th2.accum(sim.time(), sFactor[sim.L-k2]);
+				sf_tv2.accum(sim.time(), sFactor[k2*sim.L]);
+				sf_tv2.accum(sim.time(), sFactor[(sim.L-k2)*sim.L]);
+				sf_th3.accum(sim.time(), sFactor[k3]);
+				sf_th3.accum(sim.time(), sFactor[sim.L-k3]);
+				sf_tv3.accum(sim.time(), sFactor[k3*sim.L]);
+				sf_tv3.accum(sim.time(), sFactor[(sim.L-k3)*sim.L]);
 				//				recordSfDataToFile(sFactor);
 				recordStep += step;
 			}

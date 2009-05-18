@@ -73,18 +73,18 @@ public class IsingField2DApp extends Simulation {
 		//uncomment next line
 		c.frameTogether("Grids", grid, delPhiGrid, sfGrid, freeEnergyPlot);
 		c.frameTogether("Slices", vSlice, hSlice, slicePlot1, slicePlot2);
-		//c.frame(hSlice);
+		c.frame(grid);
 		//structurePeakH, freeEnergyPlot, sfPeakBoth, sfHor, sfVert);
 		//c.frameTogether("SF", sfHor, sfVert);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/sfData"));
-		params.add("1D Input File",new FileValue("/home/erdomi/data/lraim/configs1d/config"));
-		params.add("2D Input Dir",new FileValue("/home/erdomi/data/lraim/configs"));		
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/lraim/sfData"));
+		params.add("1D Input File",new FileValue("/Users/erdomi/data/lraim/configs1d/config"));
+		params.add("2D Input Dir",new FileValue("/Users/erdomi/data/lraim/configs"));		
 		params.addm("Zoom", new ChoiceValue("Yes", "No"));
 		params.addm("Interaction", new ChoiceValue("Square", "Circle"));
-		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Conserve M","Conjugate Gradient Min", 
+		params.addm("Dynamics?", new ChoiceValue("Langevin No M Convervation", "Langevin Mobility 1", "Langevin Conserve M","Conjugate Gradient Min", 
 				"Steepest Decent"));
-		params.add("Init Conditions", new ChoiceValue("Read From File","Random Gaussian", 
-				 "Artificial Stripe 3", "Artificial Stripe 2","Constant", "Read 1D Soln"));
+		params.add("Init Conditions", new ChoiceValue( "Read 1D Soln", "Read From File","Random Gaussian", 
+				 "Artificial Stripe 3", "Artificial Stripe 2","Constant"));
 		params.addm("Approx", new ChoiceValue("Slow", "HalfStep", "TimeAdjust", "Phi4","Phi4HalfStep"));
 		//params.addm("Plot FEvT", new ChoiceValue("Off", "On"));
 		params.addm("Noise", new DoubleValue(0.0, 0.0, 1.0).withSlider());
@@ -92,11 +92,11 @@ public class IsingField2DApp extends Simulation {
 		params.addm("Horizontal Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("Vertical Slice", new DoubleValue(0.5, 0, 0.9999).withSlider());
 		params.addm("kR", new DoubleValue(5.135622302, 0.0, 6.0).withSlider());
-		params.addm("T", 0.04);
-		params.addm("H", 0.80);
+		params.addm("T", 0.02);
+		params.addm("H", 0.6);
 		params.addm("dT", 0.001);
 		params.addm("tolerance", 0.0001);
-		params.addm("dt", 0.01);
+		params.addm("dt", 0.1);
 		params.addm("J", -1.0);
 		params.addm("R", 2000000.0);
 		params.addm("Random seed", 0);
@@ -123,6 +123,7 @@ public class IsingField2DApp extends Simulation {
 	public void animate() {
 
 		ising.readParams(params);
+		params.set("Time", ising.time());
 		
 		if (params.sget("Zoom").equals("Yes")) {
 			grid.setAutoScale();
@@ -239,6 +240,7 @@ public class IsingField2DApp extends Simulation {
 			System.out.println("slope1 = " + slope1 + " slope2 = " + slope2 + " linear slope = " + linearSlope);
 		}
 		if(flags.contains("Write 1D Config")) write1Dconfig();
+		if(flags.contains("Write 2D Config")) writeConfiguration();
 		flags.clear();
 	}
 	
@@ -260,7 +262,7 @@ public class IsingField2DApp extends Simulation {
 		//binWidth = ising.KRcircle / floor(IsingField2D.KR_SP/binWidth);
         sf = new StructureFactor(ising.Lp, ising.L, ising.R, binWidth, ising.dt);
 		sf.setBounds(0.1, 14);
-		int recordSteps = 0;
+		int recordSteps = 10;
 		maxi=sf.clumpsOrStripes(ising.phi);
 		writeDir = params.sget("Data Dir");
 		
@@ -287,10 +289,15 @@ public class IsingField2DApp extends Simulation {
 				cgInitialized = false;
 				landscapeFiller = opt.getLandscape();
 				brLandscapeFiller = opt.getBracketLandscape();
-			}else{
+			}else if(params.sget("Dynamics?") == "Langevin Mobility 1"){
+				ising.simulateUnstable();			
+        	}else{
 				cgInitialized = false;
-				ising.simulate();
-				//ising.simulateUnstable();
+//				ising.simulate();
+//				ising.simulateSimple();
+				ising.simulateGlauber();
+//				System.out.println("H = " + ising.H);
+
 			}
 			sf.getAccumulatorV().clear();
 			sf.getAccumulatorH().clear();
@@ -312,7 +319,7 @@ public class IsingField2DApp extends Simulation {
 				sf.accumulateAll(ising.t, ising.phi);
 				recordSFvTime();
 				//record3Ddata();
-				recordSteps += 0.1;
+				recordSteps += 10;
 				writeDataToFile();
 			}
 			Job.animate();
@@ -358,8 +365,8 @@ public class IsingField2DApp extends Simulation {
 	}
 	
 	public void writeConfiguration(){
-		String configFileName = "/home/erdomi/data/lraim/configs/inputConfig";
-		String inputFileName = "/home/erdomi/data/lraim/configs/inputParams";
+		String configFileName = "/Users/erdomi/data/lraim/configs/inputConfig";
+		String inputFileName = "/Users/erdomi/data/lraim/configs/inputParams";
 		FileUtil.deleteFile(configFileName);
 		FileUtil.deleteFile(inputFileName);
 		writeInputParams(inputFileName);	
@@ -461,7 +468,7 @@ public class IsingField2DApp extends Simulation {
 					FileUtil.printlnToFile(dataFileH, ising.T, sf.peakValueH(), ising.freeEnergy, ising.time());
 					FileUtil.printlnToFile(dataFileV, ising.T, sf.peakValueV(), ising.freeEnergy, ising.time());
 				}			
-				System.out.println("Data written to file for time = " + ising.time());
+//				System.out.println("Data written to file for time = " + ising.time());
 		}else if(params.sget("Interaction")== "Circle"){
 //			String dataStripe = "../../../research/javaData/sfData/dataStripe";
 			String dataStripe = "dataStripe";

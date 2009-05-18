@@ -1,5 +1,6 @@
 package rachele.ising.dim2MC.apps;
 
+import java.awt.Color;
 import java.io.DataInputStream;
 import java.io.EOFException;
 import java.io.File;
@@ -9,6 +10,7 @@ import java.io.FileNotFoundException;
 import rachele.ising.dim2MC.IsingLR;
 import scikit.dataset.Accumulator;
 import scikit.graphics.dim2.Grid;
+import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
@@ -22,12 +24,14 @@ public class IsingLRApp extends Simulation {
 	
 	Grid grid = new Grid("Long Range Ising Model");
 	Grid sfGrid = new Grid("SF");
+	Plot sfPlot = new Plot("sf plot");
 	int dx;
 	IsingLR sim;
 	public FourierTransformer fft;
 	double [] sFactor;
 	Accumulator sf_k;
 	Accumulator sfTheoryAcc, sfTheory2Acc;
+	Accumulator sfAcc, sfAccv;
     boolean clearFile;
     boolean takeAverages;
    	double [] sfTimeArray;
@@ -37,24 +41,26 @@ public class IsingLRApp extends Simulation {
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("grids", grid, sfGrid);		
+		c.frameTogether("grids", grid, sfGrid, sfPlot);		
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.add("Random seed", 0);
-		params.add("L", 1<<9);
-		params.add("R", 1<<6);
+		params.add("L", 1<<7);
+		params.add("R", 46);//1<<6);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.04);
+		params.addm("T", 0.02);
 		params.addm("J", -1.0);
-		params.addm("h", 0.0);
+		params.addm("h", 0.543);
 		params.addm("dt", 1/(double)(1<<3));
 		params.add("time");
 		params.add("magnetization");
 		params.add("Lp");
 		params.add("Reps");
-		flags.add("Write Config");
+		flags.add("Clear");
 		sf_k = new Accumulator();
 		sfTheoryAcc = new Accumulator();
+		sfAcc = new Accumulator();
+		sfAccv = new Accumulator();
 		
 	}	
 	
@@ -66,11 +72,19 @@ public class IsingLRApp extends Simulation {
 		
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
 		sfGrid.registerData(sim.L/dx, sim.L/dx, sFactor);
+		sfPlot.registerPoints("sf", sfAcc, Color.RED);
+		sfPlot.registerPoints("sfv", sfAccv, Color.BLUE);
 		if(flags.contains("Write Config")) writeConfigToFile();
+		if(flags.contains("Clear")){
+			sfAccv.clear();
+			sfAcc.clear();
+		}
 		flags.clear();
 	}
 	
 	public void clear() {
+		sfAcc.clear();
+		sfAccv.clear();
 	}
 	
 	public void run() {
@@ -84,6 +98,8 @@ public class IsingLRApp extends Simulation {
 			if (sim.time() > recordStep){
 				sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 //				recordSfDataToFile(sFactor);
+				sfAcc.accum(sim.time(), sFactor[2]);
+				sfAccv.accum(sim.time(), sFactor[sim.L*2]);
 				recordStep += step;
 			}
 			Job.animate();
@@ -112,7 +128,6 @@ public class IsingLRApp extends Simulation {
 	}
 	
 	public void writeArray(int repNo, double stepSize){
-
 		String fileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/sf";
 		FileUtil.deleteFile(fileName);
 		int length = sfTimeArray.length;

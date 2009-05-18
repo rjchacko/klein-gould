@@ -41,7 +41,7 @@ public class IsingLR extends RewindableDynamics {
 	
 	
 	public void setParameters(Parameters params) {
-		String dyn = params.sget("Dynamics", "Ising Glauber");
+		String dyn = params.sget("Dynamics");//, "Ising Glauber");
 		if (dyn.equals("Ising Glauber"))
 			dynamics = DynType.GLAUBER;
 		else if (dyn.equals("Ising Metropolis"))
