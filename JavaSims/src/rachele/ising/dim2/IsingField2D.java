@@ -427,6 +427,8 @@ public class IsingField2D extends AbstractIsing2D{
 	public void simModCalcContrib() {
 		convolveWithRange(phi, phi_bar, R);
 		driftContrib = 0.0;
+		absDriftContrib = 0.0;
+		absNoiseContrib = 0.0;
 		for (int i = 0; i < Lp*Lp; i++) {
 			double dF_dPhi = 0;
 			dF_dPhi = mobility[i]*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
@@ -436,6 +438,8 @@ public class IsingField2D extends AbstractIsing2D{
 			delPhi[i] = driftTerm + noiseTerm;
 			//System.out.println(noiseTerm + " " + driftTerm + " " + delPhi[i]);
 			driftContrib += abs(driftTerm)/(abs(driftTerm)+abs(noiseTerm));
+			absDriftContrib += abs(driftTerm);
+			absNoiseContrib += abs(noiseTerm);
 			phiVector[i] = delPhi[i];
 		}
 		for (int i = 0; i < Lp*Lp; i++) 
@@ -447,6 +451,7 @@ public class IsingField2D extends AbstractIsing2D{
 	public void simCalcContrib() {
 		convolveWithRange(phi, phi_bar, R);
 		driftContrib = 0.0;
+
 		for (int i = 0; i < Lp*Lp; i++) {
 			double dF_dPhi = 0;
 			dF_dPhi = mobility[i]*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
@@ -466,6 +471,7 @@ public class IsingField2D extends AbstractIsing2D{
 	public double [] simModCalcContribK(int kyValue) {
 		convolveWithRange(phi, phi_bar, R);
 		double [] driftProp = new double [Lp];
+
 		for (int i = 0; i < Lp*Lp; i++) {
 			double dF_dPhi = 0;
 			dF_dPhi = mobility[i]*(-phi_bar[i] - H + T*scikit.numerics.Math2.atanh(phi[i]));
