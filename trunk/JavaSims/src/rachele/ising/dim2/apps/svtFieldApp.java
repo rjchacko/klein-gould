@@ -284,10 +284,17 @@ public class svtFieldApp extends Simulation{
 				double [] driftFT = fft.calculate2DSF(ising.driftTermC, false, false);
 				int modeNo = params.iget("ky");
 				System.out.println("k mag = " + 2*Math.PI*ising.R*modeNo/ising.L);
+				double q1 = driftFT[0]/(Lp*Lp*ising.mean(driftFT));
+				double q4 = (driftFT[modeNo]+driftFT[Lp-modeNo]+driftFT[modeNo*Lp]+driftFT[Lp*Lp-Lp*modeNo])/(Lp*Lp*ising.mean(driftFT));
+				double q2 = (driftFT[modeNo]+driftFT[Lp-modeNo])/(Lp*Lp*ising.mean(driftFT));
 				if(accumsOn){
-					drift0acc.accum(ising.time(),driftFT[0]/(Lp*Lp*ising.mean(driftFT)));
-					drift2sumAcc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo]+driftFT[modeNo*Lp]+driftFT[Lp*Lp-Lp*modeNo])/(Lp*Lp*ising.mean(driftFT)));
-					drift2acc.accum(ising.time(),(driftFT[modeNo]+driftFT[Lp-modeNo])/(Lp*Lp*ising.mean(driftFT)));
+					drift0acc.accum(ising.time(),q1);
+					drift2sumAcc.accum(ising.time(), q4);
+					drift2acc.accum(ising.time(),q2);
+				}else{
+					FileUtil.printlnToFile(q1DriftFileName, ising.time(), q4);
+					FileUtil.printlnToFile(q2DriftFileName, ising.time(), q2);
+					
 				}
 				double [] sf = fft.calculate2DSF(ising.phi, false, false);
 				if(accumsOn){
@@ -523,10 +530,10 @@ public class svtFieldApp extends Simulation{
 		FileUtil.initFile(nAbsFileName, params, "absolute noise term contribution");
 		
 		q1DriftFileName = params.sget("Data Dir") + File.separator + "q1";
-		FileUtil.initFile(q1DriftFileName, params, "contribution to the drift term from one q value");
+		FileUtil.initFile(q1DriftFileName, params, "contribution to the drift term from one q value", "q* averaged over 4 directions");
 		
 		q2DriftFileName = params.sget("Data Dir") + File.separator + "q2";
-		FileUtil.initFile(q1DriftFileName, params, "contribution to the drift term from one q value");
+		FileUtil.initFile(q2DriftFileName, params, "contribution to the drift term from one q value", "q* averaged only over horizontal directions");
 	}	
 
     private void write1Dconfig(){
