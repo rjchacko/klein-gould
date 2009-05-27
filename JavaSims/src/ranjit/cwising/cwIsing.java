@@ -101,7 +101,7 @@ public class cwIsing extends Simulation {
 		c.frame(largestClustPlot,clustPlot,clustPlot2);
 	}
 
-	@SuppressWarnings("unchecked")
+
 	@Override
 	public void run() {
 		L=params.iget("L");
