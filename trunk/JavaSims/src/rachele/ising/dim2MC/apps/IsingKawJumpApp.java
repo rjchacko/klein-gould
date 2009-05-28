@@ -59,6 +59,7 @@ public class IsingKawJumpApp extends Simulation{
 		params.addm("kx", 2);
 		params.addm("ky", 2);
 		params.add("time");
+		params.add("magnetization");
 		flags.add("Write Config");
 		flags.add("Clear");
 		sf_k = new Accumulator();
@@ -73,7 +74,9 @@ public class IsingKawJumpApp extends Simulation{
 	
 	public void animate() {
 		params.set("time", format(sim.time()));
+		params.set("magnetization", format(sim.magnetization()));
 		sim.setParameters(params);
+		
 		
 		sfPlot.setAutoScale(true);
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));
@@ -88,7 +91,11 @@ public class IsingKawJumpApp extends Simulation{
 		if(flags.contains("Write Config")) writeConfigToFile();
 		if(flags.contains("Clear")){
 			sf_tv.clear();
-			sf_th.clear();			
+			sf_th.clear();		
+			sf_th2.clear();
+			sf_tv2.clear();
+			sf_th3.clear();
+			sf_tv3.clear();
 		}
 		flags.clear();
 	}

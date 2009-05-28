@@ -84,6 +84,7 @@ public class FieldIsing1D{
 		dx = L / Lp;
 		params.set("R/dx", R/dx);
 		params.set("DENSITY", mean(phi));
+		
 		noiseParam = params.fget("Noise");
 		
 	}
