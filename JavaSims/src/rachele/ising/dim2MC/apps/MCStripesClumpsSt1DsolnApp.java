@@ -21,6 +21,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.FileValue;
+//import static scikit.util.DoubleArray.*;
 
 /**
 * 
@@ -75,7 +76,8 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 		params.addm("ky", 2);
 		params.addm("kx int", 1);
 		params.add("time");
-		params.add("magnetization");
+//		params.add("magnetization");
+		params.add("mean phi");
 		params.add("Lp");
 		params.add("Reps");
 		flags.add("Write Config");
@@ -84,7 +86,9 @@ public class MCStripesClumpsSt1DsolnApp extends Simulation{
 	public void animate() {
 		sftPlot.setLogScale(false, true);
 		params.set("time", format(sim.time()));
-		params.set("magnetization", format(sim.magnetization()));
+//		params.set("magnetization", format(sim.magnetization()));
+		double meanPhi = (double)(sim.spins.sumAll())/(sim.L*sim.L);
+		params.set("mean phi", meanPhi);
 		sim.setParameters(params);
 		params.set("Lp", sim.L/dx);
 		grid.registerData(sim.L/dx, sim.L/dx, sim.getField(dx));

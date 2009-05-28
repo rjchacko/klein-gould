@@ -164,24 +164,18 @@ public class IsingField1DApp extends Simulation{
 		String writeDir;
 		String configFileName;
 		String paramsFile;
-		if(dynamics == "Conserved Finite Diff"){
-			writeDir = "/Users/erdomi/data/lraim/configs1dAutoConserved";
-			StringBuffer sb = new StringBuffer();
-			sb.append(writeDir); sb.append(File.separator); sb.append("L"); sb.append(ising.Lp);
-			int range = (int)(ising.Lp/params.fget("L/R")); sb.append("R"); sb.append(range);
-			sb.append("T"); sb.append(ising.T); sb.append("m"); sb.append(ising.DENSITY);
-			configFileName = sb.toString();
-		    sb.append("params"); paramsFile = sb.toString();
-		}else{
-			writeDir = "/Users/erdomi/data/lraim/configs1dAutoName";
-			StringBuffer sb = new StringBuffer();
-			sb.append(writeDir); sb.append(File.separator); sb.append("L"); sb.append(ising.Lp);
-			int range = (int)(ising.Lp/params.fget("L/R")); sb.append("R"); sb.append(range);
-			sb.append("T"); sb.append(ising.T); sb.append("h"); sb.append(ising.H);
-			configFileName = sb.toString();
-		    sb.append("params"); paramsFile = sb.toString();
-		}
-//		String configFileName = sb.toString();
+
+		//			writeDir = "/Users/erdomi/data/lraim/configs1dAutoName";
+		writeDir = "/Users/erdomi/data/lraim/configs1dAutoConserved";
+		StringBuffer sb = new StringBuffer();
+		sb.append(writeDir); sb.append(File.separator); sb.append("L"); sb.append(ising.Lp);
+		int range = (int)(ising.Lp/params.fget("L/R")); sb.append("R"); sb.append(range);
+		sb.append("T"); sb.append(ising.T);
+		//			sb.append("h");sb.append(ising.H);
+		sb.append("p"); sb.append(format(params.fget("DENSITY")));
+		configFileName = sb.toString();
+		sb.append("params"); paramsFile = sb.toString();
+
 		FileUtil.deleteFile(paramsFile);
 		FileUtil.initFile(paramsFile, params);
 		FileUtil.deleteFile(configFileName);

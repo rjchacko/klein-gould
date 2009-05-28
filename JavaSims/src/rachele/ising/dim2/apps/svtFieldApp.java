@@ -283,7 +283,7 @@ public class svtFieldApp extends Simulation{
 //				double [] noiseFT = fft.calculate2DSF(ising.noiseTermC, false, false);
 				double [] driftFT = fft.calculate2DSF(ising.driftTermC, false, false);
 				int modeNo = params.iget("ky");
-				System.out.println("k mag = " + 2*Math.PI*ising.R*modeNo/ising.L);
+//				System.out.println("k mag = " + 2*Math.PI*ising.R*modeNo/ising.L);
 				double q1 = driftFT[0]/(Lp*Lp*ising.mean(driftFT));
 				double q4 = (driftFT[modeNo]+driftFT[Lp-modeNo]+driftFT[modeNo*Lp]+driftFT[Lp*Lp-Lp*modeNo])/(Lp*Lp*ising.mean(driftFT));
 				double q2 = (driftFT[modeNo]+driftFT[Lp-modeNo])/(Lp*Lp*ising.mean(driftFT));
