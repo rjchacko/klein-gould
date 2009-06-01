@@ -84,7 +84,7 @@ public class grScalingApp extends Simulation{
 			dmt    = simt;
 			Ndead  = 0;
 
-			model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(0.));
+			model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(0.)+".txt");
 			model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
 
 
