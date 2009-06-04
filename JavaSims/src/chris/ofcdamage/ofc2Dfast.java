@@ -181,7 +181,7 @@ public class ofc2Dfast {
 				
 				// calculate metric (PART 1)
 				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
-				tmpbar   += sbar[jj];
+				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
 			}
 			dsigma = sf[jjmax]-stress[jjmax];
 			tmpbar = tmpbar / N;
@@ -258,6 +258,11 @@ public class ofc2Dfast {
 	protected double nextSf(int site){
 
 		return sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
+	}
+	
+	public double getSW(){
+		
+		return (sf0+dsf-sr0-dsr);
 	}
 	
 	public void writeData(int mct){

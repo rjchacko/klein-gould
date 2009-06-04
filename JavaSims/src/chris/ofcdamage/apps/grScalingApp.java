@@ -69,7 +69,7 @@ public class grScalingApp extends Simulation{
 		while(ccl < 25){	
 
 			ccl++;
-			phis = 0.05;	
+			phis = 0.01;	
 			params.set("Random Seed", params.iget("Random Seed")+1);
 
 			// Setup model
@@ -84,7 +84,7 @@ public class grScalingApp extends Simulation{
 			dmt    = simt;
 			Ndead  = 0;
 
-			model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(0.)+".txt");
+			model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(0.));
 			model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
 
 
@@ -182,7 +182,12 @@ public class grScalingApp extends Simulation{
 						if(record) takePicture(jj);
 					}
 				}
-				phis += 0.05;
+				if(phis < 0.1){
+					phis += 0.01;
+				}
+				else{
+					phis += 0.05;
+				}
 				dmt    = simt;				
 			}
 
