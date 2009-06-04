@@ -91,8 +91,8 @@ public class damage2Dfast extends ofc2Dfast{
 				if(Lives[tmpfail] == 1) lastlife = true;
 				for(int kk = 0 ; kk < qN ; kk++){
 					tmpnb = getNbr(fs[jj],kk);
-					if(lastlife) liveNbs[tmpnb]--;	
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
+					if(lastlife) liveNbs[tmpnb]--;
 					stress[tmpnb] += release;
 					if((stress[tmpnb] > sf[tmpnb])){
 						fs[newindex++] = tmpnb;	
@@ -211,6 +211,11 @@ public class damage2Dfast extends ofc2Dfast{
 		return stress;
 	}
 	
+	public double getStress(int site){
+		
+		return (site < N) ? stress[site] : -1;
+	}
+	
 	public int[] getDorA(){
 		
 		int[] ret = new int[N];
@@ -243,6 +248,16 @@ public class damage2Dfast extends ofc2Dfast{
 		PrintUtil.printlnToFile(fout,"intercept = ", offset);
 		PrintUtil.printlnToFile(fout,"width = ", width);
 		return;
+	}
+	
+	public int getLN(int site){
+		
+		return (site < N) ? liveNbs[site] : -1;
+	}
+	
+	public boolean isAlive(int site){
+		
+		return (!failed[site]);
 	}
 	
 }
