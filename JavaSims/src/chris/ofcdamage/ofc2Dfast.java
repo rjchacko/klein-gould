@@ -67,7 +67,6 @@ public class ofc2Dfast {
 		sf      = new double[N];
 		stress  = new double[N];
 		sbar    = new double[N];
-		nbArray = new int[N];
 		fs      = new int[2*N];
 		data    = new double[dcat][dlength];
 		failed  = new boolean[N];
@@ -82,7 +81,12 @@ public class ofc2Dfast {
 		// set up the lattice neighbors array
 		if(shape.equals("Open")) shape = "Bordered";
 		nbArray = setupNBS(shape);
-		qN      = nbArray.length;
+		if(nbArray == null){
+			qN = N;
+		}
+		else{
+			qN = nbArray.length;
+		}
 		
 		// set up output file
 		configOF();
@@ -94,7 +98,7 @@ public class ofc2Dfast {
 
 		if(shape.equals("All Sites")){
 			nbs = new LatticeNeighbors((int) L,(int) L,0,N/2,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.All);
-			return nbs.get(nbSeed);	
+			return null;
 		}
 
 		if (bcs.equals("Bordered")){
@@ -121,7 +125,6 @@ public class ofc2Dfast {
 				nbs = new LatticeNeighbors((int) L,(int) L,0,R,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Diamond);
 			}
 		}
-
 		return nbs.get(nbSeed);	
 	}
 	
@@ -178,7 +181,6 @@ public class ofc2Dfast {
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
 				// find next site to fail
 				if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
-				
 				// calculate metric (PART 1)
 				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
 				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
@@ -303,7 +305,7 @@ public class ofc2Dfast {
 		return;
 	}
 	
-	private void configOF(){
+	protected void configOF(){
 		
 		try{
 			File file = new File(outdir+File.separator+bname+".txt");
@@ -383,5 +385,10 @@ public class ofc2Dfast {
 		}
 
 		return;
+	}
+	
+	protected int getL(){
+		
+		return L;
 	}
 }
