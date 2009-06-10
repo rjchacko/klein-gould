@@ -5,6 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import scikit.dataset.DatasetBuffer;
+import scikit.dataset.Histogram;
+
 public class PrintUtil {
 	static public void deleteFile(String fileName){
 		File file = new File(fileName);
@@ -538,7 +541,20 @@ public class PrintUtil {
 		}
 	}
 
-
+	static public void printHistToFile(String fileName, Histogram h){
+		DatasetBuffer hh = h.copyData();
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int jj = 0 ; jj < hh.size() ; jj++){
+				pw.print(hh.x(jj));
+				pw.print("\t");
+				pw.println(hh.y(jj));
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
 	
 	
 }

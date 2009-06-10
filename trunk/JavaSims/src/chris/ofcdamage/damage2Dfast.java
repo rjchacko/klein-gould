@@ -1,8 +1,7 @@
 package chris.ofcdamage;
 
-import chris.util.MathUtil;
-import chris.util.PrintUtil;
 import scikit.jobs.params.Parameters;
+import chris.util.PrintUtil;
 
 public class damage2Dfast extends ofc2Dfast{
 	
@@ -68,7 +67,7 @@ public class damage2Dfast extends ofc2Dfast{
 		boolean lastlife = false;
 		
 		// force failure
-		forceFailure(mct, takedata);
+		forceZeroVel(mct, takedata, false);
 		GR = 1; // the seed site
 		
 		// discharge forced site(s) and repeat until lattice is stable
@@ -111,76 +110,6 @@ public class damage2Dfast extends ofc2Dfast{
 		return Ndead;
 	}
 	
-	protected void forceFailure(int mct, boolean takedata){
-		// force failure in the zero velocity limit
-
-		double dsigma, tmpbar, dsmin;
-		int jjmax;
-		index = 0;
-		newindex = index;
-		dsmin    = 1e5;
-		
-		// force failure in the zero velocity limit
-		jjmax = 0;
-		if(takedata){
-			tmpbar = 0;
-			Omega  = 0;
-			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
-				// find next site to fail (NB, must be alive)
-				if( (sf[jj]-stress[jj]) < dsmin && !failed[jj]){
-					jjmax = jj;
-					dsmin = sf[jj]-stress[jj];
-				}
-				// calculate metric (PART 1)
-				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
-				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
-			}
-			dsigma = sf[jjmax]-stress[jjmax];
-			tmpbar = tmpbar / (N-Ndead);
-			Omega  = 0;
-			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
-				// add stress to fail site
-				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
-				//calculate metric (PART 2)
-				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
-			}
-			//calculate metric (PART 3)
-			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
-
-			// save and/or write data
-			if(mct%dlength == 0 && mct > 0){
-				writeData(mct);
-			}
-			saveData(mct, false);
-		}
-		else{
-			for (int jj = 0 ; jj < N ; jj++){
-				// find next site to fail
-				if( (sf[jj]-stress[jj]) < dsmin && !failed[jj]){
-					jjmax = jj;
-					dsmin = sf[jj]-stress[jj];
-				}
-			}
-			// add stress to fail site
-			dsigma = sf[jjmax]-stress[jjmax];
-			for (int jj = 0 ; jj < N ; jj++){
-				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
-			}
-		}
-				
-		fs[newindex++] = jjmax;
-		failSite(jjmax);
-		
-		return;
-	}
-	
-	protected void failSite(int index){
-		
-		GR++;
-		failed[index]  = true;
-		return;
-	}
-	
 	
 	private void killSite(int site){
 		
@@ -200,22 +129,6 @@ public class damage2Dfast extends ofc2Dfast{
 		return;
 	}
 	
-	
-	public int getN(){
-		
-		return N;
-	}
-	
-	public double[] getStress(){
-		
-		return stress;
-	}
-	
-	public double getStress(int site){
-		
-		return (site < N) ? stress[site] : -1;
-	}
-	
 	public int[] getDorA(){
 		
 		int[] ret = new int[N];
@@ -224,22 +137,6 @@ public class damage2Dfast extends ofc2Dfast{
 			ret[jj] = (Lives[jj] > 0) ? 1 : 0;
 		}
 		return ret;
-	}
-	
-	protected void saveData(int mct, boolean EQ){
-		
-		data[0][mct%dlength] = 1./Omega;
-		data[1][mct%dlength] = GR;
-		data[2][mct%dlength] = MathUtil.bool2bin(EQ);
-		data[3][mct%dlength] = 1. - (double)(Ndead)/(double)(N); 
-		return;
-	}
-	
-	public double getData(int mct, int dindex){
-		
-		if(dindex >= ofc2Dfast.dcat) return -77;
-		
-		return data[dindex][mct%dlength];
 	}
 	
 	public void printFitParams(String fout, double slope, double offset, double width){
@@ -253,11 +150,6 @@ public class damage2Dfast extends ofc2Dfast{
 	public int getLN(int site){
 		
 		return (site < N) ? liveNbs[site] : -1;
-	}
-	
-	public boolean isAlive(int site){
-		
-		return (!failed[site]);
 	}
 	
 }

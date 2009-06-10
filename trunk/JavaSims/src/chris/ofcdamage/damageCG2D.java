@@ -127,7 +127,7 @@ public class damageCG2D extends damage2Dfast{
 				writeData(mct);
 				writeCGdata(mct);
 			}
-			saveData(mct, false);
+			saveData(mct, false, dsigma);
 			saveCGdata(mct);
 		}
 		else{

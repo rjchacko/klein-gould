@@ -27,7 +27,12 @@ public class LatticeNeighbors {
 		this.type = type; 
 		this.shape = shape;
 		int d = (int)r_hi*2 + 1;
-		list = new int[d*d];
+		if(!(shape.equals(Shape.All))){
+			list = new int[d*d];
+		}
+		else{
+			list = null;
+		}
 	}
 	
 	public LatticeNeighbors(int Nx, int Ny, double eps, double r_lo, double r_hi, Type type, Shape shape) {
