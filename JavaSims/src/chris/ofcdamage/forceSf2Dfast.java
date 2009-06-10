@@ -95,7 +95,7 @@ public class forceSf2Dfast extends damage2Dfast{
 			if(mct%dlength == 0 && mct > 0){
 				writeData(mct);
 			}
-			saveData(mct, false);
+			saveData(mct, false, dsigma);
 		}
 		else{
 			for (int jj = 0 ; jj < N ; jj++){

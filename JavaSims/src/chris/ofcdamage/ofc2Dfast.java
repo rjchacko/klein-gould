@@ -24,7 +24,7 @@ public class ofc2Dfast {
 	private Random rand;
 	private LatticeNeighbors nbs;
 	public static int dlength = 150000;
-	public static int dcat = 4;
+	public static int dcat = 5;
 	private static DecimalFormat fmtI = new DecimalFormat("0000");
 	
 	public ofc2Dfast(Parameters params){
@@ -140,7 +140,7 @@ public class ofc2Dfast {
 		double release;
 	
 		// force failure in the zero velocity limit
-		forceZeroVel(mct, takedata);
+		forceZeroVel(mct, takedata, true);
 		GR = 1; // the seed site
 		
 		// discharge site and repeat until lattice is stable
@@ -166,7 +166,7 @@ public class ofc2Dfast {
 		return;
 	}
 	
-	protected void forceZeroVel(int mct, boolean takedata){
+	protected void forceZeroVel(int mct, boolean takedata, boolean eqmode){
 		// force failure in the zero velocity limit
 
 		double dsigma, tmpbar;
@@ -202,10 +202,7 @@ public class ofc2Dfast {
 			if(mct%dlength == 0 && mct > 0){
 				writeData(mct);
 			}
-			saveData(mct, true);
-			fs[newindex++] = jjmax;
-			failSite(jjmax,mct);
-			
+			saveData(mct, eqmode, dsigma);
 		}
 		else{
 			for (int jj = 0 ; jj < N ; jj++){
@@ -217,11 +214,10 @@ public class ofc2Dfast {
 			for (int jj = 0 ; jj < N ; jj++){
 				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 			}
-			fs[newindex++] = jjmax;
-			failSite(jjmax);
 		}
-
-				
+		
+		fs[newindex++] = jjmax;
+		failSite(jjmax,mct);		
 		return;
 	}
 
@@ -296,15 +292,16 @@ public class ofc2Dfast {
 		return;
 	}
 	
-	protected void saveData(int mct, boolean EQ){
+	protected void saveData(int mct, boolean EQ, double ds){
 		
 		data[0][mct%dlength] = 1/Omega;
 		data[1][mct%dlength] = GR;
-		data[2][mct%dlength] = MathUtil.bool2bin(EQ);
-		data[3][mct%dlength] = 0; 
+		data[2][mct%dlength] = ds;
+		data[3][mct%dlength] = MathUtil.bool2bin(EQ);
+		data[4][mct%dlength] = 1.-(double)(Ndead)/(double)(N); 
 		return;
 	}
-	
+
 	protected void configOF(){
 		
 		try{
@@ -315,6 +312,8 @@ public class ofc2Dfast {
 			pw.print("Inverse Metric");
 			pw.print("\t");
 			pw.print("Shower Size");
+			pw.print("\t");
+			pw.print("d(sigma)");
 			pw.print("\t");
 			pw.print("EQ Mode");
 			pw.print("\t");
@@ -390,5 +389,32 @@ public class ofc2Dfast {
 	protected int getL(){
 		
 		return L;
+	}
+	
+	public int getN(){
+		
+		return N;
+	}
+	
+	public double[] getStress(){
+		
+		return stress;
+	}
+	
+	public double getStress(int site){
+		
+		return (site < N) ? stress[site] : -1;
+	}
+	
+	public boolean isAlive(int site){
+		
+		return (!failed[site]);
+	}
+	
+	public double getData(int mct, int dindex){
+		
+		if(dindex >= ofc2Dfast.dcat) return -77;
+		
+		return data[dindex][mct%dlength];
 	}
 }

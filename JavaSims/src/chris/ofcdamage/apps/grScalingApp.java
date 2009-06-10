@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 
 import javax.imageio.ImageIO;
 
+import scikit.dataset.Histogram;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -15,6 +16,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import chris.ofcdamage.damage2Dfast;
 import chris.util.DirUtil;
+import chris.util.PrintUtil;
 
 public class grScalingApp extends Simulation{
 
@@ -26,7 +28,9 @@ public class grScalingApp extends Simulation{
 	private ColorGradient cg = new ColorGradient();
 	private DecimalFormat fmt = new DecimalFormat("0000000");
 	private DecimalFormat cfmt = new DecimalFormat("00");
+	private Histogram hist;
 	private damage2Dfast model;
+	
 	
 	public static void main(String[] args) {
 		new Control(new grScalingApp(), "Damage Parameters");
@@ -83,6 +87,7 @@ public class grScalingApp extends Simulation{
 			simt   = params.iget("Sim Time");
 			dmt    = simt;
 			Ndead  = 0;
+			hist   = new Histogram(model.getSW()/N);
 
 			model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(0.));
 			model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
@@ -128,10 +133,17 @@ public class grScalingApp extends Simulation{
 
 			while(Ndead < N){
 
+				// make a histogram of stress for stress band analysis
+				for (int jj = 0 ; jj < N ; jj++){
+					hist.accum(model.getStress(jj));
+				}
+				PrintUtil.printHistToFile(model.getOutdir()+File.separator+model.getBname()+"_SH.txt",hist);
+				hist.clear();
+				
 				// simulate with damage until phi >= phis
 				params.set("Mode","Damage");
 				while(Ndead < phis*N){
-					Ndead = model.evolveD(dmt,true);
+					Ndead = model.evolveD(dmt,false);
 					if(dmt%500 == 0){
 						params.set("Status", (dmt));
 					}
@@ -151,7 +163,7 @@ public class grScalingApp extends Simulation{
 
 				// change save file name
 				model.setBname(params.sget("Data File")+"_"+cfmt.format(ccl)+"_"+cfmt.format(100*phis));
-				model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
+				//model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);
 
 				// re-equilibrate
 				params.set("Mode","Equilibrate");

@@ -50,7 +50,7 @@ public class heal2Dfast extends ofc2Dfast{
 
 		
 		//force failure
-		forceZeroVel(mct, takedata);
+		forceZeroVel(mct, takedata, false);
 		
 		// discharge forced site(s) and repeat until lattice is stable
 		while(newindex > index){
