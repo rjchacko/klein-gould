@@ -52,7 +52,7 @@ public class MCDisorderOrderSvtApp extends Simulation{
 		params.add("R", 23);//1<<6);
 		params.addm("Jump Range", 16);
 		params.add("Initial magnetization", 0.0);
-		params.addm("T", 0.05);
+		params.addm("T", 0.093);
 		params.addm("J", -1.0);
 		params.addm("h", 0.0);
 		params.addm("dt", 0.250);
@@ -103,7 +103,7 @@ public class MCDisorderOrderSvtApp extends Simulation{
 				sf_tAcc[i].clear();
 			sim.randomizeField(params.fget("Initial magnetization"));
 			sim.restartClock();
-			sFactor = fft.calculate2DSF(sim.getField(dx), false, true);
+			sFactor = fft.calculate2DSF(sim.getField(dx), false, false);
 			sim.restartClock();
 			int recordInt = 0;
 			int recordStep = 0;

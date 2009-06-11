@@ -73,8 +73,9 @@ public class MonteCarloDataApp extends Simulation{
 			c.frame(sftPlot);
 		}
 		//if(averages == "S_t_SC1D") c.frame(plot1DIsing);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/DO_MCdataAppBreakdown/testRuns"));
-		params.add("Input 1D File",new FileValue("/home/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
+//		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/DO_MCdataAppBreakdown/testRuns"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/lraim/stripeToClumpInvestigation/mcResults/DO_MCdataAppBreakdown/testRuns"));
+		params.add("Input 1D File",new FileValue("/Users/erdomi/data/lraim/configs1D/L128R50T0-04h0"));
 		params.addm("Dynamics", new ChoiceValue("Ising Glauber","Kawasaki Glauber", "Kawasaki Metropolis",  "Ising Metropolis"));
 		params.addm("init", new ChoiceValue( "Random", "Read From File"));
 		params.add("Random seed", 0);
@@ -155,8 +156,8 @@ public class MonteCarloDataApp extends Simulation{
 	}
 	
 	public void clear() {
-		for (int i = 0; i < accNo; i++)
-			sf_kAcc[i].clear();
+//		for (int i = 0; i < accNo; i++)
+//			sf_kAcc[i].clear();
 	}
 	
 	public void run() {
@@ -454,14 +455,16 @@ public class MonteCarloDataApp extends Simulation{
 	}
 	
 	public void writeConfigToFile(){
-		String configFileName = "../../../research/javaData/stripeToClumpInvestigation/monteCarloData/configs/config";
+		String configFileName = "/Users/erdomi/data/lraim/configs/randomConfig";
 		FileUtil.deleteFile(configFileName);
 		FileUtil.writeConfigToFile(configFileName, (sim.L/dx)*(sim.L/dx), sim.getField(dx));
+		configFileName = "/Users/erdomi/data/lraim/configs/randomConfigParams";
+		FileUtil.initFile(configFileName, params);
 	}
 	
 	public void readInitialConfiguration(){
 		try{
-			File myFile = new File("../../../research/javaData/stripeToClumpInvestigation/monteCarloData/configs/config");
+			File myFile = new File("/Users/erdomi/data/lraim/configs/randomConfig");
 			DataInputStream dis = new DataInputStream(new FileInputStream(myFile));
 			int spaceIndex;
 			double phiValue;
