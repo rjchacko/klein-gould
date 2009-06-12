@@ -13,7 +13,8 @@ import scikit.jobs.Simulation;
 public class OFC_App extends Simulation{
 
 	Grid grid = new Grid("Lattice");
-	Plot iterPlot = new Plot("Iteractions");
+	Grid cgGrid = new Grid(" CG grid");
+	Plot iterPlot = new Plot("Iterations");
 	Plot metricPlot = new Plot("Metric Plot");
 	OFC_Lattice ofc;
 	
@@ -22,21 +23,23 @@ public class OFC_App extends Simulation{
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Data", grid, iterPlot, metricPlot);
+		c.frameTogether("Data", grid, iterPlot, cgGrid, metricPlot);
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 64);
+		params.addm("CG size", 512);
 		params.addm("dx", 1);
-		params.addm("dt", 10);
+		params.addm("dt", 100);
 		params.addm("R", 2);
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.2);
 		params.addm("Res. Max Noise", 0.125);
 		params.add("L");
 		params.add("Time");
+		params.add("CG Time");
 	}
 	
 	public void animate() {
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
+		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.cgCount);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
@@ -67,6 +70,9 @@ public class OFC_App extends Simulation{
 			prestep = true;
 			}
 			Job.animate();
+//			if(ofc.time % 1000 == 0){
+//				System.out.println("time = " + ofc.time + " metric sum = " + ofc.metricSum);
+//			}
 		}
 		
 	}
