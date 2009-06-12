@@ -16,6 +16,7 @@ public class OFC_App extends Simulation{
 	Grid cgGrid = new Grid(" CG grid");
 	Plot iterPlot = new Plot("Iterations");
 	Plot metricPlot = new Plot("Metric Plot");
+	Plot sizePlot = new Plot("Size Histogram");
 	OFC_Lattice ofc;
 	
 	public static void main(String[] args) {
@@ -23,12 +24,13 @@ public class OFC_App extends Simulation{
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Data", grid, iterPlot, cgGrid, metricPlot);
+		c.frameTogether("Grids", grid, cgGrid);
+		c.frameTogether("Data", iterPlot, metricPlot, sizePlot);
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 512);
+		params.addm("CG size", 128);
 		params.addm("dx", 1);
 		params.addm("dt", 100);
-		params.addm("R", 2);
+		params.addm("R", 3);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.2);
 		params.addm("Res. Max Noise", 0.125);
@@ -43,20 +45,18 @@ public class OFC_App extends Simulation{
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
-		double failSite_y = ((double)(ofc.failSite/ofc.L))/ofc.L + radius;
-		double failSite_x = ((double)(ofc.failSite%ofc.L))/ofc.L + radius;
+		double failSite_y = ((double)(ofc.epicenterSite/ofc.L))/ofc.L + radius;
+		double failSite_x = ((double)(ofc.epicenterSite%ofc.L))/ofc.L + radius;
 		grid.addDrawable(
 				Geom2D.circle(failSite_x, failSite_y, radius, Color.GREEN));
 		iterPlot.registerLines("Iterations", ofc.iterAcc, Color.RED);
 		metricPlot.registerLines("Metric", ofc.inverseMetricAcc, Color.BLACK);
+		sizePlot.registerBars("Size", ofc.sizeHist, Color.BLACK);
 		params.set("Time", ofc.time);
 	}
 
 	public void clear() {
-
-		
 	}
-
 
 	public void run() {
 		ofc = new OFC_Lattice(params);
@@ -70,11 +70,7 @@ public class OFC_App extends Simulation{
 			prestep = true;
 			}
 			Job.animate();
-//			if(ofc.time % 1000 == 0){
-//				System.out.println("time = " + ofc.time + " metric sum = " + ofc.metricSum);
-//			}
 		}
-		
 	}
 
 }
