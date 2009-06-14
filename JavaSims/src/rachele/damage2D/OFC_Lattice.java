@@ -1,22 +1,17 @@
 package rachele.damage2D;
 
-import kip.util.Random;
-import scikit.dataset.Accumulator;
-import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
+import scikit.util.DoubleArray;
 
 public class OFC_Lattice extends AbstractCG_OFC{
 
-	public int time, cgTime, epicenterSite;
-	public double tStress, rStress, dissParam, maxResNoise, metric0;
-	public Random random = new Random();
-	public int [] cgCount;
-	public double [] stress;
+
+	double metric0;					//metric measured at time t = 0;
+	double lastCG_RecordTime;		//CG time parameter to keep track of last time CG info was recorded
+	
 	public double [] stressTimeAve;
+	public double [] CG_TimeAve;
 	boolean [] failList;
-	public Accumulator iterAcc;
-	public Histogram sizeHist;
-	public Accumulator inverseMetricAcc;
 	
 	public OFC_Lattice(Parameters params) {
 		setParameters(params);
@@ -40,7 +35,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		}
 		System.out.println("Fully Connected = " + fullyConnected);
 		
-		dt = params.iget("dt");
+//		CG_dt = params.fget("Coarse Grained dt");
+//		dt = params.fget("dt");
 		
 		random.setSeed(params.iget("Random Seed"));
 		
@@ -48,25 +44,60 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		dissParam = params.fget("Dissipation Param");
 		rStress = params.fget("Residual Stress");
 		maxResNoise = params.fget("Res. Max Noise");
+		lastCG_RecordTime = 0;
 	}
 	
 	public void initLattice(){
 		stress = new double [N];
 		stressTimeAve = new double [N];
 		cgCount = new int [Np];
+		CG_TimeAve = new double [Np];
 		failList = new boolean [N];
-		iterAcc = new Accumulator(dt);
-		sizeHist = new Histogram(1);
-		inverseMetricAcc = new Accumulator(dt);
-		for (int i = 0; i < L*L; i++){
+		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat();
 			stressTimeAve[i] = stress[i];
 			failList[i] = false;
-//			System.out.println("site " + i + " = " + stress[i]);
 		}
-		calcMetric0();
-		time = 1;
-		cgTime = 1;
+		for (int i = 0; i < Np; i++){
+			cgCount[i] = 0;
+			CG_TimeAve[i] = 0;
+		}
+		metric0 = calcMetric0();
+		time = 0;
+		plateUpdates = 0;
+	}
+	
+	public void initEquilibrate(int maxPlateUpdates){
+			plateUpdates = -maxPlateUpdates;
+	}
+	
+	public void equilibrate(){
+
+		epicenterSite = siteWithMaxStress();
+		double stressAdd = tStress - stress[epicenterSite];
+//		dt = stressAdd;
+//		dt=1.0;
+//		if(stressAdd < 0) System.out.println("Error: stress already above failure");
+		for (int i = 0; i < N; i++) stress[i] += stressAdd;
+//		avSize = 1;
+//		for (int i = 0; i < N; i++) stress[i] += tStress - stress[epicenterSite];
+		if(fullyConnected){
+			failList[epicenterSite] = true;
+			boolean failAgain = checkFailList();
+			while(failAgain){
+				avSize += fail();
+				failAgain = checkFailList();
+			}
+		}else{
+			failSiteWithRange(epicenterSite);
+			int nextSiteToFail = checkFail();
+			while (nextSiteToFail >= 0){
+				failSiteWithRange(nextSiteToFail);
+				nextSiteToFail = checkFail();
+			}
+		}
+		plateUpdates += 1;
+
 	}
 	
 	public void prestep(){
@@ -78,18 +109,18 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public void step(){
 		//Bring to failure
 		double stressAdd = tStress - stress[epicenterSite];
+//		dt = stressAdd;
+		dt=1.0;
 		if(stressAdd < 0) System.out.println("Error: stress already above failure");
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
-		int iteration = 0;
-		int size = 1;
+		avSize = 1;
 	
 		if(fullyConnected){
 			failList[epicenterSite] = true;
 			//Fail the failSite
 			boolean failAgain = checkFailList();
 			while(failAgain){
-				size += fail();
-				iteration += 1;
+				avSize += fail();
 				failAgain = checkFailList();
 			}
 		}else{
@@ -98,20 +129,14 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			while (nextSiteToFail >= 0){
 				failSiteWithRange(nextSiteToFail);
 				nextSiteToFail = checkFail();
-				size += 1;
-				iteration += 1;
-//				System.out.println("Next Site to Fail "+ nextSiteToFail);
+				avSize += 1;
 			}
 		}
-		iterAcc.accum(time, iteration);
-		sizeHist.accum(size);
-		for(int i=0; i < N; i++)
-			stressTimeAve[i] = (stressTimeAve[i]*(double)time + stress[i])/(double)(time+1);
-		time += 1;
-		if(time%dt==0) cgTime += 1;
-		calcMetric();
-	}
 
+		time += dt;
+		plateUpdates += 1;
+	}
+	
 	int checkFail(){
 		int s = siteWithMaxStress();
 		if (stress[s] < tStress) s = -1; 
@@ -139,35 +164,35 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		
 	}
 	
-	void calcMetric(){
-		double spaceSum = 0;
-		for (int i = 0; i < N; i++) spaceSum += stressTimeAve[i];
-		double spaceTimeStressAve = (spaceSum)/(double)(L*L);
+	public double calcInverseMetric(){
+		for(int i=0; i < N; i++)
+			stressTimeAve[i] = (stressTimeAve[i]*(double)(time-dt)+ stress[i]*dt)/(double)(time);
+		double spaceSum = DoubleArray.sum(stressTimeAve);
+		double spaceTimeStressAve = (spaceSum)/(double)(N);
 		double 
 		metricSum = 0;
 		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
 		double inverseMetric = (double)(N)*metric0/metricSum;
-		inverseMetricAcc.accum(time, inverseMetric);
-	}
-	
-	void calcMetric0(){
-		double spaceSum = 0;
-		for (int i = 0; i < N; i++) spaceSum += stress[i];
-		double spaceStressAve = (spaceSum)/(double)(N);
-		double metricSum = 0;
-		for (int i = 0; i < N; i++) metricSum += Math.pow(stress[i] - spaceStressAve, 2);
-		metric0 = metricSum / (double)N;
-	}
-	
-	void calcCG_Metric(){
-//		double spaceSum = 0;
-//		for (int i = 0; i < L*L; i++) spaceSum += stressTimeAve[i];
-//		double spaceTimeStressAve = (spaceSum)/(double)(L*L);
-//		double 
-//		metricSum = 0;
-//		for (int i = 0; i < L*L; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
-//		double inverseMetric = (double)(L*L)*metric0/metricSum;
+		return inverseMetric;
 //		inverseMetricAcc.accum(time, inverseMetric);
+	}
+	
+
+	
+	public double calcCG_Metric(){
+		double del_t = time - lastCG_RecordTime;
+		for (int i = 0; i < Np; i++){
+			CG_TimeAve[i] = (lastCG_RecordTime*CG_TimeAve[i] + del_t*cgCount[i]) / (time);
+		}
+		double CG_SpaceAve = DoubleArray.sum(CG_TimeAve)/(double)Np;
+		double CG_metric = 0;
+		for (int i = 0; i < Lp; i++){
+			CG_metric += Math.pow(CG_TimeAve[i] - CG_SpaceAve,2);
+		}
+		CG_metric /= (double)Np;
+		lastCG_RecordTime = time;
+		for (int i = 0; i < Np; i++) cgCount[i] = 0;
+		return CG_metric; 
 	}
 	
 	boolean checkFailList(){
@@ -206,38 +231,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		}
 		return noFailed;
 	}
-	
-	double calcResNoise(int s){
-		double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0)+rStress;
-		return resNoise;
-	}
-	
-	double calcStressPerNbor(int s, double rStressWithNoise){
-		double stressPerNbor = ((1-dissParam)*(stress[s] - rStressWithNoise))/(double)noNbors;
-		return stressPerNbor;
-	}
-	
-	public int siteWithMaxStress(){
-		double max = stress[0];
-		int maxSite = 0;
-		for (int i = 1; i < N; i++){
-			if (stress[i] > max){
-				max = stress[i];
-				maxSite = i;
-			}
-		}
-		return maxSite;
-	}
-	 int findCircleNbors(int r){
-		 int no = 0;
-		 for(int y = -r; y <= r; y++){
-			 for(int x = -r; x <= r; x++){
-				 double distance = Math.sqrt(x*x + y*y);
-				 if (distance <= r) no += 1;
-			 }
-		 }
-		 no -= 1;  //do not count the site itself 
-		 return no;
-	 }
+
+
 	
 }
