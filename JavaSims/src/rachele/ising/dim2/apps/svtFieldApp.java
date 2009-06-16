@@ -1,4 +1,4 @@
-package rachele.ising.dim2.apps;
+ package rachele.ising.dim2.apps;
 
 //import static scikit.util.Utilities.asList;
 

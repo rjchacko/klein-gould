@@ -41,9 +41,9 @@ public class OFC_App extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 256);
-		params.addm("dx", 2);
-		params.addm("Coarse Grained dt", 0.01);
-		params.addm("Equilibration Updates", 10000);
+		params.addm("dx", 8);
+		params.addm("Coarse Grained dt", 100);
+		params.addm("Equilibration Updates", 1000000);
 		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.01);
