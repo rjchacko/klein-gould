@@ -46,7 +46,7 @@ public class OFC_App extends Simulation{
 		params.addm("Equilibration Updates", 1000000);
 		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
-		params.addm("Dissipation Param", 0.01);
+		params.addm("Dissipation Param", 0.05);
 		params.addm("Res. Max Noise", 0.125);
 		params.add("L");
 		params.add("Time");
