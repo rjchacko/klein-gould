@@ -8,6 +8,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 
 	double metric0;					//metric measured at time t = 0;
 	double lastCG_RecordTime;		//CG time parameter to keep track of last time CG info was recorded
+	double lastRecordTime;
 	
 	public double [] stressTimeAve;
 	public double [] CG_TimeAve;
@@ -45,6 +46,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		rStress = params.fget("Residual Stress");
 		maxResNoise = params.fget("Res. Max Noise");
 		lastCG_RecordTime = 0;
+		lastRecordTime = 0;
 	}
 	
 	public void initLattice(){
@@ -54,7 +56,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		CG_TimeAve = new double [Np];
 		failList = new boolean [N];
 		for (int i = 0; i < N; i++){
-			stress[i] = random.nextFloat();
+			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;
 			stressTimeAve[i] = stress[i];
 			failList[i] = false;
 		}
@@ -75,12 +77,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 
 		epicenterSite = siteWithMaxStress();
 		double stressAdd = tStress - stress[epicenterSite];
-//		dt = stressAdd;
-//		dt=1.0;
-//		if(stressAdd < 0) System.out.println("Error: stress already above failure");
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
-//		avSize = 1;
-//		for (int i = 0; i < N; i++) stress[i] += tStress - stress[epicenterSite];
 		if(fullyConnected){
 			failList[epicenterSite] = true;
 			boolean failAgain = checkFailList();
@@ -165,16 +162,16 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	}
 	
 	public double calcInverseMetric(){
+		double del_t = time -lastRecordTime;
 		for(int i=0; i < N; i++)
-			stressTimeAve[i] = (stressTimeAve[i]*(double)(time-dt)+ stress[i]*dt)/(double)(time);
+			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(time);
 		double spaceSum = DoubleArray.sum(stressTimeAve);
 		double spaceTimeStressAve = (spaceSum)/(double)(N);
-		double 
-		metricSum = 0;
+		double metricSum = 0;
 		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
 		double inverseMetric = (double)(N)*metric0/metricSum;
+		lastRecordTime = time;
 		return inverseMetric;
-//		inverseMetricAcc.accum(time, inverseMetric);
 	}
 	
 
