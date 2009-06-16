@@ -22,17 +22,14 @@ public class OFC_App extends Simulation{
 	
 	Grid grid = new Grid("Lattice");
 	Grid cgGrid = new Grid(" CG grid");
-//	Plot iterPlot = new Plot("Iterations");
-//	Plot metricPlot = new Plot("Metric Plot");
 	Plot sizePlot = new Plot("Size Histogram");
 	OFC_Lattice ofc;
 	Accumulator cgMetricAcc;
-//	Accumulator sizeAcc = new Accumulator(100);
 	Histogram sizeHist = new Histogram(1);
-//	Accumulator inverseMetricAcc = new Accumulator();
 	String iMetFile;
 	String sizeFile;
 	String sizeHistFile;
+	String cgInvMetricFile;
 	
 	public static void main(String[] args) {
 		new Control(new OFC_App(), "OFC Model");
@@ -44,12 +41,12 @@ public class OFC_App extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 256);
-		params.addm("dx", 1);
-		params.addm("Coarse Grained dt", 100);
+		params.addm("dx", 2);
+		params.addm("Coarse Grained dt", 0.01);
 		params.addm("Equilibration Updates", 10000);
-		params.addm("R", 0);// 0 -> fully connected
+		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
-		params.addm("Dissipation Param", 0.2);
+		params.addm("Dissipation Param", 0.01);
 		params.addm("Res. Max Noise", 0.125);
 		params.add("L");
 		params.add("Time");
@@ -105,15 +102,15 @@ public class OFC_App extends Simulation{
 				prestep = true;
 
 				int size = ofc.avSize;
-
-				FileUtil.printlnToFile(iMetFile, ofc.time, ofc.calcInverseMetric());
-				FileUtil.printlnToFile(sizeFile, ofc.time, size);
 				sizeHist.accum(size);
 
 				if(ofc.time > nextRecordTime){
+					FileUtil.printlnToFile(iMetFile, ofc.time, ofc.calcInverseMetric());
+					FileUtil.printlnToFile(sizeFile, ofc.time, size);
 					FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 					FileUtil.printHistToFile(sizeHistFile, sizeHist);
-//					double cgMetric = ofc.calcCG_Metric();
+					double cgInverseMetric = 1.0/ofc.calcCG_Metric();
+					FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
 					nextRecordTime += cg_dt;
 				}
 			}
@@ -125,12 +122,12 @@ public class OFC_App extends Simulation{
 	
 	void initFiles(){
 		iMetFile = params.sget("Data Dir") + File.separator + "im.txt";  // to record iverse metric data
-		String message = "inverse metric vs time";
-		FileUtil.initFile(iMetFile, params, message);
+		FileUtil.initFile(iMetFile, params, "inverse metric vs time");
 		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";   //to record size vs time data
-		message = "avalanch size vs time";
-		FileUtil.initFile(sizeFile, params, message);
+		FileUtil.initFile(sizeFile, params, "avalanch size vs time");
 		sizeHistFile = params.sget("Data Dir") + File.separator + "sh.txt";	//to record size histogram data
+		cgInvMetricFile = params.sget("Data Dir") + File.separator + "cg.txt";
+		FileUtil.initFile(cgInvMetricFile, params, "Coarse Grained Inverse Metric");
 	}
 
 }

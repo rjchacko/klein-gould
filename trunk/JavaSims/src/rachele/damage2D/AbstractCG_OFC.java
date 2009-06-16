@@ -59,7 +59,8 @@ public class AbstractCG_OFC {
 	}
 	
 	double calcResNoise(int s){
-		double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0)+rStress;
+		double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0) + rStress;
+//		System.out.println("Res noise = " + resNoise);
 		return resNoise;
 	}
 	
