@@ -2,17 +2,15 @@ package kang.ising;// what is this used for?
 
 import java.awt.Color;
 
-import scikit.graphics.ColorGradient;
+import chris.util.PrintUtil;
+
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import scikit.jobs.params.FileValue;
-import scikit.jobs.params.StringValue;
 
 public class ising extends Simulation{
 	Grid grid1 = new Grid("Ising lattice 2d");
@@ -133,6 +131,9 @@ public class ising extends Simulation{
 			isingspin[i]=-1;
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
+				System.out.print("spin = ");
+				System.out.println(isingspin[i]);
+				PrintUtil.printlnToFile("/Users/cserino/Desktop/foo.txt","spin = ", isingspin[i]);
 		}
 		
 		
