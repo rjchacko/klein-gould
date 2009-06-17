@@ -1,4 +1,20 @@
 package kang.ising;// what is this used for?
+/**
+ * Kang, this is used to organize things. So, for example, if you open 
+ * one of my files, for example ergodicDiagramApp then you will see that the package
+ * basically tells JAVA / Eclipse what directory and subdirectory to store the file in. 
+ * 
+ * Also, you can have public, private, and protected variables and classed e.g.
+ * private double x = 0
+ * public double x = 0
+ * protected doube = 0
+ * 
+ * and protected numbers can be accessed from any class in the same package as the 
+ * protected variable / class.
+ * 
+ *  -- Chris
+ * 
+ */
 
 import java.awt.Color;
 
