@@ -9,10 +9,7 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import scikit.jobs.params.FileValue;
-import scikit.jobs.params.StringValue;
 
 public class firsttest extends Simulation{
 	Grid grid1 = new Grid("Ising lattice 2d");
