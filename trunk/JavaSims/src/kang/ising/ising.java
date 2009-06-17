@@ -72,7 +72,7 @@ public class ising extends Simulation{
 		double Energy=0;
 		int b;
 		for(b=0; b<3;b++){
-			Energy=Energy+J*isingspin[j]*isingspin[Nneighber(b,j)];
+			Energy+=J*isingspin[j]*isingspin[Nneighber(b,j)];
 		}
 		return Energy;
 			
@@ -99,7 +99,7 @@ public class ising extends Simulation{
 	}
 	
 	public void animate(){
-		int i;
+		
 		ColorPalette ising = new ColorPalette ();
 		ising.setColor(1, Color.BLACK);
 		ising.setColor(-1, Color.WHITE);
@@ -116,9 +116,11 @@ public class ising extends Simulation{
 	}
 	
 	public void run(){
+		
 		int i,j;
 		T = params.fget("Temperature");
 		H = params.fget("Field");
+		J = params.fget("Interaction Constant");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
@@ -127,35 +129,40 @@ public class ising extends Simulation{
 		
 		
 		//randomize the initial state
-		for (i=0; i<M; i++){
+		for (i=0; i<M-1; i++){
 			isingspin[i]=-1;
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
 		}
+		
+		
 		for (step=0; step< steplimit; step++){
-			j=(int) Math.random()*M; //choose a spin randomly
-			double ZeemanE1=-H*isingspin[j];// initial field energy
-			double InterE1=interactionE(j); // initial interaction energy
-			double ZeemanE2=-H*(-isingspin[j]); //field energy after flipping
-			double InterE2=-interactionE(j);
-			double E1=ZeemanE1+InterE1;
-			double E2=ZeemanE2+InterE2;
-			
-			if (E1>E2){
-				int tempS=isingspin[j];
-				isingspin[j]=-tempS;
-			}// flip the spin
-			
-			if (E1<E2){
-				if (Math.random()<Math.exp((E1-E2)/T)){
+				j=(int) (Math.random()*M); //choose a spin randomly
+				double ZeemanE1=-H*isingspin[j];// initial field energy
+				double InterE1=interactionE(j); // initial interaction energy
+				double ZeemanE2=-H*(-isingspin[j]); //field energy after flipping
+				double InterE2=-interactionE(j);
+				double E1=ZeemanE1+InterE1;
+				double E2=ZeemanE2+InterE2;
+				
+				if (E1>E2){
 					int tempS=isingspin[j];
 					isingspin[j]=-tempS;
+				}// flip the spin
 				
-				}
-			}	
-			
-			Job.animate();
-		}
+				if (E1<E2){
+					if (Math.random()<Math.exp((E1-E2)/T)){
+						int tempS=isingspin[j];
+						isingspin[j]=-tempS;
+					
+					}
+				}	
+				
+				Job.animate();
+				
+			}
+		
+		
 			
 				
 	}
