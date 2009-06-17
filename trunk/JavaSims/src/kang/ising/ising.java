@@ -36,23 +36,23 @@ public class ising extends Simulation{
 		
 		if (a==0) {
 			ni=nx*L2+ny-1;
-			if  (ny-1<0) {
-				ni=nx*L2+ny+L2-1;
+			if  (ny==0) {
+				ni=nx*L2+ny*L2-1;
 			}
 			
 		}//(x,y-1) up
 		
 		if (a==1){
 			ni=(nx+1)*L2+ny;
-			if  (nx+1>L1-1) {
-				ni=(nx*-L1+1)*L2+ny;
+			if  (nx==L1-1) {
+				ni=(nx-L1+1)*L2+ny;
 			}
 			
 		}//(x+1,y) right
 		
 		if (a==2){
 			ni=nx*L2+ny+1;
-			if  (ny+1>L2-1) {
+			if  (ny==L2-1) {
 				ni=nx*L2+ny-L2+1;
 			}
 			
@@ -60,8 +60,8 @@ public class ising extends Simulation{
 		
 		if (a==3){
 			ni=(nx-1)*L2+ny;
-			if  (nx-1<0) {
-				ni=(nx*+L1-1)*L2+ny;
+			if  (nx==0) {
+				ni=(nx+L1-1)*L2+ny;
 			}
 		}//(x-1,y) left
 		return ni;
@@ -71,8 +71,8 @@ public class ising extends Simulation{
 	public double interactionE (int j){ //function for interaction energy
 		double Energy=0;
 		int b;
-		for(b=0; b<3;b++){
-			Energy+=J*isingspin[j]*isingspin[Nneighber(b,j)];
+		for(b=0; b<=3;b++){
+			Energy=Energy+J*isingspin[j]/*isingspin[Nneighber(b,j)]*/;
 		}
 		return Energy;
 			
@@ -129,7 +129,7 @@ public class ising extends Simulation{
 		
 		
 		//randomize the initial state
-		for (i=0; i<M-1; i++){
+		for (i=0; i<M; i++){
 			isingspin[i]=-1;
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
