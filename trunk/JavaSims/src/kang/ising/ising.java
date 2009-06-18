@@ -7,7 +7,7 @@ package kang.ising;// what is this used for?
  * Also, you can have public, private, and protected variables and classed e.g.
  * private double x = 0
  * public double x = 0
- * protected doube = 0
+ * protected double = 0
  * 
  * and protected numbers can be accessed from any class in the same package as the 
  * protected variable / class.
@@ -51,7 +51,7 @@ public class ising extends Simulation{
 		if (a==0) {
 			ni=nx*L2+ny-1;
 			if  (ny==0) {
-				ni=nx*L2+ny*L2-1;
+				ni=nx*L2+ny+L2-1;
 			}
 			
 		}//(x,y-1) up
@@ -78,19 +78,30 @@ public class ising extends Simulation{
 				ni=(nx+L1-1)*L2+ny;
 			}
 		}//(x-1,y) left
+		
 		return ni;
 		
 	}
 	
 	public double interactionE (int j){ //function for interaction energy
 		double Energy=0;
-		int b;
-		for(b=0; b<=3;b++){
-			Energy=Energy+J*isingspin[j]/*isingspin[Nneighber(b,j)]*/;
+		int b,k;
+		for(b=0; b<4;b++){
+			k=Nneighber(b,j);
+			System.out.print("neighber=  ");
+			System.out.println(k);
+			Energy=Energy+J*isingspin[j]*isingspin[k];
 		}
 		return Energy;
 			
 	}
+	
+	
+	/*public double longrangeE (int j){
+		double Energy=0;
+		int a;
+	}*/
+	
 	
 	public static void main (String[] kangliu){
 		new Control(new ising(), "Kang Liu's ising model" );
@@ -101,7 +112,7 @@ public class ising extends Simulation{
 		params.add("lattice's width", 12);
 		params.add("lattice's length", 24);
 		params.add("Temperature", new DoubleValue(5, 0, 100).withSlider());
-		params.addm("Field", new DoubleValue(5, 0, 100).withSlider());
+		params.addm("Field", new DoubleValue(5, 0, 500).withSlider());
 		params.add("Interaction Constant", 5);
 		params.add("interaction range", 0);
 		params.add("Monte Carlo step's limit", 100);
@@ -147,18 +158,26 @@ public class ising extends Simulation{
 			isingspin[i]=-1;
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
-				System.out.print("spin = ");
-				System.out.println(isingspin[i]);
-				PrintUtil.printlnToFile("/Users/cserino/Desktop/foo.txt","spin = ", isingspin[i]);
+				//System.out.print("spin = ");
+				//System.out.println(isingspin[i]);
+				//PrintUtil.printlnToFile("/Users/cserino/Desktop/foo.txt","spin = ", isingspin[i]);
 		}
 		
 		
 		for (step=0; step< steplimit; step++){
 				j=(int) (Math.random()*M); //choose a spin randomly
+				
+				System.out.println("j=");
+				System.out.println(j);
+			
 				double ZeemanE1=-H*isingspin[j];// initial field energy
 				double InterE1=interactionE(j); // initial interaction energy
+				
+				
 				double ZeemanE2=-H*(-isingspin[j]); //field energy after flipping
 				double InterE2=-interactionE(j);
+				
+				
 				double E1=ZeemanE1+InterE1;
 				double E2=ZeemanE2+InterE2;
 				
