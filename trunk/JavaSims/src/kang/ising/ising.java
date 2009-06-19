@@ -97,10 +97,31 @@ public class ising extends Simulation{
 	}
 	
 	
-	/*public double longrangeE (int j){
+	public double longrangeE (int i){
 		double Energy=0;
-		int a;
-	}*/
+		int S=0;
+		int nx=i/L2;
+		int ny=i%L2;
+		int kx, ky;
+		
+		for (int m=-R; m<=R; m++)
+			for (int n=-R; n<=R; n++)
+			{
+				kx=nx+m;
+				ky=ny+n;
+				if(nx+m<0)
+					kx=nx+m+L1;
+				if(nx+m>L1-1)
+					kx=nx+m-L1;
+				if(ny+n<0)
+					ky=ny+n+L2;
+				if(ny+n>L2-1)
+					ky=ny+n-L2;
+				S+=isingspin[kx*L2+ky];	
+			}
+		Energy=J*isingspin[i]*S-J;
+		return Energy;
+	}
 	
 	
 	public static void main (String[] kangliu){
@@ -109,13 +130,13 @@ public class ising extends Simulation{
 	
 	public void load(Control liu){
 		liu.frame (grid1);
-		params.add("lattice's width", 12);
-		params.add("lattice's length", 24);
-		params.add("Temperature", new DoubleValue(5, 0, 100).withSlider());
+		params.add("lattice's width", 100);
+		params.add("lattice's length", 100);
+		params.addm("Temperature", new DoubleValue(5, 0, 100).withSlider());
 		params.addm("Field", new DoubleValue(5, 0, 500).withSlider());
-		params.add("Interaction Constant", 5);
-		params.add("interaction range", 0);
-		params.add("Monte Carlo step's limit", 100);
+		params.addm("Interaction Constant", 5);
+		params.add("Interaction range", 0);
+		params.add("Monte Carlo step's limit", 1000000);
 		
 		
 		params.add("Model type", new ChoiceValue("noninteracting", "interacting"));
@@ -143,9 +164,7 @@ public class ising extends Simulation{
 	public void run(){
 		
 		int i,j;
-		T = params.fget("Temperature");
-		H = params.fget("Field");
-		J = params.fget("Interaction Constant");
+		R = (int)params.fget("Interaction range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
@@ -165,17 +184,32 @@ public class ising extends Simulation{
 		
 		
 		for (step=0; step< steplimit; step++){
+			
+			    H = params.fget("Field");
+			    T = params.fget("Temperature");
+			    J = params.fget("Interaction Constant");
 				j=(int) (Math.random()*M); //choose a spin randomly
 				
 				System.out.println("j=");
 				System.out.println(j);
 			
 				double ZeemanE1=-H*isingspin[j];// initial field energy
-				double InterE1=interactionE(j); // initial interaction energy
+				double InterE1=0;
+                double InterE2=0;
+				
+				if (R==0) {
+					InterE1=interactionE(j); // initial interaction energy
+					InterE2=-interactionE(j);
+				}
+				
+				if (R!=0) {
+					InterE1=longrangeE(j);
+					InterE2=-longrangeE(j)-2*J;
+				}
 				
 				
 				double ZeemanE2=-H*(-isingspin[j]); //field energy after flipping
-				double InterE2=-interactionE(j);
+				
 				
 				
 				double E1=ZeemanE1+InterE1;
