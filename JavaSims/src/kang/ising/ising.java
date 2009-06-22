@@ -139,7 +139,7 @@ public class ising extends Simulation{
 		params.add("Monte Carlo step's limit", 1000000);
 		
 		
-		params.add("Model type", new ChoiceValue("noninteracting", "interacting"));
+		params.add("Model", new ChoiceValue("noninteracting", "interacting"));
 		params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
 		
 	}
@@ -188,10 +188,14 @@ public class ising extends Simulation{
 			    H = params.fget("Field");
 			    T = params.fget("Temperature");
 			    J = params.fget("Interaction Constant");
+			
 				j=(int) (Math.random()*M); //choose a spin randomly
 				
-				System.out.println("j=");
+				System.out.print("Step=");
+				System.out.println(step);
+				System.out.print("j=");
 				System.out.println(j);
+				
 			
 				double ZeemanE1=-H*isingspin[j];// initial field energy
 				double InterE1=0;
@@ -206,6 +210,8 @@ public class ising extends Simulation{
 					InterE1=longrangeE(j);
 					InterE2=-longrangeE(j)-2*J;
 				}
+				
+				
 				
 				
 				double ZeemanE2=-H*(-isingspin[j]); //field energy after flipping
