@@ -190,14 +190,7 @@ public class ofc2DfastCG extends ofc2Dfast{
 					pw.print(dataCG[kk][jj]);
 					pw.print("\t");
 				}
-				if(jj%tau==0){
-					pw.print(dataCG[dcatCG-1][jj]);
-				}
-				else{
-					pw.print("-");
-
-				}
-				pw.println();
+				pw.println(dataCG[dcatCG-1][jj]);
 			}			
 			pw.close();
 		}

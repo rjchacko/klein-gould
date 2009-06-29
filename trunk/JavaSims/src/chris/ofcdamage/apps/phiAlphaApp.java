@@ -56,7 +56,7 @@ public class phiAlphaApp extends Simulation{
 	public void run() {
 		
 		int cycle     = 0;
-		double alphaC = 0;
+		double alphaC = 0.45;	// TEMP 
 		double[] phid = new double[5];
 		double[] phi  = new double[2];
 		

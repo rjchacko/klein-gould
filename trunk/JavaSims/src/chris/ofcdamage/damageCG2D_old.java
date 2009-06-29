@@ -9,21 +9,21 @@ import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
 
-public class damageCG2D extends damage2Dfast{
+public class damageCG2D_old extends damage2Dfast{
 
 	protected double OmegaCGs, OmegaCGgr, sbarCG[], stressCG[], grbarCG[], dataCG[][];
 	protected int LCG, M, NCG, nbaCG[], grCG[], cgID[], qCG, tau;
 	protected LatticeNeighbors nbsCG;
 	public static int dcatCG = 2;
 
-	public damageCG2D(Parameters params) {
+	public damageCG2D_old(Parameters params) {
 
 		super(params);
-		damageCG2D_constructor(params);
+		damageCG2D_old_constructor(params);
 		return;
 	}
 
-	public void damageCG2D_constructor(Parameters params){
+	public void damageCG2D_old_constructor(Parameters params){
 	
 		LCG       = params.iget("L'");
 		tau       = params.iget("\u03C4");
