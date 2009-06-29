@@ -38,9 +38,13 @@ public class ising extends Simulation{
 	public int R;   //interaction range
 	public int step; //Monte Carlo step
 	public int steplimit; //upperlimit of MC step
+	public int metricstart; //the start of metric calculation
 	
 	
 	public int isingspin[];     //the array of the data
+	
+	public double timetotalE[];  
+	public double timeaverageE[]; //time average energy for metric
 	
 	public int Nneighber(int a,int i ){// function for the index of nearest neighbor
 		int nx,ny; //index for neighbor
@@ -96,6 +100,8 @@ public class ising extends Simulation{
 			
 	}
 	
+
+	
 	
 	public double longrangeE (int i){
 		double Energy=0;
@@ -137,6 +143,7 @@ public class ising extends Simulation{
 		params.addm("Interaction Constant", 5);
 		params.add("Interaction range", 0);
 		params.add("Monte Carlo step's limit", 1000000);
+		params.add("Mectric Start at",1000);
 		
 		
 		params.add("Model", new ChoiceValue("noninteracting", "interacting"));
@@ -166,10 +173,19 @@ public class ising extends Simulation{
 		int i,j;
 		R = (int)params.fget("Interaction range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
+		metricstart = (int)params.fget("Mectric Start at");
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
 		isingspin = new int[M];
+		timetotalE = new double[M];
+		timeaverageE = new double[M];
+		
+		double NMetric=0;
+		double Metric=0;
+		double totalE=0;
+		double averageE=0;// definition for metric variables
+		
 		
 		
 		//randomize the initial state
@@ -184,6 +200,8 @@ public class ising extends Simulation{
 		
 		
 		for (step=0; step< steplimit; step++){
+			
+			for (int f=0; f< M; f++){
 			
 			    H = params.fget("Field");
 			    T = params.fget("Temperature");
@@ -232,9 +250,44 @@ public class ising extends Simulation{
 						isingspin[j]=-tempS;
 					
 					}
-				}	
+				}
+			
 				
 				Job.animate();
+				}
+			
+			if(step > metricstart){
+			
+			totalE=0;
+			
+			for (int y=0; y<M; y++)
+			{
+				if(R==0)
+					timetotalE[y]+=interactionE(y);
+				if(R!=0)
+					timetotalE[y]+=longrangeE(y);
+				
+				timeaverageE[y]=timetotalE[y]/(step-metricstart);
+			 
+			}
+			
+			for (int x=0; x< M; x++)
+			{
+					totalE+=timeaverageE[x];
+			}
+			
+			averageE=totalE/M;
+			
+			for (int z=0; z< M; z++)
+			{
+				NMetric=0;
+				NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
+			}
+			
+			Metric=NMetric/M;
+			
+		
+			}
 				
 			}
 		
