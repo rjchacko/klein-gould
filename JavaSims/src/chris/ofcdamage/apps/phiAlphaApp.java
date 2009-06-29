@@ -23,14 +23,12 @@ public class phiAlphaApp extends Simulation{
 	
 	public void load(Control c) {
 		
-		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/Testing"));
+		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop"));
 		params.add("Data File", "default");
 		params.add("Random Seed", (int) 0);
-		params.add("Interaction Shape");
-		params.set("Interaction Shape","All Sites");
-		params.add("Interaction Radius (R)");
-		params.set("Interaction Radius (R)",10);
-		params.add("Lattice Size", (int) 128);
+		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
+		params.add("Interaction Radius (R)", (int) 10);
+		params.add("Lattice Size", (int) 256);
 		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
 		params.add("Equil Time", 10000);
 		//params.add("Equil Time", 500000);
