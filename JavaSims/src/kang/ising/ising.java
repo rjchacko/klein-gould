@@ -39,12 +39,15 @@ public class ising extends Simulation{
 	public int step; //Monte Carlo step
 	public int steplimit; //upperlimit of MC step
 	public int metricstart; //the start of metric calculation
+	public int N; //how many points in the metric plot
+	
 	
 	
 	public int isingspin[];     //the array of the data
 	
 	public double timetotalE[];  
 	public double timeaverageE[]; //time average energy for metric
+	public double Metric[];  //array for plotting metric
 	
 	public int Nneighber(int a,int i ){// function for the index of nearest neighbor
 		int nx,ny; //index for neighbor
@@ -143,8 +146,8 @@ public class ising extends Simulation{
 		params.addm("Interaction Constant", 5);
 		params.add("Interaction range", 0);
 		params.add("Monte Carlo step's limit", 1000000);
-		params.add("Mectric Start at",1000);
-		
+		params.add("Metric Start at",1000);
+		params.add("Metric points", 200);
 		
 		params.add("Model", new ChoiceValue("noninteracting", "interacting"));
 		params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
@@ -173,16 +176,19 @@ public class ising extends Simulation{
 		int i,j;
 		R = (int)params.fget("Interaction range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
-		metricstart = (int)params.fget("Mectric Start at");
+		metricstart = (int)params.fget("Metric Start at");
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
 		isingspin = new int[M];
 		timetotalE = new double[M];
 		timeaverageE = new double[M];
+		N = (int)params.fget("Metric points");
+		Metric = new double[N];
+		
+		
 		
 		double NMetric=0;
-		double Metric=0;
 		double totalE=0;
 		double averageE=0;// definition for metric variables
 		
@@ -284,13 +290,15 @@ public class ising extends Simulation{
 				NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
 			}
 			
-			Metric=NMetric/M;
+		
+			if(step<N+metricstart+1)
+				Metric[step-metricstart-1]=NMetric/M;
 			
-		
+			
+			
+			PrintUtil.printlnToFile("F:/metric.txt",step-metricstart, NMetric/M);
 			}
-				
-			}
-		
+		}
 		
 			
 				
