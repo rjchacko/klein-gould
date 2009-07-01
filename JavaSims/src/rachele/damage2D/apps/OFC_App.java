@@ -56,7 +56,7 @@ public class OFC_App extends Simulation{
 	
 	public void animate() {
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
-		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.cgCount);
+		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
@@ -111,7 +111,7 @@ public class OFC_App extends Simulation{
 //					FileUtil.printlnToFile(sizeFile, ofc.time, size);
 					FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 					FileUtil.printHistToFile(sizeHistFile, sizeHist);
-					double cgInverseMetric = 1.0/ofc.calcCG_Metric();
+					double cgInverseMetric = 1.0/ofc.calcCG_activity_Metric();
 					double reducedTime = ofc.time/cg_dt;
 					FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseMetric, size);
 //					FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);

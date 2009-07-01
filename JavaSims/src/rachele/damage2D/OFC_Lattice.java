@@ -55,7 +55,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public void initLattice(){
 		stress = new double [N];
 		stressTimeAve = new double [N];
-		cgCount = new int [Np];
+		epicenterCount = new int [Np];
 		CG_TimeAve = new double [Np];
 		failList = new boolean [N];
 		for (int i = 0; i < N; i++){
@@ -64,7 +64,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			failList[i] = false;
 		}
 		for (int i = 0; i < Np; i++){
-			cgCount[i] = 0;
+			epicenterCount[i] = 0;
 			CG_TimeAve[i] = 0;
 		}
 		metric0 = calcMetric0();
@@ -103,7 +103,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public void prestep(){
 		epicenterSite = siteWithMaxStress();
 		int site = findCG_site(epicenterSite);
-		cgCount[site] +=1;
+		epicenterCount[site] +=1;
 	}
 	
 	public void step(){
@@ -179,12 +179,12 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	
 
 	
-	public double calcCG_Metric(){
+	public double calcCG_activity_Metric(){
 		double del_t = time - lastCG_RecordTime;
 		for (int i = 0; i < Np; i++){
 			double countWithCutoff;
-			if (cgCount[i] < lowerCutoff) countWithCutoff = 0;
-			else countWithCutoff = cgCount[i];
+			if (epicenterCount[i] < lowerCutoff) countWithCutoff = 0;
+			else countWithCutoff = epicenterCount[i];
 			CG_TimeAve[i] = (lastCG_RecordTime*CG_TimeAve[i] + del_t*countWithCutoff) / (time);
 //			CG_TimeAve[i] = (lastCG_RecordTime*CG_TimeAve[i] + del_t*cgCount[i]) / (time);
 		}
@@ -195,7 +195,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		}
 		CG_metric /= (double)Np;
 		lastCG_RecordTime = time;
-		for (int i = 0; i < Np; i++) cgCount[i] = 0;
+		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
 		return CG_metric; 
 	}
 	
