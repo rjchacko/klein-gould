@@ -95,8 +95,8 @@ public class ising extends Simulation{
 		int b,k;
 		for(b=0; b<4;b++){
 			k=Nneighber(b,j);
-			System.out.print("neighber=  ");
-			System.out.println(k);
+//			System.out.print("neighber=  ");
+//			System.out.println(k);
 			Energy=Energy+J*isingspin[j]*isingspin[k];
 		}
 		return Energy;
@@ -141,7 +141,7 @@ public class ising extends Simulation{
 		liu.frame (grid1);
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
-		params.addm("Temperature", new DoubleValue(5, 0, 100).withSlider());
+		params.addm("Temperature", new DoubleValue(5, 0, 10000000).withSlider());
 		params.addm("Field", new DoubleValue(5, 0, 500).withSlider());
 		params.addm("Interaction Constant", 5);
 		params.add("Interaction range", 0);
@@ -151,6 +151,7 @@ public class ising extends Simulation{
 		
 		params.add("Model", new ChoiceValue("noninteracting", "interacting"));
 		params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
+		params.add("MC time");
 		
 	}
 	
@@ -215,10 +216,10 @@ public class ising extends Simulation{
 			
 				j=(int) (Math.random()*M); //choose a spin randomly
 				
-				System.out.print("Step=");
-				System.out.println(step);
-				System.out.print("j=");
-				System.out.println(j);
+//				System.out.print("Step=");
+//				System.out.println(step);
+//				System.out.print("j=");
+//				System.out.println(j);
 				
 			
 				double ZeemanE1=-H*isingspin[j];// initial field energy
@@ -246,8 +247,9 @@ public class ising extends Simulation{
 				double E2=ZeemanE2+InterE2;
 				
 				if (E1>E2){
-					int tempS=isingspin[j];
-					isingspin[j]=-tempS;
+//					int tempS=isingspin[j];
+//					isingspin[j]=-tempS;
+					isingspin[j] = -isingspin[j];
 				}// flip the spin
 				
 				if (E1<E2){
@@ -258,9 +260,9 @@ public class ising extends Simulation{
 					}
 				}
 			
-				
+				if(step % 100 == 0) params.set("MC time", step);
 				Job.animate();
-				}
+			}
 			
 			if(step > metricstart){
 			
@@ -283,10 +285,10 @@ public class ising extends Simulation{
 			}
 			
 			averageE=totalE/M;
-			
+
+			NMetric=0;
 			for (int z=0; z< M; z++)
 			{
-				NMetric=0;
 				NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
 			}
 			
@@ -294,7 +296,8 @@ public class ising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/M;
-				PrintUtil.printlnToFile("F:/metric1.txt",step-metricstart, NMetric/M);
+				//PrintUtil.printlnToFile("F:/metric1.txt",step-metricstart, NMetric/M);
+				PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
 				}
 			
 			
