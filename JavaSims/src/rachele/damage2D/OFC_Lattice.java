@@ -9,6 +9,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	double metric0;					//metric measured at time t = 0;
 	double lastCG_RecordTime;		//CG time parameter to keep track of last time CG info was recorded
 	double lastRecordTime;
+	public int lowerCutoff;
 	
 	public double [] stressTimeAve;
 	public double [] CG_TimeAve;
@@ -42,11 +43,13 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		random.setSeed(params.iget("Random Seed"));
 		
 		tStress = 1.0;
-		dissParam = params.fget("Dissipation Param");
+		dissParam = params.fget("Dissipation Param");   // = alpha
 		rStress = params.fget("Residual Stress");
 		maxResNoise = params.fget("Res. Max Noise");
 		lastCG_RecordTime = 0;
 		lastRecordTime = 0;
+		
+		lowerCutoff = params.iget("Lower Cutoff");
 	}
 	
 	public void initLattice(){
@@ -179,7 +182,11 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public double calcCG_Metric(){
 		double del_t = time - lastCG_RecordTime;
 		for (int i = 0; i < Np; i++){
-			CG_TimeAve[i] = (lastCG_RecordTime*CG_TimeAve[i] + del_t*cgCount[i]) / (time);
+			double countWithCutoff;
+			if (cgCount[i] < lowerCutoff) countWithCutoff = 0;
+			else countWithCutoff = cgCount[i];
+			CG_TimeAve[i] = (lastCG_RecordTime*CG_TimeAve[i] + del_t*countWithCutoff) / (time);
+//			CG_TimeAve[i] = (lastCG_RecordTime*CG_TimeAve[i] + del_t*cgCount[i]) / (time);
 		}
 		double CG_SpaceAve = DoubleArray.sum(CG_TimeAve)/(double)Np;
 		double CG_metric = 0;
