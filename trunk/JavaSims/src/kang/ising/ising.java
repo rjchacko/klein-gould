@@ -34,7 +34,10 @@ public class ising extends Simulation{
 	public int i, x, y;  //parameters for the index
 	public double T;     //temperature 
 	public double H;     //field
-	public double J;     //interaction constant
+	public double J;     //interaction constant after normalization
+	public double NJ;    //interaction constant before normalization
+	public double totalmagnetization;
+	public double magnetization;
 	public int R;   //interaction range
 	public int step; //Monte Carlo step
 	public int steplimit; //upperlimit of MC step
@@ -142,16 +145,17 @@ public class ising extends Simulation{
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
 		params.addm("Temperature", new DoubleValue(5, 0, 10000000).withSlider());
-		params.addm("Field", new DoubleValue(5, 0, 500).withSlider());
-		params.addm("Interaction Constant", 5);
+		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
+		params.addm("Interaction Constant", 0);
 		params.add("Interaction range", 0);
 		params.add("Monte Carlo step's limit", 1000000);
-		params.add("Metric Start at",1000);
-		params.add("Metric points", 200);
+		params.add("Metric Start at",2000);
+		params.add("Metric points", 500);
 		
-		params.add("Model", new ChoiceValue("noninteracting", "interacting"));
-		params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
+		//params.add("Model", new ChoiceValue("noninteracting", "interacting"));
+		//params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
 		params.add("MC time");
+		params.add("magnetization");
 		
 	}
 	
@@ -212,7 +216,7 @@ public class ising extends Simulation{
 			
 			    H = params.fget("Field");
 			    T = params.fget("Temperature");
-			    J = params.fget("Interaction Constant");
+			    NJ = params.fget("Interaction Constant");
 			
 				j=(int) (Math.random()*M); //choose a spin randomly
 				
@@ -227,11 +231,13 @@ public class ising extends Simulation{
                 double InterE2=0;
 				
 				if (R==0) {
+					J=NJ/4;
 					InterE1=interactionE(j); // initial interaction energy
 					InterE2=-interactionE(j);
 				}
 				
 				if (R!=0) {
+					J=NJ/(4*(R+1)*(R+1)-1);
 					InterE1=longrangeE(j);
 					InterE2=-longrangeE(j)-2*J;
 				}
@@ -254,8 +260,8 @@ public class ising extends Simulation{
 				
 				if (E1<E2){
 					if (Math.random()<Math.exp((E1-E2)/T)){
-						int tempS=isingspin[j];
-						isingspin[j]=-tempS;
+						//int tempS=isingspin[j];
+						isingspin[j]=-isingspin[j];
 					
 					}
 				}
@@ -296,14 +302,31 @@ public class ising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/M;
-				//PrintUtil.printlnToFile("F:/metric1.txt",step-metricstart, NMetric/M);
-				PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
+				PrintUtil.printlnToFile("F:/data/metric1.txt",step-metricstart, NMetric/M);
+				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
 				}
 			
-			
-			
+			if(step==N+metricstart+1)
+			{
+				PrintUtil.printlnToFile("F:/data/metric1.txt","Lattice length=", L1);
+				PrintUtil.printlnToFile("F:/data/metric1.txt","Lattice width=", L2);
+				PrintUtil.printlnToFile("F:/data/metric1.txt","J=",J);
+				PrintUtil.printlnToFile("F:/data/metric1.txt","Interaction Range=",R);
+				PrintUtil.printlnToFile("F:/data/metric1.txt","Mectric starts at", metricstart);
+				PrintUtil.printlnToFile("F:/data/metric1.txt","Final Tempearture=",T);
+				PrintUtil.printlnToFile("F:/data/metric1.txt","Final Field=",H);
+				
+			}
 			
 			}
+			
+		totalmagnetization=0;	
+		for(int s=0; s<M; s++)
+		{
+			totalmagnetization+=isingspin[s];
+		}
+		magnetization=totalmagnetization/M;
+		params.set("magnetization", magnetization);
 		}
 		
 			
