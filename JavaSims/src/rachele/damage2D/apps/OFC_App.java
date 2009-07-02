@@ -18,16 +18,17 @@ import scikit.util.Utilities;
 
 public class OFC_App extends Simulation{
 
-	double cg_dt;
+	int cg_dt;
 	
 	Grid grid = new Grid("Lattice");
 	Grid cgGrid = new Grid(" CG grid");
 //	Plot sizePlot = new Plot("Size Histogram");
 	OFC_Lattice ofc;
-	Accumulator cgMetricAcc;
+	Accumulator cgMetricAcc = new Accumulator();
+	Accumulator sizeStore = new Accumulator();
 	Histogram sizeHist = new Histogram(1);
 	String iMetFile;
-//	String sizeFile;
+	String sizeFile;
 	String sizeHistFile;
 //	String cgInvMetricFile;
 	
@@ -82,8 +83,7 @@ public class OFC_App extends Simulation{
 	public void run() {
 		ofc = new OFC_Lattice(params);
 		initFiles();
-		cg_dt = params.fget("Coarse Grained dt");
-		cgMetricAcc = new Accumulator();
+		cg_dt = params.iget("Coarse Grained dt");
 		boolean prestep = true;
 		double nextRecordTime = cg_dt;
 		
@@ -104,6 +104,7 @@ public class OFC_App extends Simulation{
 
 				int size = ofc.avSize;
 				sizeHist.accum(size);
+				sizeStore.accum(ofc.time, size);
 				double iMet = ofc.calcInverseMetric();
 
 				if(ofc.time > nextRecordTime){
@@ -111,9 +112,11 @@ public class OFC_App extends Simulation{
 //					FileUtil.printlnToFile(sizeFile, ofc.time, size);
 					FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 					FileUtil.printHistToFile(sizeHistFile, sizeHist);
-					double cgInverseMetric = 1.0/ofc.calcCG_activity_Metric();
+					double cgInverseActivityMetric = 1.0/ofc.calcCG_activityMetric();
+					double cgInverseStressMetric = 1.0/ofc.calcCG_stressMetric();
 					double reducedTime = ofc.time/cg_dt;
-					FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseMetric, size);
+					FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, size);
+					FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
 //					FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
 					nextRecordTime += cg_dt;
 				}
@@ -126,9 +129,9 @@ public class OFC_App extends Simulation{
 	
 	void initFiles(){
 		iMetFile = params.sget("Data Dir") + File.separator + "im.txt";  // to record iverse metric data
-		FileUtil.initFile(iMetFile, params, " time (plate updates), stress inverse metric, time/coarse grained time, coarse grained activity metric, size of avalanche");
-//		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";   //to record size vs time data
-//		FileUtil.initFile(sizeFile, params, "avalanch size vs time");
+		FileUtil.initFile(iMetFile, params, " time (plate updates), stress inverse metric, time/coarse grained time, coarse grained activity metric, coarse grained stress metric, size of avalanche");
+		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";   //to record size vs time data
+		FileUtil.initFile(sizeFile, params, "avalanch size vs time");
 		sizeHistFile = params.sget("Data Dir") + File.separator + "sh.txt";	//to record size histogram data
 //		cgInvMetricFile = params.sget("Data Dir") + File.separator + "cg.txt";
 //		FileUtil.initFile(cgInvMetricFile, params, "Coarse Grained Inverse Metric");
