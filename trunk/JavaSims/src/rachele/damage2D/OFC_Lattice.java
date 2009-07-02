@@ -4,7 +4,7 @@ import scikit.jobs.params.Parameters;
 import scikit.util.DoubleArray;
 
 public class OFC_Lattice extends AbstractCG_OFC{
-
+ 
 
 	double metric0;					//metric measured at time t = 0;
 	double lastCG_RecordTime;		//CG time parameter to keep track of last time CG info was recorded
@@ -12,7 +12,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public int lowerCutoff;
 	
 	public double [] stressTimeAve;
-	public double [] CG_TimeAve;
+	public double [] CG_ActivityTimeAve;
+	public double [] CG_StressTimeAve;
 	boolean [] failList;
 	
 	public OFC_Lattice(Parameters params) {
@@ -56,16 +57,18 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		stress = new double [N];
 		stressTimeAve = new double [N];
 		epicenterCount = new int [Np];
-		CG_TimeAve = new double [Np];
+		CG_ActivityTimeAve = new double [Np];
+		CG_StressTimeAve = new double [N];
 		failList = new boolean [N];
 		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;
 			stressTimeAve[i] = stress[i];
 			failList[i] = false;
+			CG_StressTimeAve[i] = 0;
 		}
 		for (int i = 0; i < Np; i++){
 			epicenterCount[i] = 0;
-			CG_TimeAve[i] = 0;
+			CG_ActivityTimeAve[i] = 0;
 		}
 		metric0 = calcMetric0();
 		time = 0;
@@ -178,20 +181,33 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	}
 	
 
+	public double calcCG_stressMetric(){
+		double del_t = time - lastCG_RecordTime;
+		for (int i = 0; i < N; i++)
+			CG_StressTimeAve[i] = (lastCG_RecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (time);
+		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)N;
+		double CG_metric = 0;
+		for (int i = 0; i < L; i++){
+			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
+		}
+		CG_metric /= (double)N;
+		lastCG_RecordTime = time;
+		return CG_metric; 
+	}
 	
-	public double calcCG_activity_Metric(){
+	public double calcCG_activityMetric(){
 		double del_t = time - lastCG_RecordTime;
 		for (int i = 0; i < Np; i++){
 			double countWithCutoff;
 			if (epicenterCount[i] < lowerCutoff) countWithCutoff = 0;
 			else countWithCutoff = epicenterCount[i];
-			CG_TimeAve[i] = (lastCG_RecordTime*CG_TimeAve[i] + del_t*countWithCutoff) / (time);
+			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*countWithCutoff) / (time);
 //			CG_TimeAve[i] = (lastCG_RecordTime*CG_TimeAve[i] + del_t*cgCount[i]) / (time);
 		}
-		double CG_SpaceAve = DoubleArray.sum(CG_TimeAve)/(double)Np;
+		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
 		double CG_metric = 0;
 		for (int i = 0; i < Lp; i++){
-			CG_metric += Math.pow(CG_TimeAve[i] - CG_SpaceAve,2);
+			CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
 		}
 		CG_metric /= (double)Np;
 		lastCG_RecordTime = time;
