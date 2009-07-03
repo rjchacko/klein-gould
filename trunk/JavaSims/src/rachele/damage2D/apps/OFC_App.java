@@ -84,7 +84,7 @@ public class OFC_App extends Simulation{
 		ofc = new OFC_Lattice(params);
 		initFiles();
 		cg_dt = params.iget("Coarse Grained dt");
-		boolean prestep = true;
+//		boolean prestep = true;
 		double nextRecordTime = cg_dt;
 		
 		//equilibrate
@@ -95,12 +95,12 @@ public class OFC_App extends Simulation{
 		}
 		
 		while(true){
-			if(prestep){
-				ofc.prestep();
-				prestep =false;
-			}else{				
+//			if(prestep){
+//				ofc.prestep();
+//				prestep =false;
+//			}else{				
 				ofc.step();
-				prestep = true;
+//				prestep = true;
 
 				int size = ofc.avSize;
 				sizeHist.accum(size);
@@ -119,8 +119,10 @@ public class OFC_App extends Simulation{
 					FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
 //					FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
 					nextRecordTime += cg_dt;
+					
+					sizeStore.clear();
 				}
-			}
+//			}
 
 
 			Job.animate();
