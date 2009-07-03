@@ -25,11 +25,13 @@ public class OFC_App extends Simulation{
 //	Plot sizePlot = new Plot("Size Histogram");
 	OFC_Lattice ofc;
 	Accumulator cgMetricAcc = new Accumulator();
-	Accumulator sizeStore = new Accumulator();
+//	Accumulator sizeStore = new Accumulator();  //To store data at each plate update within a bracket
+	
 	Histogram sizeHist = new Histogram(1);
 	String iMetFile;
 	String sizeFile;
 	String sizeHistFile;
+	int maxSize = 0;
 //	String cgInvMetricFile;
 	
 	public static void main(String[] args) {
@@ -45,6 +47,7 @@ public class OFC_App extends Simulation{
 		params.addm("dx", 8);
 		params.addm("Coarse Grained dt", 500);
 		params.addm("Equilibration Updates", 1000000);
+		params.addm("Max Time", 1000000);
 		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.05);
@@ -86,6 +89,7 @@ public class OFC_App extends Simulation{
 		cg_dt = params.iget("Coarse Grained dt");
 //		boolean prestep = true;
 		double nextRecordTime = cg_dt;
+		int maxTime = params.iget("Max Time");
 		
 		//equilibrate
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
@@ -96,35 +100,37 @@ public class OFC_App extends Simulation{
 		
 		while(true){
 //			if(prestep){
-//				ofc.prestep();
-//				prestep =false;
+//			ofc.prestep();
+//			prestep =false;
 //			}else{				
-				ofc.step();
-//				prestep = true;
+			ofc.step();
+//			prestep = true;
 
-				int size = ofc.avSize;
-				sizeHist.accum(size);
-				sizeStore.accum(ofc.time, size);
-				double iMet = ofc.calcInverseMetric();
+			int size = ofc.avSize;
+			sizeHist.accum(size);
+//			sizeStore.accum(ofc.time, size);
+			if (size > maxSize) maxSize = size;
+			double iMet = ofc.calcInverseMetric();
 
-				if(ofc.time > nextRecordTime){
+			if(ofc.time > nextRecordTime){
 
-//					FileUtil.printlnToFile(sizeFile, ofc.time, size);
-					FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
-					FileUtil.printHistToFile(sizeHistFile, sizeHist);
-					double cgInverseActivityMetric = 1.0/ofc.calcCG_activityMetric();
-					double cgInverseStressMetric = 1.0/ofc.calcCG_stressMetric();
-					double reducedTime = ofc.time/cg_dt;
-					FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, size);
-					FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
-//					FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
-					nextRecordTime += cg_dt;
-					
-					sizeStore.clear();
-				}
+//				FileUtil.printlnToFile(sizeFile, ofc.time, size);
+				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
+				FileUtil.printHistToFile(sizeHistFile, sizeHist);
+				double cgInverseActivityMetric = 1.0/ofc.calcCG_activityMetric();
+				double cgInverseStressMetric = 1.0/ofc.calcCG_stressMetric();
+				double reducedTime = ofc.time/cg_dt;
+				FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
+//				FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
+//				FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
+				nextRecordTime += cg_dt;
+				maxSize = 0;
+//				sizeStore.clear();
+			}
 //			}
 
-
+			if(ofc.time > maxTime) Job.signalStop();
+				
 			Job.animate();
 		}
 	}
