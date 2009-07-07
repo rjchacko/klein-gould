@@ -3,54 +3,44 @@ package rachele.damage2D.apps;
 import java.awt.Color;
 import java.io.File;
 
-import rachele.damage2D.OFC_Lattice;
+import rachele.damage2D.OFC_DamageLattice;
 import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;
-//import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 import scikit.util.Utilities;
 
-/**
-* Basic app.  
-* 
-* Includes event size lower cutoff option.  
-* 
-* Outputs every CG time chunk (=cg_dt) stress metric, coarse grained stress metric, 
-* coarse grained activity metric, max size of cg_dt time chunk and a (GR) size histogram
-* 
-* To run damage mode, use OFC_DamageApp.
-*/
-public class OFC_App extends Simulation{
+public class OFC_DamageApp extends Simulation{
 
 	int cg_dt;
-	
+
 	Grid grid = new Grid("Lattice");
 	Grid cgGrid = new Grid(" CG grid");
-//	Plot sizePlot = new Plot("Size Histogram");
-	OFC_Lattice ofc;
+	Grid deadGrid = new Grid("Alive/Dead Lattice");
+	//	Plot sizePlot = new Plot("Size Histogram");
+	OFC_DamageLattice ofc;
 	Accumulator cgMetricAcc = new Accumulator();
-//	Accumulator sizeStore = new Accumulator();  //To store data at each plate update within a bracket
-	
+	//	Accumulator sizeStore = new Accumulator();  //To store data at each plate update within a bracket
+
 	Histogram sizeHist = new Histogram(1);
 	String iMetFile;
-//	String sizeFile;
+	//	String sizeFile;
 	String sizeHistFile;
 	int maxSize;
-//	String cgInvMetricFile;
-	
+	//	String cgInvMetricFile;
+
 	public static void main(String[] args) {
-		new Control(new OFC_App(), "OFC Model");
+		new Control(new OFC_DamageApp(), "OFC Damage Model");
 	}
-	
+
 	public void load(Control c) {
-		c.frameTogether("Grids", grid, cgGrid);
-//		c.frameTogether("Data", sizePlot);
+		c.frameTogether("Grids", grid, cgGrid, deadGrid);
+		//		c.frameTogether("Data", sizePlot);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 32);
@@ -63,14 +53,16 @@ public class OFC_App extends Simulation{
 		params.addm("Dissipation Param", 0.05);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
+		params.addm("Max Failures", 0);
 		params.add("L");
 		params.add("Time");
 		params.add("Plate Updates");
 	}
-	
+
 	public void animate() {
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
 		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
+		deadGrid.registerData(ofc.L, ofc.L, ofc.noFails);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
@@ -78,14 +70,14 @@ public class OFC_App extends Simulation{
 		double failSite_x = ((double)(ofc.epicenterSite%ofc.L))/ofc.L + radius;
 		grid.addDrawable(
 				Geom2D.circle(failSite_x, failSite_y, radius, Color.GREEN));
-		
-//		iterPlot.setAutoScale(true);
-//		iterPlot.registerLines("Iterations", sizeAcc, Color.RED);
-		
-//		metricPlot.setAutoScale(true);
-//		metricPlot.registerLines("Metric", inverseMetricAcc, Color.BLACK);
-//		sizePlot.setAutoScale(true);
-//		sizePlot.registerBars("Size", sizeHist, Color.BLACK);
+
+		//		iterPlot.setAutoScale(true);
+		//		iterPlot.registerLines("Iterations", sizeAcc, Color.RED);
+
+		//		metricPlot.setAutoScale(true);
+		//		metricPlot.registerLines("Metric", inverseMetricAcc, Color.BLACK);
+		//		sizePlot.setAutoScale(true);
+		//		sizePlot.registerBars("Size", sizeHist, Color.BLACK);
 		params.set("Time", Utilities.format(ofc.time));
 		params.set("Plate Updates", ofc.plateUpdates);
 	}
@@ -93,45 +85,46 @@ public class OFC_App extends Simulation{
 	public void clear() {
 	}
 
+	
 	public void run() {
-		ofc = new OFC_Lattice(params);
+		ofc = new OFC_DamageLattice(params);
 		initFiles();
 		cg_dt = params.iget("Coarse Grained dt");
-//		boolean prestep = true;
+		//		boolean prestep = true;
 		double nextRecordTime = 0;
 		boolean findActivityOmega0 = true; 
 		int maxTime = params.iget("Max Time");
 		maxSize = 0;
 		double activityOmega0=0;
 		double CGstressOmega0 = 0;
-		
+
 		//equilibrate
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
 		while (ofc.plateUpdates < 0){
 			ofc.equilibrate();
 			Job.animate();
 		}
-		
+
 		while(true){
-//			if(prestep){
-//			ofc.prestep();
-//			prestep =false;
-//			}else{				
+			//			if(prestep){
+			//			ofc.prestep();
+			//			prestep =false;
+			//			}else{				
 			ofc.step();
-//			prestep = true;
+			//			prestep = true;
 
 			int size = ofc.avSize;
 			sizeHist.accum(size);
-//			sizeStore.accum(ofc.time, size);
+			//			sizeStore.accum(ofc.time, size);
 			if (size > maxSize) {
 				maxSize = size;
-//				System.out.print("max size " + maxSize);
+				//				System.out.print("max size " + maxSize);
 			}
 			double iMet = ofc.calcInverseMetric();
 
 			if(ofc.time > nextRecordTime){
 
-//				FileUtil.printlnToFile(sizeFile, ofc.time, size);
+				//				FileUtil.printlnToFile(sizeFile, ofc.time, size);
 				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 				FileUtil.printHistToFile(sizeHistFile, sizeHist);
 				double activityOmega = ofc.calcCG_activityMetric();
@@ -152,28 +145,29 @@ public class OFC_App extends Simulation{
 				double cgInverseStressMetric = CGstressOmega0/CGstressOmega;
 				double reducedTime = ofc.time/cg_dt;
 				FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
-//				FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
-//				FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
+				//				FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
+				//				FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
 				nextRecordTime += cg_dt;
 				maxSize = 0;
-//				sizeStore.clear();
+				//				sizeStore.clear();
 			}
-//			}
+			//			}
 
 			if(ofc.time > maxTime) Job.signalStop();
-				
+
 			Job.animate();
 		}
 	}
-	
+
 	void initFiles(){
 		iMetFile = params.sget("Data Dir") + File.separator + "im.txt";  // to record iverse metric data
 		FileUtil.initFile(iMetFile, params, " time (plate updates), stress inverse metric, time/coarse grained time, coarse grained activity metric, coarse grained stress metric, size of avalanche");
-//		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";   //to record size vs time data
-//		FileUtil.initFile(sizeFile, params, "avalanch size vs time");
+		//		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";   //to record size vs time data
+		//		FileUtil.initFile(sizeFile, params, "avalanch size vs time");
 		sizeHistFile = params.sget("Data Dir") + File.separator + "sh.txt";	//to record size histogram data
-//		cgInvMetricFile = params.sget("Data Dir") + File.separator + "cg.txt";
-//		FileUtil.initFile(cgInvMetricFile, params, "Coarse Grained Inverse Metric");
+		//		cgInvMetricFile = params.sget("Data Dir") + File.separator + "cg.txt";
+		//		FileUtil.initFile(cgInvMetricFile, params, "Coarse Grained Inverse Metric");
 	}
+
 
 }
