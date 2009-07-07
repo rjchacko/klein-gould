@@ -40,8 +40,8 @@ public class OFC_BracketApp extends Simulation{
 		params.addm("dx", 8);
 		params.addm("Coarse Grained dt", 500);
 		params.addm("Equilibration Updates", 1000000);
-		params.addm("Bracket Min", 10000);
-		params.addm("Bracket Max", 50000);
+		params.addm("Bracket Min", 600000);
+		params.addm("Bracket Max", 700000);
 		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.05);
