@@ -72,7 +72,7 @@ void nt::estMean_m (double & mu_m, double & std_m)
      * time.
      */
 
-    int iters = 250; //int iters = 50;
+    int iters = 200; //int iters = 50;
     int nucTestTime = 30; // int nucTestTime = 15;
     double m, m2;
 
@@ -85,7 +85,9 @@ void nt::estMean_m (double & mu_m, double & std_m)
         {
             ic->update ();
             double t = ic->magnetization ()/ic->n;
+            if (t*ic->h > 0) break; // nucleated
             m += t; t *= t; m2 += t;
+            
         }
         for (int i=0; i<nucTestTime; ++i) ic->update (); // Make sure no nuc.
         if (ic->magnetization () * ic->h < 0) // Not nucleated
@@ -94,10 +96,15 @@ void nt::estMean_m (double & mu_m, double & std_m)
             std_m = sqrt (m2/iters - m*m/iters/iters );
             return;
         }
-        else if (iters > 100) --iters; // Try shorter this time
+        else if (iters > 50) --iters; // Try shorter this time
         else
         {
-            // handle case where we had nucleation too early
+            // When we lose hope getting decent measurement of mu, std we
+            // just use simple nucleation criterion.
+            // (This is ideal for large H)
+            mu_m = 1.0;
+            std_m = 1.0/25;
+            return;
         }
     }
 }
@@ -117,6 +124,10 @@ void nt::sim (int ntrials)
     int decays = 0;
 
     estMean_m (mu_m, std_m); // Get estimates of mean and std
+    /*NOTE
+     * mu_m and std_m NOT ACTUAL MEASUREMENTS if decay is short for
+     * these parameters.
+     */
 
     #ifdef NTOUT
     fwrite (head, sizeof(float), HLEN, ntOut);
@@ -175,13 +186,4 @@ void nt::sim (int ntrials)
     #ifdef NTOUT
     fwrite (foot, sizeof(float), FLEN, ntOut);
     #endif
-
-    //meanNucleation /= decays;
-    //meanNucleationError = meanNucleation / sqrt(decays);
-    //r = 1/meanNucleation;
-    //rError = 1/(meanNucleation-meanNucleationError) - 1/meanNucleation;
-    //
-    //fprintf (ntOut, "%d\t%.5e\t%.5e\t%.5e\t%.5e\t%.5e\n", 
-    //    ic->len, fabs (ic->h), meanNucleation, meanNucleationError, r, rError);
-    //fflush (ntOut);
 }

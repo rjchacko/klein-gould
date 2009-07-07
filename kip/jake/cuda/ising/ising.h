@@ -54,6 +54,7 @@ public:
     void flipH (void);
     void downH (void);
     void upH (void);
+    void saveIsing (char *);
     
 protected:
     virtual void transferHostToDevice() {}
@@ -139,6 +140,7 @@ public:
     void update(int parityTarget);
     double magnetization();
     double energy ();
+    void rngSeed (int);
     
 protected:
     int nblocks; // nblocks = n/32 when dim >= 5

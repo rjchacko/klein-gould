@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 
 #include "ising.h"
 
@@ -125,4 +126,36 @@ int Ising::indexParity(int i) {
         len_d *= len;
     }
     return acc % 2;
+}
+
+// JEE
+
+void Ising::saveIsing (char * filename)
+{
+    FILE * fp = fopen (filename, "wb");
+    assert (fp);
+    int * s = new int [n];
+    char * sc = new char [n];
+    getSpins (s);
+    for (int i=0; i<n; ++i) sc[i] = s[i];
+    double params [] = {(double) len, (double) dim, h, T};
+    
+    // Reverse the parameter bytes so java program can read them
+    char * f, * ftemp;
+    double * fpoint;
+    ftemp = new char [8];
+    for (int i=0; i<4; ++i)
+    {
+        f = (char *) &params[i];
+        for (int j=0; j<8; ++j)
+            ftemp[j] = f[8-j-1];
+        fpoint = (double *) ftemp;
+        params[i] = *fpoint;
+    }
+
+    fwrite (params, sizeof(double), 4, fp);
+    fwrite (sc, sizeof(char), n, fp);
+    fclose (fp);
+    delete ftemp; 
+    delete s; delete sc;
 }

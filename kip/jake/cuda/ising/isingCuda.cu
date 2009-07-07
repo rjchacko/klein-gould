@@ -278,6 +278,14 @@ void IsingCuda::completeNeighborSum(int *sum) {
     assert(0==1);
 }
 
+void IsingCuda::rngSeed (int seed)
+{
+    rng->destroy ();
+    delete rng;
+    rng = new Rand48 ();
+    rng->init (GRID_DIM*BLOCK_DIM, seed); 
+}
+
 void IsingCuda::update(int parityTarget) {
     IsingCudaParams p;
     p.len = len;
