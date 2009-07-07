@@ -3,10 +3,12 @@
 #include <assert.h>
 #include <math.h>
 #include <sys/time.h>
+#include <time.h>
 
 #include "ising.h"
 #include "nt.h"
 #include "tests.h"
+#include "generate.h"
 
 double mean (double * arr, int length)
 {
@@ -379,17 +381,34 @@ void ntControl ()
 
 void chi (char * base, int ovr)
 {
-    int l = 10; int d = 7; double T = 4*12.869/9; 
-    double h = 4.0115; double delta_h = 0.0005; // 25 points, end at 4.024
-    //int l=16; int d=5; double T=8.778*4/9; 
-    //double h=2.53; double delta_h=0.002;
+    //int l = 10; int d = 7; double T = 4*12.869/9; 
+    //double h = 4.0115; double delta_h = 0.0005; // 25 points, end at 4.024
+    int l=16; int d=5; double T=8.778*4/9; 
+    double h=2.525; double delta_h=0.004;
 
     nt n = nt (l, d, h, T, base, ovr);
-    for (int i=0; i<25; ++i)
+    for (int i=30; i<45; ++i)
     {
         n.hChange (h+i*delta_h);
-        //n.sim (50);
-        n.sim (500+i*2500/25); // Run longer later
+        n.sim (500+i*200); // Run longer later
+    }
+}
+
+void makeDrops ()
+{
+    int numDrops=500;
+    int L=32, d=2;
+    double H=0.5, T=1.0084;
+    IsingCuda ic = IsingCuda (L, d, H, T);
+    generate ge = generate (&ic, (int) time(NULL));
+    char filename [256];
+
+    for (int i=0; i<numDrops; ++i)
+    {
+        sprintf (filename, "./data/drops/drop%d.dat", i);
+        ge = generate (&ic, (int) time(NULL));
+        ge.genDroplet ();
+        ic.saveIsing (filename);
     }
 }
 
@@ -417,14 +436,14 @@ int main (int argc, char *argv[]) {
     //mgraph ();
     //ntControl ();
 
-    if (argc==3)
-        chi (argv[2], 1);
-    else if (argc>3)
-    {
-        chi (argv[2], atoi(argv[3]));
-    }
-    else
-        chi ("", 1);
+    //if (argc==3)
+    //    chi (argv[2], 1);
+    //else if (argc>3)
+    //{
+    //    chi (argv[2], atoi(argv[3]));
+    //}
+    //else
+    //    chi ("", 1);
     
-    return 0;
-}
+    makeDrops ();
+} 
