@@ -15,6 +15,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	double lastRecordTime;
 	public int lowerCutoff;
 	public int maxFail;
+	public boolean deadMode;
 	
 	public double [] stressTimeAve;
 	public double [] CG_ActivityTimeAve;
@@ -29,6 +30,8 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	
 	public void setParameters(Parameters params) {
 		maxFail = params.iget("Max Failures");
+		if (maxFail == 0) deadMode = false;
+		else deadMode = true;
 		Lp = params.iget("CG size");
 		dx = params.iget("dx");
 		L = Lp*dx;
@@ -152,6 +155,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 	
 	void countFail(int siteLocation){
+		
 		if(noFails[siteLocation] >= maxFail) noFails[siteLocation] = -1;
 		else noFails[siteLocation] += 1;
 	}
