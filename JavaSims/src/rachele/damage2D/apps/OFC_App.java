@@ -32,9 +32,10 @@ public class OFC_App extends Simulation{
 	
 	Grid grid = new Grid("Lattice");
 	Grid cgGrid = new Grid(" CG grid");
+	Grid cgGridTimeAverage = new Grid("Time ave CG grid");
 //	Plot sizePlot = new Plot("Size Histogram");
 	OFC_Lattice ofc;
-	Accumulator cgMetricAcc = new Accumulator();
+//	Accumulator cgMetricAcc = new Accumulator();
 //	Accumulator sizeStore = new Accumulator();  //To store data at each plate update within a bracket
 	
 	Histogram sizeHist = new Histogram(1);
@@ -49,7 +50,7 @@ public class OFC_App extends Simulation{
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Grids", grid, cgGrid);
+		c.frameTogether("Grids", grid, cgGrid, cgGridTimeAverage);
 //		c.frameTogether("Data", sizePlot);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
@@ -71,6 +72,7 @@ public class OFC_App extends Simulation{
 	public void animate() {
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
 		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
+		cgGridTimeAverage.registerData(ofc.Lp, ofc.Lp, ofc.CG_ActivityTimeAve);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);

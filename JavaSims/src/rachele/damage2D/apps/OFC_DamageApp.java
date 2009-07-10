@@ -57,6 +57,7 @@ public class OFC_DamageApp extends Simulation{
 		params.add("L");
 		params.add("Time");
 		params.add("Plate Updates");
+		params.add("No dead sites");
 	}
 
 	public void animate() {
@@ -80,6 +81,7 @@ public class OFC_DamageApp extends Simulation{
 		//		sizePlot.registerBars("Size", sizeHist, Color.BLACK);
 		params.set("Time", Utilities.format(ofc.time));
 		params.set("Plate Updates", ofc.plateUpdates);
+		params.set("No dead sites", ofc.noDeadSites);
 	}
 
 	public void clear() {
