@@ -15,6 +15,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public double [] stressTimeAve;
 	public double [] CG_ActivityTimeAve;
 	public double [] CG_StressTimeAve;
+	public int [] plateUpdateFailLocations;  // Record all fail sites for one plate update
 	boolean [] failList;
 	
 	public OFC_Lattice(Parameters params) {
@@ -61,6 +62,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		epicenterCount = new int [Np];
 		CG_ActivityTimeAve = new double [Np];
 		CG_StressTimeAve = new double [N];
+		plateUpdateFailLocations = new int [N];
 		failList = new boolean [N];
 		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;
@@ -111,19 +113,25 @@ public class OFC_Lattice extends AbstractCG_OFC{
 //		epicenterCount[site] +=1;
 //	}
 	
+	public void clearPlateUpdateFileLocs(){
+		for(int i = 0; i < N; i++) plateUpdateFailLocations[i] = 0;
+	}
+	
 	public void step(){
 		epicenterSite = siteWithMaxStress();
 		int site = findCG_site(epicenterSite);
-//		epicenterCount[site] +=1;
-		
+		//		epicenterCount[site] +=1;
+
 		//Bring to failure
 		double stressAdd = tStress - stress[epicenterSite];
-//		dt = stressAdd;
-		dt=1.0;
+		//		dt = stressAdd;
+		dt=1;
 		if(stressAdd < 0) System.out.println("Error: stress already above failure");
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
 		avSize = 1;
-	
+		plateUpdateFailLocations[epicenterSite] += 1;
+		
+
 		if(fullyConnected){
 			failList[epicenterSite] = true;
 			//Fail the failSite
@@ -135,21 +143,26 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		}else{
 			failSiteWithRange(epicenterSite);
 			int nextSiteToFail = checkFail();
-			while (nextSiteToFail >= 0){
-				failSiteWithRange(nextSiteToFail);
-				nextSiteToFail = checkFail();
-				avSize += 1;
+			if(nextSiteToFail >= 0){
+				while (nextSiteToFail >= 0){
+					failSiteWithRange(nextSiteToFail);
+//					System.out.println("sitetofail = " + nextSiteToFail);
+					plateUpdateFailLocations[nextSiteToFail] += 1;
+					nextSiteToFail = checkFail();
+					avSize += 1;
+
+				}
 			}
 		}
 		if (avSize >= lowerCutoff) 	epicenterCount[site] +=1;
 		time += dt;
 		plateUpdates += 1;
 	}
-	
+
 	int checkFail(){
 		int s = siteWithMaxStress();
 		if (stress[s] < tStress) s = -1; 
-//		System.out.println("Stress of max Site = " + stress[s] + " at site " + s);
+		//		System.out.println("Stress of max Site = " + stress[s] + " at site " + s);
 		return s;
 	}
 	
@@ -250,6 +263,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 				stress[site] = rStressWithNoise - excessStressPerNbor;
 				failList[site] = false;
 				noFailed += 1;
+				plateUpdateFailLocations[site] += 1;
 			}
 		}
 		for(int i = 0; i < N; i++){

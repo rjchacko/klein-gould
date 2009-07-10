@@ -4,7 +4,8 @@ import scikit.jobs.params.Parameters;
 import scikit.util.DoubleArray;
 
 /**
-* Extention of OFC_Lattice.  Probably will replace OFC_Lattice-- to get to OFC only, choose maxFail = 0 
+* Extention of OFC_Lattice.  Probably will replace OFC_Lattice-- 
+* to get to OFC only, choose maxFail = 0 
 */
 public class OFC_DamageLattice extends AbstractCG_OFC{
  
@@ -16,6 +17,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public int lowerCutoff;
 	public int maxFail;
 	public boolean deadMode;
+	public int noDeadSites;
 	
 	public double [] stressTimeAve;
 	public double [] CG_ActivityTimeAve;
@@ -86,6 +88,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		metric0 = calcMetric0();
 		time = 0;
 		plateUpdates = 0;
+		noDeadSites = 0;
 	}
 	
 	public void initEquilibrate(int maxPlateUpdates){
@@ -125,7 +128,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		//Bring to failure
 		double stressAdd = tStress - stress[epicenterSite];
 //		dt = stressAdd;
-		dt=1.0;
+		dt=1;
 		if(stressAdd < 0) System.out.println("Error: stress already above failure");
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
 		avSize = 1;
@@ -143,7 +146,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			countFail(epicenterSite);
 			int nextSiteToFail = checkFail();
 			while (nextSiteToFail >= 0){
-				failSiteWithRange(nextSiteToFail);
+				failSiteWithRangeAndDamage(nextSiteToFail);
 				countFail(nextSiteToFail);
 				nextSiteToFail = checkFail();
 				avSize += 1;
@@ -154,8 +157,11 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		plateUpdates += 1;
 	}
 	
+	/**
+	 *  This method should not be used when equilibrating in earthquake mode.
+	 *  Do not combine this with failSiteWithRange.
+	 */
 	void countFail(int siteLocation){
-		
 		if(noFails[siteLocation] >= maxFail) noFails[siteLocation] = -1;
 		else noFails[siteLocation] += 1;
 	}
@@ -184,7 +190,25 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				 }
 			 }
 		 }
-		
+	}
+	
+	void failSiteWithRangeAndDamage(int s){
+		double resStressWithNoise = calcResNoise(s);
+		double stressPerNbor = calcStressPerNbor(s, resStressWithNoise);
+		stress[s] = resStressWithNoise;
+		int x = s%L;
+		int y = s/L;
+		 for(int dy = -R; dy <= R; dy++){
+			 for(int dx = -R; dx <= R; dx++){
+				 double distance = Math.sqrt(dx*dx + dy*dy);
+				 if (distance <= R){
+					 int xx = (x+dx+L)%L;
+					 int yy = (y+dy+L)%L;
+					 int nborSite = yy*L+xx;
+					 stress[nborSite] += stressPerNbor;
+				 }
+			 }
+		 }
 	}
 	
 	public double calcInverseMetric(){
@@ -272,6 +296,36 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		return noFailed;
 	}
 
+	int failWithDamage(){
+		//Bring to Residual
+		//maybe need to generate a random list here??
+		//Changed so that all stress is summed 1st before added
+		// so I don't think a random list is needed, but
+		// may be needed for finite ranges.
+		double excessStressSum = 0.0;
+		int noFailed = 0;
+		for (int site = 0; site < N; site++){
+			if(failList[site]){
+				double rStressWithNoise = calcResNoise(site);
+				double excessStressPerNbor = calcStressPerNbor(site, rStressWithNoise);
+//				double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0);
+//				double excessStressPerNbor = ((1-dissParam)*(stress[site] - rStress) - resNoise)/(double)noNbors;
+				excessStressSum =+ excessStressPerNbor;
+				stress[site] = rStressWithNoise - excessStressPerNbor;
+				failList[site] = false;
+				noFailed += 1;
+			}
+		}
+		for(int i = 0; i < N; i++){
+			stress[i] += excessStressSum;
+		}
+		return noFailed;
+	}
 
+	double calcStressPerNborWithDamage(int s, double rStressWithNoise){
+		noNbors = N - noDeadSites - 1;
+		double stressPerNbor = ((1-dissParam)*(stress[s] - rStressWithNoise))/(double)noNbors;
+		return stressPerNbor;
+	}
 	
 }
