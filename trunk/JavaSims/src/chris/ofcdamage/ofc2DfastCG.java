@@ -10,9 +10,9 @@ import scikit.jobs.params.Parameters;
 
 public class ofc2DfastCG extends ofc2Dfast{
 
-	protected double OmegaCGs, OmegaCGgr, sbarCG[], stressCG[], grbarCG[], dataCG[][];
-	protected int LCG, M, NCG, nbaCG[], grCG[], cgID[], qCG, tau;
-	public static int dcatCG = 2;
+	protected double OmegaCGs, OmegaCGgr, OmegaCGact, sbarCG[], stressCG[], dataCG[][];
+	protected int LCG, M, NCG, nbaCG[], grCG[], grbarCG[], act[], actbar[], cgID[], qCG, tau;
+	public static int dcatCG = 3;
 	
 	
 	public ofc2DfastCG(Parameters params) {
@@ -33,51 +33,49 @@ public class ofc2DfastCG extends ofc2Dfast{
 		cgID      = new int[N];
 		sbarCG    = new double[NCG];
 		stressCG  = new double[NCG];
-		grbarCG   = new double[NCG];
+		grbarCG   = new int[NCG];
 		grCG      = new int[NCG];
+		act       = new int[NCG];
+		actbar    = new int[NCG];
 		nbsCG     = new LatticeNeighbors(getL(),getL(),0,(LCG-1)/2,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Square);
 		nbaCG     = nbsCG.get(0);
 		qCG       = nbaCG.length;
 		OmegaCGs  = 0;
 		OmegaCGgr = 0;
 		dataCG    = new double[dcatCG][dlength];
-		
+
 		for (int kk = 0 ; kk < M ; kk++){
 			for (int jj = 0 ; jj < M ; jj++){
 				int site = (LCG-1)/2+jj*LCG+kk*(LCG*getL()); 	// these are the centers of
-																// of the coarse grained blocks
+				cgID[site] = jj+kk*M;
 				for (int ii = 0 ; ii < qCG ; ii++){	
-					int nb = nbsCG.getJ(site, 0, nbaCG, ii);
-					if(ii == -1){
-						cgID[site] = jj+kk*M;
-					}
-					else{
-						cgID[nb] = jj+kk*M;
-					}
+					cgID[nbsCG.getJ(site, 0, nbaCG, ii)] = jj+kk*M;
 				}
 			}
 		}
-		
+
 		return;
 	}
 	
 	protected void forceZeroVel(int mct, boolean takedata, boolean eqmode){
 		// force failure in the zero velocity limit
 
-		double dsigma, tmpbar, dsmin, tmpbarcgs;
-		int jjmax, tmpbarcgf;
+		double dsigma, tmpbar, dsmin, tmpbarcgs, tmpbaract, tmpbarcgf;
+		int jjmax;
 		index = 0;
 		newindex = index;
 		dsmin    = 1e5;
 		
 		jjmax = 0;
 		if(takedata){
-			tmpbar    = 0;
-			Omega     = 0;
-			tmpbarcgs = 0;
-			tmpbarcgf = 0;
-			OmegaCGs  = 0;
-			OmegaCGgr = 0;
+			tmpbar     = 0;
+			Omega      = 0;
+			tmpbarcgs  = 0;
+			tmpbarcgf  = 0;
+			tmpbaract  = 0;
+			OmegaCGs   = 0;
+			OmegaCGgr  = 0;
+			OmegaCGact = 0;
 			
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
 				// find next site to fail
@@ -93,6 +91,8 @@ public class ofc2DfastCG extends ofc2Dfast{
 					if(jj < NCG){
 						grbarCG[jj] += grCG[jj];
 						tmpbarcgf   += grbarCG[jj];
+						actbar[jj]  += act[jj];
+						tmpbaract   += actbar[jj];
 					}
 				}
 			}
@@ -105,28 +105,40 @@ public class ofc2DfastCG extends ofc2Dfast{
 				//calculate metric (PART 2)
 				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
 				if(jj < NCG){
-					sbarCG[jj]  += stressCG[jj];
-					if(mct%tau == 0) OmegaCGgr += (tmpbarcgf-grbarCG[jj])*(tmpbarcgf-grbarCG[jj]);
+					if(jj == 0){
+						tmpbarcgf = (double)(tmpbarcgf)/(double)(NCG);
+						tmpbaract = (double)(tmpbaract)/(double)(NCG);
+					}
+					sbarCG[jj] += stressCG[jj];
+					tmpbarcgs  += sbarCG[jj];
+					if(mct%tau == 0){
+						OmegaCGgr  += (tmpbarcgf-grbarCG[jj])*(tmpbarcgf-grbarCG[jj]);
+						grCG[jj]    = 0; //reset counting
+						OmegaCGact += (tmpbaract-actbar[jj])*(tmpbaract-actbar[jj]);
+						act[jj]     = 0; //reset counting
+					}
 				}
 				else if(jj < 2*NCG){
-					tmpbarcgs += sbarCG[jj%NCG];
-					if(mct%tau == 0) grCG[jj%NCG] = 0; //reset counting
-				}
-				else if(jj < 3*NCG){
-					OmegaCGs += (sbarCG[jj%NCG]-tmpbarcgs)*(sbarCG[jj%NCG]-tmpbarcgs);
-					stressCG[jj%NCG] = 0; // so it starts from zero next time
+					if(jj == NCG) tmpbarcgs = tmpbarcgs/NCG;
+					OmegaCGs        += (sbarCG[jj%NCG]-tmpbarcgs)*(sbarCG[jj%NCG]-tmpbarcgs);
+					stressCG[jj%NCG] = 0; //reset counting
 				}
 			}
 			//calculate metric (PART 3)
 			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
 			OmegaCGs = OmegaCGs/((double)(mct)*(double)(mct)*(double)(NCG));
-			if(mct%tau == 0) OmegaCGgr = OmegaCGgr/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
+			if(mct%tau == 0){
+				OmegaCGgr  = OmegaCGgr/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
+				OmegaCGact = OmegaCGact/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
+
+			}
 
 			// save and/or write data
 			if(mct%dlength == 0 && mct > 0){
 				writeData(mct);
 				writeCGdata(mct);
 			}
+			act[cgID[jjmax]]++;	//activity metric counting
 			saveData(mct, eqmode, dsigma);
 			saveCGdata(mct);
 		}
@@ -164,10 +176,12 @@ public class ofc2DfastCG extends ofc2Dfast{
 		
 		dataCG[0][now%dlength] = 1./OmegaCGs;
 		if(now%tau==0){
-			dataCG[1][now%dlength] = 1./OmegaCGgr; // this HAS to be the last data value
+			dataCG[1][now%dlength] = 1./OmegaCGgr;
+			dataCG[2][now%dlength] = 1./OmegaCGact;
 		}
 		else{
-			dataCG[1][now%dlength] = -1.;
+			dataCG[1][now%dlength] = -1;
+			dataCG[2][now%dlength] = -1;
 		}
 		return;
 	}
@@ -186,11 +200,11 @@ public class ofc2DfastCG extends ofc2Dfast{
 			for (int jj = 0 ; jj < ub ; jj++){
 				pw.print(jj+offset);
 				pw.print("\t");
-				for (int kk = 0 ; kk < (dcatCG-1) ; kk++){			
+				for (int kk = 0 ; kk < dcatCG ; kk++){			
 					pw.print(dataCG[kk][jj]);
 					pw.print("\t");
 				}
-				pw.println(dataCG[dcatCG-1][jj]);
+				pw.println();
 			}			
 			pw.close();
 		}
@@ -200,7 +214,7 @@ public class ofc2DfastCG extends ofc2Dfast{
 		return;
 	}
 	
-	public void clearData(){
+	public void clearData(){ 
 		
 		if (N > dlength){
 			for (int jj = 0 ; jj < N ; jj++){
@@ -214,8 +228,11 @@ public class ofc2DfastCG extends ofc2Dfast{
 				}
 				sbar[jj] = 0;
 				if(jj < NCG){
-					sbarCG[jj] = 0;
-					grbarCG[jj]  = 0;
+					sbarCG[jj]  = 0;
+					grbarCG[jj] = 0;
+					actbar[jj]  = 0;
+					grCG[jj]    = 0;
+					act[jj]     = 0;
 				}
 			}	
 		}
@@ -229,8 +246,11 @@ public class ofc2DfastCG extends ofc2Dfast{
 				}	
 				if(jj < N) sbar[jj] = 0;
 				if(jj < NCG){
-					sbarCG[jj] = 0;
-					grbarCG[jj]  = 0;
+					sbarCG[jj]  = 0;
+					grbarCG[jj] = 0;
+					actbar[jj]  = 0;
+					grCG[jj]    = 0;
+					act[jj]     = 0;
 				}
 			}	
 		}
@@ -249,6 +269,8 @@ public class ofc2DfastCG extends ofc2Dfast{
 			pw.print("Inverse CG Stress Metric");
 			pw.print("\t");
 			pw.print("Inverse CG Events Metric");
+			pw.print("\t");
+			pw.print("Inverse Activity Metric");
 			pw.println();
 			pw.close();
 		}

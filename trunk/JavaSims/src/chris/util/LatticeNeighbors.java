@@ -154,7 +154,7 @@ public class LatticeNeighbors {
 		int dy = (int)(i/Ny) - (int)(i0/Ny);
 		
 		switch (type) {
-
+	
 		case BORDERED:
 			
 			xn = nbs0[J]%Nx;
@@ -169,7 +169,7 @@ public class LatticeNeighbors {
 			xn = nbs0[J]%Nx;
 			yn = (int)(nbs0[J]/Ny);
 			
-			return  (xn+dx)%Nx + ((yn + dy)%Ny)*Ny;		
+			return (xn+dx)%Nx + ((yn + dy)%Ny)*Ny;	
 			
 		default:
 
