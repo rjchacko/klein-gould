@@ -59,7 +59,7 @@ public class phiAlphaWidthApp extends Simulation{
 		
 		int cycle      = -1;
 		double[] phi   = new double[2];
-		int cn         = 1000;
+		int cn         = 100;
 		double[] store = new double[cn];
 
 		while (cycle++ < (cn-1)){
