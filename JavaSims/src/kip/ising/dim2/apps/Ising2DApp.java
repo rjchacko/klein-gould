@@ -30,7 +30,8 @@ public class Ising2DApp extends Simulation {
 		
 		params.add("Seed", 69);
 		params.add("Boundary", new ChoiceValue("Periodic", "Open"));
-		params.add("L", 1024);
+		params.add("Root time scale", new ChoiceValue("No", "Yes"));
+		params.add("L", 512);
 		params.add("Ratio", 1.0);
 		params.add("T", 0.0);
 		params.addm("dt", 100.0);
@@ -93,9 +94,22 @@ public class Ising2DApp extends Simulation {
 		sim = new IsingZero2D(seed, L1, L2, params.fget("T"), params.sget("Boundary").equals("Open"));
 		clusters = new double[L1*L2];
 		
-        while (true) {
-        	Job.animate();
-        	sim.step(dt);            
-        }
+		if (params.sget("Root time scale").equals("No")) {
+			while (true) {
+				Job.animate();
+				sim.step(dt);
+			}
+		}
+		else {
+			double ds = dt; // reinterpret dt as ds, the scaled time step
+			
+			// s = 0, ds, 2ds, ...
+			// t = s^2
+			// dt = ((i+1)^2 - i^2) ds^2 = (2i + 1) ds^2
+			for (int i = 0; ; i++) {
+				Job.animate();
+				sim.step((2*i+1)*ds*ds);            
+			}
+		}
 	}
 }

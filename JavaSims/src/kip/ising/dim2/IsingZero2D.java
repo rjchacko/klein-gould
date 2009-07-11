@@ -8,7 +8,8 @@ public class IsingZero2D extends Ising2D {
 	
 	public IsingZero2D(int seed, int _L1, int _L2, double _T, boolean _openBoundary) {
 		super(seed, _L1, _L2, _T, _openBoundary);
-		
+		if (T != 0)
+			throw new IllegalArgumentException("Zero temperature only.");
 		activityIndex = new int[N];
 		activeSites = new int[N];
 		activeSitesCnt = 0;
