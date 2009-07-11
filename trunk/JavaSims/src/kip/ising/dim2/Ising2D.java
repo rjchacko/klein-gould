@@ -10,6 +10,7 @@ public class Ising2D {
 	public Random random = new Random();
 	public double time;
 	public boolean openBoundary = false;
+	public double h = 0;
 	
 	public Ising2D(int seed, int _L1, int _L2, double _T, boolean _openBoundary) {
 		random.setSeed(seed);
@@ -60,7 +61,7 @@ public class Ising2D {
 	
 	private void singleStep() {
 		int i = random.nextInt(N);
-		double dE = 2*spin[i]*neighborSum(i);
+		double dE = 2*spin[i]*neighborSum(i) + 2*h*spin[i];
 		if (dE <= 0 || (T != 0 && random.nextDouble() < Math.exp(-dE/T))) {
 			spin[i] = -spin[i];
 		}
