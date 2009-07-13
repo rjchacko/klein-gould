@@ -43,6 +43,7 @@ public class ising extends Simulation{
 	public int steplimit; //upperlimit of MC step
 	public int metricstart; //the start of metric calculation
 	public int N; //how many points in the metric plot
+	public double P;
 	
 	
 	
@@ -144,13 +145,14 @@ public class ising extends Simulation{
 		liu.frame (grid1);
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
-		params.addm("Temperature", new DoubleValue(5, 0, 10000000).withSlider());
+		params.addm("Temperature", new DoubleValue(1, 0, 100).withSlider());
 		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
-		params.addm("Interaction Constant", 0);
-		params.add("Interaction range", 0);
+		params.addm("Interaction Constant", 1);
+		params.add("Interaction range", 10);
 		params.add("Monte Carlo step's limit", 1000000);
-		params.add("Metric Start at",2000);
-		params.add("Metric points", 500);
+		params.add("Metric Start at",5000);
+		params.add("Metric points", 2000);
+		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
 		
 		//params.add("Model", new ChoiceValue("noninteracting", "interacting"));
 		//params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
@@ -164,6 +166,7 @@ public class ising extends Simulation{
 		ColorPalette ising = new ColorPalette ();
 		ising.setColor(1, Color.BLACK);
 		ising.setColor(-1, Color.WHITE);
+		ising.setColor(0, Color.RED);
 		
 		grid1.setColors(ising);
 		grid1.registerData(L1, L2, isingspin);
@@ -191,7 +194,7 @@ public class ising extends Simulation{
 		N = (int)params.fget("Metric points");
 		Metric = new double[N];
 		
-		
+		P = params.fget("Diluted Percentage");
 		
 		double NMetric=0;
 		double totalE=0;
@@ -207,6 +210,11 @@ public class ising extends Simulation{
 				//System.out.print("spin = ");
 				//System.out.println(isingspin[i]);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/foo.txt","spin = ", isingspin[i]);
+		}
+		
+		for (i=0; i<M; i++){
+			if(Math.random()< P)
+				isingspin[i]=0;
 		}
 		
 		
@@ -237,7 +245,7 @@ public class ising extends Simulation{
 				}
 				
 				if (R!=0) {
-					J=NJ/(4*(R+1)*(R+1)-1);
+					J=NJ/((2*R+1)*(2*R+1)-1);
 					InterE1=longrangeE(j);
 					InterE2=-longrangeE(j)-2*J;
 				}
@@ -266,7 +274,7 @@ public class ising extends Simulation{
 					}
 				}
 			
-				if(step % 100 == 0) params.set("MC time", step);
+				if(step % 10 == 0) params.set("MC time", step);
 				Job.animate();
 			}
 			
@@ -302,7 +310,7 @@ public class ising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/M;
-				PrintUtil.printlnToFile("F:/data/metric1.txt",step-metricstart, NMetric/M);
+				PrintUtil.printlnToFile("F:/data/metric7.txt",step-metricstart, NMetric/M);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
 				}
 			
@@ -310,7 +318,7 @@ public class ising extends Simulation{
 			{
 				PrintUtil.printlnToFile("F:/data/metric1.txt","Lattice length=", L1);
 				PrintUtil.printlnToFile("F:/data/metric1.txt","Lattice width=", L2);
-				PrintUtil.printlnToFile("F:/data/metric1.txt","J=",J);
+				PrintUtil.printlnToFile("F:/data/metric1.txt","J=",NJ);
 				PrintUtil.printlnToFile("F:/data/metric1.txt","Interaction Range=",R);
 				PrintUtil.printlnToFile("F:/data/metric1.txt","Mectric starts at", metricstart);
 				PrintUtil.printlnToFile("F:/data/metric1.txt","Final Tempearture=",T);
