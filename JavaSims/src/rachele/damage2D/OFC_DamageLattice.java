@@ -86,7 +86,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			CG_ActivityTimeAve[i] = 0;
 		}
 		metric0 = calcMetric0();
-		time = 0;
+		cg_time = 0;
 		plateUpdates = 0;
 		noDeadSites = 0;
 	}
@@ -153,7 +153,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			}
 		}
 		if (avSize >= lowerCutoff) 	epicenterCount[site] +=1;
-		time += dt;
+		cg_time += dt;
 		plateUpdates += 1;
 	}
 	
@@ -212,41 +212,41 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 	
 	public double calcInverseMetric(){
-		double del_t = time -lastRecordTime;
+		double del_t = cg_time -lastRecordTime;
 		for(int i=0; i < N; i++)
-			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(time);
+			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
 		double spaceSum = DoubleArray.sum(stressTimeAve);
 		double spaceTimeStressAve = (spaceSum)/(double)(N);
 		double metricSum = 0;
 		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
 		double inverseMetric = (double)(N)*metric0/metricSum;
-		lastRecordTime = time;
+		lastRecordTime = cg_time;
 		return inverseMetric;
 	}
 	
 
 	public double calcCG_stressMetric(){
-		double del_t = time - lastCG_StressRecordTime;
+		double del_t = cg_time - lastCG_StressRecordTime;
 		for (int i = 0; i < N; i++)
-			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (time);
+			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (cg_time);
 		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)N;
 		double CG_metric = 0;
 		for (int i = 0; i < L; i++){
 			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
 		}
 		CG_metric /= (double)N;
-		lastCG_StressRecordTime = time;
+		lastCG_StressRecordTime = cg_time;
 		return CG_metric; 
 	}
 	
 	public double calcCG_activityMetric(){
-		double del_t = time - lastCG_RecordTime;
+		double del_t = cg_time - lastCG_RecordTime;
 		for (int i = 0; i < Np; i++){
 //			double countWithCutoff;
 //			if (epicenterCount[i] < lowerCutoff) countWithCutoff = 0;
 //			else countWithCutoff = epicenterCount[i];
 //			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*countWithCutoff) / (time);
-			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*epicenterCount[i]) / (time);
+			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*epicenterCount[i]) / (cg_time);
 		}
 		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
 		double CG_metric = 0;
@@ -254,7 +254,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
 		}
 		CG_metric /= (double)Np;
-		lastCG_RecordTime = time;
+		lastCG_RecordTime = cg_time;
 		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
 		return CG_metric; 
 	}

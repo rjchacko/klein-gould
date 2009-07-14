@@ -55,7 +55,7 @@ public class OFC_BracketApp extends Simulation{
 	public void animate() {
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
 		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
-		params.set("Time", Utilities.format(ofc.time));
+		params.set("Time", Utilities.format(ofc.cg_time));
 		params.set("Plate Updates", ofc.plateUpdates);
 	}
 
@@ -81,12 +81,12 @@ public class OFC_BracketApp extends Simulation{
 			ofc.step();
 			int size = ofc.avSize;
 			double iMet = ofc.calcInverseMetric();
-			if(ofc.time > lowerBracket){
-				double reducedTime = ofc.time/cg_dt;
-				FileUtil.printlnToFile(iMetBracketFile, ofc.time, iMet, reducedTime, size);
+			if(ofc.cg_time > lowerBracket){
+				double reducedTime = ofc.cg_time/cg_dt;
+				FileUtil.printlnToFile(iMetBracketFile, ofc.cg_time, iMet, reducedTime, size);
 			}
 
-			if(ofc.time > upperBracket) Job.signalStop();
+			if(ofc.cg_time > upperBracket) Job.signalStop();
 
 			Job.animate();
 		}

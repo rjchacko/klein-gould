@@ -79,7 +79,7 @@ public class OFC_DamageApp extends Simulation{
 		//		metricPlot.registerLines("Metric", inverseMetricAcc, Color.BLACK);
 		//		sizePlot.setAutoScale(true);
 		//		sizePlot.registerBars("Size", sizeHist, Color.BLACK);
-		params.set("Time", Utilities.format(ofc.time));
+		params.set("Time", Utilities.format(ofc.cg_time));
 		params.set("Plate Updates", ofc.plateUpdates);
 		params.set("No dead sites", ofc.noDeadSites);
 	}
@@ -124,7 +124,7 @@ public class OFC_DamageApp extends Simulation{
 			}
 			double iMet = ofc.calcInverseMetric();
 
-			if(ofc.time > nextRecordTime){
+			if(ofc.cg_time > nextRecordTime){
 
 				//				FileUtil.printlnToFile(sizeFile, ofc.time, size);
 				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
@@ -136,7 +136,7 @@ public class OFC_DamageApp extends Simulation{
 						activityOmega0 = activityOmega;
 						findActivityOmega0 = false;
 					}
-					System.out.println("omega0 = " + activityOmega0 + " at time = " + ofc.time);
+					System.out.println("omega0 = " + activityOmega0 + " at time = " + ofc.cg_time);
 					FileUtil.printlnToFile(iMetFile, "# Omega(t=0) = ", activityOmega0);
 				}
 				if(nextRecordTime == 0){
@@ -145,8 +145,8 @@ public class OFC_DamageApp extends Simulation{
 				}
 				double cgInverseActivityMetric = activityOmega0/activityOmega;
 				double cgInverseStressMetric = CGstressOmega0/CGstressOmega;
-				double reducedTime = ofc.time/cg_dt;
-				FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
+				double reducedTime = ofc.cg_time/cg_dt;
+				FileUtil.printlnToFile(iMetFile, ofc.cg_time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
 				//				FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
 				//				FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
 				nextRecordTime += cg_dt;
@@ -155,7 +155,7 @@ public class OFC_DamageApp extends Simulation{
 			}
 			//			}
 
-			if(ofc.time > maxTime) Job.signalStop();
+			if(ofc.cg_time > maxTime) Job.signalStop();
 
 			Job.animate();
 		}

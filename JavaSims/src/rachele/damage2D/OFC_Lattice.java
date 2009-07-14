@@ -39,6 +39,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			noNbors = findCircleNbors(R);
 		}
 		System.out.println("Fully Connected = " + fullyConnected);
+		dt = 1.0/params.fget("Coarse Grained dt");
 		
 //		CG_dt = params.fget("Coarse Grained dt");
 //		dt = params.fget("dt");
@@ -75,8 +76,9 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			CG_ActivityTimeAve[i] = 0;
 		}
 		metric0 = calcMetric0();
-		time = 0;
+		cg_time = 0;
 		plateUpdates = 0;
+
 	}
 	
 	public void initEquilibrate(int maxPlateUpdates){
@@ -84,16 +86,23 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	}
 	
 	public void equilibrate(){
-
+		//find the epicenter
 		epicenterSite = siteWithMaxStress();
+		//bring epicenter to failure by adding equal stress to all sites
 		double stressAdd = tStress - stress[epicenterSite];
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
+		//find and fail all sites in avalanche
 		if(fullyConnected){
+			//failList records all sites that will fail in one iteration
+			//1st iteration includes the epicenter only
 			failList[epicenterSite] = true;
-			fc_fail(failList);
+			//fail the epicenter
+			fc_fail();			
+			//is there another iteration of failures due to epicenter failure?  If so, make a new failList
 			boolean failAgain = fc_checkFailList();
+			// new iteration if there are more failures due to previous iterations
 			while(failAgain){
-				avSize += fc_fail();
+				fc_fail();
 				failAgain = fc_checkFailList();
 			}
 		}else{
@@ -118,26 +127,43 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		for(int i = 0; i < N; i++) plateUpdateFailLocations[i] = 0;
 	}
 	
+	public void clearFailList(){
+		for(int i = 0; i < N; i++) failList[i] = false;
+	}
+	
 	public void step(){
+		clearPlateUpdateFileLocs();
+		clearFailList();
+		//initiate avalanche size
+		avSize = 0;
+		//find the epicenter
 		epicenterSite = siteWithMaxStress();
-		int site = findCG_site(epicenterSite);
-		//		epicenterCount[site] +=1;
-
-		//Bring to failure
+		//bring epicenter to failure by adding equal stress to all sites
 		double stressAdd = tStress - stress[epicenterSite];
-		//		dt = stressAdd;
-		dt=1;
 		if(stressAdd < 0) System.out.println("Error: stress already above failure");
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
-		
+		//find and fail all sites in avalanche
 		if(fullyConnected){
+			//failList records all sites that will fail in one iteration
+			//1st iteration includes the epicenter only
 			failList[epicenterSite] = true;
-//			fc_fail(epicenter);
-			//Fail the failSite
+			//fail the epicenter
+			fc_failAndCount();			
+			//is there another iteration of failures due to epicenter failure?  If so, make a new failList
 			boolean failAgain = fc_checkFailList();
+			// new iteration if there are more failures due to previous iterations
 			while(failAgain){
-				avSize += fc_fail();
+				fc_failAndCount();
 				failAgain = fc_checkFailList();
+
+
+//				failList[epicenterSite] = true;
+//				//			fc_fail(epicenter);
+//				//Fail the failSite
+//				boolean failAgain = fc_checkFailList();
+//				while(failAgain){
+//				avSize += fc_fail();
+//				failAgain = fc_checkFailList();
 			}
 		}else{
 			plateUpdateFailLocations[epicenterSite] += 1;			
@@ -154,9 +180,10 @@ public class OFC_Lattice extends AbstractCG_OFC{
 				}
 			}
 		}
-		if (avSize >= lowerCutoff) 	epicenterCount[site] +=1;
-		time += dt;
+		if (avSize >= lowerCutoff) 	epicenterCount[findCG_site(epicenterSite)] +=1;
+		cg_time += dt;
 		plateUpdates += 1;
+//		System.out.println("av size = " + avSize + " at " + plateUpdates);
 	}
 
 	int checkFailWithRange(){
@@ -179,10 +206,10 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		return failCheck;
 	}
 	
-	void fc_fail(boolean [] sitesToFail){
+	void fc_fail(){
 		double excessStressSum = 0.0;
 		for (int site = 0; site < N; site++){
-			if (sitesToFail[site]=true){
+			if (failList[site]){
 				double rStressWithNoise = calcResNoise(site);
 				double excessStressPerNbor = calcStressPerNbor(site, rStressWithNoise);
 				excessStressSum += excessStressPerNbor;
@@ -193,32 +220,49 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			stress[site] += excessStressSum;		
 	}
 	
-	int fc_fail(){
-		//Bring to Residual
-		//maybe need to generate a random list here??
-		//Changed so that all stress is summed 1st before added
-		// so I don't think a random list is needed, but
-		// may be needed for finite ranges.
+	void fc_failAndCount(){
 		double excessStressSum = 0.0;
-		int noFailed = 0;
 		for (int site = 0; site < N; site++){
-			if(failList[site]){
+			if (failList[site]){
+//				System.out.println("fail site " + site);
+				avSize += 1;
+				plateUpdateFailLocations[site] += 1;
 				double rStressWithNoise = calcResNoise(site);
 				double excessStressPerNbor = calcStressPerNbor(site, rStressWithNoise);
-//				double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0);
-//				double excessStressPerNbor = ((1-dissParam)*(stress[site] - rStress) - resNoise)/(double)noNbors;
 				excessStressSum += excessStressPerNbor;
 				stress[site] = rStressWithNoise - excessStressPerNbor;
-				failList[site] = false;
-				noFailed += 1;
-				plateUpdateFailLocations[site] += 1;
 			}
 		}
-		for(int i = 0; i < N; i++){
-			stress[i] += excessStressSum;
-		}
-		return noFailed;
+		for(int site = 0; site < N; site++)
+			stress[site] += excessStressSum;		
 	}
+	
+//	int fc_fail(){
+//		//Bring to Residual
+//		//maybe need to generate a random list here??
+//		//Changed so that all stress is summed 1st before added
+//		// so I don't think a random list is needed, but
+//		// may be needed for finite ranges.
+//		double excessStressSum = 0.0;
+//		int noFailed = 0;
+//		for (int site = 0; site < N; site++){
+//			if(failList[site]){
+//				double rStressWithNoise = calcResNoise(site);
+//				double excessStressPerNbor = calcStressPerNbor(site, rStressWithNoise);
+////				double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0);
+////				double excessStressPerNbor = ((1-dissParam)*(stress[site] - rStress) - resNoise)/(double)noNbors;
+//				excessStressSum += excessStressPerNbor;
+//				stress[site] = rStressWithNoise - excessStressPerNbor;
+//				failList[site] = false;
+//				noFailed += 1;
+//				plateUpdateFailLocations[site] += 1;
+//			}
+//		}
+//		for(int i = 0; i < N; i++){
+//			stress[i] += excessStressSum;
+//		}
+//		return noFailed;
+//	}
 	
 	void failSiteWithRange(int s){
 		double resStressWithNoise = calcResNoise(s);
@@ -241,41 +285,41 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	}
 	
 	public double calcInverseMetric(){
-		double del_t = time -lastRecordTime;
+		double del_t = cg_time -lastRecordTime;
 		for(int i=0; i < N; i++)
-			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(time);
+			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
 		double spaceSum = DoubleArray.sum(stressTimeAve);
 		double spaceTimeStressAve = (spaceSum)/(double)(N);
 		double metricSum = 0;
 		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
 		double inverseMetric = (double)(N)*metric0/metricSum;
-		lastRecordTime = time;
+		lastRecordTime = cg_time;
 		return inverseMetric;
 	}
 	
 
 	public double calcCG_stressMetric(){
-		double del_t = time - lastCG_StressRecordTime;
+		double del_t = cg_time - lastCG_StressRecordTime;
 		for (int i = 0; i < N; i++)
-			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (time);
+			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (cg_time);
 		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)N;
 		double CG_metric = 0;
 		for (int i = 0; i < L; i++){
 			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
 		}
 		CG_metric /= (double)N;
-		lastCG_StressRecordTime = time;
+		lastCG_StressRecordTime = cg_time;
 		return CG_metric; 
 	}
 	
 	public double calcCG_activityMetric(){
-		double del_t = time - lastCG_RecordTime;
+		double del_t = cg_time - lastCG_RecordTime;
 		for (int i = 0; i < Np; i++){
 //			double countWithCutoff;
 //			if (epicenterCount[i] < lowerCutoff) countWithCutoff = 0;
 //			else countWithCutoff = epicenterCount[i];
 //			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*countWithCutoff) / (time);
-			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*epicenterCount[i]) / (time);
+			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*epicenterCount[i]) / (cg_time);
 		}
 		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
 		double CG_metric = 0;
@@ -283,7 +327,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
 		}
 		CG_metric /= (double)Np;
-		lastCG_RecordTime = time;
+		lastCG_RecordTime = cg_time;
 		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
 		return CG_metric; 
 	}
