@@ -310,7 +310,7 @@ public class ising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/M;
-				PrintUtil.printlnToFile("F:/data/dmetric5.txt",step-metricstart, NMetric/M);
+				PrintUtil.printlnToFile("F:/data/dmetric6.txt",step-metricstart, NMetric/M);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
 				}
 			
