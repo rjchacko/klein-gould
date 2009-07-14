@@ -1,7 +1,10 @@
 package rachele.damage2D.apps;
 
 import java.awt.Color;
+import java.io.File;
+
 import rachele.damage2D.OFC_Lattice;
+import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Geom2D;
@@ -10,6 +13,7 @@ import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
+import scikit.jobs.params.DirectoryValue;
 
 /**
 * Same as basic app, 
@@ -17,7 +21,7 @@ import scikit.jobs.Simulation;
 * watch metrics in real time.
 * 
 */
-public class OFC_AppNoFileWrite extends Simulation{
+public class OFC_NoAutoWriteApp extends Simulation{
 
 	int cg_dt;
 	
@@ -25,37 +29,32 @@ public class OFC_AppNoFileWrite extends Simulation{
 	Grid cgGrid = new Grid(" CG grid");
 	Grid cgGridTimeAverage = new Grid("Time ave CG grid");
 	Grid plateUpdateGrid = new Grid("Plate Update grid");
-//	Plot sizePlot = new Plot("Size Histogram");
+	Plot stressMetPlot = new Plot("Stress Met Plot");
 	Plot actPlot = new Plot("CG Activity I Metric");
 	Plot sizePlot = new Plot("Size Plot");
-	Plot stressMetPlot = new Plot("Stress Met Plot");
+	Plot cgStressMetPlot = new Plot("CG Stress Met Plot");
 	OFC_Lattice ofc;
 	Accumulator cgMetricAcc = new Accumulator();
-	Accumulator maxSizeAcc = new Accumulator();
 	Accumulator CGstressMetAcc = new Accumulator();
-	Accumulator sizeAcc = new Accumulator();
+	Accumulator maxSizeAcc = new Accumulator();
+	Accumulator stressMetAcc = new Accumulator();
 	Histogram sizeHist = new Histogram(1);
-	String iMetFile;
-//	String sizeFile;
-	String sizeHistFile;
-	int maxSize;
-//	String cgInvMetricFile;
+	int maxSize, fileNo;
 	
 	public static void main(String[] args) {
-		new Control(new OFC_AppNoFileWrite(), "OFC Model");
+		new Control(new OFC_NoAutoWriteApp(), "OFC Model");
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Grids", grid, cgGrid, cgGridTimeAverage, plateUpdateGrid, sizePlot, stressMetPlot, actPlot);
-//		c.frameTogether("Data", sizePlot, stressMetPlot, actPlot);
-//		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
+		c.frameTogether("Grids", grid, cgGrid, cgGridTimeAverage, plateUpdateGrid, sizePlot, cgStressMetPlot, actPlot, stressMetPlot);
+		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 32);
 		params.addm("dx", 1);
 		params.addm("Coarse Grained dt", 50);
 		params.addm("Equilibration Updates", 1000);
 		params.addm("Max Time", 1000000);
-		params.addm("R", 16);// 0 -> fully connected
+		params.addm("R", 0);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.05);
 		params.addm("Res. Max Noise", 0.125);
@@ -64,6 +63,7 @@ public class OFC_AppNoFileWrite extends Simulation{
 		params.add("Time");
 		params.add("Plate Updates");
 		flags.add("Clear");
+		flags.add("Write");
 		
 	}
 	
@@ -87,25 +87,23 @@ public class OFC_AppNoFileWrite extends Simulation{
 		actPlot.setAutoScale(true);
 		actPlot.registerLines("Activity Metric", cgMetricAcc, Color.BLACK);
 		sizePlot.setAutoScale(true);
-		sizePlot.registerPoints("Maz EQ size", sizeAcc, Color.RED);
-		stressMetPlot.setAutoScale(true);
-		stressMetPlot.registerLines("stress met", CGstressMetAcc, Color.BLUE);
-//		iterPlot.setAutoScale(true);
-//		iterPlot.registerLines("Iterations", sizeAcc, Color.RED);
-		
-//		metricPlot.setAutoScale(true);
-//		metricPlot.registerLines("Metric", inverseMetricAcc, Color.BLACK);
-//		sizePlot.setAutoScale(true);
-//		sizePlot.registerBars("Size", sizeHist, Color.BLACK);
+		sizePlot.registerPoints("Maz EQ size", maxSizeAcc, Color.RED);
+		cgStressMetPlot.setAutoScale(true);
+		cgStressMetPlot.registerLines("CG stress met", CGstressMetAcc, Color.BLUE);
+		stressMetPlot.registerLines("stress met", stressMetAcc, Color.BLACK);
 		params.set("Time", ofc.time);
 		params.set("Plate Updates", ofc.plateUpdates);
 		
+		if(flags.contains("Write")){
+			writeCgStressTimeAveGrid();
+		}
 		if (flags.contains("Clear")){
 			cgMetricAcc.clear();
-			sizeAcc.clear();
+			maxSizeAcc.clear();
 			CGstressMetAcc.clear();
-			flags.clear();
+			stressMetAcc.clear();
 		}
+		flags.clear();
 	}
 
 	public void clear() {
@@ -113,76 +111,47 @@ public class OFC_AppNoFileWrite extends Simulation{
 
 	public void run() {
 		ofc = new OFC_Lattice(params);
-//		initFiles();
 		cg_dt = params.iget("Coarse Grained dt");
-//		boolean prestep = true;
 		double nextRecordTime = 0;
-//		boolean findActivityOmega0 = true; 
 		int maxTime = params.iget("Max Time");
 		maxSize = 0;
-//		double activityOmega0=0;
-//		double CGstressOmega0 = 0;
+		fileNo = 0;
 		
 		//equilibrate
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
+
 		while (ofc.plateUpdates < 0){
 			ofc.equilibrate();
+//			System.out.println("init done, R = " + ofc.R);
 			Job.animate();
 			if(ofc.plateUpdates == 0) Job.signalStop();
 		}
 		
 		while(true){
-//			if(prestep){
-//			ofc.prestep();
-//			prestep =false;
-//			}else{	
 			ofc.clearPlateUpdateFileLocs();
 			ofc.step();
-//			prestep = true;
 
 			int size = ofc.avSize;
 			sizeHist.accum(size);
-//			sizeStore.accum(ofc.time, size);
 			if (size > maxSize) {
 				maxSize = size;
-//				System.out.print("max size " + maxSize);
 			}
 			double iMet = ofc.calcInverseMetric();
 
 			if(ofc.time > nextRecordTime){
 
-//				FileUtil.printlnToFile(sizeFile, ofc.time, size);
-//				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
-//				FileUtil.printHistToFile(sizeHistFile, sizeHist);
 				double activityOmega = ofc.calcCG_activityMetric();
 				double CGstressOmega = ofc.calcCG_stressMetric();
-//				if(findActivityOmega0){
-//					if(activityOmega != 0){
-//						activityOmega0 = activityOmega;
-//						findActivityOmega0 = false;
-//					}
-//					System.out.println("omega0 = " + activityOmega0 + " at time = " + ofc.time);
-//					FileUtil.printlnToFile(iMetFile, "# Omega(t=0) = ", activityOmega0);
-//				}
-//				if(nextRecordTime == 0){
-//					CGstressOmega0 = CGstressOmega;
-//					System.out.println("omega0  stress= " + CGstressOmega0);
-//				}
-
 				double reducedTime = ofc.time/cg_dt;
 				double cgInverseActivityMetric = 1.0/activityOmega;
 				cgMetricAcc.accum(reducedTime, cgInverseActivityMetric);
 				double cgInverseStressMetric = 1.0/CGstressOmega;
 				CGstressMetAcc.accum(reducedTime, cgInverseStressMetric);
-				sizeAcc.accum(reducedTime, maxSize);
-//				FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
-//				FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
-//				FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
+				maxSizeAcc.accum(reducedTime, maxSize);
+				stressMetAcc.accum(reducedTime, iMet);
 				nextRecordTime += cg_dt;
 				maxSize = 0;
-//				sizeStore.clear();
 			}
-//			}
 
 
 			if(ofc.time > maxTime) Job.signalStop();
@@ -191,14 +160,15 @@ public class OFC_AppNoFileWrite extends Simulation{
 		}
 	}
 	
-//	void initFiles(){
-//		iMetFile = params.sget("Data Dir") + File.separator + "im.txt";  // to record iverse metric data
-//		FileUtil.initFile(iMetFile, params, " time (plate updates), stress inverse metric, time/coarse grained time, coarse grained activity metric, coarse grained stress metric, size of avalanche");
-////		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";   //to record size vs time data
-////		FileUtil.initFile(sizeFile, params, "avalanch size vs time");
-//		sizeHistFile = params.sget("Data Dir") + File.separator + "sh.txt";	//to record size histogram data
-////		cgInvMetricFile = params.sget("Data Dir") + File.separator + "cg.txt";
-////		FileUtil.initFile(cgInvMetricFile, params, "Coarse Grained Inverse Metric");
-//	}
-
+	void writeCgStressTimeAveGrid(){
+		String fileName = params.sget("Data Dir") + File.separator + "g" + fileNo;  
+		FileUtil.initFile(fileName, params);
+		for (int i=0; i < ofc.Np; i++){
+			int x = i%ofc.Lp;
+			int y = i/ofc.Lp;
+			FileUtil.printlnToFile(fileName, x, y,ofc.CG_ActivityTimeAve[i]);
+		}
+		fileNo +=1;
+	}
+	
 }

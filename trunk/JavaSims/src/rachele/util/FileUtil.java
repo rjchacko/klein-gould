@@ -78,6 +78,16 @@ public class FileUtil {
 		}
 	}
 
+	static public void printlnToFile(String fileName, int i1, int i2, double d3){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(i1 + " " + i2 + " " + d3);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	static public void printlnToFile(String fileName, double d1, double d2, double d3, double d4){
 		try{
 			File file = new File(fileName);
