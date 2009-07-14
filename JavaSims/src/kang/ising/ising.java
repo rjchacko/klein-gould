@@ -310,19 +310,21 @@ public class ising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/M;
-				PrintUtil.printlnToFile("F:/data/metric7.txt",step-metricstart, NMetric/M);
+				PrintUtil.printlnToFile("F:/data/dmetric5.txt",step-metricstart, NMetric/M);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
 				}
 			
 			if(step==N+metricstart+1)
 			{
-				PrintUtil.printlnToFile("F:/data/metric1.txt","Lattice length=", L1);
-				PrintUtil.printlnToFile("F:/data/metric1.txt","Lattice width=", L2);
-				PrintUtil.printlnToFile("F:/data/metric1.txt","J=",NJ);
-				PrintUtil.printlnToFile("F:/data/metric1.txt","Interaction Range=",R);
-				PrintUtil.printlnToFile("F:/data/metric1.txt","Mectric starts at", metricstart);
-				PrintUtil.printlnToFile("F:/data/metric1.txt","Final Tempearture=",T);
-				PrintUtil.printlnToFile("F:/data/metric1.txt","Final Field=",H);
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","");
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Lattice length=", L1);
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Lattice width=", L2);
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","J=",NJ);
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Interaction Range=",R);
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Mectric starts at", metricstart);
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Final Tempearture=",T);
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Final Field=",H);
+				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Diluted Percentage=",P);
 				
 			}
 			
