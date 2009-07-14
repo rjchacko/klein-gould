@@ -5,7 +5,7 @@ import java.io.File;
 
 import rachele.damage2D.OFC_Lattice;
 import rachele.util.FileUtil;
-import scikit.dataset.Accumulator;
+//import scikit.dataset.Accumulator;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Grid;

@@ -90,17 +90,18 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
 		if(fullyConnected){
 			failList[epicenterSite] = true;
-			boolean failAgain = checkFailList();
+			fc_fail(failList);
+			boolean failAgain = fc_checkFailList();
 			while(failAgain){
-				avSize += fail();
-				failAgain = checkFailList();
+				avSize += fc_fail();
+				failAgain = fc_checkFailList();
 			}
 		}else{
 			failSiteWithRange(epicenterSite);
-			int nextSiteToFail = checkFail();
+			int nextSiteToFail = checkFailWithRange();
 			while (nextSiteToFail >= 0){
 				failSiteWithRange(nextSiteToFail);
-				nextSiteToFail = checkFail();
+				nextSiteToFail = checkFailWithRange();
 			}
 		}
 		plateUpdates += 1;
@@ -128,29 +129,28 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		dt=1;
 		if(stressAdd < 0) System.out.println("Error: stress already above failure");
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
-		avSize = 1;
-		plateUpdateFailLocations[epicenterSite] += 1;
 		
-
 		if(fullyConnected){
 			failList[epicenterSite] = true;
+//			fc_fail(epicenter);
 			//Fail the failSite
-			boolean failAgain = checkFailList();
+			boolean failAgain = fc_checkFailList();
 			while(failAgain){
-				avSize += fail();
-				failAgain = checkFailList();
+				avSize += fc_fail();
+				failAgain = fc_checkFailList();
 			}
 		}else{
+			plateUpdateFailLocations[epicenterSite] += 1;			
+			avSize = 1;
 			failSiteWithRange(epicenterSite);
-			int nextSiteToFail = checkFail();
+			int nextSiteToFail = checkFailWithRange();
 			if(nextSiteToFail >= 0){
 				while (nextSiteToFail >= 0){
 					failSiteWithRange(nextSiteToFail);
 //					System.out.println("sitetofail = " + nextSiteToFail);
 					plateUpdateFailLocations[nextSiteToFail] += 1;
-					nextSiteToFail = checkFail();
+					nextSiteToFail = checkFailWithRange();
 					avSize += 1;
-
 				}
 			}
 		}
@@ -159,11 +159,65 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		plateUpdates += 1;
 	}
 
-	int checkFail(){
+	int checkFailWithRange(){
 		int s = siteWithMaxStress();
 		if (stress[s] < tStress) s = -1; 
 		//		System.out.println("Stress of max Site = " + stress[s] + " at site " + s);
 		return s;
+	}
+
+	boolean fc_checkFailList(){
+		boolean failCheck = false;
+		for(int i = 0; i < N; i++){
+			if (stress[i] >= tStress){
+				failList[i] = true;
+				failCheck = true;
+			}else{
+				failList[i] = false;
+			}
+		}
+		return failCheck;
+	}
+	
+	void fc_fail(boolean [] sitesToFail){
+		double excessStressSum = 0.0;
+		for (int site = 0; site < N; site++){
+			if (sitesToFail[site]=true){
+				double rStressWithNoise = calcResNoise(site);
+				double excessStressPerNbor = calcStressPerNbor(site, rStressWithNoise);
+				excessStressSum += excessStressPerNbor;
+				stress[site] = rStressWithNoise - excessStressPerNbor;
+			}
+		}
+		for(int site = 0; site < N; site++)
+			stress[site] += excessStressSum;		
+	}
+	
+	int fc_fail(){
+		//Bring to Residual
+		//maybe need to generate a random list here??
+		//Changed so that all stress is summed 1st before added
+		// so I don't think a random list is needed, but
+		// may be needed for finite ranges.
+		double excessStressSum = 0.0;
+		int noFailed = 0;
+		for (int site = 0; site < N; site++){
+			if(failList[site]){
+				double rStressWithNoise = calcResNoise(site);
+				double excessStressPerNbor = calcStressPerNbor(site, rStressWithNoise);
+//				double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0);
+//				double excessStressPerNbor = ((1-dissParam)*(stress[site] - rStress) - resNoise)/(double)noNbors;
+				excessStressSum += excessStressPerNbor;
+				stress[site] = rStressWithNoise - excessStressPerNbor;
+				failList[site] = false;
+				noFailed += 1;
+				plateUpdateFailLocations[site] += 1;
+			}
+		}
+		for(int i = 0; i < N; i++){
+			stress[i] += excessStressSum;
+		}
+		return noFailed;
 	}
 	
 	void failSiteWithRange(int s){
@@ -234,43 +288,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		return CG_metric; 
 	}
 	
-	boolean checkFailList(){
-		boolean failCheck = false;
-		for(int i = 0; i < N; i++){
-			if (stress[i] >= tStress){
-				failList[i] = true;
-				failCheck = true;
-			}
-		}
-		return failCheck;
-	}
-	
-	int fail(){
-		//Bring to Residual
-		//maybe need to generate a random list here??
-		//Changed so that all stress is summed 1st before added
-		// so I don't think a random list is needed, but
-		// may be needed for finite ranges.
-		double excessStressSum = 0.0;
-		int noFailed = 0;
-		for (int site = 0; site < N; site++){
-			if(failList[site]){
-				double rStressWithNoise = calcResNoise(site);
-				double excessStressPerNbor = calcStressPerNbor(site, rStressWithNoise);
-//				double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0);
-//				double excessStressPerNbor = ((1-dissParam)*(stress[site] - rStress) - resNoise)/(double)noNbors;
-				excessStressSum =+ excessStressPerNbor;
-				stress[site] = rStressWithNoise - excessStressPerNbor;
-				failList[site] = false;
-				noFailed += 1;
-				plateUpdateFailLocations[site] += 1;
-			}
-		}
-		for(int i = 0; i < N; i++){
-			stress[i] += excessStressSum;
-		}
-		return noFailed;
-	}
+
 
 
 	
