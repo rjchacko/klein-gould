@@ -57,7 +57,7 @@ public class OFC_AllDataApp extends Simulation{
 	public void animate() {
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
 		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
-		params.set("Time", Utilities.format(ofc.time));
+		params.set("Time", Utilities.format(ofc.cg_time));
 		params.set("Plate Updates", ofc.plateUpdates);
 	}
 
@@ -84,27 +84,27 @@ public class OFC_AllDataApp extends Simulation{
 			ofc.step();
 			int size = ofc.avSize;
 			sizeHist.accum(size);
-			sizeStore.accum(ofc.time, size);
+			sizeStore.accum(ofc.cg_time, size);
 			if (size > maxSize) maxSize = size;
 			double iMet = ofc.calcInverseMetric();
-			stressMetStore.accum(ofc.time, iMet);
+			stressMetStore.accum(ofc.cg_time, iMet);
 
-			if(ofc.time > nextRecordTime){
+			if(ofc.cg_time > nextRecordTime){
 
 
 				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 				FileUtil.printHistToFile(sizeHistFile, sizeHist);
 				double cgInverseActivityMetric = 1.0/ofc.calcCG_activityMetric();
 				double cgInverseStressMetric = 1.0/ofc.calcCG_stressMetric();
-				double reducedTime = ofc.time/cg_dt;
-				FileUtil.printlnToFile(iMetFile, ofc.time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
+				double reducedTime = ofc.cg_time/cg_dt;
+				FileUtil.printlnToFile(iMetFile, ofc.cg_time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
 				FileUtil.printAccumToFileNoErrorBars(sizeAllFile, sizeStore);
 				sizeStore.clear();
 				FileUtil.printAccumToFileNoErrorBars(iMetAllFile, stressMetStore);
 				stressMetStore.clear();
 				nextRecordTime += cg_dt;
 				maxSize = 0;
-				if(ofc.time > nextMakeNewFileTime){
+				if(ofc.cg_time > nextMakeNewFileTime){
 					sizeAllFile = makeNewFile(sizeAllFile);
 					iMetAllFile = makeNewFile(iMetAllFile);
 					System.out.println(sizeAllFile + " " + iMetAllFile);
@@ -114,7 +114,7 @@ public class OFC_AllDataApp extends Simulation{
 
 			}
 
-			if(ofc.time > maxTime) Job.signalStop();
+			if(ofc.cg_time > maxTime) Job.signalStop();
 				
 			Job.animate();
 		}

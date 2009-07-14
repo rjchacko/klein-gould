@@ -90,8 +90,9 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		sizePlot.registerPoints("Maz EQ size", maxSizeAcc, Color.RED);
 		cgStressMetPlot.setAutoScale(true);
 		cgStressMetPlot.registerLines("CG stress met", CGstressMetAcc, Color.BLUE);
+		stressMetPlot.setAutoScale(true);
 		stressMetPlot.registerLines("stress met", stressMetAcc, Color.BLACK);
-		params.set("Time", ofc.time);
+		params.set("Time", ofc.cg_time);
 		params.set("Plate Updates", ofc.plateUpdates);
 		
 		if(flags.contains("Write")){
@@ -128,7 +129,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		}
 		
 		while(true){
-			ofc.clearPlateUpdateFileLocs();
+
 			ofc.step();
 
 			int size = ofc.avSize;
@@ -138,11 +139,12 @@ public class OFC_NoAutoWriteApp extends Simulation{
 			}
 			double iMet = ofc.calcInverseMetric();
 
-			if(ofc.time > nextRecordTime){
 
+			if(ofc.plateUpdates > nextRecordTime){
+//				System.out.println(ofc.plateUpdates + " PU " + "nextRecordTime = " + maxSize);
 				double activityOmega = ofc.calcCG_activityMetric();
 				double CGstressOmega = ofc.calcCG_stressMetric();
-				double reducedTime = ofc.time/cg_dt;
+				double reducedTime = ofc.cg_time;
 				double cgInverseActivityMetric = 1.0/activityOmega;
 				cgMetricAcc.accum(reducedTime, cgInverseActivityMetric);
 				double cgInverseStressMetric = 1.0/CGstressOmega;
@@ -154,7 +156,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 			}
 
 
-			if(ofc.time > maxTime) Job.signalStop();
+			if(ofc.cg_time > maxTime) Job.signalStop();
 				
 			Job.animate();
 		}

@@ -12,8 +12,8 @@ public class AbstractCG_OFC {
 	public int dx;				// coarse grained size = L/Lp 
 	public int noNbors;			// no of neighbors within given interaction range
 	public int plateUpdates;	// no of times avalanch has been forced by increassing stress to all sites
-	public int time;			// time (interpreted either as no of updates or proportional to size of stress update ??)
-	public int dt;			// Either 1 or proportional to stress update (see above)
+	public double cg_time;			// coarse grained time 
+	public double dt;			// 1.0/coarse grained time chunk. (Coarse grained units of time)
 	public int epicenterSite; 	// beginning site of current avalanch
 	public int avSize; 			// avalanch size
 	double tStress;				// threshold stress
