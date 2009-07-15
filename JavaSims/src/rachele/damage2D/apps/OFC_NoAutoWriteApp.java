@@ -51,7 +51,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 32);
 		params.addm("dx", 1);
-		params.addm("Coarse Grained dt", 50);
+		params.addm("Coarse Grained dt", 1);
 		params.addm("Equilibration Updates", 1000);
 		params.addm("Max Time", 1000000);
 		params.addm("R", 0);// 0 -> fully connected
@@ -137,20 +137,27 @@ public class OFC_NoAutoWriteApp extends Simulation{
 			if (size > maxSize) {
 				maxSize = size;
 			}
-			double iMet = ofc.calcInverseMetric();
-
+//			double iMet = ofc.calcInverseMetric();
+			double iMet = 1.0/ofc.calcStressMetric();
 
 			if(ofc.plateUpdates > nextRecordTime){
-//				System.out.println(ofc.plateUpdates + " PU " + "nextRecordTime = " + maxSize);
+//				System.out.println(ofc.plateUpdates + " PU " + "nextRecordTime = " + nextRecordTime);
+				
+				//stress metric
+				stressMetAcc.accum(ofc.cg_time, iMet);
+				
+				//CG stress metric
+				double cgInverseStressMetric = 1.0/ofc.calcCG_stressMetric();
+				CGstressMetAcc.accum(ofc.cg_time, cgInverseStressMetric);
+				
+				
 				double activityOmega = ofc.calcCG_activityMetric();
-				double CGstressOmega = ofc.calcCG_stressMetric();
-				double reducedTime = ofc.cg_time;
+
 				double cgInverseActivityMetric = 1.0/activityOmega;
-				cgMetricAcc.accum(reducedTime, cgInverseActivityMetric);
-				double cgInverseStressMetric = 1.0/CGstressOmega;
-				CGstressMetAcc.accum(reducedTime, cgInverseStressMetric);
-				maxSizeAcc.accum(reducedTime, maxSize);
-				stressMetAcc.accum(reducedTime, iMet);
+				cgMetricAcc.accum(ofc.cg_time, cgInverseActivityMetric);
+
+				maxSizeAcc.accum(ofc.cg_time, maxSize);
+
 				nextRecordTime += cg_dt;
 				maxSize = 0;
 			}

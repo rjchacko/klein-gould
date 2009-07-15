@@ -62,18 +62,18 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		stressTimeAve = new double [N];
 		epicenterCount = new int [Np];
 		CG_ActivityTimeAve = new double [Np];
-		CG_StressTimeAve = new double [N];
+		CG_StressTimeAve = new double [Np];
 		plateUpdateFailLocations = new int [N];
 		failList = new boolean [N];
 		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;
 			stressTimeAve[i] = stress[i];
 			failList[i] = false;
-			CG_StressTimeAve[i] = 0;
 		}
 		for (int i = 0; i < Np; i++){
 			epicenterCount[i] = 0;
 			CG_ActivityTimeAve[i] = 0;
+			CG_StressTimeAve[i] = 0;
 		}
 		metric0 = calcMetric0();
 		cg_time = 0;
@@ -284,6 +284,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		
 	}
 	
+
 	public double calcInverseMetric(){
 		double del_t = cg_time -lastRecordTime;
 		for(int i=0; i < N; i++)
@@ -296,24 +297,72 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		lastRecordTime = cg_time;
 		return inverseMetric;
 	}
-	
 
+	public double calcStressMetric(){
+		double del_t = cg_time -lastRecordTime;
+		for(int i=0; i < N; i++)
+			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
+		double spaceSum = DoubleArray.sum(stressTimeAve);
+		double spaceTimeStressAve = (spaceSum)/(double)(N);
+		double metricSum = 0;
+		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
+		double stressMetric = metricSum/(double)N;
+		lastRecordTime = cg_time;
+		return stressMetric;
+	}
+
+	//fixed to CG in space and time
 	public double calcCG_stressMetric(){
 		double del_t = cg_time - lastCG_StressRecordTime;
-		for (int i = 0; i < N; i++)
-			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (cg_time);
-		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)N;
+		double [] cgStressConfig = findCG_StressConfig();
+		// accumulate the most recent time step into the time ave
+		for (int i = 0; i < Np; i++)
+			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*cgStressConfig[i]) / (cg_time);
+		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)Np;
 		double CG_metric = 0;
-		for (int i = 0; i < L; i++){
+		//take the space ave
+		for (int i = 0; i < Np; i++){
 			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
 		}
-		CG_metric /= (double)N;
+		CG_metric /= (double)Np;
 		lastCG_StressRecordTime = cg_time;
 		return CG_metric; 
 	}
 	
+//	//only CGs in time, not space
+//	public double calcCG_stressMetricCGTime(){
+//		double del_t = cg_time - lastCG_StressRecordTime;
+//
+//		// accumulate the most recent time step into the time ave
+//		for (int i = 0; i < N; i++)
+//			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (cg_time);
+//		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)N;
+//		double CG_metric = 0;
+//		//take the space ave
+//		for (int i = 0; i < N; i++){
+//			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
+//		}
+//		CG_metric /= (double)N;
+//		lastCG_StressRecordTime = cg_time;
+//		return CG_metric; 
+//	}
+	
+	public double [] findCG_StressConfig(){
+		double [] cgSpaceStressConfig = new double [Np];
+		for(int i = 0; i < N; i++){
+			int cgSite = findCG_site(i);
+			cgSpaceStressConfig[cgSite] += stress[i];
+		}
+		int cgBoxSize = N/Np;
+		for(int cgSite = 0; cgSite < Np; cgSite++){
+			cgSpaceStressConfig[cgSite] /= (double) cgBoxSize;
+		}
+		return cgSpaceStressConfig;
+	}
+	
 	public double calcCG_activityMetric(){
 		double del_t = cg_time - lastCG_RecordTime;
+//		System.out.println("del_t = " + del_t + " cg_time = " + cg_time + " lasCG_recordTime = " + lastCG_RecordTime);
 		for (int i = 0; i < Np; i++){
 //			double countWithCutoff;
 //			if (epicenterCount[i] < lowerCutoff) countWithCutoff = 0;
@@ -323,7 +372,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		}
 		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
 		double CG_metric = 0;
-		for (int i = 0; i < Lp; i++){
+		for (int i = 0; i < Np; i++){
 			CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
 		}
 		CG_metric /= (double)Np;

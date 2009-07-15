@@ -96,11 +96,11 @@ public class OFC_App extends Simulation{
 		cg_dt = params.iget("Coarse Grained dt");
 //		boolean prestep = true;
 		double nextRecordTime = 0;
-		boolean findActivityOmega0 = true; 
+//		boolean findActivityOmega0 = true; 
 		int maxTime = params.iget("Max Time");
 		maxSize = 0;
-		double activityOmega0=0;
-		double CGstressOmega0 = 0;
+//		double activityOmega0=0;
+//		double CGstressOmega0 = 0;
 		
 		//equilibrate
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
@@ -117,29 +117,29 @@ public class OFC_App extends Simulation{
 			if (size > maxSize) {
 				maxSize = size;
 			}
-			double iMet = ofc.calcInverseMetric();
+			double stressMetric = ofc.calcStressMetric();
 
 			if(ofc.cg_time > nextRecordTime){
 				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 				FileUtil.printHistToFile(sizeHistFile, sizeHist);
 				double activityOmega = ofc.calcCG_activityMetric();
 				double CGstressOmega = ofc.calcCG_stressMetric();
-				if(findActivityOmega0){
-					if(activityOmega != 0){
-						activityOmega0 = activityOmega;
-						findActivityOmega0 = false;
-					}
-					System.out.println("omega0 = " + activityOmega0 + " at time = " + ofc.cg_time);
-					FileUtil.printlnToFile(iMetFile, "# Omega(t=0) = ", activityOmega0);
-				}
-				if(nextRecordTime == 0){
-					CGstressOmega0 = CGstressOmega;
-					System.out.println("omega0  stress= " + CGstressOmega0);
-				}
-				double cgInverseActivityMetric = activityOmega0/activityOmega;
-				double cgInverseStressMetric = CGstressOmega0/CGstressOmega;
-				double reducedTime = ofc.cg_time/cg_dt;
-				FileUtil.printlnToFile(iMetFile, ofc.cg_time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
+//				if(findActivityOmega0){
+//					if(activityOmega != 0){
+//						activityOmega0 = activityOmega;
+//						findActivityOmega0 = false;
+//					}
+//					System.out.println("omega0 = " + activityOmega0 + " at time = " + ofc.cg_time);
+//					FileUtil.printlnToFile(iMetFile, "# Omega(t=0) = ", activityOmega0);
+//				}
+//				if(nextRecordTime == 0){
+//					CGstressOmega0 = CGstressOmega;
+//					System.out.println("omega0  stress= " + CGstressOmega0);
+//				}
+				double cgInverseActivityMetric = 1.0/activityOmega;
+				double cgInverseStressMetric = 1.0/CGstressOmega;
+				double inverseStressMetric = 1.0/stressMetric;
+				FileUtil.printlnToFile(iMetFile, ofc.plateUpdates, inverseStressMetric, ofc.cg_time, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
 //				FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
 //				FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
 				nextRecordTime += cg_dt;
