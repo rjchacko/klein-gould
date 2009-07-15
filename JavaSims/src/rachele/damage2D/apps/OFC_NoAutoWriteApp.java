@@ -25,7 +25,10 @@ public class OFC_NoAutoWriteApp extends Simulation{
 
 	int cg_dt;
 	
-	Grid grid = new Grid("Lattice");
+	Grid grid = new Grid("Stress");
+	Grid stressTimeAveGrid = new Grid ("Stress Time Ave");
+	Grid cgStressGrid = new Grid("CG stress grid");
+	Grid cgStressTimeAveGrid = new Grid("CG time ave stress grid");
 	Grid cgGrid = new Grid(" CG grid");
 	Grid cgGridTimeAverage = new Grid("Time ave CG grid");
 	Grid plateUpdateGrid = new Grid("Plate Update grid");
@@ -46,11 +49,11 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Grids", grid, cgGrid, cgGridTimeAverage, plateUpdateGrid, sizePlot, cgStressMetPlot, actPlot, stressMetPlot);
+		c.frameTogether("Grids", grid, stressTimeAveGrid, plateUpdateGrid, cgStressGrid, cgStressTimeAveGrid, sizePlot, cgStressMetPlot, actPlot, stressMetPlot);
 		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 32);
-		params.addm("dx", 1);
+		params.addm("CG size", 8);
+		params.addm("dx", 8);
 		params.addm("Coarse Grained dt", 1);
 		params.addm("Equilibration Updates", 1000);
 		params.addm("Max Time", 1000000);
@@ -68,10 +71,18 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	}
 	
 	public void animate() {
+		grid.setScale(0.0,1.0);
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
+		stressTimeAveGrid.setScale(0.0,1.0);
+		stressTimeAveGrid.registerData(ofc.L, ofc.L, ofc.stressTimeAve);
 		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
+		cgStressGrid.setScale(0.0,1.0);
+		cgStressGrid.registerData(ofc.Lp, ofc.Lp, ofc.CG_Stress);
 		cgGridTimeAverage.registerData(ofc.Lp, ofc.Lp, ofc.CG_ActivityTimeAve);
+		plateUpdateGrid.setScale(0.0, 3);
 		plateUpdateGrid.registerData(ofc.L, ofc.L, ofc.plateUpdateFailLocations);
+		cgStressTimeAveGrid.setScale(0.0,1.0);
+		cgStressTimeAveGrid.registerData(ofc.Lp, ofc.Lp, ofc.CG_StressTimeAve);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
