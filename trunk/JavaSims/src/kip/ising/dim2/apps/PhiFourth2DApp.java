@@ -7,7 +7,6 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import scikit.jobs.params.DoubleValue;
 
 public class PhiFourth2DApp extends Simulation {
 	Grid grid = new Grid("Grid");
@@ -23,18 +22,16 @@ public class PhiFourth2DApp extends Simulation {
 		c.frame(grid);
 		params.addm("Saddle", new ChoiceValue("No", "Yes"));
 		params.addm("Noise", new ChoiceValue("Yes", "No"));
-		params.addm("T", new DoubleValue(0.05, -0.2, 0.1).withSlider());
-		params.addm("h", new DoubleValue(0., -0.2, 0.2).withSlider());
+		params.addm("T", 0.);
+		params.addm("h", 0.);
 		params.addm("dt", 1.0);
 		params.add("R", 1000.0);
-		params.add("L", 8000.0);
-		params.add("dx", 100.0);
+		params.add("L/R", 10.0);
+		params.add("dx/R", 0.1);
 		params.add("Random seed", 0);
 		params.add("Time");
 		params.add("F density");
 		params.add("dF/dphi");
-		params.add("Rx");
-		params.add("Ry");
 		params.add("Eigenvalue");
 		params.add("del Eigenmode");
 		params.add("Valid profile");
@@ -43,10 +40,6 @@ public class PhiFourth2DApp extends Simulation {
 	}
 	
 	public void animate() {
-		if (flags.contains("Res up"))
-			clump.doubleResolution();
-		if (flags.contains("Res down"))
-			clump.halveResolution();
 		flags.clear();
 		clump.readParams(params);
 		
@@ -63,13 +56,10 @@ public class PhiFourth2DApp extends Simulation {
 //		System.arraycopy(clump.growthEigenmode, Lp*(Lp/2), section, 0, Lp);
 //		plot.registerLines("", new PointSet(0, 1, section), Color.BLUE);
 		
-		params.set("dx", clump.dx);
+		params.set("dx/R", clump.dx/clump.R);
 		params.set("Time", format(clump.time()));
 		params.set("F density", format(clump.freeEnergyDensity));
 		params.set("dF/dphi", format(clump.rms_dF_dphi));
-		params.set("Rx", clump.Rx);
-		params.set("Ry", clump.Ry);
-		params.set("Valid profile", !clump.rescaleClipped);
 	}
 	
 	public void clear() {
@@ -79,18 +69,11 @@ public class PhiFourth2DApp extends Simulation {
 	
 	public void run() {
 		clump = new PhiFourth2D(params);
-		clump.initializeFieldWithRandomSeed();
+		clump.randomize();
 		Job.animate();
 		
 		while (true) {			
-			if (params.sget("Saddle").equals("Yes")) {
-				clump.saddleStep();
-			}
-			else {
-				clump.simulate();
-				clump.relaxInteraction();
-			}
-			
+			clump.simulate();
 			Job.animate();
 		}
 	}
