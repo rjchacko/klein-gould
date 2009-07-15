@@ -33,25 +33,19 @@ public class OFC_App extends Simulation{
 	Grid grid = new Grid("Lattice");
 	Grid cgGrid = new Grid(" CG grid");
 	Grid cgGridTimeAverage = new Grid("Time ave CG grid");
-//	Plot sizePlot = new Plot("Size Histogram");
+	Grid plateUpdateGrid = new Grid("Plate Update grid");
 	OFC_Lattice ofc;
-//	Accumulator cgMetricAcc = new Accumulator();
-//	Accumulator sizeStore = new Accumulator();  //To store data at each plate update within a bracket
-	
 	Histogram sizeHist = new Histogram(1);
 	String iMetFile;
-//	String sizeFile;
 	String sizeHistFile;
 	int maxSize;
-//	String cgInvMetricFile;
 	
 	public static void main(String[] args) {
 		new Control(new OFC_App(), "OFC Model");
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Grids", grid, cgGrid, cgGridTimeAverage);
-//		c.frameTogether("Data", sizePlot);
+		c.frameTogether("Grids", grid, cgGrid, plateUpdateGrid, cgGridTimeAverage);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 32);
@@ -73,6 +67,7 @@ public class OFC_App extends Simulation{
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
 		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
 		cgGridTimeAverage.registerData(ofc.Lp, ofc.Lp, ofc.CG_ActivityTimeAve);
+		plateUpdateGrid.registerData(ofc.L, ofc.L, ofc.plateUpdateFailLocations);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
@@ -115,25 +110,16 @@ public class OFC_App extends Simulation{
 		}
 		
 		while(true){
-//			if(prestep){
-//			ofc.prestep();
-//			prestep =false;
-//			}else{				
 			ofc.step();
-//			prestep = true;
 
 			int size = ofc.avSize;
 			sizeHist.accum(size);
-//			sizeStore.accum(ofc.time, size);
 			if (size > maxSize) {
 				maxSize = size;
-//				System.out.print("max size " + maxSize);
 			}
 			double iMet = ofc.calcInverseMetric();
 
 			if(ofc.cg_time > nextRecordTime){
-
-//				FileUtil.printlnToFile(sizeFile, ofc.time, size);
 				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 				FileUtil.printHistToFile(sizeHistFile, sizeHist);
 				double activityOmega = ofc.calcCG_activityMetric();
