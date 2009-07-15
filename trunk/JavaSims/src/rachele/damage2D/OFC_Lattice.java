@@ -15,6 +15,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public double [] stressTimeAve;
 	public double [] CG_ActivityTimeAve;
 	public double [] CG_StressTimeAve;
+	public double [] CG_Stress;
 	public int [] plateUpdateFailLocations;  // Record all fail sites for one plate update
 	boolean [] failList;
 	
@@ -64,6 +65,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		CG_ActivityTimeAve = new double [Np];
 		CG_StressTimeAve = new double [Np];
 		plateUpdateFailLocations = new int [N];
+		CG_Stress = new double [Np];
 		failList = new boolean [N];
 		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;
@@ -314,10 +316,11 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	//fixed to CG in space and time
 	public double calcCG_stressMetric(){
 		double del_t = cg_time - lastCG_StressRecordTime;
-		double [] cgStressConfig = findCG_StressConfig();
+		//		double [] cgStressConfig = findCG_StressConfig();
+		CG_Stress = findCG_StressConfig();
 		// accumulate the most recent time step into the time ave
 		for (int i = 0; i < Np; i++)
-			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*cgStressConfig[i]) / (cg_time);
+			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*CG_Stress[i]) / (cg_time);
 		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)Np;
 		double CG_metric = 0;
 		//take the space ave
