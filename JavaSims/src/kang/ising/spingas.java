@@ -146,6 +146,7 @@ public class spingas extends Simulation{
 		//params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
 		params.add("MC time");
 		params.add("magnetization");
+		params.add("Particle number");
 		
 	}
 	
@@ -193,17 +194,23 @@ public class spingas extends Simulation{
 		
 		//randomize the initial state
 		for (i=0; i<M; i++){
-			if (Math.random()< P)
+			double pro = Math.random();
+			if (pro < P)
 				isingspin[i]=0;               //dilute the lattice first
-			isingspin[i]=-1;
-			if (Math.random()> 0.5)
+			if(pro > P)
+				{
+				isingspin[i]=-1;
+				if (Math.random()> 0.5)
 				{
 				isingspin[i]=1;
 				X++;
 				}
+				}
+			
 	
 		}
 		Job.animate();
+		params.set("Particle number", X);
 		
 		// track all the particles
 		
@@ -233,7 +240,7 @@ public class spingas extends Simulation{
 				int phole;                   //position of the hole
 				int holesnumber;            //the number of the holes in the neighborhood of a particle
 				hole = new int [(2*R+1)*(2*R+1)-1] ;  //the array for holes
-				j= (int)Math.random()*X;   //randomly choose a particle
+				j= (int)(Math.random()*X);   //randomly choose a particle
 				k= particleposition[j];    //find this particle on the lattice
 				kx=(int)k/L2;
 				ky=(int)k%L2;               //calculate this particle's position
