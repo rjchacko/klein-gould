@@ -17,21 +17,25 @@ public class spingas extends Simulation{
 	public int L1, L2,M; //parameters for the lattice
 	public int i, x, y;  //parameters for the index
 	public double T;     //temperature 
-	public double chp;     //chemical potential
+	//public double chp;     //chemical potential
 	public double K;     //interaction constant after normalization
 	public double NK;    //interaction constant before normalization
 	
 	public int R;   //interaction range
 	public int step; //Monte Carlo step
-	public int steplimit; //upperlimit of MC step
+	public int steplimit; //upper limit of MC step
 	public int metricstart; //the start of metric calculation
 	public int N; //how many points in the metric plot
 	public double P; //dilution percentage
+	
+	public double totalmagnetization;
+	public double magnetization;
 	
 	
 	
 	public int isingspin[];     //the array of the data
 	public int particleposition[]; //tracking the particles
+	public int hole[];         // the array for the holes within the range of a particle
 	
 	
 	public double timetotalE[];  
@@ -80,7 +84,7 @@ public class spingas extends Simulation{
 		
 	}
 	
-	public double interactionE (int j){ //function for interaction energy
+	public double interactionE (int j){ //function for interaction energy of nearest neighbors
 		double Energy=0;
 		int b,k;
 		for(b=0; b<4;b++){
@@ -90,7 +94,7 @@ public class spingas extends Simulation{
 	
 		}
 		return Energy;	
-	}
+	}    // this function is not useful
 	
 	public double longrangeE (int i){
 		double Energy=0;
@@ -130,7 +134,7 @@ public class spingas extends Simulation{
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
 		params.addm("Temperature", new DoubleValue(1, 0, 100).withSlider());
-		params.addm("Chemical potential", new DoubleValue(0, -2, 2).withSlider());
+		//params.addm("Chemical potential", new DoubleValue(0, -2, 2).withSlider());
 		params.addm("Interaction Constant", 1);
 		params.add("Interaction range", 10);
 		params.add("Monte Carlo step's limit", 1000000);
@@ -141,7 +145,7 @@ public class spingas extends Simulation{
 		//params.add("Model", new ChoiceValue("noninteracting", "interacting"));
 		//params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
 		params.add("MC time");
-		//params.add("magnetization");
+		params.add("magnetization");
 		
 	}
 	
@@ -166,7 +170,7 @@ public class spingas extends Simulation{
 	}
 	
     public void run(){
-    	int i,j;
+    	int i,j,q;
 		R = (int)params.fget("Interaction range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
 		metricstart = (int)params.fget("Metric Start at");
@@ -192,13 +196,14 @@ public class spingas extends Simulation{
 			if (Math.random()< P)
 				isingspin[i]=0;               //dilute the lattice first
 			if (isingspin[i]!=0)              //if the site is not dead
-			isingspin[i]=-1;
-			if (Math.random()> 0.5)
-				{
-				isingspin[i]=1;
-				X+=1;                         //count the number of the particles
-				}
-				
+			{
+				isingspin[i]=-1;
+				if (Math.random()> 0.5)
+					{
+					isingspin[i]=1;
+					X++;                         //count the number of the particles
+					}
+			}	
 		}
 		
 		
@@ -218,9 +223,93 @@ public class spingas extends Simulation{
     	//enter the MCS
 		
 		for (step=0; step< steplimit; step++){
+		    T = params.fget("Temperature");
+		    NK = params.fget("Interaction Constant");
+		    K=NK/((2*R+1)*(2*R+1)-1);
 		
+			for(q=0; q<X; q++)
+			{
+				int k, kx, ky;              //indices for particle position
+				int lx, ly;                  //positions for other lattice points within the range
+				int h,u;                      //index for hole[] array
+				int phole;                   //position of the hole
+				int holesnumber;            //the number of the holes in the neighborhood of a particle
+				hole = new int [(2*R+1)*(2*R+1)-1] ;  //the array for holes
+				j= (int)Math.random()*X;   //randomly choose a particle
+				k= particleposition[j];    //find this particle on the lattice
+				kx=(int)k/L2;
+				ky=(int)k%L2;               //calculate this particle's position
+				
+				h=0;
+				holesnumber=0;
+				for (int m=-R; m<=R; m++)
+				{
+					for (int n=-R; n<=R; n++)
+					{
+						
+						lx=kx+m;
+						ly=ky+n;                              //find the other points
+						if(kx+m<0)
+							lx=kx+m+L1;
+						if(kx+m>L1-1)
+							lx=kx+m-L1;
+						if(ky+n<0)
+							ly=ky+n+L2;
+						if(ky+n>L2-1)
+							ly=ky+n-L2;                        // check the boundary
+
+						if (isingspin[lx*L2+ly]==-1)
+							{
+							hole[h]=lx*L2+ly;                  //record the position of the hole
+							h++;
+							holesnumber++;
+							}
+						
+					}
+				}
+				if(holesnumber!=0)   // there has to be a hole in the neighborhood if you want to move the particle
+				{
+					u= (int)Math.random()*holesnumber;            //randomly choose a hole
+					phole= hole[u];
+					
+					double E1=longrangeE(k);
+					double E2=longrangeE(phole);
+					
+					if (E1>E2)            //if decrease the energy
+					{
+						isingspin[k]=-1;
+						isingspin[phole]=1;                //move the particle
+						particleposition[j]=phole;         //track the particle
+					}
+					
+					if  (E1<E2)           //if increase the energy
+					{
+						if (Math.random()<Math.exp((E1-E2)/T))
+						{
+							isingspin[k]=-1;
+							isingspin[phole]=1;                //move the particle
+							particleposition[j]=phole;         //track the particle
+						}
+					}
+					
+					
+				}
+				if(step % 10 == 0) params.set("MC time", step);
+				Job.animate();
+
+
+				
 			
-			
+			}
+				
+			totalmagnetization=0;	
+			for(int s=0; s<M; s++)
+			{
+				totalmagnetization+=isingspin[s];
+			}
+			magnetization=totalmagnetization/M;
+			params.set("magnetization", magnetization);
+			}
 			
 			
 			
@@ -232,4 +321,3 @@ public class spingas extends Simulation{
     	
     }
 	
-}
