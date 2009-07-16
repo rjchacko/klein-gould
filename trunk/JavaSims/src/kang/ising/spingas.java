@@ -135,7 +135,7 @@ public class spingas extends Simulation{
 		params.add("lattice's length", 100);
 		params.addm("Temperature", new DoubleValue(1, 0, 100).withSlider());
 		//params.addm("Chemical potential", new DoubleValue(0, -2, 2).withSlider());
-		params.addm("Interaction Constant", 1);
+		params.addm("Interaction Constant", new DoubleValue(1, -100,100).withSlider());
 		params.add("Interaction range", 10);
 		params.add("Monte Carlo step's limit", 1000000);
 		params.add("Metric Start at",5000);
@@ -195,17 +195,15 @@ public class spingas extends Simulation{
 		for (i=0; i<M; i++){
 			if (Math.random()< P)
 				isingspin[i]=0;               //dilute the lattice first
-			if (isingspin[i]!=0)              //if the site is not dead
-			{
-				isingspin[i]=-1;
-				if (Math.random()> 0.5)
-					{
-					isingspin[i]=1;
-					X++;                         //count the number of the particles
-					}
-			}	
+			isingspin[i]=-1;
+			if (Math.random()> 0.5)
+				{
+				isingspin[i]=1;
+				X++;
+				}
+	
 		}
-		
+		Job.animate();
 		
 		// track all the particles
 		
