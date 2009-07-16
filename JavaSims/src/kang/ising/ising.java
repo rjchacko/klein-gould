@@ -215,7 +215,7 @@ public class ising extends Simulation{
 		for (i=0; i<M; i++){
 			if(Math.random()< P)
 				isingspin[i]=0;
-		}
+		}// here, the sequence of dilution and initialization is not important
 		
 		
 		for (step=0; step< steplimit; step++){
