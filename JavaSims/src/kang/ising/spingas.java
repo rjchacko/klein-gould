@@ -205,12 +205,30 @@ public class spingas extends Simulation{
 		// track all the particles
 		
 		particleposition = new int[X];
+		j=0;                     //initialize the index for particleposition array
 		for (i=0; i<M; i++){
-			if 
+			if (isingspin[i]==1)
+			{
+				particleposition[j]=i;         //record the position of the jth particle
+				j++;
+			}
 			
 		}
     	
-    	
+    	//enter the MCS
+		
+		for (step=0; step< steplimit; step++){
+		
+			
+			
+			
+			
+			
+			
+		}
+		
+		
+		
     	
     }
 	
