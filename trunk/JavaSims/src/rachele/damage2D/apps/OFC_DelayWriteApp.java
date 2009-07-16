@@ -49,7 +49,7 @@ public class OFC_DelayWriteApp extends Simulation{
 		params.addm("dx", 4);
 		params.addm("Coarse Grained dt", 1);
 		params.addm("Equilibration Updates", 500000);
-		params.addm("Max CG Time", 10000);
+		params.addm("Max CG Time", 1000000);
 		params.addm("Data points per write", 1000);
 		params.addm("R", 0);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
