@@ -198,14 +198,14 @@ public class spingas extends Simulation{
 			if (pro < P)
 				isingspin[i]=0;               //dilute the lattice first
 			if(pro > P)
-				{
+			{
 				isingspin[i]=-1;
 				if (Math.random()> 0.5)
 				{
 				isingspin[i]=1;
 				X++;
 				}
-				}
+			}
 			
 	
 		}
@@ -274,7 +274,7 @@ public class spingas extends Simulation{
 				}
 				if(holesnumber!=0)   // there has to be a hole in the neighborhood if you want to move the particle
 				{
-					u= (int)Math.random()*holesnumber;            //randomly choose a hole
+					u= (int)(Math.random()*holesnumber);            //randomly choose a hole
 					phole= hole[u];
 					
 					double E1=longrangeE(k);
