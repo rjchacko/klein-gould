@@ -2,6 +2,8 @@ package kang.ising;// what is this used for?
 
 import java.awt.Color;
 
+import chris.util.PrintUtil;
+
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -19,6 +21,15 @@ public class firsttest extends Simulation{
 	public double H;
 	public int isingspin[];
 	public double heisenbergspin[];
+	
+	
+	// help dds
+	public double group;
+	public double member;
+	public int l,k;
+	// help dds
+	
+	
 	
 	//items below this line are the functions
 	
@@ -87,5 +98,19 @@ public class firsttest extends Simulation{
 		}
 		
 		Job.animate();
+		
+		k=(int)(80/0.17857);
+		for (l=0; l<=k;l++)
+		{
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/dds.txt",-5, 40-l*0.17857);
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/dds.txt",5, 40-l*0.17857);
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/dds.txt",5, 40-l*0.17857-0.1190);
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/dds.txt",-5, 40-l*0.17857-0.1190);
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/dds.txt",-5, 40-l*0.17857);
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/dds.txt",0, 0);
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/dds.txt",0, 0);
+		}
+		
+		
 	}
 }

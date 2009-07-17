@@ -316,6 +316,8 @@ public class spingas extends Simulation{
 			params.set("magnetization", magnetization);
 			}
 			
+		
+		
 			
 			
 			
