@@ -230,18 +230,20 @@ public class spingas extends Simulation{
 		for (step=0; step< steplimit; step++){
 		    T = params.fget("Temperature");
 		    NK = params.fget("Interaction Constant");
-		    K=NK/((2*R+1)*(2*R+1)-1);
+		    //K=NK/((2*R+1)*(2*R+1)-1);
+		    K=NK/(X-1);
 		
 			for(q=0; q<X; q++)
 			{
+				int v;  // vth particle
 				int k, kx, ky;              //indices for particle position
 				int lx, ly;                  //positions for other lattice points within the range
 				int h,u;                      //index for hole[] array
 				int phole;                   //position of the hole
 				int holesnumber;            //the number of the holes in the neighborhood of a particle
 				hole = new int [(2*R+1)*(2*R+1)-1] ;  //the array for holes
-				j= (int)(Math.random()*X);   //randomly choose a particle
-				k= particleposition[j];    //find this particle on the lattice
+				v= (int)(Math.random()*X);   //randomly choose a particle
+				k= particleposition[v];    //find this particle on the lattice
 				kx=(int)k/L2;
 				ky=(int)k%L2;               //calculate this particle's position
 				
@@ -275,26 +277,42 @@ public class spingas extends Simulation{
 				if(holesnumber!=0)   // there has to be a hole in the neighborhood if you want to move the particle
 				{
 					u= (int)(Math.random()*holesnumber);            //randomly choose a hole
-					phole= hole[u];
+					phole= hole[u];                             //find that hole on the lattice
+					
+					//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/particle.txt",step, isingspin[k]);
+					//if(isingspin[k]==-1)
+					//	PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/particle.txt", v,k);
+					//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/hole.txt",step, isingspin[phole]);
 					
 					double E1=longrangeE(k);
+					isingspin[k]=-1;
+					isingspin[phole]=1;                //move the particle first and calculate the energy
 					double E2=longrangeE(phole);
 					
-					if (E1>E2)            //if decrease the energy
+					isingspin[k]=1;
+					isingspin[phole]=-1;    //move it back
+					
+					if (E1>E2)            //if decrease the energy, we should move the particle
 					{
 						isingspin[k]=-1;
-						isingspin[phole]=1;                //move the particle
-						particleposition[j]=phole;         //track the particle
+						isingspin[phole]=1;               
+						particleposition[v]=phole;         //track the particle
 					}
 					
 					if  (E1<E2)           //if increase the energy
 					{
-						if (Math.random()<Math.exp((E1-E2)/T))
+						double probability= Math.random();
+						if (probability<=Math.exp((E1-E2)/T))
 						{
 							isingspin[k]=-1;
-							isingspin[phole]=1;                //move the particle
-							particleposition[j]=phole;         //track the particle
+							isingspin[phole]=1;          
+							particleposition[v]=phole;         //track the particle
 						}
+						/*if (probability>Math.exp((E1-E2)/T))
+						{
+							isingspin[k]=1;
+							isingspin[phole]=-1;   // in this case, we move the particle back to the original position
+						}*/
 					}
 					
 					
