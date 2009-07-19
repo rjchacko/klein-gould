@@ -52,7 +52,7 @@ public class OFC_App extends Simulation{
 		params.addm("dx", 8);
 		params.addm("Coarse Grained dt", 500);
 		params.addm("Equilibration Updates", 1000000);
-		params.addm("Max Time", 1000000);
+		params.addm("Max Time", 2000);
 		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.05);
@@ -119,7 +119,7 @@ public class OFC_App extends Simulation{
 			}
 			double stressMetric = ofc.calcStressMetric();
 
-			if(ofc.cg_time > nextRecordTime){
+			if(ofc.plateUpdates > nextRecordTime){
 				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 				FileUtil.printHistToFile(sizeHistFile, sizeHist);
 				double activityOmega = ofc.calcCG_activityMetric();

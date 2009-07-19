@@ -40,7 +40,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			noNbors = findCircleNbors(R);
 		}
 		System.out.println("Fully Connected = " + fullyConnected);
-		dt = 1.0/params.fget("Coarse Grained dt");
+		dt = 1.0/params.fget("Coarse Grained dt (PU)");
 		
 //		CG_dt = params.fget("Coarse Grained dt");
 //		dt = params.fget("dt");
@@ -109,12 +109,18 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			}
 		}else{
 			failSiteWithRange(epicenterSite);
+//			avSize += 1;
 			int nextSiteToFail = checkFailWithRange();
+
 			while (nextSiteToFail >= 0){
+//				System.out.println("sitetofail = " + nextSiteToFail);
+//				System.out.println("size = " + avSize); 
 				failSiteWithRange(nextSiteToFail);
+				avSize += 1;
 				nextSiteToFail = checkFailWithRange();
 			}
 		}
+//		System.out.println("plateUpdates = " + plateUpdates);
 		plateUpdates += 1;
 
 	}
@@ -172,6 +178,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			avSize = 1;
 			failSiteWithRange(epicenterSite);
 			int nextSiteToFail = checkFailWithRange();
+//			System.out.println("sitetofail = " + nextSiteToFail);
 			if(nextSiteToFail >= 0){
 				while (nextSiteToFail >= 0){
 					failSiteWithRange(nextSiteToFail);
