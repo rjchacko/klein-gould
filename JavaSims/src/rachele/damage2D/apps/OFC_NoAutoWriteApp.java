@@ -50,11 +50,11 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	
 	public void load(Control c) {
 		c.frameTogether("Grids", grid, stressTimeAveGrid, plateUpdateGrid, cgStressGrid, cgStressTimeAveGrid, sizePlot, cgStressMetPlot, actPlot, stressMetPlot);
-		params.add("Data Dir",new DirectoryValue("/home/erdomi/data/damage/testRuns"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 8);
 		params.addm("dx", 8);
-		params.addm("Coarse Grained dt", 1);
+		params.addm("Coarse Grained dt (PU)", 1);
 		params.addm("Equilibration Updates", 1000);
 		params.addm("Max Time", 1000000);
 		params.addm("R", 0);// 0 -> fully connected
@@ -123,7 +123,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 
 	public void run() {
 		ofc = new OFC_Lattice(params);
-		cg_dt = params.iget("Coarse Grained dt");
+		cg_dt = params.iget("Coarse Grained dt (PU)");
 		double nextRecordTime = 0;
 		int maxTime = params.iget("Max Time");
 		maxSize = 0;

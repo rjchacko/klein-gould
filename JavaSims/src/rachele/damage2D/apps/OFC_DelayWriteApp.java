@@ -45,19 +45,20 @@ public class OFC_DelayWriteApp extends Simulation{
 		c.frameTogether("Grids", grid, cgGrid, plateUpdateGrid, cgGridTimeAverage);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 8);
-		params.addm("dx", 4);
-		params.addm("Coarse Grained dt", 1);
+		params.addm("CG size", 16);
+		params.addm("dx", 1);
+		params.addm("Coarse Grained dt (PU)", 100);
 		params.addm("Equilibration Updates", 500000);
 		params.addm("Max CG Time", 1000000);
 		params.addm("Data points per write", 1000);
-		params.addm("R", 0);// 0 -> fully connected
+		params.addm("R", 4);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
-		params.addm("Dissipation Param", 0.05);
+		params.addm("Dissipation Param", 0.1);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
 		params.add("L");
 		params.add("CG Time");
+		params.add("Size");
 		params.add("Plate Updates");
 	}
 	
@@ -75,6 +76,7 @@ public class OFC_DelayWriteApp extends Simulation{
 				Geom2D.circle(failSite_x, failSite_y, radius, Color.GREEN));
 		params.set("CG Time", Utilities.format(ofc.cg_time));
 		params.set("Plate Updates", ofc.plateUpdates);
+		params.set("Size", ofc.avSize);
 	}
 
 	public void clear() {
@@ -83,7 +85,7 @@ public class OFC_DelayWriteApp extends Simulation{
 	public void run() {
 		ofc = new OFC_Lattice(params);
 		initFiles();
-		cg_dt = params.iget("Coarse Grained dt");
+		cg_dt = params.iget("Coarse Grained dt (PU)");
 		double nextAccumTime = 0;
 		int maxTime = params.iget("Max CG Time");
 		int dataPointsPerWrite = params.iget("Data points per write");
@@ -107,7 +109,8 @@ public class OFC_DelayWriteApp extends Simulation{
 			}
 			double stressMetric = ofc.calcStressMetric();
 
-			if(ofc.cg_time > nextAccumTime){ //Accumulate data to be written
+			if(ofc.plateUpdates > nextAccumTime){ //Accumulate data to be written
+				Job.animate();
 				//stress metric
 				double inverseStressMetric = 1.0/stressMetric;
 				invStressMetTempAcc.accum(ofc.plateUpdates, inverseStressMetric);
@@ -120,10 +123,10 @@ public class OFC_DelayWriteApp extends Simulation{
 				//maxSize
 				maxSizeTempAcc.accum(ofc.cg_time, maxSize);
 				
-				
 				nextAccumTime += cg_dt;
 				dataPointsCount += 1;
 				maxSize = 0;
+
 			}
 			
 //			System.out.println("no data pts = " + dataPointsCount + " cg time = " + ofc.cg_time + " next accum time = " + nextAccumTime);
@@ -147,9 +150,9 @@ public class OFC_DelayWriteApp extends Simulation{
 			}
 
 
-			if(ofc.cg_time > maxTime) Job.signalStop();
+			if(ofc.plateUpdates > maxTime) Job.signalStop();
 				
-			Job.animate();
+
 		}
 	}
 	
