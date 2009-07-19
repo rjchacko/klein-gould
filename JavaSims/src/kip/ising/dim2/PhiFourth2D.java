@@ -1,10 +1,8 @@
 package kip.ising.dim2;
 
-import static java.lang.Math.floor;
 import static java.lang.Math.rint;
 import static java.lang.Math.sqrt;
 import static scikit.numerics.Math2.hypot;
-import static scikit.numerics.Math2.j1;
 import static scikit.numerics.Math2.sqr;
 import kip.util.Random;
 import scikit.dataset.Accumulator;
@@ -14,22 +12,9 @@ import scikit.numerics.fn.Function2D;
 
 
 class PhiFourth2DConsts {
-	// value of kR which minimizes j1(kR)/kR
-	public static final double KR_SP = 5.13562230184068255630140;
-	// S(k) ~ 1 / (V(kR_sp)/T+1)
-	// => T_SP = - V(kR_sp) = - 2 j1(kR_sp) / kR_sp 
-	public static final double T_SP = 0.132279487396100031736846;	
-	
 	Function2D potential1 = new Function2D() {
-		public double eval(double x, double y) {
-			return - (x*x + y*y);
-		}
-	};
-
-	Function2D potential2 = new Function2D() {
 		public double eval(double kx, double ky) {
-			double k = hypot(kx, ky);
-			return (k == 0 ? 1 : 2*j1(k)/k);
+			return - (kx*kx + ky*ky);
 		}
 	};
 }
@@ -41,7 +26,7 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 	
 	int Lp;
 	double t;
-	double[] phi, phi_bar, del_phi;
+	double[] phi, laplace_phi, del_phi;
 	FFT2D fft;
 	boolean noiselessDynamics = false;
 	
@@ -84,7 +69,16 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 	
 	public void randomize() {
 		for (int i = 0; i < Lp*Lp; i++) {
-			phi[i] += sqrt(1/(R*R*dx*dx))*random.nextGaussian();
+			phi[i] = sqrt(1/(dx*dx))*random.nextGaussian();
+			phi[i] += 1;
+		}
+		
+		System.out.println(Lp);
+		for (int x = 0; x < Lp; x++) {
+			for (int y = 0; y < Lp; y++) {
+				int i = y*Lp + x;
+				phi[i] = Math.sin(0.5*(x+32)); // hypot(x*dx, y*dx); 
+			}
 		}
 	}
 	
@@ -92,30 +86,43 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 		noiselessDynamics = b;
 	}	
 	
+	private void laplaceOperator(double[] phi, double[] phi_bar) {
+		for (int x = 0; x < Lp; x++) {
+			for (int y = 0; y < Lp; y++) {
+				int xp = (x+1)%Lp;
+				int xm = (x-1+Lp)%Lp;
+				int yp = (y+1)%Lp;
+				int ym = (y-1+Lp)%Lp;
+				phi_bar[y*Lp+x] = (-4*phi[y*Lp+x] + phi[yp*Lp+x] + phi[ym*Lp+x] + 
+									phi[y*Lp+xp] + phi[y*Lp+xm]) / (dx*dx); 
+			}
+		}
+	}
+	
 	public void simulate() {
-		fft.convolve(phi, phi_bar, potential2);
+		fft.convolve(phi, laplace_phi, potential1);
+//		laplaceOperator(phi, laplace_phi);
 		
 		for (int i = 0; i < Lp*Lp; i++) {
-			del_phi[i] = - dt*(phi_bar[i]+T*phi[i] + phi[i]*phi[i]*phi[i] - h);
+//			del_phi[i] = - dt*(phi_bar[i]+T*phi[i] + phi[i]*phi[i]*phi[i] - h);
+			del_phi[i] = - dt*(-R*R*laplace_phi[i] + (T+sqr(phi[i]))*phi[i] - h);
 			if (!noiselessDynamics)
-				del_phi[i] += sqrt(dt/(R*R*dx*dx))*noise();
+				del_phi[i] += sqrt(dt/(dx*dx))*noise();
 		}
 		
-		rms_dF_dphi = 0;
-		freeEnergyDensity = 0;
+//		rms_dF_dphi = 0;
+//		freeEnergyDensity = 0;
 		for (int i = 0; i < Lp*Lp; i++) {
-			rms_dF_dphi += sqr(del_phi[i] / dt);
-			freeEnergyDensity += phi[i]*phi_bar[i]/2 + (T+T_SP)*phi[i]*phi[i]/2 + phi[i]*phi[i]*phi[i]*phi[i]/4 - h*phi[i];
+//			rms_dF_dphi += sqr(del_phi[i] / dt);
+			freeEnergyDensity += -phi[i]*(R*R*laplace_phi[i])/2 + sqr(T+sqr(phi[i]))/4 - h*phi[i];
 			phi[i] += del_phi[i];
 		}
-		rms_dF_dphi = sqrt(rms_dF_dphi/(Lp*Lp));
-		freeEnergyDensity /= (Lp*Lp);
+//		rms_dF_dphi = sqrt(rms_dF_dphi/(Lp*Lp));
+//		freeEnergyDensity /= (Lp*Lp);
 		t += dt;
 	}
 
 	public Accumulator newStructureAccumulator(double binWidth) {
-		// round binwidth down so that it divides KR_SP without remainder.
-		binWidth = KR_SP / floor(KR_SP/binWidth);
 		return new Accumulator(binWidth);
 	}
 	
@@ -140,7 +147,7 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 	
 	private void allocate() {
 		phi = new double[Lp*Lp];
-		phi_bar = new double[Lp*Lp];
+		laplace_phi = new double[Lp*Lp];
 		del_phi = new double[Lp*Lp];
 		
 		fft = new FFT2D(Lp, Lp);
