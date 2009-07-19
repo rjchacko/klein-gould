@@ -12,28 +12,28 @@ import scikit.numerics.fn.Function2D;
 
 
 class PhiFourth2DConsts {
-	Function2D potential1 = new Function2D() {
+	static public Function2D potential1 = new Function2D() {
 		public double eval(double kx, double ky) {
 			return - (kx*kx + ky*ky);
 		}
 	};
 	
-	Function2D potential2 = new Function2D() {
+	static public Function2D potential2 = new Function2D() {
 		public double eval(double kx, double ky) {
 			double theta = Math.atan2(ky, kx);
-			return - (kx*kx + ky*ky)*(2+Math.cos(4*theta));
+			return - (kx*kx + ky*ky)*(1+Math.cos(4*theta)/2.);
 		}
 	};
 }
 
-public class PhiFourth2D extends PhiFourth2DConsts {
+public class PhiFourth2D {
 
 	public double L, R, T, h, dx;
 	Random random = new Random();
 	
 	int Lp;
 	double t;
-	double[] phi, laplace_phi, del_phi;
+	double[] phi, laplace_phi, del_phi, potential;
 	FFT2D fft;
 	boolean noiselessDynamics = false;
 	
@@ -55,7 +55,14 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 		Lp = Integer.highestOneBit((int)rint(L/dx));
 		dx = L / Lp;
 		params.set("dx/R", dx/R);
-		allocate();
+
+		phi = new double[Lp*Lp];
+		laplace_phi = new double[Lp*Lp];
+		del_phi = new double[Lp*Lp];
+		
+		fft = new FFT2D(Lp, Lp);
+		fft.setLengths(L, L);
+		potential = fft.buildFourierArray(PhiFourth2DConsts.potential2);
 		
 		t = 0;
 		for (int i = 0; i < Lp*Lp; i++)
@@ -107,8 +114,9 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 //	}
 	
 	public void simulate() {
-		fft.convolve(phi, laplace_phi, potential2);
 //		laplaceOperator(phi, laplace_phi);
+//		fft.convolve(phi, laplace_phi, PhiFourth2DConsts.potential2);
+		fft.convolve(phi, laplace_phi, potential);
 		
 		for (int i = 0; i < Lp*Lp; i++) {
 			del_phi[i] = - dt*(-R*R*laplace_phi[i] + (T+sqr(phi[i]))*phi[i] - h);
@@ -145,16 +153,6 @@ public class PhiFourth2D extends PhiFourth2DConsts {
 	
 	public double time() {
 		return t;
-	}
-	
-	
-	private void allocate() {
-		phi = new double[Lp*Lp];
-		laplace_phi = new double[Lp*Lp];
-		del_phi = new double[Lp*Lp];
-		
-		fft = new FFT2D(Lp, Lp);
-		fft.setLengths(L, L);
 	}
 	
 	private double noise() {
