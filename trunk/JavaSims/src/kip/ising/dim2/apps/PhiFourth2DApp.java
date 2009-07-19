@@ -12,7 +12,7 @@ public class PhiFourth2DApp extends Simulation {
 	Grid grid = new Grid("Grid");
 	Grid gmode = new Grid("Growth Mode");
 //	Plot plot = new Plot("Slice");
-	PhiFourth2D clump;
+	PhiFourth2D sim;
 	
 	public static void main(String[] args) {
 		new Control(new PhiFourth2DApp(), "Clump Model Saddle Profile");
@@ -24,10 +24,10 @@ public class PhiFourth2DApp extends Simulation {
 		params.addm("Noise", new ChoiceValue("Yes", "No"));
 		params.addm("T", 0.);
 		params.addm("h", 0.);
-		params.addm("dt", 1.0);
+		params.addm("dt", 0.1);
 		params.add("R", 1000.0);
-		params.add("L/R", 10.0);
-		params.add("dx/R", 0.1);
+		params.add("L/R", 100.0);
+		params.add("dx/R", 1.0);
 		params.add("Random seed", 0);
 		params.add("Time");
 		params.add("F density");
@@ -41,12 +41,12 @@ public class PhiFourth2DApp extends Simulation {
 	
 	public void animate() {
 		flags.clear();
-		clump.readParams(params);
+		sim.readParams(params);
 		
 		grid.setAutoScale();
 		grid.setDrawRange(true);
-		int Lp = clump.numColumns();
-		grid.registerData(Lp, Lp, clump.phi());
+		int Lp = sim.numColumns();
+		grid.registerData(Lp, Lp, sim.phi());
 		
 //		gmode.registerData(Lp, Lp, clump.growthEigenmode);
 //		params.set("Eigenvalue", format(clump.growthEigenvalue));
@@ -56,10 +56,10 @@ public class PhiFourth2DApp extends Simulation {
 //		System.arraycopy(clump.growthEigenmode, Lp*(Lp/2), section, 0, Lp);
 //		plot.registerLines("", new PointSet(0, 1, section), Color.BLUE);
 		
-		params.set("dx/R", clump.dx/clump.R);
-		params.set("Time", format(clump.time()));
-		params.set("F density", format(clump.freeEnergyDensity));
-		params.set("dF/dphi", format(clump.rms_dF_dphi));
+		params.set("dx/R", sim.dx/sim.R);
+		params.set("Time", format(sim.time()));
+		params.set("F density", format(sim.freeEnergyDensity));
+		params.set("dF/dphi", format(sim.rms_dF_dphi));
 	}
 	
 	public void clear() {
@@ -68,12 +68,12 @@ public class PhiFourth2DApp extends Simulation {
 	}
 	
 	public void run() {
-		clump = new PhiFourth2D(params);
-		clump.randomize();
+		sim = new PhiFourth2D(params);
+		sim.randomize();
 		Job.animate();
 		
 		while (true) {			
-			clump.simulate();
+			sim.simulate();
 			Job.animate();
 		}
 	}

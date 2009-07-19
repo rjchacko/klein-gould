@@ -44,7 +44,8 @@ public class TestGfxApp {
 	public static Component createCanvas(GLEventListener listener) {
 		GLCapabilities capabilities = new GLCapabilities();
 		
-		if (1==1) {
+		boolean useGLJPanel = true;
+		if (useGLJPanel) {
 			GLJPanel canvas = new GLJPanel(capabilities);
 			canvas.addGLEventListener(listener);
 			return canvas;
