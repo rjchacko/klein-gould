@@ -4,8 +4,6 @@ import java.awt.Color;
 
 import chris.util.PrintUtil;
 
-import chris.util.PrintUtil;
-
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -13,6 +11,7 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 //import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
+//import scikit.jobs.params.StringValue;
 
 public class spingas extends Simulation{
 	Grid grid1 = new Grid("Spin gas lattice 2d");
@@ -32,6 +31,7 @@ public class spingas extends Simulation{
 	
 	public double totalmagnetization;
 	public double magnetization;
+	public String computer;    //the computer on which i run the program
 	
 	
 	
@@ -144,7 +144,7 @@ public class spingas extends Simulation{
 		params.add("Metric points", 2000);
 		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
 		
-		//params.add("Model", new ChoiceValue("noninteracting", "interacting"));
+		//params.add("Computer", new ChoiceValue("IBM", "Mac"));
 		//params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
 		params.add("MC time");
 		params.add("magnetization");
@@ -181,6 +181,9 @@ public class spingas extends Simulation{
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
 		isingspin = new int[M];
+
+		
+		
 
 		N = (int)params.fget("Metric points");
 		Metric = new double[N];
@@ -360,7 +363,7 @@ public class spingas extends Simulation{
 					{
 					Metric[step-metricstart-1]=NMetric/X;
 					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt",step-metricstart, NMetric/M);
-					//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
+					//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/metric2.txt",step-metricstart, NMetric/M);
 					}
 				
 				if(step==N+metricstart+1)
@@ -374,6 +377,15 @@ public class spingas extends Simulation{
 					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","Final Tempearture=",T);
 					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","Diluted Percentage=",P);
 					
+					/*PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/data/spingas/dmetric1.txt","");
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/data/spingas/dmetric1.txt","Lattice length=", L1);
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/data/spingas/dmetric1.txt","Lattice width=", L2);
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/data/spingas/dmetric1.txt","K=",NK);
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/data/spingas/dmetric1.txt","Interaction Range=",R);
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/data/spingas/dmetric1.txt","Mectric starts at", metricstart);
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/data/spingas/dmetric1.txt","Final Tempearture=",T);
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/data/spingas/dmetric1.txt","Diluted Percentage=",P);
+					*/
 				}
 				
 				}
