@@ -4,12 +4,14 @@ import java.awt.Color;
 
 import chris.util.PrintUtil;
 
+import chris.util.PrintUtil;
+
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
-import scikit.jobs.params.ChoiceValue;
+//import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
 
 public class spingas extends Simulation{
@@ -179,8 +181,7 @@ public class spingas extends Simulation{
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
 		isingspin = new int[M];
-		timetotalE = new double[M];
-		timeaverageE = new double[M];
+
 		N = (int)params.fget("Metric points");
 		Metric = new double[N];
 		
@@ -211,6 +212,9 @@ public class spingas extends Simulation{
 		}
 		Job.animate();
 		params.set("Particle number", X);
+		timetotalE = new double[X];
+		timeaverageE = new double[X];      //arrays of the energy metric only for the particles
+		
 		
 		// track all the particles
 		
@@ -324,7 +328,57 @@ public class spingas extends Simulation{
 				
 			
 			}
+			
+			
+			if(step > metricstart){
 				
+				totalE=0;
+				
+				for (int y=0; y<X; y++)
+				{
+				    timetotalE[y]+=longrangeE(particleposition[y]);  // the yth particle's energy at time=step
+					
+					timeaverageE[y]=timetotalE[y]/(step-metricstart);
+				 
+				}
+				
+				for (int x=0; x<X; x++)
+				{
+						totalE+=timeaverageE[x];
+				}
+				
+				averageE=totalE/X;
+
+				NMetric=0;
+				for (int z=0; z< X; z++)
+				{
+					NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
+				}
+				
+			
+				if(step<N+metricstart+1)
+					{
+					Metric[step-metricstart-1]=NMetric/X;
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt",step-metricstart, NMetric/M);
+					//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
+					}
+				
+				if(step==N+metricstart+1)
+				{
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","");
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","Lattice length=", L1);
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","Lattice width=", L2);
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","K=",NK);
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","Interaction Range=",R);
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","Mectric starts at", metricstart);
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","Final Tempearture=",T);
+					PrintUtil.printlnToFile("F:/data/spingas/dmetric1.txt","Diluted Percentage=",P);
+					
+				}
+				
+				}
+			
+			
 			totalmagnetization=0;	
 			for(int s=0; s<M; s++)
 			{
@@ -332,6 +386,10 @@ public class spingas extends Simulation{
 			}
 			magnetization=totalmagnetization/M;
 			params.set("magnetization", magnetization);
+			
+			
+			
+			
 			}
 			
 		
