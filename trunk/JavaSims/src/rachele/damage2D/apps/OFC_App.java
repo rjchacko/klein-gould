@@ -28,7 +28,7 @@ import scikit.util.Utilities;
 */
 public class OFC_App extends Simulation{
 
-	int cg_dt;
+	int dt;
 	
 	Grid grid = new Grid("Lattice");
 	Grid cgGrid = new Grid(" CG grid");
@@ -50,7 +50,7 @@ public class OFC_App extends Simulation{
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 32);
 		params.addm("dx", 8);
-		params.addm("Coarse Grained dt", 500);
+		params.addm("Coarse Grained dt (PU)", 500);
 		params.addm("Equilibration Updates", 1000000);
 		params.addm("Max Time", 2000);
 		params.addm("R", 16);// 0 -> fully connected
@@ -93,7 +93,7 @@ public class OFC_App extends Simulation{
 	public void run() {
 		ofc = new OFC_Lattice(params);
 		initFiles();
-		cg_dt = params.iget("Coarse Grained dt");
+		dt = params.iget("Coarse Grained dt (PU)");
 //		boolean prestep = true;
 		double nextRecordTime = 0;
 //		boolean findActivityOmega0 = true; 
@@ -142,7 +142,7 @@ public class OFC_App extends Simulation{
 				FileUtil.printlnToFile(iMetFile, ofc.plateUpdates, inverseStressMetric, ofc.cg_time, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
 //				FileUtil.printAccumToFileNoErrorBars(sizeFile, sizeStore);
 //				FileUtil.printlnToFile(cgInvMetricFile, ofc.time, cgInverseMetric);
-				nextRecordTime += cg_dt;
+				nextRecordTime += dt;
 				maxSize = 0;
 //				sizeStore.clear();
 			}
