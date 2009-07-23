@@ -29,18 +29,28 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	Grid stressTimeAveGrid = new Grid ("Stress Time Ave");
 	Grid cgStressGrid = new Grid("CG stress grid");
 	Grid cgStressTimeAveGrid = new Grid("CG time ave stress grid");
-	Grid cgGrid = new Grid(" CG grid");
+	Grid cgGrid = new Grid("CG grid");
 	Grid cgGridTimeAverage = new Grid("Time ave CG grid");
 	Grid plateUpdateGrid = new Grid("Plate Update grid");
+	Grid cgFailCountGrid = new Grid("cg fail count grid");
+	Grid cgSizeActTimeAveGrid = new Grid("CG size act time ave");
 	Plot stressMetPlot = new Plot("Stress Met Plot");
 	Plot actPlot = new Plot("CG Activity I Metric");
 	Plot sizePlot = new Plot("Size Plot");
 	Plot cgStressMetPlot = new Plot("CG Stress Met Plot");
+	Plot cgSizeActPlot = new Plot("CG Size Act Met");
+	Plot sizeSumPlot = new Plot("Size sum plot");
+	Plot sizeActMaxPlot = new Plot("Size act max");
+	
 	OFC_Lattice ofc;
 	Accumulator cgMetricAcc = new Accumulator();
 	Accumulator CGstressMetAcc = new Accumulator();
 	Accumulator maxSizeAcc = new Accumulator();
 	Accumulator stressMetAcc = new Accumulator();
+	Accumulator cgActSizeMetAcc = new Accumulator();
+	Accumulator cgMaxSizeActBoxAcc = new Accumulator();
+	Accumulator sizeSumAcc = new Accumulator();
+	Accumulator timeAveForMaxCGSizeActAcc = new Accumulator();
 	Histogram sizeHist = new Histogram(1);
 	int maxSize, fileNo;
 	
@@ -49,17 +59,18 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Grids", grid, stressTimeAveGrid, plateUpdateGrid, cgStressGrid, cgStressTimeAveGrid, sizePlot, cgStressMetPlot, actPlot, stressMetPlot);
+		c.frameTogether("Grids", stressMetPlot, cgSizeActPlot, cgGrid, cgStressMetPlot, sizePlot, cgSizeActTimeAveGrid, actPlot, sizeSumPlot, sizeActMaxPlot);
+		c.frame(plateUpdateGrid);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 8);
 		params.addm("dx", 8);
-		params.addm("Coarse Grained dt (PU)", 1);
-		params.addm("Equilibration Updates", 1000);
+		params.addm("Coarse Grained dt (PU)", 25);
+		params.addm("Equilibration Updates", 100);
 		params.addm("Max Time", 1000000);
-		params.addm("R", 0);// 0 -> fully connected
+		params.addm("R", 4);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
-		params.addm("Dissipation Param", 0.05);
+		params.addm("Dissipation Param", 0.1);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
 		params.add("L");
@@ -83,6 +94,8 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		plateUpdateGrid.registerData(ofc.L, ofc.L, ofc.plateUpdateFailLocations);
 		cgStressTimeAveGrid.setScale(0.0,1.0);
 		cgStressTimeAveGrid.registerData(ofc.Lp, ofc.Lp, ofc.CG_StressTimeAve);
+		cgFailCountGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterSize);
+		cgSizeActTimeAveGrid.registerData(ofc.Lp, ofc.Lp, ofc.CG_SizeActTimeAve);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
@@ -99,10 +112,22 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		actPlot.registerLines("Activity Metric", cgMetricAcc, Color.BLACK);
 		sizePlot.setAutoScale(true);
 		sizePlot.registerPoints("Maz EQ size", maxSizeAcc, Color.RED);
+		sizePlot.registerPoints("av size sum", sizeSumAcc, Color.BLUE);
+		sizePlot.registerPoints("Max Size Act Block", cgMaxSizeActBoxAcc, Color.pink);
+		cgSizeActPlot.setAutoScale(true);
+		cgSizeActPlot.registerLines("size act", cgActSizeMetAcc, Color.green);
 		cgStressMetPlot.setAutoScale(true);
 		cgStressMetPlot.registerLines("CG stress met", CGstressMetAcc, Color.BLUE);
 		stressMetPlot.setAutoScale(true);
 		stressMetPlot.registerLines("stress met", stressMetAcc, Color.BLACK);
+		sizeSumPlot.setAutoScale(true);
+		sizeSumPlot.registerPoints("av size sum", sizeSumAcc, Color.BLUE);
+		sizeActMaxPlot.setAutoScale(true);
+		sizeActMaxPlot.registerPoints("Max Size Act Block", cgMaxSizeActBoxAcc, Color.pink);
+		sizeActMaxPlot.registerPoints("Max Size Act Block Time Ave", timeAveForMaxCGSizeActAcc, Color.black);
+		
+
+		
 		params.set("Time", ofc.cg_time);
 		params.set("Plate Updates", ofc.plateUpdates);
 		
@@ -114,6 +139,10 @@ public class OFC_NoAutoWriteApp extends Simulation{
 			maxSizeAcc.clear();
 			CGstressMetAcc.clear();
 			stressMetAcc.clear();
+			cgActSizeMetAcc.clear();
+			cgMaxSizeActBoxAcc.clear();
+			sizeSumAcc.clear();
+			timeAveForMaxCGSizeActAcc.clear();
 		}
 		flags.clear();
 	}
@@ -126,6 +155,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		cg_dt = params.iget("Coarse Grained dt (PU)");
 		double nextRecordTime = 0;
 		int maxTime = params.iget("Max Time");
+		int sizeSum=0;
 		maxSize = 0;
 		fileNo = 0;
 		
@@ -134,7 +164,6 @@ public class OFC_NoAutoWriteApp extends Simulation{
 
 		while (ofc.plateUpdates < 0){
 			ofc.equilibrate();
-//			System.out.println("init done, R = " + ofc.R);
 			Job.animate();
 			if(ofc.plateUpdates == 0) Job.signalStop();
 		}
@@ -142,17 +171,28 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		while(true){
 
 			ofc.step();
-
+			ofc.cgFailCountAdd();
+			
 			int size = ofc.avSize;
 			sizeHist.accum(size);
 			if (size > maxSize) {
 				maxSize = size;
 			}
-//			double iMet = ofc.calcInverseMetric();
+			sizeSum += size;
 			double iMet = 1.0/ofc.calcStressMetric();
 
 			if(ofc.plateUpdates > nextRecordTime){
-//				System.out.println(ofc.plateUpdates + " PU " + "nextRecordTime = " + nextRecordTime);
+				
+				int maxEpicenter=0;
+				int loc = -1;
+				for(int i = 0; i < ofc.Np; i++){
+					if (ofc.epicenterSize[i] > maxEpicenter){
+						maxEpicenter = ofc.epicenterSize[i];
+						loc = i;
+					}
+				}
+				cgMaxSizeActBoxAcc.accum(ofc.cg_time, maxEpicenter);
+				timeAveForMaxCGSizeActAcc.accum(ofc.cg_time, ofc.CG_SizeActTimeAve[loc]);
 				
 				//stress metric
 				stressMetAcc.accum(ofc.cg_time, iMet);
@@ -167,10 +207,16 @@ public class OFC_NoAutoWriteApp extends Simulation{
 				double cgInverseActivityMetric = 1.0/activityOmega;
 				cgMetricAcc.accum(ofc.cg_time, cgInverseActivityMetric);
 
+				double cgInvSizeActMet = 1.0/ofc.calcCG_sizeActMetric();
+				cgActSizeMetAcc.accum(ofc.cg_time, cgInvSizeActMet);
+				
 				maxSizeAcc.accum(ofc.cg_time, maxSize);
 
+				sizeSumAcc.accum(ofc.cg_time, sizeSum);
+				
 				nextRecordTime += cg_dt;
 				maxSize = 0;
+				sizeSum = 0;
 			}
 
 

@@ -8,15 +8,19 @@ public class OFC_Lattice extends AbstractCG_OFC{
 
 	double metric0;					//metric measured at time t = 0;
 	double lastCG_RecordTime;		//CG time parameter to keep track of last time CG info was recorded
+	double lastCG_SizeActRecordTime;
 	double lastCG_StressRecordTime; //Basically same as lasCG_RecordTime, but separate to keep calcInverseMeric subroutines independent in case one is not performed
 	double lastRecordTime;
 	public int lowerCutoff;
 	
 	public double [] stressTimeAve;
 	public double [] CG_ActivityTimeAve;
+	public double [] CG_SizeActTimeAve;
 	public double [] CG_StressTimeAve;
 	public double [] CG_Stress;
 	public int [] plateUpdateFailLocations;  // Record all fail sites for one plate update
+	public int [] cgFailCount; //Counts 1 in a cg block if there is any site that fails in that block.
+	public int [] epicenterSize;
 	boolean [] failList;
 	
 	public OFC_Lattice(Parameters params) {
@@ -52,6 +56,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		rStress = params.fget("Residual Stress");
 		maxResNoise = params.fget("Res. Max Noise");
 		lastCG_RecordTime = 0;
+		lastCG_SizeActRecordTime = 0;
 		lastCG_StressRecordTime = 0;
 		lastRecordTime = 0;
 		
@@ -62,9 +67,12 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		stress = new double [N];
 		stressTimeAve = new double [N];
 		epicenterCount = new int [Np];
+		epicenterSize = new int [Np];
 		CG_ActivityTimeAve = new double [Np];
+		CG_SizeActTimeAve = new double [Np];
 		CG_StressTimeAve = new double [Np];
 		plateUpdateFailLocations = new int [N];
+		cgFailCount = new int[Np];
 		CG_Stress = new double [Np];
 		failList = new boolean [N];
 		for (int i = 0; i < N; i++){
@@ -74,7 +82,9 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		}
 		for (int i = 0; i < Np; i++){
 			epicenterCount[i] = 0;
+			epicenterSize[i] = 0;
 			CG_ActivityTimeAve[i] = 0;
+			CG_SizeActTimeAve[i] = 0;
 			CG_StressTimeAve[i] = 0;
 		}
 		metric0 = calcMetric0();
@@ -163,42 +173,33 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			while(failAgain){
 				fc_failAndCount();
 				failAgain = fc_checkFailList();
-
-
-//				failList[epicenterSite] = true;
-//				//			fc_fail(epicenter);
-//				//Fail the failSite
-//				boolean failAgain = fc_checkFailList();
-//				while(failAgain){
-//				avSize += fc_fail();
-//				failAgain = fc_checkFailList();
 			}
 		}else{
 			plateUpdateFailLocations[epicenterSite] += 1;			
 			avSize = 1;
 			failSiteWithRange(epicenterSite);
 			int nextSiteToFail = checkFailWithRange();
-//			System.out.println("sitetofail = " + nextSiteToFail);
 			if(nextSiteToFail >= 0){
 				while (nextSiteToFail >= 0){
 					failSiteWithRange(nextSiteToFail);
-//					System.out.println("sitetofail = " + nextSiteToFail);
 					plateUpdateFailLocations[nextSiteToFail] += 1;
 					nextSiteToFail = checkFailWithRange();
 					avSize += 1;
 				}
 			}
 		}
-		if (avSize >= lowerCutoff) 	epicenterCount[findCG_site(epicenterSite)] +=1;
+		if (avSize >= lowerCutoff){
+			int cgSite = findCG_site(epicenterSite);
+			epicenterCount[cgSite] +=1;
+			epicenterSize[cgSite] += avSize;
+		}
 		cg_time += dt;
 		plateUpdates += 1;
-//		System.out.println("av size = " + avSize + " at " + plateUpdates);
 	}
 
 	int checkFailWithRange(){
 		int s = siteWithMaxStress();
 		if (stress[s] < tStress) s = -1; 
-		//		System.out.println("Stress of max Site = " + stress[s] + " at site " + s);
 		return s;
 	}
 
@@ -233,7 +234,6 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		double excessStressSum = 0.0;
 		for (int site = 0; site < N; site++){
 			if (failList[site]){
-//				System.out.println("fail site " + site);
 				avSize += 1;
 				plateUpdateFailLocations[site] += 1;
 				double rStressWithNoise = calcResNoise(site);
@@ -245,33 +245,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		for(int site = 0; site < N; site++)
 			stress[site] += excessStressSum;		
 	}
-	
-//	int fc_fail(){
-//		//Bring to Residual
-//		//maybe need to generate a random list here??
-//		//Changed so that all stress is summed 1st before added
-//		// so I don't think a random list is needed, but
-//		// may be needed for finite ranges.
-//		double excessStressSum = 0.0;
-//		int noFailed = 0;
-//		for (int site = 0; site < N; site++){
-//			if(failList[site]){
-//				double rStressWithNoise = calcResNoise(site);
-//				double excessStressPerNbor = calcStressPerNbor(site, rStressWithNoise);
-////				double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0);
-////				double excessStressPerNbor = ((1-dissParam)*(stress[site] - rStress) - resNoise)/(double)noNbors;
-//				excessStressSum += excessStressPerNbor;
-//				stress[site] = rStressWithNoise - excessStressPerNbor;
-//				failList[site] = false;
-//				noFailed += 1;
-//				plateUpdateFailLocations[site] += 1;
-//			}
-//		}
-//		for(int i = 0; i < N; i++){
-//			stress[i] += excessStressSum;
-//		}
-//		return noFailed;
-//	}
+
 	
 	void failSiteWithRange(int s){
 		double resStressWithNoise = calcResNoise(s);
@@ -370,6 +344,26 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		return cgSpaceStressConfig;
 	}
 	
+	
+	public void cgFailCountAdd(){
+		for (int i = 0; i < Np; i++){
+			int xp = i%Lp;
+			int yp = i/Lp;
+			
+			outer:
+			for(int x = xp*dx; x < xp*dx + dx; x ++){
+				for(int y = yp*dx; y < yp*dx + dx; y++){
+					int site = y*L+x;
+					if(plateUpdateFailLocations[site] > 0){
+						cgFailCount[i] += 1;
+						break outer;
+					}
+				}
+			}
+
+		}
+	}
+	
 	public double calcCG_activityMetric(){
 		double del_t = cg_time - lastCG_RecordTime;
 //		System.out.println("del_t = " + del_t + " cg_time = " + cg_time + " lasCG_recordTime = " + lastCG_RecordTime);
@@ -390,8 +384,49 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
 		return CG_metric; 
 	}
-	
 
+	public double calcCG_sizeActMetric(){
+		double del_t = cg_time - lastCG_SizeActRecordTime;
+		for (int i = 0; i < Np; i++){
+			CG_SizeActTimeAve[i] = (lastCG_SizeActRecordTime*CG_SizeActTimeAve[i] + del_t*epicenterSize[i]) / (cg_time);
+		}
+		double CG_SpaceAve = DoubleArray.sum(CG_SizeActTimeAve)/(double)Np;
+		double CG_metric = 0;
+		for (int i = 0; i < Np; i++){
+			CG_metric += Math.pow(CG_SizeActTimeAve[i] - CG_SpaceAve,2);
+		}
+		CG_metric /= (double)Np;
+		lastCG_SizeActRecordTime = cg_time;
+		for (int i = 0; i < Np; i++) epicenterSize[i] = 0;
+		return CG_metric; 
+	}
+	
+	
+	/**
+	* The CG fail metric is a metric that use a parameter I call the CG fail paramater.
+	* For each plate update, we add one to the fail paramater in each CG block that
+	* contains any sites that fail.  The parameter captures more spatial information that just
+	* the epicenter locations and hopefully creates clustering that can be detected in the metric.
+	*/
+//	public double calcCG_failMetric(){
+//		double del_t = cg_time - lastCG_RecordTime;
+//		for (int i = 0; i < Np; i++){
+////			double countWithCutoff;
+////			if (epicenterCount[i] < lowerCutoff) countWithCutoff = 0;
+////			else countWithCutoff = epicenterCount[i];
+////			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*countWithCutoff) / (time);
+//			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*epicenterCount[i]) / (cg_time);
+//		}
+//		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
+//		double CG_metric = 0;
+//		for (int i = 0; i < Np; i++){
+//			CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
+//		}
+//		CG_metric /= (double)Np;
+//		lastCG_RecordTime = cg_time;
+//		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
+//		return CG_metric; 
+//	}
 
 
 	
