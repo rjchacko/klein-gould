@@ -149,7 +149,7 @@ public class OFC_DelayWriteApp extends Simulation{
 
 			}
 
-
+		
 			if(ofc.plateUpdates > maxTime) Job.signalStop();
 				
 

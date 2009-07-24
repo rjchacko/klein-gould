@@ -148,6 +148,7 @@ public class OFC_App extends Simulation{
 			}
 //			}
 
+//			if(ofc.plateUpdates > 500000) Job.signalStop();
 			if(ofc.cg_time > maxTime) Job.signalStop();
 				
 			Job.animate();
