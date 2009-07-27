@@ -30,7 +30,7 @@ void generate::genDroplet ()
 void generate::genDropletLog (int t, int search, int twoPow)
 {
     int numNucleate = 0;
-    const double limit = 0.1;
+    const double limit = 0.2;
 
     // for hypothesis test
     double pbar;
@@ -65,6 +65,8 @@ void generate::genDropletLog (int t, int search, int twoPow)
         ic->setSpins (s);
         return;
     }
+
+    //printf ("%d %.2f\n", t, pbar);
 
     if (pbar > 0.5 + z_alpha*sigma/sqrt (numTests))
         genDropletLog (t-search/twoPow-1, search, twoPow*2);
