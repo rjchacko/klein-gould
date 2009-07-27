@@ -396,19 +396,90 @@ void chi (char * base, int ovr)
 
 void makeDrops ()
 {
-    int numDrops=500;
-    int L=32, d=2;
-    double H=0.5, T=1.0084;
-    IsingCuda ic = IsingCuda (L, d, H, T);
-    generate ge = generate (&ic, (int) time(NULL));
+    int numDrops=50;
+   
+    char dir [][10] = {"far", "mid", "near"};
     char filename [256];
 
-    for (int i=0; i<numDrops; ++i)
+    int L3=32, d3=3;
+    double H3 [] = {1.136, 1.110, 1.083}, T3=4*4.511/9;
+    int L4=20, d4=4;
+    double H4 [] = {1.840, 1.822, 1.802}, T4=4*6.682/9;
+    //int L5=16, d5=5;
+    //double H5 [] = {2.557, 2.569, 2.581}, T5=4*8.77847518/9;
+    //int L7=10, d7=7;
+    //double H7 [] = {4.016, 4.019, 4.0215}, T7=4*12.8690191/9;
+    
+    unsigned int seed;
+
+    for (int i=0; i<3; ++i)
+    //for (int i=0; i<3; ++i)
     {
-        sprintf (filename, "./data/drops/drop%d.dat", i);
-        ge = generate (&ic, (int) time(NULL));
-        ge.genDroplet ();
-        ic.saveIsing (filename);
+        for (int j=0; j<numDrops; ++j)
+        {
+            IsingCuda * ic = new IsingCuda (L3, d3, H3[i], T3);
+            seed = (unsigned int) time (NULL);
+            generate ge = generate (ic, (int) seed);
+            ge.genDroplet ();
+            sprintf (filename,"./data/%dd/%s/drop_%d.dat",ic->dim,dir[i],seed);
+            ic->saveIsing (filename);
+            delete ic;
+            
+            ic = new IsingCuda (L4, d4, H4[i], T4);
+            seed = (unsigned int) time (NULL);
+            ge = generate (ic, (int) seed);
+            ge.genDroplet ();
+            sprintf (filename,"./data/%dd/%s/drop_%d.dat",ic->dim,dir[i],seed);
+            ic->saveIsing (filename);
+            delete ic;
+
+            /*
+            IsingCuda * ic = new IsingCuda (L5, d5, H5[i], T5);
+            seed = (unsigned int) time (NULL);
+            generate ge = generate (ic, (int) seed);
+            ge.genDroplet ();
+            sprintf (filename,"./data/%dd/%s/drop_%d.dat",ic->dim,dir[i],seed);
+            ic->saveIsing (filename);
+            delete ic;
+            
+            ic = new IsingCuda (L7, d7, H7[i], T7);
+            seed = (unsigned int) time (NULL);
+            ge = generate (ic, (int) seed);
+            ge.genDroplet ();
+            sprintf (filename,"./data/%dd/%s/drop_%d.dat",ic->dim,dir[i],seed);
+            ic->saveIsing (filename);
+            delete ic;
+            */
+        }
+    }
+}
+
+void quick_nt ()
+{
+    int trials = 50;
+    int relax = 40;
+    double thresh = 0.75;
+
+    int L [] = {32, 20};
+    int d [] = {3, 4};
+    double H [] = {1.083, 1.802};
+    double T [] = {4*4.511/9, 4*6.682/9};
+    for (int i=1; i<2; ++i)
+    {
+        IsingCuda * ic = new IsingCuda (L[i], d[i], H[i], T[i]);
+        int nt_acc = 0;
+        for (int j=0; j<trials; ++j)
+        {
+            ic->allSpinsUp (); ic->downH ();
+            for (int k=0; k<relax; ++k) ic->update ();
+            while (ic->magnetization()/ic->n >thresh)
+            {
+                ic->update ();
+                ++nt_acc;
+            }
+        }
+        printf ("d = %d, r = 1/%.2f\n", d[i], (double) nt_acc/trials);
+        delete ic;
     }
 }
 
@@ -446,4 +517,5 @@ int main (int argc, char *argv[]) {
     //    chi ("", 1);
     
     makeDrops ();
+    //quick_nt ();
 } 

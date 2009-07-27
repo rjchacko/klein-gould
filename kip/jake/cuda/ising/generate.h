@@ -7,14 +7,14 @@ class generate
 {
 public:
     static const int numTests = 100;
-    static const int upRelax = 10;
+    static const int upRelax = 15;
 
     // BELOW IS SUBJECT TO CHANGE DEPENDING ON r OF SYSTEM
-    static const int nucCheck = 75; // number of steps to allow m<thresh
-    static const double thresh = 0.5;
+    static const int nucCheck = 25; // number of steps to allow m<thresh
+    static const double thresh = 0.75;
 
     // The amound of time possibilities for the log-generate function
-    static const int dropTimeSearch = 128;
+    static const int dropTimeSearch = 64;
 
     IsingCuda * ic;
     int theSeed;
