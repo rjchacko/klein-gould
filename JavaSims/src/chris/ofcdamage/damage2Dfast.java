@@ -30,7 +30,7 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		if(Nl0 - dN < 0){	// cannot have negative lives
 			dN = Nl0;
-			params.set("Full width of NL", dN);
+			params.set("NL width", dN);
 		}
 		
 		for (int jj = 0 ; jj < N ; jj++){
