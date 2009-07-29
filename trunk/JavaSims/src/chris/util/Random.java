@@ -109,39 +109,27 @@ public class Random extends kip.util.Random{
 	   */
 	
 	public double[] nextSpherePt(int d, double RR){
-		
+				
 		double ret[] = new double[d];
 		
 		if (d == 1){
-			ret[0] = -1;
+			ret[0] = -1*RR;
 			if(nextDouble() > 0.5)
-				ret[0] = 1;
+				ret[0] = RR;
 		}
 		else if (d == 2){
 			ret = new double[2];
 			double theta = nextDouble()*twopi;
-			ret[0] = Math.cos(theta);
-			ret[1] = Math.sin(theta);
+			ret[0] = RR*Math.cos(theta);
+			ret[1] = RR*Math.sin(theta);
 			return ret;
-		}
-		else if (d == 3){
-			double x, y, z;
-			ret = new double[3];
-			x = 2*(nextDouble() - 0.5);
-			y = 2*(nextDouble() - 0.5);
-			while ((x*x + y*y) >= 1) 
-				y = 2*(nextDouble() - 0.5);
-			z = 1 - 2*(x*x+y*y);
-			ret[0] = x;
-			ret[1] = y;
-			ret[2] = z;
 		}
 		else{
 			ret = new double[d];
 			double nrm = 0;
 			for (int jj = 0 ; jj < d ; jj ++){
 				ret[jj] = nextGaussian();
-				nrm += ret[jj]+ret[jj];
+				nrm += ret[jj]*ret[jj];
 			}
 			nrm = Math.sqrt(nrm);
 			for (int jj = 0 ; jj < d ; jj ++){
