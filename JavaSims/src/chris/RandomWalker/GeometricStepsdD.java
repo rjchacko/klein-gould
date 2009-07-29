@@ -1,10 +1,8 @@
 package chris.RandomWalker;
 
 import java.io.File;
-import java.util.Random;
-
 import chris.util.PrintUtil;
-
+import chris.util.Random;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
@@ -145,19 +143,8 @@ public class GeometricStepsdD extends Simulation{
 	}
 	
 	private double[] nextStep(double norm){
-		double[] ret = new double[dim];
-		double tmpnorm = 0;
-		
-		for (int jj = 0 ; jj < dim ; jj++){
-			ret[jj] = rand.nextDouble()-0.5;
-			tmpnorm += ret[jj]*ret[jj];
-		}
-		tmpnorm = Math.sqrt(tmpnorm);
-		for (int jj = 0 ; jj < dim ; jj++){
-			ret[jj] = norm*ret[jj]/tmpnorm;
-		}
-		
-		return ret;
+
+		return rand.nextSpherePt(dim, norm);
 	}
 	
 	private void updatePDF(double[] rr){
