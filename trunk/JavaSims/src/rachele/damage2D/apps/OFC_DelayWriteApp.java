@@ -21,7 +21,7 @@ import scikit.util.Utilities;
 
 public class OFC_DelayWriteApp extends Simulation{
 
-	int cg_dt;
+	int dt;
 	Grid grid = new Grid("Lattice");
 	Grid cgGrid = new Grid(" CG grid");
 	Grid cgGridTimeAverage = new Grid("Time ave CG grid");
@@ -30,12 +30,16 @@ public class OFC_DelayWriteApp extends Simulation{
 	Histogram sizeHist = new Histogram(1);
 	String iMetFile;
 	String sizeHistFile;
+	String sizeFile;
 	int maxSize;
 	
 	Accumulator invStressMetTempAcc = new Accumulator();
 	Accumulator cgInvStressMetTempAcc = new Accumulator();
 	Accumulator cgInvActivityMetTempAcc = new Accumulator();
 	Accumulator maxSizeTempAcc = new Accumulator();
+	Accumulator invSizeActMetTempAcc = new Accumulator();
+	Accumulator	cgMaxSizeActBoxTempAcc = new Accumulator();
+	Accumulator timeAveForMaxCGSizeActTempAcc = new Accumulator();
 	
 	public static void main(String[] args) {
 		new Control(new OFC_DelayWriteApp(), "OFC Model");
@@ -45,11 +49,11 @@ public class OFC_DelayWriteApp extends Simulation{
 		c.frameTogether("Grids", grid, cgGrid, plateUpdateGrid, cgGridTimeAverage);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 16);
-		params.addm("dx", 1);
-		params.addm("Coarse Grained dt (PU)", 100);
+		params.addm("CG size", 32);
+		params.addm("dx", 4);
+		params.addm("Coarse Grained dt (PU)", 1);
 		params.addm("Equilibration Updates", 500000);
-		params.addm("Max CG Time", 1000000);
+		params.addm("Max PU", 1000000);
 		params.addm("Data points per write", 1000);
 		params.addm("R", 4);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
@@ -85,9 +89,9 @@ public class OFC_DelayWriteApp extends Simulation{
 	public void run() {
 		ofc = new OFC_Lattice(params);
 		initFiles();
-		cg_dt = params.iget("Coarse Grained dt (PU)");
+		dt = params.iget("Coarse Grained dt (PU)");
 		double nextAccumTime = 0;
-		int maxTime = params.iget("Max CG Time");
+		int maxTime = params.iget("Max PU");
 		int dataPointsPerWrite = params.iget("Data points per write");
 		
 		maxSize = 0;
@@ -111,6 +115,22 @@ public class OFC_DelayWriteApp extends Simulation{
 
 			if(ofc.plateUpdates > nextAccumTime){ //Accumulate data to be written
 				Job.animate();
+				
+				//maxSize
+				maxSizeTempAcc.accum(ofc.cg_time, maxSize);
+				
+				int maxEpicenter=0;
+				int loc = 0;
+				for(int i = 0; i < ofc.Np; i++){
+					if (ofc.epicenterSize[i] > maxEpicenter){
+						maxEpicenter = ofc.epicenterSize[i];
+						loc = i;
+					}
+				}
+				cgMaxSizeActBoxTempAcc.accum(ofc.cg_time, maxEpicenter);
+				timeAveForMaxCGSizeActTempAcc.accum(ofc.cg_time, ofc.CG_SizeActTimeAve[loc]);
+				if(dataPointsCount ==0) System.out.println("max loc = " + maxEpicenter + " " + ofc.CG_SizeActTimeAve[loc]);
+				
 				//stress metric
 				double inverseStressMetric = 1.0/stressMetric;
 				invStressMetTempAcc.accum(ofc.plateUpdates, inverseStressMetric);
@@ -120,10 +140,13 @@ public class OFC_DelayWriteApp extends Simulation{
 				//CG activity metric
 				double cgInverseActivityMetric = 1.0/ofc.calcCG_activityMetric();
 				cgInvActivityMetTempAcc.accum(ofc.cg_time, cgInverseActivityMetric);
-				//maxSize
-				maxSizeTempAcc.accum(ofc.cg_time, maxSize);
+				// size activity metric
+				double cgInverseSizeActMet = 1.0/ofc.calcCG_sizeActMetric();
+				invSizeActMetTempAcc.accum(ofc.cg_time, cgInverseSizeActMet);
 				
-				nextAccumTime += cg_dt;
+
+				
+				nextAccumTime += dt;
 				dataPointsCount += 1;
 				maxSize = 0;
 
@@ -134,8 +157,9 @@ public class OFC_DelayWriteApp extends Simulation{
 			if(dataPointsCount > dataPointsPerWrite -1){ //write accumulated data
 				FileUtil.initFile(sizeHistFile, params, "avalanch size histogram");
 				FileUtil.printHistToFile(sizeHistFile, sizeHist);
-				printAccumsToFile(iMetFile, invStressMetTempAcc, cgInvStressMetTempAcc, cgInvActivityMetTempAcc, maxSizeTempAcc);
-				//				FileUtil.printlnToFile(iMetFile, ofc.plateUpdates, inverseStressMetric, ofc.cg_time, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
+				printAccumsToFile(iMetFile, invStressMetTempAcc, cgInvStressMetTempAcc, cgInvActivityMetTempAcc, invSizeActMetTempAcc);
+				
+				printAccumsToFile2(sizeFile, maxSizeTempAcc,cgMaxSizeActBoxTempAcc, timeAveForMaxCGSizeActTempAcc);
 			
 				//restart counts
 				maxSize = 0;
@@ -146,6 +170,9 @@ public class OFC_DelayWriteApp extends Simulation{
 				cgInvStressMetTempAcc.clear();
 				cgInvActivityMetTempAcc.clear();
 				maxSizeTempAcc.clear();
+				invSizeActMetTempAcc.clear();
+				cgMaxSizeActBoxTempAcc.clear();
+				timeAveForMaxCGSizeActTempAcc.clear();
 
 			}
 
@@ -173,14 +200,29 @@ public class OFC_DelayWriteApp extends Simulation{
 		}
 	}
 	
+	static void printAccumsToFile2(String fileName, Accumulator acc1, Accumulator acc2, Accumulator acc3){
+		DatasetBuffer data1 = acc1.copyData();
+		DatasetBuffer data2 = acc2.copyData();
+		DatasetBuffer data3 = acc3.copyData();
+		int size = data1.size();
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int i = 0; i < size; i++){
+				pw.println(data1.x(i) + " " + data1.y(i) + " " + data2.y(i) + " " + data3.y(i) ) ;
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	void initFiles(){
 		iMetFile = params.sget("Data Dir") + File.separator + "im.txt";  // to record iverse metric data
-		FileUtil.initFile(iMetFile, params, " time (plate updates), stress inverse metric, time/coarse grained time, coarse grained activity metric, coarse grained stress metric, size of avalanche");
-//		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";   //to record size vs time data
-//		FileUtil.initFile(sizeFile, params, "avalanch size vs time");
+		FileUtil.initFile(iMetFile, params, " time (plate updates), stress inverse metric, time/coarse grained time, coarse grained activity inverse metric, coarse grained stress inverse metric, cg size act inverse metric");
+		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";
+		FileUtil.initFile(sizeFile, params, "time (plate updates),  max avalanche size, time/coarse grained time,");
 		sizeHistFile = params.sget("Data Dir") + File.separator + "sh.txt";	//to record size histogram data
-//		cgInvMetricFile = params.sget("Data Dir") + File.separator + "cg.txt";
-//		FileUtil.initFile(cgInvMetricFile, params, "Coarse Grained Inverse Metric");
+
 	}
 
 }
