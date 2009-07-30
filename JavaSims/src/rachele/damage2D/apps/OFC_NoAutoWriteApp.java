@@ -59,7 +59,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Grids", stressMetPlot, cgSizeActPlot, cgGrid, cgStressMetPlot, sizePlot, cgSizeActTimeAveGrid, actPlot, sizeSumPlot, sizeActMaxPlot);
+		c.frameTogether("Grids", stressMetPlot, cgSizeActPlot, cgGrid, cgStressMetPlot, sizePlot, cgSizeActPlot, actPlot, sizeSumPlot, sizeActMaxPlot);
 		c.frame(plateUpdateGrid);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
