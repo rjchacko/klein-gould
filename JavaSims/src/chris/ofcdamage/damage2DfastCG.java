@@ -1,21 +1,20 @@
 package chris.ofcdamage;
 
 import scikit.jobs.params.Parameters;
-import chris.util.PrintUtil;
 
-public class damage2DfastCG extends ofc2Dfast{
+public class damage2DfastCG extends ofc2DfastCG{
 	
 	private int liveNbs[], Nl0, Lives[];
 	
 	
 	public damage2DfastCG(Parameters params){
 		
-		super(params); //call to ofc2Dfast's constructor
+		super(params); //call to ofc2DfastCG's constructor
 		contructor_damage2DfastCG(params);
 	
 		return;
 	}
-	
+
 	public void contructor_damage2DfastCG(Parameters params){
 		
 		int dN;
@@ -30,7 +29,7 @@ public class damage2DfastCG extends ofc2Dfast{
 		
 		if(Nl0 - dN < 0){	// cannot have negative lives
 			dN = Nl0;
-			params.set("Full width of NL", dN);
+			params.set("NL width", dN);
 		}
 		
 		for (int jj = 0 ; jj < N ; jj++){
@@ -52,7 +51,6 @@ public class damage2DfastCG extends ofc2Dfast{
 		
 		return;
 	}
-	
 	
 	public int evolveD(int mct, boolean takedata){
 		// evolve the ofc model *IN DAMAGE MODE* starting with a stable 
@@ -110,7 +108,6 @@ public class damage2DfastCG extends ofc2Dfast{
 		return Ndead;
 	}
 	
-	
 	private void killSite(int site){
 		
 		Ndead++;
@@ -139,17 +136,10 @@ public class damage2DfastCG extends ofc2Dfast{
 		return ret;
 	}
 	
-	public void printFitParams(String fout, double slope, double offset, double width){
-		
-		PrintUtil.printlnToFile(fout,"slope = ", slope);
-		PrintUtil.printlnToFile(fout,"intercept = ", offset);
-		PrintUtil.printlnToFile(fout,"width = ", width);
-		return;
-	}
-	
 	public int getLN(int site){
 		
 		return (site < N) ? liveNbs[site] : -1;
 	}
+	
 	
 }
