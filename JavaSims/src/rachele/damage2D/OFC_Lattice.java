@@ -3,6 +3,10 @@ package rachele.damage2D;
 import scikit.jobs.params.Parameters;
 import scikit.util.DoubleArray;
 
+/**
+* OFC_Lattice is used for OFC only runs.  Probably will be replaced by OFC_DamageLattice-- 
+* to get to OFC only, choose maxFail = 0 
+*/
 public class OFC_Lattice extends AbstractCG_OFC{
  
 
@@ -148,6 +152,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public void clearFailList(){
 		for(int i = 0; i < N; i++) failList[i] = false;
 	}
+	
+
 	
 	public void step(){
 		clearPlateUpdateFileLocs();
