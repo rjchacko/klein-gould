@@ -25,7 +25,7 @@ public class AbstractCG_OFC {
 	public double [] stress;
 	Random random = new Random();
 	
-	int findCG_site(int s){
+	public int findCG_site(int s){
 		int x = s % L;
 		int y = s / L;
 		int xp = x / dx;
