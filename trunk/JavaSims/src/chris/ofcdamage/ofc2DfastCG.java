@@ -4,14 +4,16 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+
+import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
-import scikit.jobs.params.Parameters;
 
 public class ofc2DfastCG extends ofc2Dfast{
 
-	protected double OmegaCGs, OmegaCGgr, OmegaCGact, sbarCG[], stressCG[], dataCG[][];
-	protected int LCG, M, NCG, nbaCG[], grCG[], grbarCG[], act[], actbar[], cgID[], qCG, tau;
+	protected double OmegaCGs,OmegaCGsact, OmegaCGact, sbarCG[], stressCG[], dataCG[][];
+	protected int LCG, M, NCG, nbaCG[], act[], actbar[], cgID[], qCG, tau, ssold;
+	protected int sactCG[], sactbarCG[];
 	public static int dcatCG = 3;
 	
 	
@@ -33,15 +35,15 @@ public class ofc2DfastCG extends ofc2Dfast{
 		cgID      = new int[N];
 		sbarCG    = new double[NCG];
 		stressCG  = new double[NCG];
-		grbarCG   = new int[NCG];
-		grCG      = new int[NCG];
+		sactbarCG = new int[NCG];
+		sactCG    = new int[NCG];
 		act       = new int[NCG];
 		actbar    = new int[NCG];
 		nbsCG     = new LatticeNeighbors(getL(),getL(),0,(LCG-1)/2,LatticeNeighbors.Type.PERIODIC,LatticeNeighbors.Shape.Square);
 		nbaCG     = nbsCG.get(0);
 		qCG       = nbaCG.length;
 		OmegaCGs  = 0;
-		OmegaCGgr = 0;
+		OmegaCGsact = 0;
 		dataCG    = new double[dcatCG][dlength];
 
 		for (int kk = 0 ; kk < M ; kk++){
@@ -60,27 +62,30 @@ public class ofc2DfastCG extends ofc2Dfast{
 	protected void forceZeroVel(int mct, boolean takedata, boolean eqmode){
 		// force failure in the zero velocity limit
 
-		double dsigma, tmpbar, dsmin, tmpbarcgs, tmpbaract, tmpbarcgf;
-		int jjmax;
-		index = 0;
+		double dsigma, tmpbar, dsmin, tmpbarcgs, tmpbaract, tmpbarsact;
+		index    = 0;
 		newindex = index;
 		dsmin    = 1e5;
 		
-		jjmax = 0;
 		if(takedata){
 			tmpbar     = 0;
 			Omega      = 0;
 			tmpbarcgs  = 0;
-			tmpbarcgf  = 0;
+			tmpbarsact = 0;
 			tmpbaract  = 0;
 			OmegaCGs   = 0;
-			OmegaCGgr  = 0;
+			OmegaCGsact  = 0;
 			OmegaCGact = 0;
 			
+			// add the number of failed sites from last update
+			// to size activity metric (the "parent" site is
+			// stored in ssold)
+			sactCG[cgID[ssold]] += GR;
+			ssold = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
 				// find next site to fail
 				if( (sf[jj]-stress[jj]) < dsmin && !failed[jj]){
-					jjmax = jj;
+					ssold = jj;
 					dsmin = sf[jj]-stress[jj];
 				}
 				// calculate metric (PART 1)
@@ -89,14 +94,14 @@ public class ofc2DfastCG extends ofc2Dfast{
 				stressCG[cgID[jj]] += MathUtil.bool2bin(!failed[jj])*stress[jj];
 				if(mct%tau == 0){
 					if(jj < NCG){
-						grbarCG[jj] += grCG[jj];
-						tmpbarcgf   += grbarCG[jj];
-						actbar[jj]  += act[jj];
-						tmpbaract   += actbar[jj];
+						sactbarCG[jj] += sactCG[jj];
+						tmpbarsact    += sactbarCG[jj];
+						actbar[jj]    += act[jj];
+						tmpbaract     += actbar[jj];
 					}
 				}
 			}
-			dsigma = sf[jjmax]-stress[jjmax];
+			dsigma = sf[ssold]-stress[ssold];
 			tmpbar = tmpbar / (N-Ndead);
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
 				// add stress to fail site
@@ -106,14 +111,14 @@ public class ofc2DfastCG extends ofc2Dfast{
 				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
 				if(jj < NCG){
 					if(jj == 0){
-						tmpbarcgf = (double)(tmpbarcgf)/(double)(NCG);
-						tmpbaract = (double)(tmpbaract)/(double)(NCG);
+						tmpbarsact = (double)(tmpbarsact)/(double)(NCG);
+						tmpbaract  = (double)(tmpbaract)/(double)(NCG);
 					}
 					sbarCG[jj] += stressCG[jj];
 					tmpbarcgs  += sbarCG[jj];
 					if(mct%tau == 0){
-						OmegaCGgr  += (tmpbarcgf-grbarCG[jj])*(tmpbarcgf-grbarCG[jj]);
-						grCG[jj]    = 0; //reset counting
+						OmegaCGsact  += (tmpbarsact-sactbarCG[jj])*(tmpbarsact-sactbarCG[jj]);
+						sactCG[jj]  = 0; //reset counting
 						OmegaCGact += (tmpbaract-actbar[jj])*(tmpbaract-actbar[jj]);
 						act[jj]     = 0; //reset counting
 					}
@@ -128,7 +133,7 @@ public class ofc2DfastCG extends ofc2Dfast{
 			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
 			OmegaCGs = OmegaCGs/((double)(mct)*(double)(mct)*(double)(NCG));
 			if(mct%tau == 0){
-				OmegaCGgr  = OmegaCGgr/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
+				OmegaCGsact  = OmegaCGsact/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
 				OmegaCGact = OmegaCGact/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
 
 			}
@@ -138,31 +143,32 @@ public class ofc2DfastCG extends ofc2Dfast{
 				writeData(mct);
 				writeCGdata(mct);
 			}
-			act[cgID[jjmax]]++;	//activity metric counting
+			act[cgID[ssold]]++;	//activity metric counting
 			saveData(mct, eqmode, dsigma);
 			saveCGdata(mct);
 		}
 		else{
+			ssold = 0;
 			for (int jj = 0 ; jj < N ; jj++){
 				// find next site to fail
-				if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
+				if( ((sf[jj]-stress[jj]) < (sf[ssold]-stress[ssold])) && !failed[jj] ) ssold = jj;
 			}
 			// add stress to fail site
-			dsigma = sf[jjmax]-stress[jjmax];
+			dsigma = sf[ssold]-stress[ssold];
 			for (int jj = 0 ; jj < N ; jj++){
 				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 			}
 		}
 		
-		fs[newindex++] = jjmax;
-		failSite(jjmax,mct);		
+		fs[newindex++] = ssold;
+		failSite(ssold,mct);		
 		return;
 	}
 	
 	protected void failSite(int index){
 
 		super.failSite(index);
-		grCG[cgID[index]]++;
+		sactCG[cgID[index]]++;
 		return;
 	}
 	
@@ -176,7 +182,7 @@ public class ofc2DfastCG extends ofc2Dfast{
 		
 		dataCG[0][now%dlength] = 1./OmegaCGs;
 		if(now%tau==0){
-			dataCG[1][now%dlength] = 1./OmegaCGgr;
+			dataCG[1][now%dlength] = 1./OmegaCGsact;
 			dataCG[2][now%dlength] = 1./OmegaCGact;
 		}
 		else{
@@ -228,11 +234,11 @@ public class ofc2DfastCG extends ofc2Dfast{
 				}
 				sbar[jj] = 0;
 				if(jj < NCG){
-					sbarCG[jj]  = 0;
-					grbarCG[jj] = 0;
-					actbar[jj]  = 0;
-					grCG[jj]    = 0;
-					act[jj]     = 0;
+					sbarCG[jj]    = 0;
+					sactbarCG[jj] = 0;
+					actbar[jj]    = 0;
+					sactCG[jj]    = 0;
+					act[jj]       = 0;
 				}
 			}	
 		}
@@ -246,11 +252,11 @@ public class ofc2DfastCG extends ofc2Dfast{
 				}	
 				if(jj < N) sbar[jj] = 0;
 				if(jj < NCG){
-					sbarCG[jj]  = 0;
-					grbarCG[jj] = 0;
-					actbar[jj]  = 0;
-					grCG[jj]    = 0;
-					act[jj]     = 0;
+					sbarCG[jj]    = 0;
+					sactbarCG[jj] = 0;
+					actbar[jj]    = 0;
+					sactCG[jj]    = 0;
+					act[jj]       = 0;
 				}
 			}	
 		}
@@ -268,7 +274,7 @@ public class ofc2DfastCG extends ofc2Dfast{
 			pw.print("\t");
 			pw.print("Inverse CG Stress Metric");
 			pw.print("\t");
-			pw.print("Inverse CG Events Metric");
+			pw.print("Inverse CG Size Activity Metric");
 			pw.print("\t");
 			pw.print("Inverse Activity Metric");
 			pw.println();
