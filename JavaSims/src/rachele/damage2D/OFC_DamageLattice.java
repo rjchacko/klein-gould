@@ -116,6 +116,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 	
 	public void findNbors(){
+		System.out.println("Finding neighbors");
 		if (interactionTopology == "Circle"){
 			findCircleNbors();
 		}//else if (interactionTopology == "Square"){	
@@ -193,11 +194,11 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				failAgain = checkFailList();
 			}
 		}else{
-			failSiteWithRange(epicenterSite);  //Just distributes stress to each neighbor
+			failSiteWithList(epicenterSite);  //Just distributes stress to each neighbor
 			int nextSiteToFail = checkFail();  //each checkFail loops through lattice once.
 			avSize = 1;
 			while (nextSiteToFail >= 0){
-				failSiteWithRange(nextSiteToFail);
+				failSiteWithList(nextSiteToFail);
 				nextSiteToFail = checkFail();
 				avSize += 1;
 			}
@@ -206,17 +207,20 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 
 	}
 	
-	public void ofcStep(){
-		epicenterSite = siteWithMaxStress();
-//		int site = findCG_site(epicenterSite);
-		
-		//Bring to failure
+	public void bringToFailure(){
+		epicenterSite = siteWithMaxStress();	
 		double stressAdd = tStress - stress[epicenterSite];
-//		dt = stressAdd;
-		dt=1;
 		if(stressAdd < 0) System.out.println("Error: stress already above failure");
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
 		avSize = 1;
+	}
+	
+	/**
+	* One step in OFC only mode- no damage, no fails, no healing
+	*/
+	public void ofcStep(){
+		bringToFailure();
+		dt=1;
 	
 		if(fullyConnected){
 			failList[epicenterSite] = true;
@@ -227,12 +231,10 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				failAgain = checkFailList();
 			}
 		}else{
-			failSiteWithRange(epicenterSite);
-//			countFail(epicenterSite);
+			failSiteWithList(epicenterSite);
 			int nextSiteToFail = checkFail();
 			while (nextSiteToFail >= 0){
-				failSiteWithRange(nextSiteToFail);
-//				countFail(nextSiteToFail);
+				failSiteWithList(nextSiteToFail);
 				nextSiteToFail = checkFail();
 				avSize += 1;
 			}
@@ -247,9 +249,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		plateUpdates += 1;
 	}
 	
-	/**
-	* One step in OFC only mode- no damage, no fails, no healing
-	*/
+
 	public void OFC_step(){
 		
 	}
@@ -274,11 +274,32 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		avSize = 1;
 		//find and fail all sites in avalanche
 		failSiteWithList(epicenterSite);
-		nextSiteToFail = checkFailWithRange();
+		countFailAndCheckForDeath(epicenterSite);
+
+		nextSiteToFail = checkNextFailSite();
 		plateUpdates += 1;
 	}
 	
-	public int checkFailWithRange(){
+	public void healStepIter(){
+		failSiteWithList(nextSiteToFail);
+		countFailAndCheckForDeath(nextSiteToFail);
+		avSize += 1;
+		nextSiteToFail = checkNextFailSite();
+	}
+	
+	public void countFailAndCheckForDeath(int s){
+		noFails[s] += 1;
+		if (noFails[s] >= maxNoFails[s]){
+			noFails[s] = -1;
+			noDeadSites += 1;
+			for(int i = 0; i < maxNbors; i++){
+				noNborsForSite[nborList[s][i]] -= 1;
+			}
+			
+		}
+	}
+	
+	public int checkNextFailSite(){
 		int s = siteWithMaxStress();
 		if (stress[s] < tStress) s = -1; 
 		return s;
@@ -315,38 +336,28 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			checkAliveCount += 1;
 			}
 		}
-//		System.out.println("Check: No of nbors (should be =) = " + noNborsForSite[s] + " check alive sites count = " + checkAliveCount);
-		//account for failure of site
-		noFails[s] += 1;
-		// account for death of site
-		if (noFails[s] >= maxNoFails[s]){
-			noFails[s] = -1;
-			noDeadSites += 1;
-			for(int i = 0; i < maxNbors; i++){
-				noNborsForSite[nborList[s][i]] -= 1;
-			}
-			
-		}
+
+
 	}
 	
-	void failSiteWithRange(int s){
-		double resStressWithNoise = calcResNoise(s);
-		double stressPerNbor = calcStressPerNbor(s, resStressWithNoise);
-		stress[s] = resStressWithNoise;
-		int x = s%L;
-		int y = s/L;
-		 for(int dy = -R; dy <= R; dy++){
-			 for(int dx = -R; dx <= R; dx++){
-				 double distance = Math.sqrt(dx*dx + dy*dy);
-				 if (distance <= R){
-					 int xx = (x+dx+L)%L;
-					 int yy = (y+dy+L)%L;
-					 int nborSite = yy*L+xx;
-					 stress[nborSite] += stressPerNbor;
-				 }
-			 }
-		 }
-	}
+//	void failSiteWithRange(int s){
+//		double resStressWithNoise = calcResNoise(s);
+//		double stressPerNbor = calcStressPerNbor(s, resStressWithNoise);
+//		stress[s] = resStressWithNoise;
+//		int x = s%L;
+//		int y = s/L;
+//		 for(int dy = -R; dy <= R; dy++){
+//			 for(int dx = -R; dx <= R; dx++){
+//				 double distance = Math.sqrt(dx*dx + dy*dy);
+//				 if (distance <= R){
+//					 int xx = (x+dx+L)%L;
+//					 int yy = (y+dy+L)%L;
+//					 int nborSite = yy*L+xx;
+//					 stress[nborSite] += stressPerNbor;
+//				 }
+//			 }
+//		 }
+//	}
 	
 //	void failSiteWithRangeAndDamage(int s){
 //		double resStressWithNoise = calcResNoise(s);

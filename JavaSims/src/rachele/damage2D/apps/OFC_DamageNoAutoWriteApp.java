@@ -85,7 +85,7 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 		double percentDead = ofc.noDeadSites/(double)(ofc.L*ofc.L);
 		params.set("Percent dead sites", percentDead);
 		params.set("Av Size", ofc.avSize);
-		if (percentDead >= 0.1) Job.signalStop();
+		if (percentDead >= 1.0) Job.signalStop();
 	}
 
 	public void clear() {
@@ -112,9 +112,7 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 			ofc.healPreStep();
 			Job.animate();
 			while (ofc.nextSiteToFail >= 0){
-				ofc.failSiteWithList(ofc.nextSiteToFail);
-				ofc.avSize += 1;
-				ofc.nextSiteToFail = ofc.checkFailWithRange();
+				ofc.healStepIter();
 				Job.animate();
 			}
 			if (ofc.avSize >= ofc.lowerCutoff) 	ofc.epicenterCount[ofc.findCG_site(ofc.epicenterSite)] +=1;

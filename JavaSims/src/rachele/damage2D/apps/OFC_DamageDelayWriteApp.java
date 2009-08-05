@@ -20,6 +20,9 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.util.Utilities;
 
+/**
+* Equilibrate in OFC, run in damage to max percent damage, equilibrate again in OFC, take data in OFC
+*/
 public class OFC_DamageDelayWriteApp extends Simulation{
 
 	int dt;
@@ -36,6 +39,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 	int maxSize;	
 	int cg_dt;
 	double percentDead;
+	double maxPercentDamage;
 	
 	OFC_DamageLattice ofc;
 	
@@ -70,6 +74,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
 		params.addm("Max Failures", 1);
+		params.addm("Max Percent Damage", 0.05);
 		params.add("L");
 		params.add("Time");
 		params.add("Av Size");
@@ -109,6 +114,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		initFiles();
 		
 		dt = params.iget("Coarse Grained dt (PU)");
+		maxPercentDamage = params.fget("Max Percent Damage");
 		double nextAccumTime = 0;
 		int maxTime = params.iget("Max PU");
 		int dataPointsPerWrite = params.iget("Data points per write");
@@ -126,17 +132,16 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		System.out.println("Finished Equilibration 1");
 		
 		// Kill
-		while (percentDead <= .1){
+		while (percentDead <= maxPercentDamage){
 			ofc.healPreStep();
 			Job.animate();
 			while (ofc.nextSiteToFail >= 0){
-				ofc.failSiteWithList(ofc.nextSiteToFail);
-				ofc.avSize += 1;
-				ofc.nextSiteToFail = ofc.checkFailWithRange();
+				ofc.healStepIter();
 				Job.animate();
 			}	
 		}
 		System.out.println(percentDead + " dead after " + ofc.plateUpdates + " PU");
+		FileUtil.printlnToFile(iMetFile, "# ", percentDead, " percent dead after " , ofc.plateUpdates, " PU.");
 
 		// Equilibrate again
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
@@ -188,8 +193,6 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 				// size activity metric
 				double cgInverseSizeActMet = 1.0/ofc.calcCG_sizeActMetric();
 				invSizeActMetTempAcc.accum(ofc.cg_time, cgInverseSizeActMet);
-				
-
 				
 				nextAccumTime += dt;
 				dataPointsCount += 1;
