@@ -211,7 +211,11 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		epicenterSite = siteWithMaxStress();	
 		double stressAdd = tStress - stress[epicenterSite];
 		if(stressAdd < 0) System.out.println("Error: stress already above failure");
-		for (int i = 0; i < N; i++) if(noFails[i] >=0) stress[i] += stressAdd;
+		for (int i = 0; i < N; i++){
+			if(noFails[i] >=0) stress[i] += stressAdd;
+			plateUpdateFailLocations[i] = 0;
+		}
+		plateUpdateFailLocations[epicenterSite] = 1;
 		avSize = 1;
 	}
 	
@@ -305,14 +309,14 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		return s;
 	}
 	
-	/**
-	 *  This method should not be used when equilibrating in earthquake mode.
-	 *  Do not combine this with failSiteWithRange.
-	 */
-	void countFail(int siteLocation){
-		if(noFails[siteLocation] >= maxNoFails[siteLocation]) noFails[siteLocation] = -1;
-		else noFails[siteLocation] += 1;
-	}
+//	/**
+//	 *  This method should not be used when equilibrating in earthquake mode.
+//	 *  Do not combine this with failSiteWithRange.
+//	 */
+//	void countFail(int siteLocation){
+//		if(noFails[siteLocation] >= maxNoFails[siteLocation]) noFails[siteLocation] = -1;
+//		else noFails[siteLocation] += 1;
+//	}
 	
 	int checkFail(){
 		int s = siteWithMaxStress();
@@ -334,6 +338,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				checkAliveCount += 1;
 			}
 		}
+		plateUpdateFailLocations[s] += 1;
 //		System.out.println("alive nbors " + noNborsForSite[s] + " " + checkAliveCount);
 
 
