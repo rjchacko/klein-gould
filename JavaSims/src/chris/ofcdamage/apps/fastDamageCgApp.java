@@ -10,6 +10,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import chris.ofcdamage.damage2Dfast;
 import chris.ofcdamage.damage2DfastCG;
+import chris.ofcdamage.ofc2Dfast;
 
 public class fastDamageCgApp extends Simulation{
 
@@ -86,6 +87,7 @@ public class fastDamageCgApp extends Simulation{
 				Job.animate();
 			}
 		}
+		if((simt-1)%ofc2Dfast.dlength != 0) model.writeData(simt);
 
 		// Simulate the model with damage
 
@@ -102,17 +104,13 @@ public class fastDamageCgApp extends Simulation{
 				Job.animate();
 				dmt++;
 				if(Ndead >= N) break;
-				System.out.print(Ndead);
-				System.out.print("\t");
-				System.out.print(phis*N);
 			}
 
 			// write and clear data
-			if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(dmt);
-
-			if(Ndead >= N) break;
-
+			if((dmt-1)%damage2DfastCG.dlength != 0) model.writeData(dmt);
 			model.clearData();
+			
+			if(Ndead >= N) break;
 
 			// change save file name
 			model.setBname(params.sget("Data File")+"_"+cfmt.format(100*phis));
@@ -137,6 +135,8 @@ public class fastDamageCgApp extends Simulation{
 					Job.animate();
 				}
 			}
+			// write data
+			if((simt-1)%damage2DfastCG.dlength != 0) model.writeData(dmt);
 
 			phis += 0.05;
 			dmt    = simt;				
