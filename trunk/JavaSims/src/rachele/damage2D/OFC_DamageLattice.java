@@ -211,7 +211,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		epicenterSite = siteWithMaxStress();	
 		double stressAdd = tStress - stress[epicenterSite];
 		if(stressAdd < 0) System.out.println("Error: stress already above failure");
-		for (int i = 0; i < N; i++) stress[i] += stressAdd;
+		for (int i = 0; i < N; i++) if(noFails[i] >=0) stress[i] += stressAdd;
 		avSize = 1;
 	}
 	
@@ -249,33 +249,31 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		plateUpdates += 1;
 	}
 	
-
-	public void OFC_step(){
-		
-	}
-	
 	/**
 	* One step in Damage OFC mode- accumulate no of fails, kill sites > maxFail
 	*/
-	public void damageStep(){
-		
+	public void damagePreStep(){
+		bringToFailure();
+		failSiteWithList(epicenterSite);
+		countFailAndCheckForDeath(epicenterSite);
+		nextSiteToFail = checkNextFailSite();
+		plateUpdates += 1;		
+	}
+
+	public void damageStepIter(){
+		failSiteWithList(nextSiteToFail);
+		countFailAndCheckForDeath(nextSiteToFail);
+		avSize += 1;
+		nextSiteToFail = checkNextFailSite();
 	}
 	
 	/**
 	* One step in Damage/Healing Mode- sites fail, die and are healed.
 	*/
 	public void healPreStep(){
-		//find the epicenter
-		// update this to faster algorithm
-		epicenterSite = siteWithMaxStress();
-		//bring epicenter to failure by adding equal stress to all sites
-		double stressAdd = tStress - stress[epicenterSite];
-		for (int i = 0; i < N; i++) stress[i] += stressAdd;
-		avSize = 1;
-		//find and fail all sites in avalanche
+		bringToFailure();
 		failSiteWithList(epicenterSite);
 		countFailAndCheckForDeath(epicenterSite);
-
 		nextSiteToFail = checkNextFailSite();
 		plateUpdates += 1;
 	}
@@ -287,11 +285,13 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		nextSiteToFail = checkNextFailSite();
 	}
 	
+	
 	public void countFailAndCheckForDeath(int s){
 		noFails[s] += 1;
 		if (noFails[s] >= maxNoFails[s]){
 			noFails[s] = -1;
 			noDeadSites += 1;
+			stress[s] = 0;
 			for(int i = 0; i < maxNbors; i++){
 				noNborsForSite[nborList[s][i]] -= 1;
 			}
@@ -321,8 +321,6 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		return s;
 	}
 	
-
-	
 	public void failSiteWithList(int s){
 		double resStressWithNoise = calcResNoise(s);
 		double stressPerNbor = ((1-dissParam)*(stress[s] - resStressWithNoise))/(double)noNborsForSite[s];
@@ -333,9 +331,10 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			int nborSite = nborList[s][i];
 			if(noFails[nborSite] >= 0){
 				stress[nborSite] += stressPerNbor;
-			checkAliveCount += 1;
+				checkAliveCount += 1;
 			}
 		}
+//		System.out.println("alive nbors " + noNborsForSite[s] + " " + checkAliveCount);
 
 
 	}
