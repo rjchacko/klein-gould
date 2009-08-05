@@ -12,8 +12,7 @@ import chris.util.MathUtil;
 public class ofc2DfastCG extends ofc2Dfast{
 
 	protected double OmegaCGs,OmegaCGsact, OmegaCGact, sbarCG[], stressCG[], dataCG[][];
-	protected int LCG, M, NCG, nbaCG[], act[], actbar[], cgID[], qCG, tau, ssold;
-	protected int sactCG[], sactbarCG[];
+	protected int LCG, M, NCG, nbaCG[], act[], actbar[], cgID[], qCG, tau, ssold, sactCG[], sactbarCG[];
 	public static int dcatCG = 3;
 	
 	
@@ -68,14 +67,14 @@ public class ofc2DfastCG extends ofc2Dfast{
 		dsmin    = 1e5;
 		
 		if(takedata){
-			tmpbar     = 0;
-			Omega      = 0;
-			tmpbarcgs  = 0;
-			tmpbarsact = 0;
-			tmpbaract  = 0;
-			OmegaCGs   = 0;
-			OmegaCGsact  = 0;
-			OmegaCGact = 0;
+			tmpbar      = 0;
+			Omega       = 0;
+			tmpbarcgs   = 0;
+			tmpbarsact  = 0;
+			tmpbaract   = 0;
+			OmegaCGs    = 0;
+			OmegaCGsact = 0;
+			OmegaCGact  = 0;
 			
 			// add the number of failed sites from last update
 			// to size activity metric (the "parent" site is
@@ -109,33 +108,32 @@ public class ofc2DfastCG extends ofc2Dfast{
 				
 				//calculate metric (PART 2)
 				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
-				if(jj < NCG){
-					if(jj == 0){
-						tmpbarsact = (double)(tmpbarsact)/(double)(NCG);
-						tmpbaract  = (double)(tmpbaract)/(double)(NCG);
+				if(mct % tau == 0){
+					if(jj < NCG){
+						if(jj == 0){
+							tmpbarsact = (double)(tmpbarsact)/(double)(NCG);
+							tmpbaract  = (double)(tmpbaract)/(double)(NCG);
+						}
+						sbarCG[jj]  += stressCG[jj];
+						tmpbarcgs   += sbarCG[jj];
+						OmegaCGsact += (tmpbarsact-sactbarCG[jj])*(tmpbarsact-sactbarCG[jj]);
+						sactCG[jj]   = 0; //reset counting
+						OmegaCGact  += (tmpbaract-actbar[jj])*(tmpbaract-actbar[jj]);
+						act[jj]      = 0; //reset counting
 					}
-					sbarCG[jj] += stressCG[jj];
-					tmpbarcgs  += sbarCG[jj];
-					if(mct%tau == 0){
-						OmegaCGsact  += (tmpbarsact-sactbarCG[jj])*(tmpbarsact-sactbarCG[jj]);
-						sactCG[jj]  = 0; //reset counting
-						OmegaCGact += (tmpbaract-actbar[jj])*(tmpbaract-actbar[jj]);
-						act[jj]     = 0; //reset counting
+					else if(jj < 2*NCG){
+						if(jj == NCG) tmpbarcgs = tmpbarcgs/NCG;
+						OmegaCGs        += (sbarCG[jj%NCG]-tmpbarcgs)*(sbarCG[jj%NCG]-tmpbarcgs);
+						stressCG[jj%NCG] = 0; //reset counting
 					}
-				}
-				else if(jj < 2*NCG){
-					if(jj == NCG) tmpbarcgs = tmpbarcgs/NCG;
-					OmegaCGs        += (sbarCG[jj%NCG]-tmpbarcgs)*(sbarCG[jj%NCG]-tmpbarcgs);
-					stressCG[jj%NCG] = 0; //reset counting
 				}
 			}
 			//calculate metric (PART 3)
 			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
-			OmegaCGs = OmegaCGs/((double)(mct)*(double)(mct)*(double)(NCG));
 			if(mct%tau == 0){
 				OmegaCGsact  = OmegaCGsact/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
-				OmegaCGact = OmegaCGact/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
-
+				OmegaCGact   = OmegaCGact/((double)(mct/tau)*(double)(mct/tau)*(double)(NCG));
+				OmegaCGs     = OmegaCGs/((double)(mct)*(double)(mct)*(double)(NCG));
 			}
 
 			// save and/or write data
@@ -180,12 +178,13 @@ public class ofc2DfastCG extends ofc2Dfast{
 
 	protected void saveCGdata(int now){
 		
-		dataCG[0][now%dlength] = 1./OmegaCGs;
 		if(now%tau==0){
+			dataCG[0][now%dlength] = 1./OmegaCGs;
 			dataCG[1][now%dlength] = 1./OmegaCGsact;
 			dataCG[2][now%dlength] = 1./OmegaCGact;
 		}
 		else{
+			dataCG[0][now%dlength] = -1;
 			dataCG[1][now%dlength] = -1;
 			dataCG[2][now%dlength] = -1;
 		}
