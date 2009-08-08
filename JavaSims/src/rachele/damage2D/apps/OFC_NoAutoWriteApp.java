@@ -34,6 +34,8 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	Grid plateUpdateGrid = new Grid("Plate Update grid");
 	Grid cgFailCountGrid = new Grid("cg fail count grid");
 	Grid cgSizeActTimeAveGrid = new Grid("CG size act time ave");
+	Grid oneEpicenter = new Grid("Special Epicienter avalanches");
+	
 	Plot stressMetPlot = new Plot("Stress Met Plot");
 	Plot actPlot = new Plot("CG Activity I Metric");
 	Plot sizePlot = new Plot("Size Plot");
@@ -41,6 +43,9 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	Plot cgSizeActPlot = new Plot("CG Size Act Met");
 	Plot sizeSumPlot = new Plot("Size sum plot");
 	Plot sizeActMaxPlot = new Plot("Size act max");
+	
+	Plot histAll = new Plot("Histogram all sizes");
+	Plot histSp = new Plot("Histogram special");
 	
 	OFC_Lattice ofc;
 	Accumulator cgMetricAcc = new Accumulator();
@@ -52,15 +57,19 @@ public class OFC_NoAutoWriteApp extends Simulation{
 	Accumulator sizeSumAcc = new Accumulator();
 	Accumulator timeAveForMaxCGSizeActAcc = new Accumulator();
 	Histogram sizeHist = new Histogram(1);
+	Histogram spSizeHist = new Histogram(1);
 	int maxSize, fileNo;
+	
+	int [] avalancheOneEpicenter;
 	
 	public static void main(String[] args) {
 		new Control(new OFC_NoAutoWriteApp(), "OFC Model");
 	}
 	
 	public void load(Control c) {
-		c.frameTogether("Grids", stressMetPlot, cgSizeActPlot, cgGrid, cgStressMetPlot, sizePlot, cgSizeActPlot, actPlot, sizeSumPlot, sizeActMaxPlot);
-		c.frame(plateUpdateGrid);
+//		c.frameTogether("Grids", stressMetPlot, cgSizeActPlot, cgGrid, cgStressMetPlot, sizePlot, cgSizeActPlot, actPlot, sizeSumPlot, sizeActMaxPlot);
+		c.frameTogether("avs",plateUpdateGrid, oneEpicenter);
+		c.frameTogether("size hists", histAll, histSp);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 8);
@@ -104,6 +113,8 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		grid.addDrawable(
 				Geom2D.circle(failSite_x, failSite_y, radius, Color.GREEN));
 		
+		oneEpicenter.registerData(ofc.L, ofc.L, avalancheOneEpicenter);
+		
 		plateUpdateGrid.clearDrawables();
 		plateUpdateGrid.addDrawable(
 				Geom2D.circle(failSite_x, failSite_y, radius, Color.GREEN));
@@ -126,7 +137,8 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		sizeActMaxPlot.registerPoints("Max Size Act Block", cgMaxSizeActBoxAcc, Color.pink);
 		sizeActMaxPlot.registerPoints("Max Size Act Block Time Ave", timeAveForMaxCGSizeActAcc, Color.black);
 		
-
+		histAll.registerBars("all sizes", sizeHist, Color.BLACK);
+		histSp.registerBars("Special sizes", spSizeHist, Color.RED);
 		
 		params.set("Time", ofc.cg_time);
 		params.set("Plate Updates", ofc.plateUpdates);
@@ -144,7 +156,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 			sizeSumAcc.clear();
 			timeAveForMaxCGSizeActAcc.clear();
 		}
-		flags.clear();
+//		flags.clear();
 	}
 
 	public void clear() {
@@ -158,6 +170,10 @@ public class OFC_NoAutoWriteApp extends Simulation{
 		int sizeSum=0;
 		maxSize = 0;
 		fileNo = 0;
+		int spAvNo = 0;
+		
+		avalancheOneEpicenter = new int [ofc.N];
+		int specialEpicenter = ofc.N/2 + ofc.L/2;
 		
 		//equilibrate
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
@@ -173,12 +189,23 @@ public class OFC_NoAutoWriteApp extends Simulation{
 			ofc.step();
 			ofc.cgFailCountAdd();
 			
+
+			
 			int size = ofc.avSize;
 			sizeHist.accum(size);
 			if (size > maxSize) {
 				maxSize = size;
 			}
 			sizeSum += size;
+			if (ofc.epicenterSite == specialEpicenter){
+				spAvNo += 1;
+				System.out.println("Av " + spAvNo + " at time " + ofc.plateUpdates );
+				spSizeHist.accum(size);
+				for (int i = 0; i < ofc.N; i++){
+					avalancheOneEpicenter[i] += ofc.plateUpdateFailLocations[i];
+				}
+			}
+			
 			double iMet = 1.0/ofc.calcStressMetric();
 
 			if(ofc.plateUpdates > nextRecordTime){
