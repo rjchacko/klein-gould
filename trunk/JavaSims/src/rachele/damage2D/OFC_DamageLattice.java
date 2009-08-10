@@ -60,7 +60,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			fullyConnected = false;
 			noNbors = findCircleNbors(R);
 		}
-		System.out.println("Fully Connected = " + fullyConnected);
+
 		interactionTopology = params.sget("Interaction");
 //		CG_dt = params.fget("Coarse Grained dt");
 //		dt = params.fget("dt");
@@ -93,8 +93,11 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		noFails = new int [N];
 		maxNoFails = new int [N];
 		noNborsForSite = new int [N];
-		maxNbors = findMaxNoNbors();
-		nborList = new int [N][maxNbors];
+		maxNbors = findMaxNoNbors();		
+		if(interactionTopology == "Circle"){
+			nborList = new int [N][maxNbors];						
+		}
+
 		findNbors();
 		
 		for (int i = 0; i < N; i++){
@@ -117,11 +120,18 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	
 	public void findNbors(){
 		System.out.println("Finding neighbors");
-		if (interactionTopology == "Circle"){
-			findCircleNbors();
-		}//else if (interactionTopology == "Square"){	
-		//write the rest of this for other topologies	
-		//}
+		if(fullyConnected){
+			System.out.println("Fully connected");
+		}else{
+			if (interactionTopology == "Circle"){
+				findCircleNbors();
+			}else if(interactionTopology == "Square"){
+				System.out.println("Need circle code for find SquareNbors");
+				
+			}
+			//write the rest of this for other topologies	
+			//}			
+		}
 	}
 	
 	public int findMaxNoNbors(){
@@ -296,10 +306,11 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			noFails[s] = -1;
 			noDeadSites += 1;
 			stress[s] = 0;
-			for(int i = 0; i < maxNbors; i++){
-				noNborsForSite[nborList[s][i]] -= 1;
+			if(fullyConnected){
+
+			}else{
+				
 			}
-			
 		}
 	}
 	
@@ -325,6 +336,23 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		return s;
 	}
 	
+	public void failSiteForFC(int s){
+		double resStressWithNoise = calcResNoise(s);
+		double stressPerNbor = ((1-dissParam)*(stress[s] - resStressWithNoise))/(double)noNbors;
+		stress[s] = resStressWithNoise;
+		//distribute stress to the alive nbors
+		int checkAliveCount = 0;
+		for (int i = 0; i <= maxNbors; i++){
+			if(noFails[s] >= 0){
+				stress[s] += stressPerNbor;
+				checkAliveCount += 1;
+			}
+		}
+		stress[s] -= stressPerNbor;
+		plateUpdateFailLocations[s] += 1;
+		System.out.println("alive nbors " + noNborsForSite[s] + " " + checkAliveCount);
+	}
+	
 	public void failSiteWithList(int s){
 		double resStressWithNoise = calcResNoise(s);
 		double stressPerNbor = ((1-dissParam)*(stress[s] - resStressWithNoise))/(double)noNborsForSite[s];
@@ -340,8 +368,6 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		}
 		plateUpdateFailLocations[s] += 1;
 //		System.out.println("alive nbors " + noNborsForSite[s] + " " + checkAliveCount);
-
-
 	}
 	
 //	void failSiteWithRange(int s){
@@ -510,7 +536,6 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	
 	int fail(){
 		//Bring to Residual
-		//maybe need to generate a random list here??
 		//Changed so that all stress is summed 1st before added
 		// so I don't think a random list is needed, but
 		// may be needed for finite ranges.
@@ -526,6 +551,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				stress[site] = rStressWithNoise - excessStressPerNbor;
 				failList[site] = false;
 				noFailed += 1;
+				noNbors -= 1;
 			}
 		}
 		for(int i = 0; i < N; i++){
