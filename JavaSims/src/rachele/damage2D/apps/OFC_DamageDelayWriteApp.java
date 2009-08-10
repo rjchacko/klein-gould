@@ -145,7 +145,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 
 		// Equilibrate again
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
-		while (ofc.plateUpdates < 0){
+ 		while (ofc.plateUpdates < 0){
 			ofc.equilibrate();
 			Job.animate();
 		}
