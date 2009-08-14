@@ -1,6 +1,7 @@
 package rachele.damage2D.apps;
 
 import java.awt.Color;
+//import java.text.Format;
 //import java.io.File;
 import rachele.damage2D.OFC_DamageLattice;
 //import rachele.util.FileUtil;
@@ -54,6 +55,8 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 		params.addm("Lower Cutoff", 1);
 		params.addm("Mean Max Failures", 1);
 		params.addm("Failures Max Noise", 0);
+		params.addm("Mean Heal Time", 0);
+		params.addm("Heal Time Noise", 0);
 		params.add("L");
 		params.add("Time");
 		params.add("Av Size");
@@ -85,7 +88,7 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 		params.set("Time", Utilities.format(ofc.cg_time));
 		params.set("Plate Updates", ofc.plateUpdates);
 		double percentDead = ofc.noDeadSites/(double)(ofc.L*ofc.L);
-		params.set("Percent dead sites", percentDead);
+		params.set("Percent dead sites",  Utilities.format(percentDead));
 		params.set("Av Size", ofc.avSize);
 		if (percentDead >= 1.0) Job.signalStop();
 	}
@@ -97,11 +100,7 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 	public void run() {
 		ofc = new OFC_DamageLattice(params);
 		cg_dt = params.iget("Coarse Grained dt");
-//		double nextRecordTime = 0;
-//		boolean findActivityOmega0 = true; 
 		maxSize = 0;
-//		double activityOmega0 = 0;
-//		double CGstressOmega0 = 0;
 
 		//equilibrate
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
@@ -125,33 +124,6 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 			if (size > maxSize) {
 				maxSize = size;
 			}
-
-//			double iMet = ofc.calcInverseMetric();
-//
-//			if(ofc.cg_time > nextRecordTime){
-//
-//				double activityOmega = ofc.calcCG_activityMetric();
-//				double CGstressOmega = ofc.calcCG_stressMetric();
-//				if(findActivityOmega0){
-//					if(activityOmega != 0){
-//						activityOmega0 = activityOmega;
-//						findActivityOmega0 = false;
-//					}
-//					System.out.println("omega0 = " + activityOmega0 + " at time = " + ofc.cg_time);
-//					FileUtil.printlnToFile(iMetFile, "# Omega(t=0) = ", activityOmega0);
-//				}
-//				if(nextRecordTime == 0){
-//					CGstressOmega0 = CGstressOmega;
-//					System.out.println("omega0  stress= " + CGstressOmega0);
-//				}
-//				double cgInverseActivityMetric = activityOmega0/activityOmega;
-//				double cgInverseStressMetric = CGstressOmega0/CGstressOmega;
-//				double reducedTime = ofc.cg_time/cg_dt;
-//				FileUtil.printlnToFile(iMetFile, ofc.cg_time, iMet, reducedTime, cgInverseActivityMetric, cgInverseStressMetric, maxSize);
-//				nextRecordTime += cg_dt;
-//				maxSize = 0;
-//			}
-
 
 			Job.animate();
 		}
