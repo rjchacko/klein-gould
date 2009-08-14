@@ -60,7 +60,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		c.frame(deadGrid);
 
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
-		params.add("Interaction", new ChoiceValue( "Fully Connected", "Circle", "Square", "Small World") );
+		params.add("Interaction", new ChoiceValue( "Circle", "Fully Connected", "Square", "Small World") );
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 30);
 		params.addm("dx", 9);
@@ -68,13 +68,15 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		params.addm("Equilibration Updates", 500);
 		params.addm("Max PU", 1000000);
 		params.addm("Data points per write", 10);
-		params.addm("R", 0);// 0 -> fully connected
+		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.3);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
-		params.addm("Ave Failures", 3);
-		params.addm("Mean Max Noise", 2);
+		params.addm("Mean Max Failures", 1);
+		params.addm("Failures Max Noise", 0);
+		params.addm("Mean Heal Time", 0);
+		params.addm("Heal Time Noise", 0);
 		params.addm("Max Percent Damage", 0.05);
 		params.add("L");
 		params.add("Time");
@@ -135,10 +137,10 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		
 		// Kill
 		while (percentDead <= maxPercentDamage){
-			ofc.healPreStep();
+			ofc.damagePreStep();
 			Job.animate();
 			while (ofc.nextSiteToFail >= 0){
-				ofc.healStepIter();
+				ofc.damageStepIter();
 				Job.animate();
 			}	
 		}
@@ -155,8 +157,12 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		ofc.plateUpdates = 0;
 		
 		while(true){
-			ofc.ofcStep();
+			ofc.healPreStep();
 			Job.animate();
+			while (ofc.nextSiteToFail >= 0){
+				ofc.healStepIter();
+				Job.animate();
+			}	
 			
 			int size = ofc.avSize;
 			sizeHist.accum(size);

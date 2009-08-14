@@ -18,6 +18,8 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public int lowerCutoff;
 	public int meanMaxFail;  		// Mean value of the max no of fails before death
 	public int noiseMaxFail; 		// Max fail value = meanMaxFail +- eta where max eta = maxFailNoise
+	public int meanHealTime;			// average time before sites heal
+	public int noiseHealTime;		// heal time for site = aveHealTime +- eta where max eta = noiseHealTime
 	public boolean deadMode;
 	public int noDeadSites;
 	public int nextSiteToFail;
@@ -33,6 +35,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public int [][]nborList;  // List of neighbors for each site: nborList[site = 0..N-1][nbor index = 0..maxNbors]  This is gonna be really big
 	public int [] noNborsForSite;  // No of nbors at each site (for when different for each site.)
 	public int [] maxNoFails; //  Max no of fails for each site
+	public int [] healTime; // Time before site heals
 	public String interactionTopology;
 	public int [] plateUpdateFailLocations;  // Record all fail sites for one plate update
 	public int [] cgFailCount; //Counts 1 in a cg block if there is any site that fails in that block.
@@ -46,6 +49,8 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public void setParameters(Parameters params) {
 		meanMaxFail = params.iget("Mean Max Failures");
 		noiseMaxFail = params.iget("Failures Max Noise");
+		meanHealTime = params.iget("Mean Heal Time");
+		noiseHealTime = params.iget("Heal Time Noise");
 		if (meanMaxFail == 0) deadMode = false;
 		else deadMode = true;
 		Lp = params.iget("CG size");
@@ -94,6 +99,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		failList = new boolean [N];
 		noFails = new int [N];
 		maxNoFails = new int [N];
+		healTime = new int [N];
 		noNborsForSite = new int [N];
 		maxNbors = findMaxNoNbors();	
 		System.out.println("max no nbors = " + maxNbors);
@@ -112,6 +118,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			if(deadMode){
 //				maxNoFails[i] = meanMaxFail;									
 				maxNoFails[i] = meanMaxFail + (int)(random.nextDouble()*(double)(2*noiseMaxFail+1))-noiseMaxFail;
+				healTime[i] = meanHealTime +  (int)(random.nextDouble()*(double)(2*noiseHealTime+1))-noiseHealTime;
 //				if (i<L) System.out.println("no of fails = " + maxNoFails[i]);
 			}else{
 				maxNoFails[i] = meanMaxFail;									
@@ -340,25 +347,40 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public void healPreStep(){
 		bringToFailure();
 		failSite(epicenterSite);
-//		failSiteWithList(epicenterSite);
 		countFailAndCheckForDeath(epicenterSite);
 		nextSiteToFail = checkNextFailSite();
+		checkForHealing();
 		plateUpdates += 1;
 	}
 	
 	public void healStepIter(){
 		failSite(nextSiteToFail);
-//		failSiteWithList(nextSiteToFail);
 		countFailAndCheckForDeath(nextSiteToFail);
 		avSize += 1;
 		nextSiteToFail = checkNextFailSite();
 	}
 	
+	public void checkForHealing(){
+		int countHeal = 0;
+		for (int s = 0; s < N; s++){
+			if(noFails[s] < 0){
+				if(noFails[s] + plateUpdates >= healTime[s] ){
+					noFails[s] = 0;
+					noDeadSites -= 1;
+					for (int i = 0; i < maxNbors; i++){
+						noNborsForSite[nborList[s][i]] += 1;
+					}
+					countHeal+=1;
+				}
+			}
+		}
+		System.out.println("count heal = " + countHeal);
+	}
 	
 	public void countFailAndCheckForDeath(int s){
 		noFails[s] += 1;
 		if (noFails[s] >= maxNoFails[s]){
-			noFails[s] = -1;
+			noFails[s] = -plateUpdates;
 			noDeadSites += 1;
 			stress[s] = 0;
 			if(fullyConnected){
@@ -428,44 +450,6 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		plateUpdateFailLocations[s] += 1;
 //		System.out.println("alive nbors " + noNborsForSite[s] + " " + checkAliveCount);
 	}
-	
-//	void failSiteWithRange(int s){
-//		double resStressWithNoise = calcResNoise(s);
-//		double stressPerNbor = calcStressPerNbor(s, resStressWithNoise);
-//		stress[s] = resStressWithNoise;
-//		int x = s%L;
-//		int y = s/L;
-//		 for(int dy = -R; dy <= R; dy++){
-//			 for(int dx = -R; dx <= R; dx++){
-//				 double distance = Math.sqrt(dx*dx + dy*dy);
-//				 if (distance <= R){
-//					 int xx = (x+dx+L)%L;
-//					 int yy = (y+dy+L)%L;
-//					 int nborSite = yy*L+xx;
-//					 stress[nborSite] += stressPerNbor;
-//				 }
-//			 }
-//		 }
-//	}
-	
-//	void failSiteWithRangeAndDamage(int s){
-//		double resStressWithNoise = calcResNoise(s);
-//		double stressPerNbor = calcStressPerNbor(s, resStressWithNoise);
-//		stress[s] = resStressWithNoise;
-//		int x = s%L;
-//		int y = s/L;
-//		 for(int dy = -R; dy <= R; dy++){
-//			 for(int dx = -R; dx <= R; dx++){
-//				 double distance = Math.sqrt(dx*dx + dy*dy);
-//				 if (distance <= R){
-//					 int xx = (x+dx+L)%L;
-//					 int yy = (y+dy+L)%L;
-//					 int nborSite = yy*L+xx;
-//					 stress[nborSite] += stressPerNbor;
-//				 }
-//			 }
-//		 }
-//	}
 	
 	public double calcInverseMetric(){
 		double del_t = cg_time -lastRecordTime;
