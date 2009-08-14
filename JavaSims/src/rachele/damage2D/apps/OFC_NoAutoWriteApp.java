@@ -180,7 +180,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 
 		while (ofc.plateUpdates < 0){
 			ofc.equilibrate();
-			Job.animate();
+//			Job.animate();
 			if(ofc.plateUpdates == 0) Job.signalStop();
 		}
 		
@@ -188,8 +188,6 @@ public class OFC_NoAutoWriteApp extends Simulation{
 
 			ofc.step();
 			ofc.cgFailCountAdd();
-			
-
 			
 			int size = ofc.avSize;
 			sizeHist.accum(size);
@@ -204,6 +202,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 				for (int i = 0; i < ofc.N; i++){
 					avalancheOneEpicenter[i] += ofc.plateUpdateFailLocations[i];
 				}
+				Job.animate();
 			}
 			
 			double iMet = 1.0/ofc.calcStressMetric();
@@ -249,7 +248,7 @@ public class OFC_NoAutoWriteApp extends Simulation{
 
 			if(ofc.cg_time > maxTime) Job.signalStop();
 				
-			Job.animate();
+//			Job.animate();
 		}
 	}
 	

@@ -16,7 +16,8 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	double lastRecordTime;
 	double lastCG_SizeActRecordTime;
 	public int lowerCutoff;
-	public int meanMaxFail;  		//Mean value of the max no of fails before death
+	public int meanMaxFail;  		// Mean value of the max no of fails before death
+	public int noiseMaxFail; 		// Max fail value = meanMaxFail +- eta where max eta = maxFailNoise
 	public boolean deadMode;
 	public int noDeadSites;
 	public int nextSiteToFail;
@@ -43,7 +44,8 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 	
 	public void setParameters(Parameters params) {
-		meanMaxFail = params.iget("Max Failures");
+		meanMaxFail = params.iget("Mean Max Failures");
+		noiseMaxFail = params.iget("Failures Max Noise");
 		if (meanMaxFail == 0) deadMode = false;
 		else deadMode = true;
 		Lp = params.iget("CG size");
@@ -93,7 +95,8 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		noFails = new int [N];
 		maxNoFails = new int [N];
 		noNborsForSite = new int [N];
-		maxNbors = findMaxNoNbors();		
+		maxNbors = findMaxNoNbors();	
+		System.out.println("max no nbors = " + maxNbors);
 		if(interactionTopology == "Circle"){
 			nborList = new int [N][maxNbors];						
 		}
@@ -106,7 +109,14 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			failList[i] = false;
 			noFails[i] = 0;
 			CG_StressTimeAve[i] = 0;
-			maxNoFails[i] = meanMaxFail;
+			if(deadMode){
+//				maxNoFails[i] = meanMaxFail;									
+				maxNoFails[i] = meanMaxFail + (int)(random.nextDouble()*(double)(2*noiseMaxFail+1))-noiseMaxFail;
+//				if (i<L) System.out.println("no of fails = " + maxNoFails[i]);
+			}else{
+				maxNoFails[i] = meanMaxFail;									
+			}
+
 		}
 		for (int i = 0; i < Np; i++){
 			epicenterCount[i] = 0;
@@ -119,7 +129,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 	
 	public void findNbors(){
-		System.out.println("Finding neighbors");
+		System.out.println("Finding neighbors ");
 		if(fullyConnected){
 			System.out.println("Fully connected");
 		}else{
@@ -135,6 +145,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 	
 	public int findMaxNoNbors(){
+		System.out.println(interactionTopology);
 		int noNbors = 0;
 		if (interactionTopology == "Circle"){
 			noNbors = findNoCircleNbors();
@@ -145,6 +156,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		}else if (interactionTopology == "Fully Connected"){	
 			noNbors = N-1;
 			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
+			System.out.println("nbors = " + noNbors);
 		}else if (interactionTopology == "Small World"){	
 			System.out.println("Need small world code for findMaxNbors");
 		}		
@@ -194,25 +206,39 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public void equilibrate(){
 
 		epicenterSite = siteWithMaxStress();  //each checkFail loops through lattice once.
+//		System.out.println("epicenter = " + epicenterSite);
 		double stressAdd = tStress - stress[epicenterSite];
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
-		if(fullyConnected){
-			failList[epicenterSite] = true;
-			boolean failAgain = checkFailList();
-			while(failAgain){
-				avSize += fail();
-				failAgain = checkFailList();
-			}
-		}else{
-			failSiteWithList(epicenterSite);  //Just distributes stress to each neighbor
-			int nextSiteToFail = checkFail();  //each checkFail loops through lattice once.
-			avSize = 1;
-			while (nextSiteToFail >= 0){
-				failSiteWithList(nextSiteToFail);
-				nextSiteToFail = checkFail();
-				avSize += 1;
-			}
+		
+		failSite(epicenterSite);  //Just distributes stress to each neighbor
+//		System.out.println("Site failed");
+		int nextSiteToFail = checkFail();  //each checkFail loops through lattice once.
+		avSize = 1;
+		while (nextSiteToFail >= 0){
+			failSite(nextSiteToFail);
+			nextSiteToFail = checkFail();
+//			System.out.println("avSize = " + avSize + " nextSiteToFail = " + nextSiteToFail);
+			avSize += 1;
 		}
+//		System.out.println("av size = " + avSize);
+		
+//		if(fullyConnected){
+//			failList[epicenterSite] = true;
+//			boolean failAgain = checkFailList();
+//			while(failAgain){
+//				avSize += fail();
+//				failAgain = checkFailList();
+//			}
+//		}else{
+//			failSiteWithList(epicenterSite);  //Just distributes stress to each neighbor
+//			int nextSiteToFail = checkFail();  //each checkFail loops through lattice once.
+//			avSize = 1;
+//			while (nextSiteToFail >= 0){
+//				failSiteWithList(nextSiteToFail);
+//				nextSiteToFail = checkFail();
+//				avSize += 1;
+//			}
+//		}
 		plateUpdates += 1;
 
 	}
@@ -236,23 +262,41 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		bringToFailure();
 		dt=1;
 	
-		if(fullyConnected){
-			failList[epicenterSite] = true;
-			//Fail the failSite
-			boolean failAgain = checkFailList();
-			while(failAgain){
-				avSize += fail();
-				failAgain = checkFailList();
-			}
-		}else{
-			failSiteWithList(epicenterSite);
-			int nextSiteToFail = checkFail();
-			while (nextSiteToFail >= 0){
-				failSiteWithList(nextSiteToFail);
-				nextSiteToFail = checkFail();
-				avSize += 1;
-			}
+		failSite(epicenterSite);
+//		failSiteWithList(epicenterSite);
+		int nextSiteToFail = checkFail();
+		while(nextSiteToFail >= 0){
+//			failSiteWithList(nextSiteToFail);
+			failSite(nextSiteToFail);
+			nextSiteToFail = checkFail();
+			avSize += 1;
 		}
+		
+//		if(fullyConnected){
+//			failSiteForFC(epicenterSite);
+//			int nextSiteToFail = checkFail();
+//			while(nextSiteToFail >= 0){
+//				failSiteForFC(nextSiteToFail);
+//				nextSiteToFail = checkFail();
+//				avSize += 1;
+//			}
+//			
+////			failList[epicenterSite] = true;
+////			//Fail the failSite
+////			boolean failAgain = checkFailList();
+////			while(failAgain){
+////				avSize += fail();
+////				failAgain = checkFailList();
+////			}
+//		}else{
+//			failSiteWithList(epicenterSite);
+//			int nextSiteToFail = checkFail();
+//			while (nextSiteToFail >= 0){
+//				failSiteWithList(nextSiteToFail);
+//				nextSiteToFail = checkFail();
+//				avSize += 1;
+//			}
+//		}
 
 		if (avSize >= lowerCutoff){
 			int cgSite = findCG_site(epicenterSite);
@@ -268,14 +312,23 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	*/
 	public void damagePreStep(){
 		bringToFailure();
-		failSiteWithList(epicenterSite);
+		failSite(epicenterSite);
 		countFailAndCheckForDeath(epicenterSite);
 		nextSiteToFail = checkNextFailSite();
 		plateUpdates += 1;		
 	}
 
+	public void failSite(int s){
+//		System.out.println(fullyConnected);
+		if(fullyConnected){
+			failSiteForFC(s);
+		}else{
+			failSiteWithList(s);
+		}
+	}
+	
 	public void damageStepIter(){
-		failSiteWithList(nextSiteToFail);
+		failSite(nextSiteToFail);
 		countFailAndCheckForDeath(nextSiteToFail);
 		avSize += 1;
 		nextSiteToFail = checkNextFailSite();
@@ -286,14 +339,16 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	*/
 	public void healPreStep(){
 		bringToFailure();
-		failSiteWithList(epicenterSite);
+		failSite(epicenterSite);
+//		failSiteWithList(epicenterSite);
 		countFailAndCheckForDeath(epicenterSite);
 		nextSiteToFail = checkNextFailSite();
 		plateUpdates += 1;
 	}
 	
 	public void healStepIter(){
-		failSiteWithList(nextSiteToFail);
+		failSite(nextSiteToFail);
+//		failSiteWithList(nextSiteToFail);
 		countFailAndCheckForDeath(nextSiteToFail);
 		avSize += 1;
 		nextSiteToFail = checkNextFailSite();
@@ -307,9 +362,11 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			noDeadSites += 1;
 			stress[s] = 0;
 			if(fullyConnected){
-
+				noNbors -= 1;
 			}else{
-				
+				for (int i = 0; i < maxNbors; i++){
+					noNborsForSite[nborList[s][i]] -= 1;
+				}
 			}
 		}
 	}
@@ -342,15 +399,17 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		stress[s] = resStressWithNoise;
 		//distribute stress to the alive nbors
 		int checkAliveCount = 0;
+//		System.out.println(maxNbors);
 		for (int i = 0; i <= maxNbors; i++){
-			if(noFails[s] >= 0){
-				stress[s] += stressPerNbor;
+			if(noFails[i] >= 0){
+				stress[i] += stressPerNbor;
 				checkAliveCount += 1;
 			}
 		}
 		stress[s] -= stressPerNbor;
+		checkAliveCount -= 1;
 		plateUpdateFailLocations[s] += 1;
-		System.out.println("alive nbors " + noNborsForSite[s] + " " + checkAliveCount);
+//		System.out.println("alive nbors " + noNbors + " " + checkAliveCount);
 	}
 	
 	public void failSiteWithList(int s){

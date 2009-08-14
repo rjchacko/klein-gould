@@ -60,20 +60,21 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		c.frame(deadGrid);
 
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
-		params.add("Interaction", new ChoiceValue("Circle", "Fully Connected", "Square", "Small World") );
+		params.add("Interaction", new ChoiceValue( "Fully Connected", "Circle", "Square", "Small World") );
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 30);
 		params.addm("dx", 9);
 		params.addm("Coarse Grained dt (PU)", 100);
-		params.addm("Equilibration Updates", 500000);
+		params.addm("Equilibration Updates", 500);
 		params.addm("Max PU", 1000000);
 		params.addm("Data points per write", 10);
-		params.addm("R", 10);// 0 -> fully connected
+		params.addm("R", 0);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.3);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
-		params.addm("Max Failures", 1);
+		params.addm("Ave Failures", 3);
+		params.addm("Mean Max Noise", 2);
 		params.addm("Max Percent Damage", 0.05);
 		params.add("L");
 		params.add("Time");
@@ -124,6 +125,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		percentDead = 0;
 		
 		// Equilibrate
+		System.out.println("Equlibrating");
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
 		while (ofc.plateUpdates < 0){
 			ofc.equilibrate();
