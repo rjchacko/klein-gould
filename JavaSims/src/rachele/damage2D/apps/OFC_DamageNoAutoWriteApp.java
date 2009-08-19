@@ -55,7 +55,7 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 		params.addm("Lower Cutoff", 1);
 		params.addm("Mean Max Failures", 1);
 		params.addm("Failures Max Noise", 0);
-		params.addm("Mean Heal Time", 0);
+		params.addm("Mean Heal Time", 1);
 		params.addm("Heal Time Noise", 0);
 		params.add("L");
 		params.add("Time");
@@ -65,6 +65,7 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 	}
 
 	public void animate() {
+		grid.setScale(0.0, 1.0);
 		grid.registerData(ofc.L, ofc.L, ofc.stress);
 		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
 		int maxNoFails = params.iget("Mean Max Failures") + params.iget("Failures Max Noise");

@@ -23,6 +23,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public boolean deadMode;
 	public int noDeadSites;
 	public int nextSiteToFail;
+	public double initPercentDead;
 	int maxNbors;
 	
 	public double [] stressTimeAve;
@@ -83,6 +84,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		lastRecordTime = 0;
 		
 		lowerCutoff = params.iget("Lower Cutoff");
+		initPercentDead = params.fget("Init Percent Dead");
 	}
 	
 	public void initLattice(){
@@ -108,12 +110,13 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		}
 
 		findNbors();
+		noDeadSites = 0;
 		
 		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;
 			stressTimeAve[i] = stress[i];
 			failList[i] = false;
-			noFails[i] = 0;
+
 			CG_StressTimeAve[i] = 0;
 			if(deadMode){
 //				maxNoFails[i] = meanMaxFail;									
@@ -123,6 +126,21 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			}else{
 				maxNoFails[i] = meanMaxFail;									
 			}
+//			noFails[i] = 0;
+			
+			if(random.nextDouble() > initPercentDead){
+				//the site is alive
+				//assign no of fails uniformly between 0 and maxNoFails - 1
+				noFails[i] = (int)(random.nextDouble()*((double)maxNoFails[i]+1.0));
+				System.out.println(i + " alive maxNoFails = " + maxNoFails[i] + " noFails = " + noFails[i]);
+			}else{
+				//the site is dead
+				noDeadSites+=1;
+				//assign a heal time uniformly between -1 and -healtime+1
+				noFails[i] = -((int)(random.nextDouble()*(double)(healTime[i]-1))+1);
+				System.out.println(i + " dead healTime = " + healTime[i] + " noFails = " + noFails[i]);
+			}
+	
 
 		}
 		for (int i = 0; i < Np; i++){
@@ -132,7 +150,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		metric0 = calcMetric0();
 		cg_time = 0;
 		plateUpdates = 0;
-		noDeadSites = 0;
+
 	}
 	
 	public void findNbors(){
@@ -278,51 +296,32 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			nextSiteToFail = checkFail();
 			avSize += 1;
 		}
-		
-//		if(fullyConnected){
-//			failSiteForFC(epicenterSite);
-//			int nextSiteToFail = checkFail();
-//			while(nextSiteToFail >= 0){
-//				failSiteForFC(nextSiteToFail);
-//				nextSiteToFail = checkFail();
-//				avSize += 1;
-//			}
-//			
-////			failList[epicenterSite] = true;
-////			//Fail the failSite
-////			boolean failAgain = checkFailList();
-////			while(failAgain){
-////				avSize += fail();
-////				failAgain = checkFailList();
-////			}
-//		}else{
-//			failSiteWithList(epicenterSite);
-//			int nextSiteToFail = checkFail();
-//			while (nextSiteToFail >= 0){
-//				failSiteWithList(nextSiteToFail);
-//				nextSiteToFail = checkFail();
-//				avSize += 1;
-//			}
-//		}
 
+		cgEpicenterSizeAccum();
+		cg_time += dt;
+		plateUpdates += 1;
+	}
+	
+	
+	public void cgEpicenterSizeAccum(){
 		if (avSize >= lowerCutoff){
 			int cgSite = findCG_site(epicenterSite);
 			epicenterCount[cgSite] +=1;
 			epicenterSize[cgSite] += avSize;
 		}
-		cg_time += dt;
-		plateUpdates += 1;
+		
 	}
-	
 	/**
 	* One step in Damage OFC mode- accumulate no of fails, kill sites > maxFail
 	*/
 	public void damagePreStep(){
+		dt = 1;
 		bringToFailure();
 		failSite(epicenterSite);
 		countFailAndCheckForDeath(epicenterSite);
 		nextSiteToFail = checkNextFailSite();
-		plateUpdates += 1;		
+		plateUpdates += 1;	
+		cg_time += dt;
 	}
 
 	public void failSite(int s){
@@ -345,12 +344,13 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	* One step in Damage/Healing Mode- sites fail, die and are healed.
 	*/
 	public void healPreStep(){
+		dt = 1;
 		bringToFailure();
 		failSite(epicenterSite);
 		countFailAndCheckForDeath(epicenterSite);
 		nextSiteToFail = checkNextFailSite();
-		checkForHealing();
 		plateUpdates += 1;
+		cg_time += dt;
 	}
 	
 	public void healStepIter(){
@@ -363,14 +363,21 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public void checkForHealing(){
 		int countHeal = 0;
 		for (int s = 0; s < N; s++){
+//			System.out.println("noFails = " + s + " " +noFails[s]);
 			if(noFails[s] < 0){
-				if(noFails[s] + plateUpdates >= healTime[s] ){
+//				int testNo=Math.abs(noFails[s] - (plateUpdates));
+//				System.out.println("test no = " + testNo + " healTime[s] = " + healTime[s]);
+//				if(testNo >= healTime[s]){
+				//heal the site
+				if(noFails[s] <= -healTime[s]){
 					noFails[s] = 0;
 					noDeadSites -= 1;
 					for (int i = 0; i < maxNbors; i++){
 						noNborsForSite[nborList[s][i]] += 1;
 					}
 					countHeal+=1;
+				}else{
+					noFails[s] -= 1;
 				}
 			}
 		}
@@ -380,9 +387,10 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public void countFailAndCheckForDeath(int s){
 		noFails[s] += 1;
 		if (noFails[s] >= maxNoFails[s]){
-			noFails[s] = -plateUpdates;
+//			noFails[s] = -Math.abs(plateUpdates);
+			noFails[s] = -1;
 			noDeadSites += 1;
-			stress[s] = 0;
+//			stress[s] = 0;
 			if(fullyConnected){
 				noNbors -= 1;
 			}else{
