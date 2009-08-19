@@ -20,7 +20,7 @@ public class AbstractCG_OFC {
 	double rStress;				// base residual stress
 	double dissParam;			// dissipation paramater, aka alpha			
 	double maxResNoise; 		// actual residual stress = rStress + residual noise with maxResNoise = max residual noise
-	boolean fullyConnected;
+	public boolean fullyConnected;
 	public int [] epicenterCount;
 	public double [] stress;
 	Random random = new Random();

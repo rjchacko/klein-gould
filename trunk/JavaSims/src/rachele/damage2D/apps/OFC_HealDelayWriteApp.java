@@ -20,10 +20,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.util.Utilities;
 
-/**
-* Equilibrate in OFC, run in damage to max percent damage, equilibrate again in OFC, take data in OFC
-*/
-public class OFC_DamageDelayWriteApp extends Simulation{
+public class OFC_HealDelayWriteApp extends Simulation{
 
 	int dt;
 	Grid grid = new Grid("Lattice");
@@ -36,9 +33,11 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 	String iMetFile;
 	String sizeHistFile;
 	String sizeFile;
+	String damageFile;
 	int maxSize;	
 	int cg_dt;
 	double percentDead;
+	double maxPercentDead;
 	double maxPercentDamage;
 	
 	OFC_DamageLattice ofc;
@@ -50,34 +49,36 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 	Accumulator invSizeActMetTempAcc = new Accumulator();
 	Accumulator	cgMaxSizeActBoxTempAcc = new Accumulator();
 	Accumulator timeAveForMaxCGSizeActTempAcc = new Accumulator();
+	Accumulator damagePercentTempAcc = new Accumulator();
 	
 	public static void main(String[] args) {
-		new Control(new OFC_DamageDelayWriteApp(), "OFC Damage Model");
+		new Control(new OFC_HealDelayWriteApp(), "OFC Damage-Healing Model");
 	}
 
 	public void load(Control c) {
 		c.frameTogether("Grids", grid, cgGrid, plateUpdateGrid, cgGridTimeAverage);
 		c.frame(deadGrid);
-
+		
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.add("Interaction", new ChoiceValue( "Circle", "Fully Connected", "Square", "Small World") );
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 32);
-		params.addm("dx", 8);
-		params.addm("Coarse Grained dt (PU)", 100);
-		params.addm("Equilibration Updates", 500000);
+		params.addm("CG size", 30);
+		params.addm("dx", 9);
+		params.addm("Coarse Grained dt (PU)", 10);
+		params.addm("Equilibration Updates", 500);
 		params.addm("Max PU", 1000000);
-		params.addm("Data points per write", 10);
+		params.addm("Data points per write", 100);
 		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.3);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
-		params.addm("Mean Max Failures", 2);
-		params.addm("Failures Max Noise", 1);
-		params.addm("Mean Heal Time", 2);
-		params.addm("Heal Time Noise", 1);
-		params.addm("Max Percent Damage", 0.05);
+		params.addm("Mean Max Failures", 0);
+		params.addm("Failures Max Noise", 0);
+		params.addm("Mean Heal Time", 1);
+		params.addm("Heal Time Noise", 0);
+		params.addm("Init Percent Dead", .5);
+//		params.addm("Max Percent Damage", 0.05);
 		params.add("L");
 		params.add("Time");
 		params.add("Av Size");
@@ -91,7 +92,14 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		cgGrid.registerData(ofc.Lp, ofc.Lp, ofc.epicenterCount);
 		cgGridTimeAverage.registerData(ofc.Lp, ofc.Lp, ofc.CG_ActivityTimeAve);
 		plateUpdateGrid.registerData(ofc.L, ofc.L, ofc.plateUpdateFailLocations);
-		deadGrid.registerData(ofc.L, ofc.L, ofc.noFails);
+//		int maxNoFails = params.iget("Mean Max Failures") + params.iget("Failures Max Noise");
+		deadGrid.setScale(0,1);
+		double [] deadLattice = new double [ofc.N];
+		for (int i = 0; i <ofc.N; i ++){
+			deadLattice[i] = (ofc.noFails[i] < 0) ? 0:1;
+		}
+		deadGrid.registerData(ofc.L, ofc.L, deadLattice);
+		System.out.println(ofc.noFails[0] + "  " + ofc.noFails[1] + " " + ofc.noFails[2]);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
@@ -102,7 +110,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		
 		params.set("Time", Utilities.format(ofc.cg_time));
 		params.set("Plate Updates", ofc.plateUpdates);
-		percentDead = ofc.noDeadSites/(double)(ofc.L*ofc.L);
+
 		params.set("Percent dead sites", Utilities.format(percentDead));
 		params.set("Av Size", ofc.avSize);
 
@@ -117,68 +125,59 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		initFiles();
 		
 		dt = params.iget("Coarse Grained dt (PU)");
-		maxPercentDamage = params.fget("Max Percent Damage");
+//		maxPercentDamage = params.fget("Max Percent Damage");
 		double nextAccumTime = 0;
 		int maxTime = params.iget("Max PU");
 		int dataPointsPerWrite = params.iget("Data points per write");
 		
 		maxSize = 0;
+		maxPercentDead = 0;
 		int dataPointsCount = 0;
 		percentDead = 0;
 		
-		// Equilibrate
+		// Equilibrate in heal mode
 		System.out.println("Equlibrating");
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
 		while (ofc.plateUpdates < 0){
-			ofc.equilibrate();
-			Job.animate();
-		}
-		System.out.println("Finished Equilibration 1");
-		
-		// Kill
-		while (percentDead <= maxPercentDamage){
-			ofc.damagePreStep();
+//			System.out.println(ofc.fullyConnected);
+			ofc.healPreStep();
 			Job.animate();
 			while (ofc.nextSiteToFail >= 0){
-				ofc.damageStepIter();
+				ofc.healStepIter();
+				percentDead = ofc.noDeadSites/(double)(ofc.L*ofc.L);
 				Job.animate();
-			}	
+			}
+			ofc.checkForHealing();
 		}
-		System.out.println(percentDead + " dead after " + ofc.plateUpdates + " PU");
-		FileUtil.printlnToFile(iMetFile, "# ", percentDead, " percent dead after " , ofc.plateUpdates, " PU.");
-
-		// Equilibrate again
-		ofc.initEquilibrate(params.iget("Equilibration Updates"));
- 		while (ofc.plateUpdates < 0){
-			ofc.equilibrate();
-			Job.animate();
-		}
-		System.out.println("Finished Equilibration 2");
-		ofc.plateUpdates = 0;
+		System.out.println("Finished Equilibration");
+		ofc.cg_time = 0;
 		
 		while(true){
-//			ofc.healPreStep();
-//			Job.animate();
-//			while (ofc.nextSiteToFail >= 0){
-//				ofc.healStepIter();
-//				Job.animate();
-//			}	
-			
-			ofc.ofcStep();
+			ofc.healPreStep();
 			Job.animate();
+			while (ofc.nextSiteToFail >= 0){
+				ofc.healStepIter();
+				Job.animate();
+			}	
+			ofc.checkForHealing();
+			ofc.cgEpicenterSizeAccum();
 			
 			int size = ofc.avSize;
 			sizeHist.accum(size);
-			if (size > maxSize) {
-				maxSize = size;
-			}
+			if (size > maxSize) maxSize = size;
+			
+			percentDead = ofc.noDeadSites/(double)(ofc.L*ofc.L);
+			if(percentDead > maxPercentDead) maxPercentDead = percentDead;
+			
 			double stressMetric = ofc.calcStressMetric();
-//			System.out.println(nextAccumTime);
+			
 			if(ofc.plateUpdates > nextAccumTime){ //Accumulate data to be written
 				Job.animate();
 				
 				//maxSize
 				maxSizeTempAcc.accum(ofc.cg_time, maxSize);
+				damagePercentTempAcc.accum(ofc.cg_time, percentDead);
+//				System.out.println(percentDead);
 				
 				int maxEpicenter=0;
 				int loc = 0;
@@ -208,6 +207,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 				nextAccumTime += dt;
 				dataPointsCount += 1;
 				maxSize = 0;
+				maxPercentDead = 0;
 
 			}
 			
@@ -220,6 +220,8 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 				
 				printAccumsToFile2(sizeFile, maxSizeTempAcc,cgMaxSizeActBoxTempAcc, timeAveForMaxCGSizeActTempAcc);
 			
+				FileUtil.printAccumToFileNoErrorBars(damageFile, damagePercentTempAcc);
+				
 				//restart counts
 				maxSize = 0;
 				dataPointsCount = 0;
@@ -232,11 +234,12 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 				invSizeActMetTempAcc.clear();
 				cgMaxSizeActBoxTempAcc.clear();
 				timeAveForMaxCGSizeActTempAcc.clear();
+				damagePercentTempAcc.clear();
 
 			}
 
 		
-			if(ofc.plateUpdates > maxTime) Job.signalStop();
+			if(ofc.plateUpdates%maxTime == 0) Job.signalStop();
 
 		}
 	}
@@ -280,6 +283,8 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";
 		FileUtil.initFile(sizeFile, params, "time (plate updates),  max avalanche size, time/coarse grained time,");
 		sizeHistFile = params.sget("Data Dir") + File.separator + "sh.txt";	//to record size histogram data
+		damageFile = params.sget("Data Dir") + File.separator + "d.txt";	//to record percent damage
+		FileUtil.initFile(damageFile, params, "time (plate updates),  max percent damage");
 
 	}
 }
