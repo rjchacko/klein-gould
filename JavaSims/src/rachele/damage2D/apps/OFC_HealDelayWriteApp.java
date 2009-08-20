@@ -65,9 +65,9 @@ public class OFC_HealDelayWriteApp extends Simulation{
 		params.addm("CG size", 30);
 		params.addm("dx", 9);
 		params.addm("Coarse Grained dt (PU)", 10);
-		params.addm("Equilibration Updates", 500);
+		params.addm("Equilibration Updates", 500000);
 		params.addm("Max PU", 1000000);
-		params.addm("Data points per write", 100);
+		params.addm("Data points per write", 10);
 		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.3);
@@ -75,7 +75,7 @@ public class OFC_HealDelayWriteApp extends Simulation{
 		params.addm("Lower Cutoff", 1);
 		params.addm("Mean Max Failures", 0);
 		params.addm("Failures Max Noise", 0);
-		params.addm("Mean Heal Time", 1);
+		params.addm("Mean Heal Time", 24000);
 		params.addm("Heal Time Noise", 0);
 		params.addm("Init Percent Dead", .5);
 //		params.addm("Max Percent Damage", 0.05);
@@ -99,7 +99,7 @@ public class OFC_HealDelayWriteApp extends Simulation{
 			deadLattice[i] = (ofc.noFails[i] < 0) ? 0:1;
 		}
 		deadGrid.registerData(ofc.L, ofc.L, deadLattice);
-		System.out.println(ofc.noFails[0] + "  " + ofc.noFails[1] + " " + ofc.noFails[2]);
+//		System.out.println(ofc.noFails[0] + "  " + ofc.noFails[1] + " " + ofc.noFails[2]);
 		
 		grid.clearDrawables();
 		double radius = 1.0/(2.0*ofc.L);
