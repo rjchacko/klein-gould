@@ -48,12 +48,15 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 	
 	public void setParameters(Parameters params) {
+		System.out.println("Setting params");
 		meanMaxFail = params.iget("Mean Max Failures");
 		noiseMaxFail = params.iget("Failures Max Noise");
 		meanHealTime = params.iget("Mean Heal Time");
+		System.out.println("mean heal time = " + meanHealTime);
 		noiseHealTime = params.iget("Heal Time Noise");
-		if (meanMaxFail == 0) deadMode = false;
-		else deadMode = true;
+//		if (meanMaxFail == 0) deadMode = false;
+//		else deadMode = true;
+		deadMode = true;
 		Lp = params.iget("CG size");
 		dx = params.iget("dx");
 		L = Lp*dx;
@@ -88,6 +91,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 	
 	public void initLattice(){
+		System.out.println("Initializing lattice");
 		stress = new double [N];
 		stressTimeAve = new double [N];
 		epicenterCount = new int [Np];
@@ -112,6 +116,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		findNbors();
 		noDeadSites = 0;
 		
+		System.out.println("Setting max fails, heal times, and noFails");
 		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;
 			stressTimeAve[i] = stress[i];
@@ -381,7 +386,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				}
 			}
 		}
-		System.out.println("count heal = " + countHeal);
+//		System.out.println("count heal = " + countHeal);
 	}
 	
 	public void countFailAndCheckForDeath(int s){
