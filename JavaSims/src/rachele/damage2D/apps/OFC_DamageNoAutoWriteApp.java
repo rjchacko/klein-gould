@@ -99,7 +99,7 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 
 	
 	public void run() {
-		ofc = new OFC_DamageLattice(params);
+		ofc = new OFC_DamageLattice(params, "damage");
 		cg_dt = params.iget("Coarse Grained dt");
 		maxSize = 0;
 

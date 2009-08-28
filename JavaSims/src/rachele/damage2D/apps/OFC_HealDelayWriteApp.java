@@ -121,7 +121,7 @@ public class OFC_HealDelayWriteApp extends Simulation{
 
 	
 	public void run() {
-		ofc = new OFC_DamageLattice(params);
+		ofc = new OFC_DamageLattice(params, "heal");
 		initFiles();
 		
 		dt = params.iget("Coarse Grained dt (PU)");
