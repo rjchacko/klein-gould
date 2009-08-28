@@ -42,18 +42,20 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public int [] cgFailCount; //Counts 1 in a cg block if there is any site that fails in that block.
 	public int [] epicenterSize;
 	
-	public OFC_DamageLattice(Parameters params) {
-		setParameters(params);
-		initLattice();
+	public OFC_DamageLattice(Parameters params, String mode) {
+		setParameters(params, mode);
+		initLattice(mode);
 	}
 	
-	public void setParameters(Parameters params) {
+	public void setParameters(Parameters params, String mode) {
 		System.out.println("Setting params");
 		meanMaxFail = params.iget("Mean Max Failures");
 		noiseMaxFail = params.iget("Failures Max Noise");
-		meanHealTime = params.iget("Mean Heal Time");
-		System.out.println("mean heal time = " + meanHealTime);
-		noiseHealTime = params.iget("Heal Time Noise");
+		if(mode == "heal"){
+			meanHealTime = params.iget("Mean Heal Time");
+			System.out.println("mean heal time = " + meanHealTime);
+			noiseHealTime = params.iget("Heal Time Noise");
+		}
 //		if (meanMaxFail == 0) deadMode = false;
 //		else deadMode = true;
 		deadMode = true;
@@ -90,7 +92,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		initPercentDead = params.fget("Init Percent Dead");
 	}
 	
-	public void initLattice(){
+	public void initLattice(String mode){
 		System.out.println("Initializing lattice");
 		stress = new double [N];
 		stressTimeAve = new double [N];
@@ -105,7 +107,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		failList = new boolean [N];
 		noFails = new int [N];
 		maxNoFails = new int [N];
-		healTime = new int [N];
+		if(mode == "heal") healTime = new int [N];
 		noNborsForSite = new int [N];
 		maxNbors = findMaxNoNbors();	
 		System.out.println("max no nbors = " + maxNbors);
@@ -126,7 +128,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			if(deadMode){
 //				maxNoFails[i] = meanMaxFail;									
 				maxNoFails[i] = meanMaxFail + (int)(random.nextDouble()*(double)(2*noiseMaxFail+1))-noiseMaxFail;
-				healTime[i] = meanHealTime +  (int)(random.nextDouble()*(double)(2*noiseHealTime+1))-noiseHealTime;
+				if(mode == "heal") healTime[i] = meanHealTime +  (int)(random.nextDouble()*(double)(2*noiseHealTime+1))-noiseHealTime;
 //				if (i<L) System.out.println("no of fails = " + maxNoFails[i]);
 			}else{
 				maxNoFails[i] = meanMaxFail;									
@@ -142,8 +144,13 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				//the site is dead
 				noDeadSites+=1;
 				//assign a heal time uniformly between -1 and -healtime+1
-				noFails[i] = -((int)(random.nextDouble()*(double)(healTime[i]-1))+1);
-				System.out.println(i + " dead healTime = " + healTime[i] + " noFails = " + noFails[i]);
+				if(mode == "heal"){
+					noFails[i] = -((int)(random.nextDouble()*(double)(healTime[i]-1))+1);
+					System.out.println(i + " dead healTime = " + healTime[i] + " noFails = " + noFails[i]);
+				}else{
+					noFails[i] = -1;
+				}
+
 			}
 	
 
@@ -235,15 +242,12 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	
 	public void equilibrate(){
 
-		epicenterSite = siteWithMaxStress();  //each checkFail loops through lattice once.
-//		System.out.println("epicenter = " + epicenterSite);
-		double stressAdd = tStress - stress[epicenterSite];
-		for (int i = 0; i < N; i++) stress[i] += stressAdd;
+		bringToFailure();
 		
 		failSite(epicenterSite);  //Just distributes stress to each neighbor
 //		System.out.println("Site failed");
 		int nextSiteToFail = checkFail();  //each checkFail loops through lattice once.
-		avSize = 1;
+//		avSize = 1;
 		while (nextSiteToFail >= 0){
 			failSite(nextSiteToFail);
 			nextSiteToFail = checkFail();
@@ -464,18 +468,18 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 //		System.out.println("alive nbors " + noNborsForSite[s] + " " + checkAliveCount);
 	}
 	
-	public double calcInverseMetric(){
-		double del_t = cg_time -lastRecordTime;
-		for(int i=0; i < N; i++)
-			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
-		double spaceSum = DoubleArray.sum(stressTimeAve);
-		double spaceTimeStressAve = (spaceSum)/(double)(N);
-		double metricSum = 0;
-		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
-		double inverseMetric = (double)(N)*metric0/metricSum;
-		lastRecordTime = cg_time;
-		return inverseMetric;
-	}
+//	public double calcInverseMetric(){
+//		double del_t = cg_time -lastRecordTime;
+//		for(int i=0; i < N; i++)
+//			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
+//		double spaceSum = DoubleArray.sum(stressTimeAve);
+//		double spaceTimeStressAve = (spaceSum)/(double)(N);
+//		double metricSum = 0;
+//		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
+//		double inverseMetric = (double)(N)*metric0/metricSum;
+//		lastRecordTime = cg_time;
+//		return inverseMetric;
+//	}
 
 	public double calcStressMetric(){
 		double del_t = cg_time -lastRecordTime;
@@ -490,6 +494,31 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		return stressMetric;
 	}
 
+	/**
+	* Only includes sites that are alive in the metric calculation
+	*/
+	public double calcLiveStressMetric(){
+		double del_t = cg_time -lastRecordTime;
+		for(int i=0; i < N; i++)
+			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
+		double spaceSum = 0.0;
+		int noAlive = 0;
+		for(int i=0; i < N; i++){
+			if(noFails[i] >= 0){
+				noAlive += 1;
+				spaceSum += stressTimeAve[i];
+			}
+		}
+		double spaceTimeStressAve = (spaceSum)/(double)(noAlive);
+		double metricSum = 0;
+		for (int i = 0; i < N; i++){
+			if(noFails[i] >= 0) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
+		}
+		double stressMetric = metricSum/(double)noAlive;
+		lastRecordTime = cg_time;
+		return stressMetric;
+	}
+	
 	//fixed to CG in space and time
 	public double calcCG_stressMetric(){
 		double del_t = cg_time - lastCG_StressRecordTime;
