@@ -20,7 +20,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.util.Utilities;
 
-public class OFC_HealDelayWriteApp extends Simulation{
+public class OFC_HealFrozenDelayWriteApp extends Simulation{
 
 	int dt;
 	Grid grid = new Grid("Lattice");
@@ -52,7 +52,7 @@ public class OFC_HealDelayWriteApp extends Simulation{
 	Accumulator damagePercentTempAcc = new Accumulator();
 	
 	public static void main(String[] args) {
-		new Control(new OFC_HealDelayWriteApp(), "OFC Damage-Healing Model");
+		new Control(new OFC_HealFrozenDelayWriteApp(), "OFC Damage-Healing Model");
 	}
 
 	public void load(Control c) {
@@ -121,7 +121,7 @@ public class OFC_HealDelayWriteApp extends Simulation{
 
 	
 	public void run() {
-		ofc = new OFC_DamageLattice(params, "heal");
+		ofc = new OFC_DamageLattice(params, "healFrozen");
 		initFiles();
 		
 		dt = params.iget("Coarse Grained dt (PU)");
@@ -147,7 +147,7 @@ public class OFC_HealDelayWriteApp extends Simulation{
 				percentDead = ofc.noDeadSites/(double)(ofc.L*ofc.L);
 				Job.animate();
 			}
-			ofc.checkForHealing();
+			ofc.checkForFrozenHealing();
 		}
 		System.out.println("Finished Equilibration");
 		ofc.cg_time = 0;
@@ -159,7 +159,7 @@ public class OFC_HealDelayWriteApp extends Simulation{
 				ofc.healStepIter();
 				Job.animate();
 			}	
-			ofc.checkForHealing();
+			ofc.checkForFrozenHealing();
 			ofc.cgEpicenterSizeAccum();
 			
 			int size = ofc.avSize;

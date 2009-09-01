@@ -24,6 +24,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public int noDeadSites;
 	public int nextSiteToFail;
 	public double initPercentDead;
+	public double healProb; 		// Probability of healing a dead site when mode = healProb
 	int maxNbors;
 	
 	public double [] stressTimeAve;
@@ -51,10 +52,12 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		System.out.println("Setting params");
 		meanMaxFail = params.iget("Mean Max Failures");
 		noiseMaxFail = params.iget("Failures Max Noise");
-		if(mode == "heal"){
+		if(mode == "healFrozen"){
 			meanHealTime = params.iget("Mean Heal Time");
 			System.out.println("mean heal time = " + meanHealTime);
 			noiseHealTime = params.iget("Heal Time Noise");
+		}else if(mode == "healProb"){
+			healProb = params.fget("Heal Probability");
 		}
 //		if (meanMaxFail == 0) deadMode = false;
 //		else deadMode = true;
@@ -107,7 +110,9 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		failList = new boolean [N];
 		noFails = new int [N];
 		maxNoFails = new int [N];
-		if(mode == "heal") healTime = new int [N];
+		if(mode == "healFrozen"){
+			healTime = new int [N];
+		}
 		noNborsForSite = new int [N];
 		maxNbors = findMaxNoNbors();	
 		System.out.println("max no nbors = " + maxNbors);
@@ -128,7 +133,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			if(deadMode){
 //				maxNoFails[i] = meanMaxFail;									
 				maxNoFails[i] = meanMaxFail + (int)(random.nextDouble()*(double)(2*noiseMaxFail+1))-noiseMaxFail;
-				if(mode == "heal") healTime[i] = meanHealTime +  (int)(random.nextDouble()*(double)(2*noiseHealTime+1))-noiseHealTime;
+				if(mode == "healFrozen") healTime[i] = meanHealTime +  (int)(random.nextDouble()*(double)(2*noiseHealTime+1))-noiseHealTime;
 //				if (i<L) System.out.println("no of fails = " + maxNoFails[i]);
 			}else{
 				maxNoFails[i] = meanMaxFail;									
@@ -144,7 +149,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				//the site is dead
 				noDeadSites+=1;
 				//assign a heal time uniformly between -1 and -healtime+1
-				if(mode == "heal"){
+				if(mode == "healFrozen"){
 					noFails[i] = -((int)(random.nextDouble()*(double)(healTime[i]-1))+1);
 					System.out.println(i + " dead healTime = " + healTime[i] + " noFails = " + noFails[i]);
 				}else{
@@ -369,7 +374,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		nextSiteToFail = checkNextFailSite();
 	}
 	
-	public void checkForHealing(){
+	public void checkForFrozenHealing(){
 		int countHeal = 0;
 		for (int s = 0; s < N; s++){
 //			System.out.println("noFails = " + s + " " +noFails[s]);
@@ -391,6 +396,22 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			}
 		}
 //		System.out.println("count heal = " + countHeal);
+	}
+	
+	public void checkForProbHealing(){
+		int countHeal = 0;
+		for (int s = 0; s < N; s++){
+			if(noFails[s] < 0){
+				if(random.nextDouble() <= healProb){
+					noFails[s] = 0;
+					noDeadSites -= 1;
+					for (int i = 0; i < maxNbors; i++){
+						noNborsForSite[nborList[s][i]] += 1;
+					}
+					countHeal+=1;
+				}
+			}
+		}
 	}
 	
 	public void countFailAndCheckForDeath(int s){
