@@ -19,7 +19,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 import scikit.util.Utilities;
 
-public class OFC_DelayWriteApp extends Simulation{
+public class OFC_cgClusterDelayWriteApp extends Simulation{
 
 	int dt;
 	Grid grid = new Grid("Lattice");
@@ -31,8 +31,9 @@ public class OFC_DelayWriteApp extends Simulation{
 	String iMetFile;
 	String sizeHistFile;
 	String sizeFile;
-
+	String specialBoxFile;
 	int maxSize;
+	int specialBox;
 	
 	Accumulator invStressMetTempAcc = new Accumulator();
 	Accumulator cgInvStressMetTempAcc = new Accumulator();
@@ -42,9 +43,10 @@ public class OFC_DelayWriteApp extends Simulation{
 	Accumulator	cgMaxSizeActBoxTempAcc = new Accumulator();
 	Accumulator	cgMaxSizeActLocationTempAcc = new Accumulator();
 	Accumulator timeAveForMaxCGSizeActTempAcc = new Accumulator();
+	Accumulator specialBoxTempAcc = new Accumulator();
 	
 	public static void main(String[] args) {
-		new Control(new OFC_DelayWriteApp(), "OFC Model");
+		new Control(new OFC_cgClusterDelayWriteApp(), "OFC Model- clusters");
 	}
 	
 	public void load(Control c) {
@@ -52,16 +54,17 @@ public class OFC_DelayWriteApp extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
 		params.addm("CG size", 32);
-		params.addm("dx", 8);
+		params.addm("dx", 4);
 		params.addm("Coarse Grained dt (PU)", 1);
-		params.addm("Equilibration Updates", 10000);
+		params.addm("Equilibration Updates", 100);
 		params.addm("Max PU", 1000000);
 		params.addm("Data points per write", 1000);
-		params.addm("R", 16);// 0 -> fully connected
+		params.addm("R", 4);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Dissipation Param", 0.1);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
+		params.addm("Special Box", 290);
 		params.add("L");
 		params.add("CG Time");
 		params.add("Size");
@@ -95,6 +98,7 @@ public class OFC_DelayWriteApp extends Simulation{
 		double nextAccumTime = 0;
 		int maxTime = params.iget("Max PU");
 		int dataPointsPerWrite = params.iget("Data points per write");
+		specialBox = params.iget("Special Box");
 		
 		maxSize = 0;
 		int dataPointsCount = 0;
@@ -117,11 +121,13 @@ public class OFC_DelayWriteApp extends Simulation{
 //			double stressMetric = ofc.calcStressMetric();
 
 			if(ofc.plateUpdates > nextAccumTime){ //Accumulate data to be written
-//				System.out.println("nextAccumTime = " + nextAccumTime);
 				Job.animate();
 				
 				//maxSize
-				maxSizeTempAcc.accum(ofc.plateUpdates, maxSize);
+				maxSizeTempAcc.accum(ofc.cg_time, maxSize);
+		
+
+//				System.out.println(specialBox);
 				
 				int maxEpicenter=0;
 				int loc = 0;
@@ -131,10 +137,16 @@ public class OFC_DelayWriteApp extends Simulation{
 						loc = i;
 					}
 				}
+				
+//				System.out.println(maxEpicenter + " at " + loc);
 				cgMaxSizeActBoxTempAcc.accum(ofc.cg_time, maxEpicenter);
 				cgMaxSizeActLocationTempAcc.accum(ofc.cg_time, loc);
+				specialBoxTempAcc.accum((double)ofc.plateUpdates, (double)ofc.epicenterSize[specialBox]);
+				if(loc==specialBox) System.out.println("special box size = " + ofc.epicenterSize[loc] + " " +loc + " mec " + maxEpicenter + " at " + ofc.plateUpdates);
 				timeAveForMaxCGSizeActTempAcc.accum(ofc.cg_time, ofc.CG_SizeActTimeAve[loc]);
 				if(dataPointsCount ==0) System.out.println("max loc = " + maxEpicenter + " " + ofc.CG_SizeActTimeAve[loc]);
+				
+		
 				
 				//stress metric
 				double inverseStressMetric = 1.0/stressMetric;
@@ -169,6 +181,8 @@ public class OFC_DelayWriteApp extends Simulation{
 				
 				printAccumsToFile(sizeFile, maxSizeTempAcc,cgMaxSizeActBoxTempAcc, timeAveForMaxCGSizeActTempAcc, cgMaxSizeActLocationTempAcc);
 			
+				FileUtil.printAccumToFileNoErrorBars(specialBoxFile, specialBoxTempAcc);
+				
 				//restart counts
 				maxSize = 0;
 				dataPointsCount = 0;
@@ -180,7 +194,9 @@ public class OFC_DelayWriteApp extends Simulation{
 				maxSizeTempAcc.clear();
 				invSizeActMetTempAcc.clear();
 				cgMaxSizeActBoxTempAcc.clear();
+				cgMaxSizeActLocationTempAcc.clear();
 				timeAveForMaxCGSizeActTempAcc.clear();
+				specialBoxTempAcc.clear();
 
 			}
 
@@ -226,16 +242,14 @@ public class OFC_DelayWriteApp extends Simulation{
 		}
 	}
 	
-	
 	void initFiles(){
 		iMetFile = params.sget("Data Dir") + File.separator + "im.txt";  // to record iverse metric data
 		FileUtil.initFile(iMetFile, params, " time (plate updates), stress inverse metric, time/coarse grained time, coarse grained activity inverse metric, coarse grained stress inverse metric, cg size act inverse metric");
 		sizeFile = params.sget("Data Dir") + File.separator + "s.txt";
 		FileUtil.initFile(sizeFile, params, "time (plate updates, fixed),  max avalanche size, max size act, time av of max size act, loc of max size act");
 		sizeHistFile = params.sget("Data Dir") + File.separator + "sh.txt";	//to record size histogram data
-
-		
-		
+		specialBoxFile = params.sget("Data Dir") + File.separator + "b.txt";
+		FileUtil.initFile(specialBoxFile, params, "time (Plate Updates), size-activity");
 	}
 
 }

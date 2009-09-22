@@ -11,10 +11,10 @@ public class OFC_Lattice extends AbstractCG_OFC{
  
 
 	double metric0;					//metric measured at time t = 0;
-	double lastCG_RecordTime;		//CG time parameter to keep track of last time CG info was recorded
-	double lastCG_SizeActRecordTime;
-	double lastCG_StressRecordTime; //Basically same as lasCG_RecordTime, but separate to keep calcInverseMeric subroutines independent in case one is not performed
-	double lastRecordTime;
+	double lastCG_RecordTime, lastCG_RecordTimePU;		//CG time parameter to keep track of last time CG info was recorded
+	double lastCG_SizeActRecordTime, lastCG_SizeActRecordTimePU;
+	double lastCG_StressRecordTime, lastCG_StressRecordTimePU; //Basically same as lasCG_RecordTime, but separate to keep calcInverseMeric subroutines independent in case one is not performed
+	double lastRecordTime, lastRecordTimePU;
 	public int lowerCutoff;
 	
 	public double [] stressTimeAve;
@@ -287,55 +287,9 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		return inverseMetric;
 	}
 
-	public double calcStressMetric(){
-		double del_t = cg_time -lastRecordTime;
-		for(int i=0; i < N; i++)
-			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
-		double spaceSum = DoubleArray.sum(stressTimeAve);
-		double spaceTimeStressAve = (spaceSum)/(double)(N);
-		double metricSum = 0;
-		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
-		double stressMetric = metricSum/(double)N;
-		lastRecordTime = cg_time;
-		return stressMetric;
-	}
 
-	//fixed to CG in space and time
-	public double calcCG_stressMetric(){
-		double del_t = cg_time - lastCG_StressRecordTime;
-		//		double [] cgStressConfig = findCG_StressConfig();
-		CG_Stress = findCG_StressConfig();
-		// accumulate the most recent time step into the time ave
-		for (int i = 0; i < Np; i++)
-			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*CG_Stress[i]) / (cg_time);
-		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)Np;
-		double CG_metric = 0;
-		//take the space ave
-		for (int i = 0; i < Np; i++){
-			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
-		}
-		CG_metric /= (double)Np;
-		lastCG_StressRecordTime = cg_time;
-		return CG_metric; 
-	}
 	
-//	//only CGs in time, not space
-//	public double calcCG_stressMetricCGTime(){
-//		double del_t = cg_time - lastCG_StressRecordTime;
-//
-//		// accumulate the most recent time step into the time ave
-//		for (int i = 0; i < N; i++)
-//			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (cg_time);
-//		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)N;
-//		double CG_metric = 0;
-//		//take the space ave
-//		for (int i = 0; i < N; i++){
-//			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
-//		}
-//		CG_metric /= (double)N;
-//		lastCG_StressRecordTime = cg_time;
-//		return CG_metric; 
-//	}
+
 	
 	public double [] findCG_StressConfig(){
 		double [] cgSpaceStressConfig = new double [Np];
@@ -368,6 +322,38 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			}
 
 		}
+	}
+	
+	public double calcStressMetric(){
+		double del_t = cg_time -lastRecordTime;
+		for(int i=0; i < N; i++)
+			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
+		double spaceSum = DoubleArray.sum(stressTimeAve);
+		double spaceTimeStressAve = (spaceSum)/(double)(N);
+		double metricSum = 0;
+		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
+		double stressMetric = metricSum/(double)N;
+		lastRecordTime = cg_time;
+		return stressMetric;
+	}
+
+	//fixed to CG in space and time
+	public double calcCG_stressMetric(){
+		double del_t = cg_time - lastCG_StressRecordTime;
+		//		double [] cgStressConfig = findCG_StressConfig();
+		CG_Stress = findCG_StressConfig();
+		// accumulate the most recent time step into the time ave
+		for (int i = 0; i < Np; i++)
+			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*CG_Stress[i]) / (cg_time);
+		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)Np;
+		double CG_metric = 0;
+		//take the space ave
+		for (int i = 0; i < Np; i++){
+			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
+		}
+		CG_metric /= (double)Np;
+		lastCG_StressRecordTime = cg_time;
+		return CG_metric; 
 	}
 	
 	public double calcCG_activityMetric(){
@@ -407,6 +393,70 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		return CG_metric; 
 	}
 	
+	public double calcStressMetricPU(){
+		double del_t = plateUpdates -lastRecordTimePU;
+		for(int i=0; i < N; i++)
+			stressTimeAve[i] = (stressTimeAve[i]*(lastRecordTimePU)+ stress[i]*del_t)/(plateUpdates);
+		double spaceSum = DoubleArray.sum(stressTimeAve);
+		double spaceTimeStressAve = (spaceSum)/(double)(N);
+		double metricSum = 0;
+		for (int i = 0; i < N; i++) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
+		double stressMetric = metricSum/(double)N;
+		lastRecordTimePU = plateUpdates;
+		return stressMetric;
+	}
+
+	//fixed to CG in space and time
+	public double calcCG_stressMetricPU(){
+		double del_t = plateUpdates - lastCG_StressRecordTimePU;
+		//		double [] cgStressConfig = findCG_StressConfig();
+		CG_Stress = findCG_StressConfig();
+		// accumulate the most recent time step into the time ave
+		for (int i = 0; i < Np; i++)
+			CG_StressTimeAve[i] = (lastCG_StressRecordTimePU*CG_StressTimeAve[i] + del_t*CG_Stress[i]) / (plateUpdates);
+		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)Np;
+		double CG_metric = 0;
+		//take the space ave
+		for (int i = 0; i < Np; i++){
+			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
+		}
+		CG_metric /= (double)Np;
+		lastCG_StressRecordTimePU = plateUpdates;
+		return CG_metric; 
+	}
+	
+	public double calcCG_activityMetricPU(){
+		double del_t = plateUpdates - lastCG_RecordTimePU;
+		for (int i = 0; i < Np; i++){
+			CG_ActivityTimeAve[i] = (lastCG_RecordTimePU*CG_ActivityTimeAve[i] + del_t*epicenterCount[i]) / (plateUpdates);
+		}
+		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
+		double CG_metric = 0;
+		for (int i = 0; i < Np; i++){
+			CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
+		}
+		CG_metric /= (double)Np;
+		lastCG_RecordTimePU = plateUpdates;
+		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
+		return CG_metric; 
+	}
+
+	public double calcCG_sizeActMetricPU(){
+		double del_t = plateUpdates - lastCG_SizeActRecordTimePU;
+		for (int i = 0; i < Np; i++){
+			CG_SizeActTimeAve[i] = (lastCG_SizeActRecordTimePU*CG_SizeActTimeAve[i] + del_t*epicenterSize[i]) / (plateUpdates);
+		}
+		double CG_SpaceAve = DoubleArray.sum(CG_SizeActTimeAve)/(double)Np;
+		double CG_metric = 0;
+		for (int i = 0; i < Np; i++){
+			CG_metric += Math.pow(CG_SizeActTimeAve[i] - CG_SpaceAve,2);
+		}
+		CG_metric /= (double)Np;
+		lastCG_SizeActRecordTimePU = plateUpdates;
+		for (int i = 0; i < Np; i++) epicenterSize[i] = 0;
+		return CG_metric; 
+	}
+	
 	
 	/**
 	* The CG fail metric is a metric that use a parameter I call the CG fail paramater.
@@ -434,6 +484,22 @@ public class OFC_Lattice extends AbstractCG_OFC{
 //		return CG_metric; 
 //	}
 
-
+//	//only CGs in time, not space
+//	public double calcCG_stressMetricCGTime(){
+//		double del_t = cg_time - lastCG_StressRecordTime;
+//
+//		// accumulate the most recent time step into the time ave
+//		for (int i = 0; i < N; i++)
+//			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*stress[i]) / (cg_time);
+//		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)N;
+//		double CG_metric = 0;
+//		//take the space ave
+//		for (int i = 0; i < N; i++){
+//			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
+//		}
+//		CG_metric /= (double)N;
+//		lastCG_StressRecordTime = cg_time;
+//		return CG_metric; 
+//	}
 	
 }
