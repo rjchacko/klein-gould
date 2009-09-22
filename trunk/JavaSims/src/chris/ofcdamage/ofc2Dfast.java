@@ -7,6 +7,7 @@ import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.Random;
 
+import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
@@ -15,7 +16,7 @@ import chris.util.PrintUtil;
 public class ofc2Dfast {
 
 	private double sr0, sf0, a0, dsr, dsf, da;
-	protected double Omega, sr[], sf[], stress[],sbar[], data[][];
+	protected double Omega, sr[], sf[], stress[], oldstress[], sbar[], data[][];
 	private int L, R, nbArray[], nbSeed;
 	protected int N, qN, fs[], GR, index, newindex, Ndead;
 	private boolean srn, sfn, an;
@@ -139,6 +140,9 @@ public class ofc2Dfast {
 		int a,b, tmpfail, tmpnb;
 		double release;
 	
+		// copy the old stress array
+		oldstress = stress;
+		
 		// force failure in the zero velocity limit
 		forceZeroVel(mct, takedata, true);
 		GR = 1; // the seed site
@@ -417,4 +421,34 @@ public class ofc2Dfast {
 		
 		return data[dindex][mct%dlength];
 	}
+	
+	public double getSr0(){
+		
+		return sr0;
+	}
+	
+	public double getSf0(){
+		
+		return sf0;
+	}
+	
+	public void takePSdata(Histogram h){
+		
+		h.accum(stress[0]);
+		return;
+	}
+	
+	public void takeWdata(Histogram h){
+		
+		/*
+		 * THIS ASSUMES Sr - dSr = 0
+		 * 				and  dSf = 0
+		 */
+		
+		for(int jj = 0 ; jj < N ; jj++){
+			h.accum(oldstress[jj] + stress[jj]*(1+sf0));
+		}
+		return;
+	}
+	
 }
