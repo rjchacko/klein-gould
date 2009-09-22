@@ -48,6 +48,7 @@ public class ising extends Simulation{
 	
 	
 	public int isingspin[];     //the array of the data
+	public double coarsegrain[]; //the array of the coarse grain magnetization
 	
 	public double timetotalE[];  
 	public double timeaverageE[]; //time average energy for metric
@@ -108,7 +109,31 @@ public class ising extends Simulation{
 	}
 	
 
-	
+	public double coarsegrainE (int i){
+		double Energy=0;
+		double S=0;
+		int nx=i/L2;
+		int ny=i%L2;
+		int kx, ky;
+		
+		for (int m=-R; m<=R; m++)
+			for (int n=-R; n<=R; n++)
+			{
+				kx=nx+m;
+				ky=ny+n;
+				if(nx+m<0)
+					kx=nx+m+L1;
+				if(nx+m>L1-1)
+					kx=nx+m-L1;
+				if(ny+n<0)
+					ky=ny+n+L2;
+				if(ny+n>L2-1)
+					ky=ny+n-L2;
+				S+=coarsegrain[kx*L2+ky];	
+			}
+		Energy=J*coarsegrain[i]*S-J;
+		return Energy;
+	}
 	
 	public double longrangeE (int i){
 		double Energy=0;
