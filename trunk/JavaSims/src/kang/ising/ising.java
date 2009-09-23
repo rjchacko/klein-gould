@@ -20,6 +20,7 @@ import java.awt.Color;
 
 import chris.util.PrintUtil;
 
+import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -30,6 +31,7 @@ import scikit.jobs.params.DoubleValue;
 
 public class ising extends Simulation{
 	Grid grid1 = new Grid("Ising lattice 2d");
+	Grid grid2 = new Grid("Coarsegrain Ising lattice 2d");
 	public int L1, L2,M; //parameters for the lattice
 	public int i, x, y;  //parameters for the index
 	public double T;     //temperature 
@@ -39,6 +41,7 @@ public class ising extends Simulation{
 	public double totalmagnetization;
 	public double magnetization;
 	public int R;   //interaction range
+	public int CR;  //coarse grain range
 	public int step; //Monte Carlo step
 	public int steplimit; //upperlimit of MC step
 	public int metricstart; //the start of metric calculation
@@ -131,7 +134,7 @@ public class ising extends Simulation{
 					ky=ny+n-L2;
 				S+=coarsegrain[kx*L2+ky];	
 			}
-		Energy=J*coarsegrain[i]*S-J;
+		Energy=J*coarsegrain[i]*S-J*coarsegrain[i]*coarsegrain[i];
 		return Energy;
 	}
 	
@@ -161,6 +164,33 @@ public class ising extends Simulation{
 		return Energy;
 	}
 	
+	public double coarsegrain (int i){
+		double phi=0;
+		int S=0;
+		int nx=i/L2;
+		int ny=i%L2;
+		int kx, ky;
+		
+		for (int m=-CR; m<=CR; m++)
+			{
+			for (int n=-CR; n<=CR; n++)
+			 {
+				kx=nx+m;
+				ky=ny+n;
+				if(nx+m<0)
+					kx=nx+m+L1;
+				if(nx+m>L1-1)
+					kx=nx+m-L1;
+				if(ny+n<0)
+					ky=ny+n+L2;
+				if(ny+n>L2-1)
+					ky=ny+n-L2;
+				S+=isingspin[kx*L2+ky];	
+			 }
+			}
+		phi=(double)S/((2*CR+1)*(2*CR+1));
+		return phi;
+	}          // the function to coarsegrain site[i]
 	
 	public static void main (String[] kangliu){
 		new Control(new ising(), "Kang Liu's ising model" );
@@ -168,12 +198,14 @@ public class ising extends Simulation{
 	
 	public void load(Control liu){
 		liu.frame (grid1);
+		liu.frame (grid2);
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
 		params.addm("Temperature", new DoubleValue(1, 0, 100).withSlider());
 		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
 		params.addm("Interaction Constant", 1);
 		params.add("Interaction range", 10);
+		params.add("Coarsegrain range", 10);
 		params.add("Monte Carlo step's limit", 1000000);
 		params.add("Metric Start at",5000);
 		params.add("Metric points", 2000);
@@ -182,6 +214,7 @@ public class ising extends Simulation{
 		//params.add("Model", new ChoiceValue("noninteracting", "interacting"));
 		//params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
 		params.add("MC time");
+		params.add("Metric");
 		params.add("magnetization");
 		
 	}
@@ -196,24 +229,35 @@ public class ising extends Simulation{
 		grid1.setColors(ising);
 		grid1.registerData(L1, L2, isingspin);
 		
+		ColorGradient smooth = new ColorGradient();
+
+		for (i = 0; i < M; i++) {
+			smooth.getColor(coarsegrain[i], -1., 1.);
+		}
+		grid2.setColors(smooth);
+		grid2.registerData(L1, L1, coarsegrain);
+		
 		
 	}
 	
 	public void clear(){
 		grid1.clear();
-		
+		grid2.clear();
 	}
 	
 	public void run(){
 		
 		int i,j;
 		R = (int)params.fget("Interaction range");
+		CR = (int)params.fget("Coarsegrain range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
 		metricstart = (int)params.fget("Metric Start at");
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
 		isingspin = new int[M];
+		coarsegrain = new double[M];
+		
 		timetotalE = new double[M];
 		timeaverageE = new double[M];
 		N = (int)params.fget("Metric points");
@@ -299,11 +343,22 @@ public class ising extends Simulation{
 					}
 				}
 			
-				if(step % 10 == 0) params.set("MC time", step);
+				if(step % 10 == 0) {
+					params.set("MC time", step);
+					params.set("Metric", NMetric/M);
+				}
 				Job.animate();
 			}
 			
 			if(step > metricstart){
+				
+			if(CR!=0)
+			{
+				for(int e=0; e<M; e++)
+					coarsegrain[e]=coarsegrain(e);
+			}
+			// first coarsegrain the ising lattice
+			
 			
 			totalE=0;
 			
@@ -311,8 +366,15 @@ public class ising extends Simulation{
 			{
 				if(R==0)
 					timetotalE[y]+=interactionE(y);
+					
 				if(R!=0)
-					timetotalE[y]+=longrangeE(y);
+					{
+					if(CR==0)
+						timetotalE[y]+=longrangeE(y);
+					if(CR!=0)
+						timetotalE[y]+=coarsegrainE(y);
+					
+					}
 				
 				timeaverageE[y]=timetotalE[y]/(step-metricstart);
 			 
@@ -335,21 +397,22 @@ public class ising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/M;
-				PrintUtil.printlnToFile("F:/data/dmetric6.txt",step-metricstart, NMetric/M);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt",step-metricstart, NMetric/M);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
 				}
 			
 			if(step==N+metricstart+1)
 			{
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","");
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Lattice length=", L1);
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Lattice width=", L2);
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","J=",NJ);
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Interaction Range=",R);
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Mectric starts at", metricstart);
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Final Tempearture=",T);
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Final Field=",H);
-				PrintUtil.printlnToFile("F:/data/dmetric1.txt","Diluted Percentage=",P);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","");
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Lattice length=", L1);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Lattice width=", L2);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","J=",NJ);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Interaction Range=",R);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Coarsegrain Range=",CR);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Mectric starts at", metricstart);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Final Tempearture=",T);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Final Field=",H);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Diluted Percentage=",P);
 				
 			}
 			
