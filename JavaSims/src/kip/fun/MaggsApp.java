@@ -13,7 +13,7 @@ import static scikit.util.DoubleArray.*;
 
 public class MaggsApp extends Simulation {
 	
-	int L = 3;
+	int L = 5;
 	int numLinks = 3*L*L*L;
 	int XDir = 0;
 	int YDir = 1;
@@ -21,8 +21,8 @@ public class MaggsApp extends Simulation {
 	
 	int x1 = 0, x2 = 1;
 	double dielectric = 1.0;
-	double Emag = 0.2;
-	double beta = 10;
+	double Emag = 1.0;
+	double beta = 1;
 	
 	Random rand = new Random(0);
 	int rotatePlaquetteAccept = 0;
@@ -78,7 +78,7 @@ public class MaggsApp extends Simulation {
 	
 	public void animate() {
 		// checkE();
-		//checkAcceptanceRatios();
+		// checkAcceptanceRatios();
 		
 		double energyArray[] = energyData.copyArray();
 		energyArray = slice(energyArray, 100, energyArray.length);
@@ -109,9 +109,9 @@ public class MaggsApp extends Simulation {
 		E[i] = 1 / dielectric;
 		
 		// create a -1 charge at (0,1,0) and a +1 charge at (1,1,0)
-		x = 0; y = 1; z = 0;
-		i = getLink(x, y, z, XDir);
-		E[i] = -1 / dielectric;
+//		x = 0; y = 1; z = 0;
+//		i = getLink(x, y, z, XDir);
+//		E[i] = -1 / dielectric;
 	}
 	
 	int getChargeAtSite(int x, int y, int z) {
@@ -143,7 +143,8 @@ public class MaggsApp extends Simulation {
 	void checkAcceptanceRatios() {
 		double r1 = rotatePlaquetteAccept/(double)rotatePlaquetteTrials;
 		double r2 = shiftNetEAccept/(double)shiftNetETrials;
-		System.out.println("ratios: " + r1 + " " + r2);
+		double r3 = moveChargeAccept/(double)moveChargeTrials;
+		System.out.println("ratios: " + r1 + " " + r2 + " " + r3);
 	}
 	
 	double calculateEnergy() {
