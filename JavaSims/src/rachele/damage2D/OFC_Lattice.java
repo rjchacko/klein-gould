@@ -20,6 +20,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public double [] stressTimeAve;
 	public double [] CG_ActivityTimeAve;
 	public double [] CG_SizeActTimeAve;
+	public double [] CG_ActivityTimeAveDev;
+	public double [] CG_SizeActTimeAveDev;
 	public double [] CG_StressTimeAve;
 	public double [] CG_Stress;
 	public int [] plateUpdateFailLocations;  // Record all fail sites for one plate update
@@ -74,6 +76,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		epicenterSize = new int [Np];
 		CG_ActivityTimeAve = new double [Np];
 		CG_SizeActTimeAve = new double [Np];
+		CG_ActivityTimeAveDev = new double [Np];
+		CG_SizeActTimeAveDev = new double [Np];
 		CG_StressTimeAve = new double [Np];
 		plateUpdateFailLocations = new int [N];
 		cgFailCount = new int[Np];
@@ -369,7 +373,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
 		double CG_metric = 0;
 		for (int i = 0; i < Np; i++){
-			CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
+			CG_ActivityTimeAveDev[i] = CG_ActivityTimeAve[i] - CG_SpaceAve;
+			CG_metric += Math.pow(CG_ActivityTimeAveDev[i],2);
 		}
 		CG_metric /= (double)Np;
 		lastCG_RecordTime = cg_time;
@@ -385,7 +390,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		double CG_SpaceAve = DoubleArray.sum(CG_SizeActTimeAve)/(double)Np;
 		double CG_metric = 0;
 		for (int i = 0; i < Np; i++){
-			CG_metric += Math.pow(CG_SizeActTimeAve[i] - CG_SpaceAve,2);
+			CG_SizeActTimeAveDev[i] = CG_SizeActTimeAve[i] - CG_SpaceAve;
+			CG_metric += Math.pow(CG_SizeActTimeAveDev[i] ,2);
 		}
 		CG_metric /= (double)Np;
 		lastCG_SizeActRecordTime = cg_time;
@@ -433,7 +439,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
 		double CG_metric = 0;
 		for (int i = 0; i < Np; i++){
-			CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
+			CG_ActivityTimeAveDev[i] = CG_ActivityTimeAve[i] - CG_SpaceAve;
+			CG_metric += Math.pow(CG_ActivityTimeAveDev[i],2);
 		}
 		CG_metric /= (double)Np;
 		lastCG_RecordTimePU = plateUpdates;
@@ -449,7 +456,8 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		double CG_SpaceAve = DoubleArray.sum(CG_SizeActTimeAve)/(double)Np;
 		double CG_metric = 0;
 		for (int i = 0; i < Np; i++){
-			CG_metric += Math.pow(CG_SizeActTimeAve[i] - CG_SpaceAve,2);
+			CG_SizeActTimeAveDev[i] = CG_SizeActTimeAve[i] - CG_SpaceAve;
+			CG_metric += Math.pow(CG_SizeActTimeAveDev[i] ,2);
 		}
 		CG_metric /= (double)Np;
 		lastCG_SizeActRecordTimePU = plateUpdates;
