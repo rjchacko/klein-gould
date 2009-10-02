@@ -32,7 +32,9 @@ import scikit.jobs.params.DoubleValue;
 public class ising extends Simulation{
 	Grid grid1 = new Grid("Ising lattice 2d");
 	Grid grid2 = new Grid("Coarsegrain Ising lattice 2d");
-	public int L1, L2,M; //parameters for the lattice
+	public int L1, L2, M; //parameters for the lattice
+	public int S1, S2, S; //parameters for the coarsegrain blocks, s is the total number of the spins in a block
+	public int B1, B2, B; //parameters for the numbers of the blocks in x and y direction, B is the total number
 	public int i, x, y;  //parameters for the index
 	public double T;     //temperature 
 	public double H;     //field
@@ -52,6 +54,7 @@ public class ising extends Simulation{
 	
 	public int isingspin[];     //the array of the data
 	public double coarsegrain[]; //the array of the coarse grain magnetization
+	public double CGEnergy[]; // the array of the CGblocks' energy
 	
 	public double timetotalE[];  
 	public double timeaverageE[]; //time average energy for metric
@@ -192,6 +195,26 @@ public class ising extends Simulation{
 		return phi;
 	}          // the function to coarsegrain site[i]
 	
+	
+	public double BlockEnergy (int i){
+		int Bx= i/B2;
+		int By= i%B2;
+		int Sx, Sy;
+		int j;
+		
+		double totalenergy=0;
+		double energy=0;
+		for(Sx=0;Sx<S1;Sx++)
+			for(Sy=0;Sy<S2;Sy++)
+			{
+				j=(Bx*S1+Sx)*L2+(By*S2+Sy);
+				totalenergy+=longrangeE(j);
+			}
+		energy=totalenergy/S;
+		return energy;
+		
+	}
+	
 	public static void main (String[] kangliu){
 		new Control(new ising(), "Kang Liu's ising model" );
 	}
@@ -201,11 +224,13 @@ public class ising extends Simulation{
 		liu.frame (grid2);
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
+		params.add("CGBlock's width", 10);
+		params.add("CGBlock's length", 10);
 		params.addm("Temperature", new DoubleValue(1, 0, 100).withSlider());
 		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
 		params.addm("Interaction Constant", 1);
 		params.add("Interaction range", 10);
-		params.add("Coarsegrain range", 10);
+		params.add("Coarsegrain range", 0);
 		params.add("Monte Carlo step's limit", 1000000);
 		params.add("Metric Start at",5000);
 		params.add("Metric points", 2000);
@@ -255,11 +280,19 @@ public class ising extends Simulation{
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
-		isingspin = new int[M];
-		coarsegrain = new double[M];
+		S1 =(int)params.fget("CGBlock's width");
+		S2 =(int)params.fget("CGBlock's width");
+		B1 = L1/S1;
+		B2 = L2/S2;
+		B = B1 * B2;
 		
-		timetotalE = new double[M];
-		timeaverageE = new double[M];
+		isingspin = new int[M];
+		CGEnergy = new double[B];   // the energy of the blocks
+		
+		coarsegrain = new double[M]; // the magnetization of each site after coarsegraining
+		
+		timetotalE = new double[B];
+		timeaverageE = new double[B];
 		N = (int)params.fget("Metric points");
 		Metric = new double[N];
 		
@@ -362,7 +395,7 @@ public class ising extends Simulation{
 			
 			totalE=0;
 			
-			for (int y=0; y<M; y++)
+			for (int y=0; y<B; y++)
 			{
 				if(R==0)
 					timetotalE[y]+=interactionE(y);
@@ -370,7 +403,17 @@ public class ising extends Simulation{
 				if(R!=0)
 					{
 					if(CR==0)
-						timetotalE[y]+=longrangeE(y);
+						{
+						if(B==M)
+							timetotalE[y]+=longrangeE(y);
+						if(B!=M)
+							{
+							CGEnergy[y]=BlockEnergy(y);
+							timetotalE[y]+=CGEnergy[y];
+								
+							}
+						
+						}
 					if(CR!=0)
 						timetotalE[y]+=coarsegrainE(y);
 					
@@ -380,15 +423,15 @@ public class ising extends Simulation{
 			 
 			}
 			
-			for (int x=0; x< M; x++)
+			for (int x=0; x< B; x++)
 			{
 					totalE+=timeaverageE[x];
 			}
 			
-			averageE=totalE/M;
+			averageE=totalE/B;
 
 			NMetric=0;
-			for (int z=0; z< M; z++)
+			for (int z=0; z< B; z++)
 			{
 				NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
 			}
@@ -396,9 +439,9 @@ public class ising extends Simulation{
 		
 			if(step<N+metricstart+1)
 				{
-				Metric[step-metricstart-1]=NMetric/M;
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt",step-metricstart, NMetric/M);
-				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/M);
+				Metric[step-metricstart-1]=NMetric/B;
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt",step-metricstart, NMetric/B);
+				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
 			
 			if(step==N+metricstart+1)
