@@ -254,20 +254,20 @@ public class ising extends Simulation{
 		grid1.setColors(ising);
 		grid1.registerData(L1, L2, isingspin);
 		
-		ColorGradient smooth = new ColorGradient();
+		//ColorGradient smooth = new ColorGradient();
 
-		for (i = 0; i < M; i++) {
+		/*for (i = 0; i < M; i++) {
 			smooth.getColor(coarsegrain[i], -1., 1.);
 		}
 		grid2.setColors(smooth);
 		grid2.registerData(L1, L1, coarsegrain);
-		
+		*/
 		
 	}
 	
 	public void clear(){
 		grid1.clear();
-		grid2.clear();
+		//grid2.clear();
 	}
 	
 	public void run(){
@@ -282,6 +282,7 @@ public class ising extends Simulation{
 		M = L1 * L2;
 		S1 =(int)params.fget("CGBlock's width");
 		S2 =(int)params.fget("CGBlock's width");
+		S= S1 * S2;
 		B1 = L1/S1;
 		B2 = L2/S2;
 		B = B1 * B2;
@@ -378,7 +379,7 @@ public class ising extends Simulation{
 			
 				if(step % 10 == 0) {
 					params.set("MC time", step);
-					params.set("Metric", NMetric/M);
+					params.set("Metric", NMetric/B);
 				}
 				Job.animate();
 			}
@@ -440,7 +441,7 @@ public class ising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/B;
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt",step-metricstart, NMetric/B);
+				PrintUtil.printlnToFile("F:/data/cmetric5.txt",step-metricstart, Metric[step-metricstart-1]);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
 			
@@ -449,6 +450,8 @@ public class ising extends Simulation{
 				PrintUtil.printlnToFile("F:/data/cmetric1.txt","");
 				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Lattice length=", L1);
 				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Lattice width=", L2);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Block length=", S1);
+				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Block width=", S2);
 				PrintUtil.printlnToFile("F:/data/cmetric1.txt","J=",NJ);
 				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Interaction Range=",R);
 				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Coarsegrain Range=",CR);
