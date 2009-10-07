@@ -441,11 +441,11 @@ public class ising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/B;
-				PrintUtil.printlnToFile("F:/data/cmetric5.txt",step-metricstart, Metric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/cmetric9.txt",step-metricstart, Metric[step-metricstart-1]);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
 			
-			if(step==N+metricstart+1)
+			if(step==metricstart+500)
 			{
 				PrintUtil.printlnToFile("F:/data/cmetric1.txt","");
 				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Lattice length=", L1);
