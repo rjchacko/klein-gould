@@ -170,7 +170,7 @@ public class OFC_cgClusterDelayWriteApp extends Simulation{
 				
 				cgMaxSizeActBoxTempAcc.accum(ofc.cg_time, maxEpicenter);
 				cgMaxSizeActLocationTempAcc.accum(ofc.cg_time, loc);
-				specialBoxTempAcc.accum((double)ofc.plateUpdates, (double)ofc.epicenterSize[specialBox]);
+				specialBoxTempAcc.accum((double)ofc.plateUpdates, (double)ofc.stress[specialBox]);
 //				if(loc==specialBox) System.out.println("special box size = " + ofc.epicenterSize[loc] + " " +loc + " mec " + maxEpicenter + " at " + ofc.plateUpdates);
 				specialBoxActTempAcc.accum(ofc.plateUpdates, (double)ofc.epicenterCount[specialBox]);
 				specialBoxSizeActTempAcc.accum(ofc.plateUpdates, (double)ofc.epicenterSize[specialBox]);
@@ -293,7 +293,7 @@ public class OFC_cgClusterDelayWriteApp extends Simulation{
 		FileUtil.initFile(sizeFile, params, "time (plate updates, fixed),  max avalanche size, cgTime, max size act, time av of max size act, loc of max size act");
 		sizeHistFile = params.sget("Data Dir") + File.separator + "sh.txt";	//to record size histogram data
 		specialBoxFile = params.sget("Data Dir") + File.separator + "b.txt";
-		FileUtil.initFile(specialBoxFile, params, "time (Plate Updates), size-activity");
+		FileUtil.initFile(specialBoxFile, params, "time (Plate Updates), stress, cg time, cg stress, activity, size-activity");
 		overallBoxFile = params.sget("Data Dir") + File.separator + "ab.txt";
 		FileUtil.initFile(overallBoxFile, params, "overall box file: counts number of times that a cg box has a reoccurance of SA > lower cg bound", "time (Plate Updates), no of reoccurances");	
 	}
