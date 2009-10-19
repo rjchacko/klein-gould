@@ -7,16 +7,15 @@ import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.Random;
 
-import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
 import chris.util.PrintUtil;
 
-public class ofc2Dfast {
+public class ofc2Dtrevfast {
 
 	private double sr0, sf0, a0, dsr, dsf, da;
-	protected double Omega, sr[], sf[], stress[], oldstress[], sbar[], data[][];
+	protected double Omega, sr[], sf[], stress[],sbar[], data[][];
 	private int L, R, nbArray[], nbSeed;
 	protected int N, qN, fs[], GR, index, newindex, Ndead;
 	private boolean srn, sfn, an;
@@ -28,7 +27,7 @@ public class ofc2Dfast {
 	public static int dcat = 5;
 	private static DecimalFormat fmtI = new DecimalFormat("0000");
 	
-	public ofc2Dfast(Parameters params){
+	public ofc2Dtrevfast(Parameters params){
 		
 		constructor_ofc2Dfast(params);
 		return;
@@ -76,6 +75,7 @@ public class ofc2Dfast {
 			sr[jj]     = srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
 			sf[jj]     = sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
 			stress[jj] = sr[jj] + (sf[jj]-sr[jj])*getRand().nextDouble();
+			//stress[jj] = sr0 + (sf0-sr0)*getRand().nextDouble();
 			failed[jj] = false;
 		}
 
@@ -138,11 +138,8 @@ public class ofc2Dfast {
 		// takedata specifies whether or not to record data
 		
 		int a,b, tmpfail, tmpnb;
-		double release;
+		double absorb;
 	
-		// copy the old stress array
-		oldstress = stress;
-		
 		// force failure in the zero velocity limit
 		forceZeroVel(mct, takedata, true);
 		GR = 1; // the seed site
@@ -154,20 +151,19 @@ public class ofc2Dfast {
 			index = newindex;
 			for (int jj = a ; jj < b ; jj++){
 				tmpfail = fs[jj];
-				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
+				// stress absorbed by "anti"-dieing site
+				absorb  = (sf[tmpfail]-stress[tmpfail])*(1-nextAlpha())/qN;
 				for(int kk = 0 ; kk < qN ; kk++){
 					tmpnb = getNbr(fs[jj],kk);
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
-					stress[tmpnb] += release;
-					if(stress[tmpnb] > sf[tmpnb]){
+					stress[tmpnb] -= absorb;
+					if(stress[tmpnb] <= sr[tmpnb]){
 						fs[newindex++] = tmpnb;	
 						failSite(tmpnb);
 					}
 				}
 				resetSite(tmpfail);
 			}
-//			Job.animate();
-//			// FOR DEBUGGING ONLY
 		}
 		return;
 	}
@@ -176,22 +172,22 @@ public class ofc2Dfast {
 		// force failure in the zero velocity limit
 
 		double dsigma, tmpbar;
-		int jjmax;
+		int jjmin;
 		index = 0;
 		newindex = index;
 		
-		jjmax = 0;
+		jjmin = 0;
 		if(takedata){
 			tmpbar = 0;
 			Omega  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
 				// find next site to fail
-				if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
+				if( ((stress[jj]-sr[jj]) < (stress[jjmin]-sr[jjmin])) && !failed[jj] ) jjmin = jj;
 				// calculate metric (PART 1)
 				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
 				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
 			}
-			dsigma = sf[jjmax]-stress[jjmax];
+			dsigma = sr[jjmin]-stress[jjmin]; // THIS IS NEGATIVE
 			tmpbar = tmpbar / N;
 			Omega  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
@@ -215,17 +211,18 @@ public class ofc2Dfast {
 		else{
 			for (int jj = 0 ; jj < N ; jj++){
 				// find next site to fail
-				if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
+				if( ((stress[jj]-sr[jj]) < (stress[jjmin]-sr[jjmin])) && !failed[jj] ) jjmin = jj;
 			}
 			// add stress to fail site
-			dsigma = sf[jjmax]-stress[jjmax];
+			dsigma = sr[jjmin]-stress[jjmin]; // THIS IS NEGATIVE
 			for (int jj = 0 ; jj < N ; jj++){
 				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 			}
 		}
 		
-		fs[newindex++] = jjmax;
-		failSite(jjmax,mct);		
+		fs[newindex++] = jjmin;
+		failSite(jjmin,mct);	
+
 		return;
 	}
 
@@ -251,7 +248,7 @@ public class ofc2Dfast {
 
 		sr[site]     = nextSr(site);
 		sf[site]     = nextSf(site);
-		stress[site] = sr[site];
+		stress[site] = sf[site];
 		failed[site] = false;
 		return;
 	}
@@ -264,6 +261,16 @@ public class ofc2Dfast {
 	protected double nextSf(int site){
 
 		return sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
+	}
+	
+	public double getSmin(){
+		
+		return sr0-dsr;
+	}
+	
+	public double getSmax(){
+		
+		return sf0+dsf;
 	}
 	
 	public double getSW(){
@@ -421,52 +428,8 @@ public class ofc2Dfast {
 	
 	public double getData(int mct, int dindex){
 		
-		if(dindex >= ofc2Dfast.dcat) return -77;
+		if(dindex >= ofc2Dtrevfast.dcat) return -77;
 		
 		return data[dindex][mct%dlength];
 	}
-	
-	public double getSr0(){
-		
-		return sr0;
-	}
-	
-	public double getSf0(){
-		
-		return sf0;
-	}
-	
-	/*
-	 * 
-	 * 	MOVE THIS TO APP AND
-	 *  TAKEWDATA METHOD!
-	 * 
-	 * 
-	 */
-	
-	
-	public void takePSdata(Histogram h){
-		
-		h.accum(stress[0]);
-		return;
-	}
-	
-	public void takeWdata(Histogram h){
-		
-		/*
-		 * THIS ASSUMES Sr - dSr = 0
-		 * 				and  dSf = 0
-		 */
-		
-		for(int jj = 0 ; jj < N ; jj++){
-			h.accum(oldstress[jj] + stress[jj]*(1+sf0));
-		}
-		return;
-	}
-	
-	public int getGR(){
-		
-		return GR;
-	}
-	
 }

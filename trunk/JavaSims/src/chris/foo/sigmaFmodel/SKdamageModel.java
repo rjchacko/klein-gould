@@ -112,9 +112,9 @@ public class SKdamageModel {
 			if(true){
 				stress[jj] = Sr0 + (Sf0 - Sr0)*rand.nextDouble();
 			}
-			else{
-				
-			}
+//			else{
+//				
+//			}
 			if(SrN){
 				Sr[jj] = Sr0 + SrW*(0.5 - rand.nextDouble());
 			}

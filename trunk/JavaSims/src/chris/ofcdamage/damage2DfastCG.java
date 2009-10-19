@@ -93,6 +93,13 @@ public class damage2DfastCG extends ofc2DfastCG{
 					stress[tmpnb] += release;
 					if((stress[tmpnb] > sf[tmpnb])){
 						fs[newindex++] = tmpnb;	
+/*
+ * 						java.lang.ArrayIndexOutOfBoundsException: 46875
+						at chris.ofcdamage.damage2DfastCG.evolveD(damage2DfastCG.java:95)
+						at chris.ofcdamage.apps.fastDamageCgApp.run(fastDamageCgApp.java:99)
+						at scikit.jobs.Job$3.run(Job.java:222)
+						at java.lang.Thread.run(Thread.java:613)
+ */
 						failSite(tmpnb);
 					}
 				}
