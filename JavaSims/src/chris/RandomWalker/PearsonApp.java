@@ -42,7 +42,7 @@ public class PearsonApp extends Simulation{
 		
 		for (int jj = 0 ; jj < nw ; jj++){
 			model.nextWalk(lambda, ns, d);
-			if(jj % 500 == 0){
+			if(jj % 5000 == 0){
 				params.set("Status",jj);
 				Job.animate();
 			}

@@ -2,11 +2,11 @@ package chris.ofcdamage;
 
 import scikit.jobs.params.Parameters;
 import chris.util.PrintUtil;
+import chris.util.SortUtil;
 
 public class damage2Dfast extends ofc2Dfast{
 	
-	private int liveNbs[], Nl0, Lives[];
-	
+	protected int liveNbs[], Nl0, Lives[], dN;
 	
 	public damage2Dfast(Parameters params){
 		
@@ -18,15 +18,34 @@ public class damage2Dfast extends ofc2Dfast{
 	
 	public void contructor_damage2Dfast(Parameters params){
 		
-		int dN;
-		
-		Nl0 = params.iget("Number of Lives");
-		dN  = params.iget("NL width");
-		fs  = new int[3*N];
-		
-		Ndead   = 0;
 		liveNbs = new int[N];
 		Lives   = new int[N];
+		
+		if(params.sget("Mode").equals("GRscaling")){
+			double p      = params.fget("\u03D5");
+			double rseq[] = new double[N];
+			for (int jj = 0 ; jj < N ; jj++){
+				rseq[jj]    = getRand().nextDouble();
+				liveNbs[jj] = qN;
+				Lives[jj]   = 1;
+			}
+			int[] rs = SortUtil.S2LindexSort(rseq);
+			Ndead = (int)(p*N);
+			for (int jj = 0 ; jj < Ndead ; jj++){
+				sr[rs[jj]]     = getSr0();
+				sf[rs[jj]]     = getSf0();
+				stress[rs[jj]] = 0;
+				Lives[rs[jj]]  = 0;
+				failed[rs[jj]] = true;
+				for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
+			}
+			return;
+		}
+
+		Nl0     = params.iget("Number of Lives");
+		dN      = params.iget("NL width");
+		fs      = new int[3*N];
+		Ndead   = 0;
 		
 		if(Nl0 - dN < 0){	// cannot have negative lives
 			dN = Nl0;
@@ -35,7 +54,7 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		for (int jj = 0 ; jj < N ; jj++){
 			liveNbs[jj] = qN;
-			Lives[jj]   = (dN > 0) ? Nl0 + getRand().nextInt(2*dN+1)-dN : Nl0; // rand in [0 , 2*dN]
+			Lives[jj]   = nextNumLives();
 		}
 		
 		if(dN == Nl0){
@@ -52,11 +71,53 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		return;
 	}
+	             
+	public void evolveEQ(int mct, boolean takedata){
+		// evolve the ofc model starting with a stable configuration
+		// until the next stable configuration is reached.
+		//
+		// mct is the monte carlo time step or the number of forced failures
+		//
+		// takedata specifies whether or not to record data
+		
+		int a,b, tmpfail, tmpnb;
+		double release;
 	
+		// copy the old stress array
+		oldstress = stress;
+		
+		// force failure in the zero velocity limit
+		forceZeroVel(mct, takedata, true);
+		GR = 1; // the seed site
+		
+		// discharge site and repeat until lattice is stable
+		while(newindex > index){
+			a     = index;
+			b     = newindex;
+			index = newindex;
+			for (int jj = a ; jj < b ; jj++){
+				tmpfail = fs[jj];
+				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/liveNbs[tmpfail];
+				for(int kk = 0 ; kk < qN ; kk++){
+					tmpnb = getNbr(fs[jj],kk);
+					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
+					stress[tmpnb] += release;
+					if(stress[tmpnb] > sf[tmpnb]){
+						fs[newindex++] = tmpnb;	
+						failSite(tmpnb);
+					}
+				}
+				resetSite(tmpfail);
+			}
+//			Job.animate();
+//			// FOR DEBUGGING ONLY
+		}
+		return;
+	}
 	
 	public int evolveD(int mct, boolean takedata){
 		// evolve the ofc model *IN DAMAGE MODE* starting with a stable 
-		//configurationu ntil the next stable configuration is reached.
+		// configuration until the next stable configuration is reached.
 		//
 		// mct is the monte carlo time step or the number of forced failures
 		//
@@ -79,7 +140,7 @@ public class damage2Dfast extends ofc2Dfast{
 				tmpfail = fs[jj];
 				if(liveNbs[tmpfail] == 0){
 					if(Lives[tmpfail] == 1){
-						killSite(tmpfail);
+						killSite(tmpfail, mct);
 					}
 					else{
 						resetSiteD(tmpfail);
@@ -100,7 +161,7 @@ public class damage2Dfast extends ofc2Dfast{
 				}
 				if(lastlife){
 					lastlife = false;
-					killSite(tmpfail);
+					killSite(tmpfail, mct);
 				}
 				else{
 					resetSiteD(tmpfail);
@@ -110,8 +171,7 @@ public class damage2Dfast extends ofc2Dfast{
 		return Ndead;
 	}
 	
-	
-	private void killSite(int site){
+	protected void killSite(int site){
 		
 		Ndead++;
 		sr[site]     = 0;
@@ -119,6 +179,12 @@ public class damage2Dfast extends ofc2Dfast{
 		stress[site] = 0;
 		Lives[site]  = 0;
 		failed[site] = true;
+		return;
+	}
+	
+	protected void killSite(int site, int mct){
+
+		killSite(site);
 		return;
 	}
 	
@@ -150,6 +216,11 @@ public class damage2Dfast extends ofc2Dfast{
 	public int getLN(int site){
 		
 		return (site < N) ? liveNbs[site] : -1;
+	}
+	
+	public int nextNumLives(){
+		
+		return (dN > 0) ? Nl0 + getRand().nextInt(2*dN+1)-dN : Nl0; // rand in [0 , 2*dN]
 	}
 	
 }
