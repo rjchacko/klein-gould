@@ -62,7 +62,7 @@ public class PhiFourth2D {
 		
 		fft = new FFT2D(Lp, Lp);
 		fft.setLengths(L, L);
-		potential = fft.buildFourierArray(PhiFourth2DConsts.potential2);
+		//potential = fft.buildFourierArray(PhiFourth2DConsts.potential2);
 		
 		t = 0;
 		for (int i = 0; i < Lp*Lp; i++)
@@ -116,7 +116,7 @@ public class PhiFourth2D {
 	public void simulate() {
 //		laplaceOperator(phi, laplace_phi);
 //		fft.convolve(phi, laplace_phi, PhiFourth2DConsts.potential2);
-		fft.convolve(phi, laplace_phi, potential);
+		//fft.convolve(phi, laplace_phi, potential);
 		
 		for (int i = 0; i < Lp*Lp; i++) {
 			del_phi[i] = - dt*(-R*R*laplace_phi[i] + (T+sqr(phi[i]))*phi[i] - h);

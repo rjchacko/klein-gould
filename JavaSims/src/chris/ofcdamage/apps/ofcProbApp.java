@@ -71,7 +71,7 @@ public class ofcProbApp extends Simulation{
 		// Simulate the model without damage
 		for (int jj = 0 ; jj < simt ; jj++){
 			model.evolve(jj,false);
-			model.takePSdata(hs);
+			takePSdata(hs);
 			//model.takeWdata(hx);
 			if(jj%500 == 0){
 				params.set("Status", jj);
@@ -88,6 +88,12 @@ public class ofcProbApp extends Simulation{
 		return;
 	}
 
+	private void takePSdata(Histogram h){
+
+		h.accum(model.getStress(0));
+		return;
+	}
+	
 	public void animate() {
 		
 		return;

@@ -1,5 +1,6 @@
 package chris.ofcdamage;
 
+import chris.util.MathUtil;
 import scikit.jobs.params.Parameters;
 
 public class forceSf2Dfast extends damage2Dfast{
@@ -61,8 +62,9 @@ public class forceSf2Dfast extends damage2Dfast{
 		// force failure in the zero velocity limit
 
 		double dsigma, tmpbar;
-		int jjmax;
+		int jjmax, ndt;
 		index = 0;
+		ndt   = 0;
 		newindex = index;
 		
 		// force failure in the zero velocity limit
@@ -77,6 +79,7 @@ public class forceSf2Dfast extends damage2Dfast{
 				// calculate metric (PART 1)
 				sbar[jj] += stress[jj];
 				tmpbar   += sbar[jj];
+				ndt      += MathUtil.bool2bin(ftt[jj]);
 			}
 			dsigma = sf[jjmax]-stress[jjmax];
 			tmpbar = tmpbar / N;
@@ -87,6 +90,7 @@ public class forceSf2Dfast extends damage2Dfast{
 				
 				//calculate metric (PART 2)
 				Omega += (sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				ftt[jj] = false;
 			}
 			//calculate metric (PART 3)
 			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N));
@@ -95,7 +99,7 @@ public class forceSf2Dfast extends damage2Dfast{
 			if(mct%dlength == 0 && mct > 0){
 				writeData(mct);
 			}
-			saveData(mct, false, dsigma);
+			saveData(mct, false, dsigma, ndt);
 		}
 		else{
 			for (int jj = 0 ; jj < N ; jj++){

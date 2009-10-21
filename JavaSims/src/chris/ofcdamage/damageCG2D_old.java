@@ -65,10 +65,12 @@ public class damageCG2D_old extends damage2Dfast{
 		//
 
 		double dsigma, tmpbar, dsmin, tmpbarcgs;
-		int jjmax, tmpbarcgf;
+		int jjmax, tmpbarcgf, ndt;
+
 		index = 0;
 		newindex = index;
 		dsmin    = 1e5;
+		ndt      = 0;
 		
 		// force failure in the zero velocity limit
 		jjmax = 0;
@@ -89,6 +91,7 @@ public class damageCG2D_old extends damage2Dfast{
 				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
 				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
 				stressCG[cgID[jj]] += MathUtil.bool2bin(!failed[jj])*stress[jj];
+				ndt += MathUtil.bool2bin(ftt[jj]);
 				if(mct%tau == 0){
 					if(jj < NCG){
 						grbarCG[jj] += grCG[jj];
@@ -104,6 +107,7 @@ public class damageCG2D_old extends damage2Dfast{
 				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 				//calculate metric (PART 2)
 				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				ftt[jj] = false;
 				if(jj < NCG){
 					sbarCG[jj]  += stressCG[jj];
 					if(mct%tau == 0) OmegaCGgr += (tmpbarcgf-grbarCG[jj])*(tmpbarcgf-grbarCG[jj]);
@@ -127,7 +131,7 @@ public class damageCG2D_old extends damage2Dfast{
 				writeData(mct);
 				writeCGdata(mct);
 			}
-			saveData(mct, false, dsigma);
+			saveData(mct, false, dsigma, ndt);
 			saveCGdata(mct);
 		}
 		else{

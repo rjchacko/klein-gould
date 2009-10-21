@@ -62,10 +62,14 @@ public class ofc2DfastCG extends ofc2Dfast{
 		// force failure in the zero velocity limit
 
 		double dsigma, tmpbar, dsmin, tmpbarcgs, tmpbaract, tmpbarsact;
+		int ndt;
+		ndt   = 0;
+
 		index    = 0;
 		newindex = index;
 		dsmin    = 1e5;
-		
+		ndt      = 0;
+
 		if(takedata){
 			tmpbar      = 0;
 			Omega       = 0;
@@ -91,6 +95,7 @@ public class ofc2DfastCG extends ofc2Dfast{
 				sbar[jj]           += MathUtil.bool2bin(!failed[jj])*stress[jj];
 				tmpbar             += MathUtil.bool2bin(!failed[jj])*sbar[jj];
 				stressCG[cgID[jj]] += MathUtil.bool2bin(!failed[jj])*stress[jj];
+				ndt += MathUtil.bool2bin(ftt[jj]);
 				if(mct%tau == 0){
 					if(jj < NCG){
 						sactbarCG[jj] += sactCG[jj];
@@ -108,6 +113,7 @@ public class ofc2DfastCG extends ofc2Dfast{
 				
 				//calculate metric (PART 2)
 				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				ftt[jj] = false;
 				if(mct % tau == 0){
 					if(jj < NCG){
 						if(jj == 0){
@@ -142,7 +148,7 @@ public class ofc2DfastCG extends ofc2Dfast{
 				writeCGdata(mct);
 			}
 			act[cgID[ssold]]++;	//activity metric counting
-			saveData(mct, eqmode, dsigma);
+			saveData(mct, eqmode, dsigma, ndt);
 			saveCGdata(mct);
 		}
 		else{
