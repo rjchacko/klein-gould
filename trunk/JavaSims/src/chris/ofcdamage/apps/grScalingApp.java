@@ -73,7 +73,7 @@ public class grScalingApp extends Simulation{
 		while(ccl < 25){	
 
 			ccl++;
-			phis = 0.01;	
+			phis = 0.05;	
 			params.set("Random Seed", params.iget("Random Seed")+1);
 
 			// Setup model
@@ -194,12 +194,13 @@ public class grScalingApp extends Simulation{
 						if(record) takePicture(jj);
 					}
 				}
-				if(phis < 0.1){
-					phis += 0.01;
-				}
-				else{
-					phis += 0.05;
-				}
+//				if(phis < 0.1){
+//					phis += 0.01;
+//				}
+//				else{
+//					phis += 0.05;
+//				}
+				phis += 0.05;
 				dmt    = simt;				
 			}
 

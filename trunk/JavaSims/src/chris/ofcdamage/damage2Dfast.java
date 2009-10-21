@@ -2,7 +2,6 @@ package chris.ofcdamage;
 
 import scikit.jobs.params.Parameters;
 import chris.util.PrintUtil;
-import chris.util.SortUtil;
 
 public class damage2Dfast extends ofc2Dfast{
 	
@@ -21,26 +20,27 @@ public class damage2Dfast extends ofc2Dfast{
 		liveNbs = new int[N];
 		Lives   = new int[N];
 		
-		if(params.sget("Mode").equals("GRscaling")){
-			double p      = params.fget("\u03D5");
-			double rseq[] = new double[N];
-			for (int jj = 0 ; jj < N ; jj++){
-				rseq[jj]    = getRand().nextDouble();
-				liveNbs[jj] = qN;
-				Lives[jj]   = 1;
-			}
-			int[] rs = SortUtil.S2LindexSort(rseq);
-			Ndead = (int)(p*N);
-			for (int jj = 0 ; jj < Ndead ; jj++){
-				sr[rs[jj]]     = getSr0();
-				sf[rs[jj]]     = getSf0();
-				stress[rs[jj]] = 0;
-				Lives[rs[jj]]  = 0;
-				failed[rs[jj]] = true;
-				for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
-			}
+		if(params.sget("Mode").equals("Freeze")){
+			freezeIn(params, liveNbs, Lives);
 			return;
 		}
+//			double p      = params.fget("\u03D5");
+//			double rseq[] = new double[N];
+//			for (int jj = 0 ; jj < N ; jj++){
+//				rseq[jj]    = getRand().nextDouble();
+//				liveNbs[jj] = qN;
+//				Lives[jj]   = 1;
+//			}
+//			int[] rs = SortUtil.S2LindexSort(rseq);
+//			Ndead = (int)(p*N);
+//			for (int jj = 0 ; jj < Ndead ; jj++){
+//				sr[rs[jj]]     = getSr0();
+//				sf[rs[jj]]     = getSf0();
+//				stress[rs[jj]] = 0;
+//				Lives[rs[jj]]  = 0;
+//				failed[rs[jj]] = true;
+//				for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
+//			}
 
 		Nl0     = params.iget("Number of Lives");
 		dN      = params.iget("NL width");
@@ -222,5 +222,14 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		return (dN > 0) ? Nl0 + getRand().nextInt(2*dN+1)-dN : Nl0; // rand in [0 , 2*dN]
 	}
+	
+	
+	// FOR TESTING ONLY
+	
+	public int getNL(int st){
+		
+		return Lives[st];
+	}
+	
 	
 }

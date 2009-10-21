@@ -9,7 +9,6 @@ import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
-import static scikit.util.DoubleArray.*;
 
 public class MaggsApp extends Simulation {
 	
@@ -80,8 +79,8 @@ public class MaggsApp extends Simulation {
 		// checkE();
 		// checkAcceptanceRatios();
 		
-		double energyArray[] = energyData.copyArray();
-		energyArray = slice(energyArray, 100, energyArray.length);
+	//	double energyArray[] = energyData.copyArray();
+		//energyArray = slice(energyArray, 100, energyArray.length);
 //		params.set("energy", mean(energyArray)+" +- "+standardError(energyArray, 50));
 		energyPlot.registerPoints("Density", new PointSet(0, 1, energyData.copyArray()), Color.BLUE);
 	}

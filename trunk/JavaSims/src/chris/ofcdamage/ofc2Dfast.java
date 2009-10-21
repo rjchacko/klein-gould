@@ -4,14 +4,17 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.text.DateFormat;
 import java.text.DecimalFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.Random;
 
-import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
 import chris.util.PrintUtil;
+import chris.util.SortUtil;
 
 public class ofc2Dfast {
 
@@ -20,12 +23,12 @@ public class ofc2Dfast {
 	private int L, R, nbArray[], nbSeed;
 	protected int N, qN, fs[], GR, index, newindex, Ndead;
 	private boolean srn, sfn, an;
-	protected boolean failed[];
+	protected boolean failed[], ftt[];
 	private String outdir, bcs, bname;
 	private Random rand;
 	private LatticeNeighbors nbs;
 	public static int dlength = 150000;
-	public static int dcat = 5;
+	public static int dcat = 6;
 	private static DecimalFormat fmtI = new DecimalFormat("0000");
 	
 	public ofc2Dfast(Parameters params){
@@ -71,12 +74,15 @@ public class ofc2Dfast {
 		fs      = new int[2*N];
 		data    = new double[dcat][dlength];
 		failed  = new boolean[N];
+		ftt     = new boolean[N];
+
 		
 		for(int jj = 0 ; jj < N ; jj++){
 			sr[jj]     = srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
 			sf[jj]     = sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
 			stress[jj] = sr[jj] + (sf[jj]-sr[jj])*getRand().nextDouble();
 			failed[jj] = false;
+			ftt[jj]    = false;
 		}
 
 		// set up the lattice neighbors array
@@ -92,6 +98,30 @@ public class ofc2Dfast {
 		// set up output file
 		configOF();
 		
+		return;
+	}
+	
+	
+	public void freezeIn(Parameters params, int[] liveNbs, int[] Lives){
+		
+		double p      = params.fget("\u03D5");
+		double rseq[] = new double[N];
+		for (int jj = 0 ; jj < N ; jj++){
+			rseq[jj]    = getRand().nextDouble();
+			liveNbs[jj] = qN;
+			Lives[jj]   = 1;
+		}
+		
+		int[] rs = SortUtil.S2LindexSort(rseq);
+		Ndead = (int)(p*N);
+		for (int jj = 0 ; jj < Ndead ; jj++){
+			sr[rs[jj]]     = getSr0();
+			sf[rs[jj]]     = getSf0();
+			stress[rs[jj]] = 0;
+			Lives[rs[jj]]  = 0;
+			failed[rs[jj]] = true;
+			for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
+		}
 		return;
 	}
 	
@@ -176,10 +206,11 @@ public class ofc2Dfast {
 		// force failure in the zero velocity limit
 
 		double dsigma, tmpbar;
-		int jjmax;
+		int jjmax, ndt;
 		index = 0;
+		ndt   = 0;
 		newindex = index;
-		
+	
 		jjmax = 0;
 		if(takedata){
 			tmpbar = 0;
@@ -190,16 +221,20 @@ public class ofc2Dfast {
 				// calculate metric (PART 1)
 				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
 				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
+				// sum the sites from last time
+				ndt += MathUtil.bool2bin(ftt[jj]);
 			}
 			dsigma = sf[jjmax]-stress[jjmax];
-			tmpbar = tmpbar / N;
+			tmpbar = tmpbar / (N-Ndead);
+			//tmpbar = tmpbar / N;
 			Omega  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
 				// add stress to fail site
 				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
-				
 				//calculate metric (PART 2)
 				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				// reset ftt
+				ftt[jj] = false;
 			}
 			//calculate metric (PART 3)
 			//Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
@@ -210,7 +245,7 @@ public class ofc2Dfast {
 			if(mct%dlength == 0 && mct > 0){
 				writeData(mct);
 			}
-			saveData(mct, eqmode, dsigma);
+			saveData(mct, eqmode, dsigma, ndt);
 		}
 		else{
 			for (int jj = 0 ; jj < N ; jj++){
@@ -238,6 +273,7 @@ public class ofc2Dfast {
 	protected void failSite(int index){
 		
 		GR++;
+		ftt[index]     = true;
 		failed[index]  = true;
 		return;
 	}
@@ -300,13 +336,14 @@ public class ofc2Dfast {
 		return;
 	}
 	
-	protected void saveData(int mct, boolean EQ, double ds){
+	protected void saveData(int mct, boolean EQ, double ds, int grp){
 		
 		data[0][mct%dlength] = 1/Omega;
 		data[1][mct%dlength] = GR;
 		data[2][mct%dlength] = ds;
 		data[3][mct%dlength] = MathUtil.bool2bin(EQ);
 		data[4][mct%dlength] = 1.-(double)(Ndead)/(double)(N); 
+		data[5][mct%dlength] = grp;
 		return;
 	}
 
@@ -326,6 +363,8 @@ public class ofc2Dfast {
 			pw.print("EQ Mode");
 			pw.print("\t");
 			pw.print("Phi");
+			pw.print("\t");
+			pw.print("Unique Shower Size");
 			pw.println();
 			pw.close();
 		}
@@ -340,6 +379,19 @@ public class ofc2Dfast {
 		
 		PrintUtil.printlnToFile(fout,prms.toString());
 		PrintUtil.printlnToFile(fout,"Neighbors = " + fmtI.format(qN));
+		
+		return;
+	}
+	
+	public void PrintParams(String fout, Parameters prms, Object obj){
+		
+		PrintUtil.printlnToFile(fout,prms.toString());
+		PrintUtil.printlnToFile(fout,"Neighbors = " + fmtI.format(qN));
+		PrintUtil.printlnToFile(fout, obj.getClass().getName());
+		DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
+        Date date = new Date();
+        PrintUtil.printlnToFile(fout, dateFormat.format(date));		
+		
 		return;
 	}
 	
@@ -436,37 +488,22 @@ public class ofc2Dfast {
 		return sf0;
 	}
 	
-	/*
-	 * 
-	 * 	MOVE THIS TO APP AND
-	 *  TAKEWDATA METHOD!
-	 * 
-	 * 
-	 */
-	
-	
-	public void takePSdata(Histogram h){
-		
-		h.accum(stress[0]);
-		return;
-	}
-	
-	public void takeWdata(Histogram h){
-		
-		/*
-		 * THIS ASSUMES Sr - dSr = 0
-		 * 				and  dSf = 0
-		 */
-		
-		for(int jj = 0 ; jj < N ; jj++){
-			h.accum(oldstress[jj] + stress[jj]*(1+sf0));
-		}
-		return;
-	}
-	
 	public int getGR(){
 		
 		return GR;
 	}
+	
+	// FOR TESTING ONLY 
+	
+	public double getSr(int st){
+		
+		return sr[st];
+	}
+	
+	public double getSf(int st){
+		
+		return sf[st];
+	}
+	
 	
 }

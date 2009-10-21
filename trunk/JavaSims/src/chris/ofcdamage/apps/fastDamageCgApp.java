@@ -129,7 +129,7 @@ public class fastDamageCgApp extends Simulation{
 			// simulate system in EQ mode with phi != 0
 			params.set("Mode","Earthquake");
 			for (int jj = 0 ; jj < simt ; jj++){
-				model.evolve(jj,true);
+				model.evolveEQ(jj,true);
 				if(jj%500 == 0){
 					params.set("Status", jj);
 					Job.animate();
