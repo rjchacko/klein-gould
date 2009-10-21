@@ -43,7 +43,8 @@ public class ising extends Simulation{
 	public double totalmagnetization;
 	public double magnetization;
 	public int R;   //interaction range
-	public int CR;  //coarse grain range
+	public int CR;  //coarse grain range for magnetization
+	public int CGT;  //coarse grain time
 	public int step; //Monte Carlo step
 	public int steplimit; //upperlimit of MC step
 	public int metricstart; //the start of metric calculation
@@ -56,7 +57,9 @@ public class ising extends Simulation{
 	public double coarsegrain[]; //the array of the coarse grain magnetization
 	public double CGEnergy[]; // the array of the CGblocks' energy
 	
-	public double timetotalE[];  
+	public double timetotalE[];
+	public double cgtotalE[];  // time coarsegrain total energy within each coarsegrain time period
+	public double cgaverageE[];
 	public double timeaverageE[]; //time average energy for metric
 	public double Metric[];  //array for plotting metric
 	
@@ -231,6 +234,7 @@ public class ising extends Simulation{
 		params.addm("Interaction Constant", 1);
 		params.add("Interaction range", 10);
 		params.add("Coarsegrain range", 0);
+		params.add("Coarsegrain time",1);
 		params.add("Monte Carlo step's limit", 1000000);
 		params.add("Metric Start at",5000);
 		params.add("Metric points", 2000);
@@ -277,6 +281,7 @@ public class ising extends Simulation{
 		CR = (int)params.fget("Coarsegrain range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
 		metricstart = (int)params.fget("Metric Start at");
+		CGT= (int)params.fget("Coarsegrain time");
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
@@ -294,6 +299,9 @@ public class ising extends Simulation{
 		
 		timetotalE = new double[B];
 		timeaverageE = new double[B];
+		cgtotalE = new double[B];
+		cgaverageE = new double[B];
+		
 		N = (int)params.fget("Metric points");
 		Metric = new double[N];
 		
@@ -377,7 +385,7 @@ public class ising extends Simulation{
 					}
 				}
 			
-				if(step % 10 == 0) {
+				if(step % 1 == 0) {
 					params.set("MC time", step);
 					params.set("Metric", NMetric/B);
 				}
@@ -395,6 +403,8 @@ public class ising extends Simulation{
 			
 			
 			totalE=0;
+			
+			
 			
 			for (int y=0; y<B; y++)
 			{
@@ -426,39 +436,62 @@ public class ising extends Simulation{
 			
 			for (int x=0; x< B; x++)
 			{
-					totalE+=timeaverageE[x];
-			}
+				if (CGT!=1)
+					cgtotalE[x]+=timeaverageE[x];
+			}    //sum over the time average energy within the time coarse grain
+			
+			if((step-metricstart)%CGT==0) 
+			{	
+			
+				for (int z=0; z< B; z++)
+				{
+					cgaverageE[z]= cgtotalE[z]/CGT;
+					cgtotalE[z]=0;
+				}
+				for (int x=0; x< B; x++)
+			    {
+					if(CGT==1)
+						totalE+=timeaverageE[x];
+					if(CGT!=1)
+						totalE+=cgaverageE[x];
+			    }
 			
 			averageE=totalE/B;
 
 			NMetric=0;
+			
 			for (int z=0; z< B; z++)
 			{
-				NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
+				if(CGT==1)
+					NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
+				if(CGT!=1)
+					NMetric+=(cgaverageE[z]-averageE)*(cgaverageE[z]-averageE);
 			}
 			
 		
-			if(step<N+metricstart+1)
+			if(step<N*CGT+metricstart+1)
 				{
-				Metric[step-metricstart-1]=NMetric/B;
-				PrintUtil.printlnToFile("F:/data/cmetric9.txt",step-metricstart, Metric[step-metricstart-1]);
+				Metric[(step-metricstart)/CGT-1]=NMetric/B;
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt",(step-metricstart)/CGT, Metric[(step-metricstart)/CGT-1]);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
+			}
 			
-			if(step==metricstart+500)
+			if(step==metricstart+500*CGT)
 			{
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","");
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Lattice length=", L1);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Lattice width=", L2);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Block length=", S1);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Block width=", S2);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","J=",NJ);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Interaction Range=",R);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Coarsegrain Range=",CR);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Mectric starts at", metricstart);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Final Tempearture=",T);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Final Field=",H);
-				PrintUtil.printlnToFile("F:/data/cmetric1.txt","Diluted Percentage=",P);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","");
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Lattice length=", L1);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Lattice width=", L2);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Block length=", S1);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Block width=", S2);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","J=",NJ);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Interaction Range=",R);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Coarsegrain Range=",CR);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Coarsegrain Time=",CGT);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Mectric starts at", metricstart);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Final Tempearture=",T);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Final Field=",H);
+				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Diluted Percentage=",P);
 				
 			}
 			
