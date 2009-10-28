@@ -62,10 +62,10 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.add("Interaction", new ChoiceValue( "Circle", "Fully Connected", "Square", "Small World") );
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 30);
-		params.addm("dx", 9);
-		params.addm("Coarse Grained dt (PU)", 10);
-		params.addm("Equilibration Updates", 500000);
+		params.addm("CG size", 64);
+		params.addm("dx", 4);
+		params.addm("Coarse Grained dt (PU)", 1);
+		params.addm("Equilibration Updates", 50000);
 		params.addm("Max PU", 1000000);
 		params.addm("Data points per write", 100);
 		params.addm("R", 16);// 0 -> fully connected
@@ -77,8 +77,8 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		params.addm("Failures Max Noise", 0);
 //		params.addm("Mean Heal Time", 2);
 //		params.addm("Heal Time Noise", 1);
-		params.addm("Init Percent Dead", 0);
-		params.addm("Max Percent Damage", 0.01);
+		params.addm("Init Percent Dead", 0.1);
+		params.addm("Max Percent Damage", 0.0);
 		params.add("L");
 		params.add("Time");
 		params.add("Av Size");
@@ -103,7 +103,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		
 		params.set("Time", Utilities.format(ofc.cg_time));
 		params.set("Plate Updates", ofc.plateUpdates);
-		percentDead = ofc.noDeadSites/(double)(ofc.L*ofc.L);
+		percentDead = (double)ofc.noDeadSites/(double)(ofc.L*ofc.L);
 		params.set("Percent dead sites", Utilities.format(percentDead));
 		params.set("Av Size", ofc.avSize);
 
@@ -137,14 +137,16 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		System.out.println("Finished Equilibration 1");
 		
 		// Kill
-		while (percentDead <= maxPercentDamage){
+		while (percentDead < maxPercentDamage){
 			ofc.damagePreStep();
 			Job.animate();
 			while (ofc.nextSiteToFail >= 0){
 				ofc.damageStepIter();
 				Job.animate();
 			}	
+//			System.out.println(percentDead + "dead after " + ofc.plateUpdates + " PU");
 		}
+//		Job.signalStop();
 		System.out.println(percentDead + " dead after " + ofc.plateUpdates + " PU");
 		FileUtil.printlnToFile(iMetFile, "# ", percentDead, " percent dead after " , ofc.plateUpdates, " PU.");
 
@@ -192,7 +194,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 				}
 				cgMaxSizeActBoxTempAcc.accum(ofc.cg_time, maxEpicenter);
 				timeAveForMaxCGSizeActTempAcc.accum(ofc.cg_time, ofc.CG_SizeActTimeAve[loc]);
-				if(dataPointsCount ==0) System.out.println("max loc = " + maxEpicenter + " " + ofc.CG_SizeActTimeAve[loc]);
+//				if(dataPointsCount ==0) System.out.println("max loc = " + maxEpicenter + " " + ofc.CG_SizeActTimeAve[loc]);
 				
 				//stress metric
 				double inverseStressMetric = 1.0/stressMetric;

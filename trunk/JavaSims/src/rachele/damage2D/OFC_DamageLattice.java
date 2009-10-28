@@ -144,7 +144,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				//the site is alive
 				//assign no of fails uniformly between 0 and maxNoFails - 1
 				noFails[i] = (int)(random.nextDouble()*((double)maxNoFails[i]+1.0));
-				System.out.println(i + " alive maxNoFails = " + maxNoFails[i] + " noFails = " + noFails[i]);
+//				System.out.println(i + " alive maxNoFails = " + maxNoFails[i] + " noFails = " + noFails[i]);
 			}else{
 				//the site is dead
 				noDeadSites+=1;
