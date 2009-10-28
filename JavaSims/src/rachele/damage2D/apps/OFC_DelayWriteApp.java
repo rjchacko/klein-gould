@@ -51,15 +51,15 @@ public class OFC_DelayWriteApp extends Simulation{
 		c.frameTogether("Grids", grid, cgGrid, plateUpdateGrid, cgGridTimeAverage);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 32);
-		params.addm("dx", 8);
+		params.addm("CG size", 64);
+		params.addm("dx", 1);
 		params.addm("Coarse Grained dt (PU)", 1);
-		params.addm("Equilibration Updates", 10000);
+		params.addm("Equilibration Updates", 50000);
 		params.addm("Max PU", 1000000);
-		params.addm("Data points per write", 1000);
-		params.addm("R", 16);// 0 -> fully connected
+		params.addm("Data points per write", 100);
+		params.addm("R", 2);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
-		params.addm("Dissipation Param", 0.1);
+		params.addm("Dissipation Param", 0.3);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
 		params.add("L");

@@ -48,6 +48,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		}else{
 			fullyConnected = false;
 			noNbors = findCircleNbors(R);
+			System.out.println("No of neighbors = " + noNbors);
 		}
 		System.out.println("Fully Connected = " + fullyConnected);
 		dt = 1.0/params.fget("Coarse Grained dt (PU)");
@@ -108,6 +109,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public void equilibrate(){
 		//find the epicenter
 		epicenterSite = siteWithMaxStress();
+//		System.out.println("epicenter = " + epicenterSite);
 		//bring epicenter to failure by adding equal stress to all sites
 		double stressAdd = tStress - stress[epicenterSite];
 		for (int i = 0; i < N; i++) stress[i] += stressAdd;
@@ -209,6 +211,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 
 	int checkFailWithRange(){
 		int s = siteWithMaxStress();
+//		System.out.println("site with max stress = " + s);
 		if (stress[s] < tStress) s = -1; 
 		return s;
 	}
@@ -270,6 +273,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 					 int xx = (x+dx+L)%L;
 					 int yy = (y+dy+L)%L;
 					 int nborSite = yy*L+xx;
+//					 System.out.println("nborsite = " + nborSite);
 					 stress[nborSite] += stressPerNbor;
 				 }
 			 }
