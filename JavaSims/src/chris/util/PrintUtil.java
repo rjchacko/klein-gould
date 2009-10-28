@@ -354,8 +354,7 @@ public class PrintUtil {
 			
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			
-			
+	
 			// print info here
 //			pw.println("m by n array");
 //			pw.println("printing:");
