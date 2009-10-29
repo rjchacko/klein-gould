@@ -2,6 +2,7 @@ package kip.ising.dim2;
 
 import static java.lang.Math.exp;
 import static java.lang.Math.min;
+import chris.util.SortUtil;
 import kip.ising.RewindableDynamics;
 import kip.ising.spinblock.SpinBlocks2D;
 import kip.util.Random;
@@ -16,6 +17,7 @@ public class IsingLR extends RewindableDynamics {
 	
 	public int L, R;
 	public double T, J, h;
+	
 	public Random random = new Random();
 
 	public IsingLR(Parameters params) {
@@ -82,6 +84,22 @@ public class IsingLR extends RewindableDynamics {
 		}
 	}
 	
+	public void setDiluteField(double m, double p){
+		
+		int N         = L*L;
+		int dN        = (int)(p*N);
+		double rseq[] = new double[N];
+		
+		for (int jj = 0 ; jj < N ; jj++)
+			rseq[jj] = random.nextDouble();
+		int[] rs = SortUtil.S2LindexSort(rseq);
+	    setField(m);
+		for (int jj = 0 ; jj < dN ; jj++)
+			spins.INITset(rs[jj]%L, rs[jj]/L, 0);
+
+		return;
+	}
+	
 	public double[] getField(int dx) {
 		int scale = Integer.numberOfTrailingZeros(dx);
 		int blocks[] = spins.blocksAtScale(scale);
@@ -92,6 +110,10 @@ public class IsingLR extends RewindableDynamics {
 		return ret;
 	}
 	
+	public int[] getSpins(){
+		
+		return spins.blocksAtScale(0);
+	}
 	
 	private boolean shouldFlip(double dE) {
 		switch (dynamics) {
@@ -139,5 +161,10 @@ public class IsingLR extends RewindableDynamics {
 			}
 			scikit.jobs.Job.yield();
 		}
+	}
+
+	public double dt() {
+
+		return dt;
 	}
 }

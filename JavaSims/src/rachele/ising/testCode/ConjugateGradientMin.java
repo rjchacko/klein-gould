@@ -567,10 +567,10 @@ public class ConjugateGradientMin {
     		df = functionMultiDim(trialPointD) - functionMultiDim(trialPoint);
     		System.out.println("df = " + df);
     		if(df > 0.0){
-    			for (int j = 0; j < N; j ++){
+    			for (int j = 0; j < N; j++){
     				minReferencePoint[j] = trialPoint[j];
     				//xi[j] = -xi[j];
-    				return;
+    				//return;
     			}
 			}
 		}
