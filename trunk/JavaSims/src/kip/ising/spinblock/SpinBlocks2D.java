@@ -90,6 +90,22 @@ public class SpinBlocks2D {
 			flip(x, y);
 	}
 	
+	public void INITset(int x, int y, int s){
+		assert (s == 1 || s == -1 || s == 0);
+		if (get(x, y) != s){
+			int dm = -blocks[0][0][y*L+x]; // change in magnetization after flipping spin i (NOT 2 x)
+			for (int yscale = 0; yscale < blocks.length; yscale++) {
+				int yind = y >> yscale;
+				for (int xscale = 0; xscale < blocks.length; xscale++) {
+					int xind = x >> xscale;
+					blocks[yscale][xscale][yind*(L>>xscale) + xind] += dm;
+				}
+			}
+			netSum += dm;
+		}
+		return;
+	}
+	
 	public int get(int x, int y) {
 		return blocks[0][0][y*L+x];
 	}

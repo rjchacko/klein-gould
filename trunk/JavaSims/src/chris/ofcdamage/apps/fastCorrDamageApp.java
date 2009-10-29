@@ -36,10 +36,10 @@ public class fastCorrDamageApp extends Simulation{
 //		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
 		params.add("Interaction Radius (R)");
 		params.add("Lattice Size");
-		params.set("Interaction Radius (R)", (int) 3);
-		params.set("Lattice Size", (int) 25);	
+		params.set("Interaction Radius (R)", (int) 20);
+		params.set("Lattice Size", (int) 512);	
 //		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
-		params.add("Equil Time", 500000);
+		params.add("Equil Time", 600000);
 //		params.add("Sim Time", 500000);
 //		params.add("Number of Lives",(int) 10);
 //		params.add("NL width", (int) 8);
@@ -47,7 +47,7 @@ public class fastCorrDamageApp extends Simulation{
 //		params.add("\u03C3_f width", 0.);
 		params.add("Residual Stress (\u03C3_r)", 1.);
 		params.add("\u03C3_r width", 0.2);
-		params.add("Dissipation (\u03B1)", 0.1);
+		params.add("Dissipation (\u03B1)", 0.05);
 //		params.add("\u03B1 width", 0.);
 		params.add("Cycle");
 		params.add("Mode");
@@ -59,7 +59,6 @@ public class fastCorrDamageApp extends Simulation{
 
 		int ccl  = 0;
 		int ndo;
-	
 		
 		while(ccl < 1000){	
 			
@@ -82,7 +81,10 @@ public class fastCorrDamageApp extends Simulation{
 			if(ccl == 1) model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params,model);	
 			eqt    = params.iget("Equil Time");
 			Ndead  = 0;
+			double[] dummy = new double[(int)(0.45*N)];
+			int dummycount = 0;
 
+			
 			params.set("Cycle", ccl);
 			params.set("Mode","Equilibrate");
 			Job.animate();
@@ -119,6 +121,8 @@ public class fastCorrDamageApp extends Simulation{
 					params.set("Mode", Ndead);
 					Job.animate();
 				}
+				// save a list of phi for bug checking
+				dummy[dummycount++] = Ndead/N;
 			}
 
 
@@ -126,6 +130,7 @@ public class fastCorrDamageApp extends Simulation{
 			params.set("Random Seed", params.iget("Random Seed") + 1);
 			// print the data so far
 			PrintUtil.printArrayToFile(model.getOutdir()+File.separator+model.getBname()+"_"+ifmt.format(ccl)+".txt", grd, 201, 10);
+			PrintUtil.printArrayToFile(model.getOutdir()+File.separator+model.getBname()+"phiStop"+"_"+ifmt.format(ccl)+".txt", dummy,dummycount,1);
 			Job.animate();
 
 		}
