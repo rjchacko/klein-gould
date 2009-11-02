@@ -129,8 +129,8 @@ public class fastCorrDamageApp extends Simulation{
 			params.set("Mode", "Next Cycle");
 			params.set("Random Seed", params.iget("Random Seed") + 1);
 			// print the data so far
-			PrintUtil.printArrayToFile(model.getOutdir()+File.separator+model.getBname()+"_"+ifmt.format(ccl)+".txt", grd, 201, 10);
-			PrintUtil.printArrayToFile(model.getOutdir()+File.separator+model.getBname()+"phiStop"+"_"+ifmt.format(ccl)+".txt", dummy,dummycount,1);
+			PrintUtil.printMxNarrayToFile(model.getOutdir()+File.separator+model.getBname()+"_"+ifmt.format(ccl)+".txt", grd, 201, 10);
+			PrintUtil.printVectorToFile(model.getOutdir()+File.separator+model.getBname()+"phiStop"+"_"+ifmt.format(ccl)+".txt", dummy,dummycount);
 			Job.animate();
 
 		}

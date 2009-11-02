@@ -54,8 +54,8 @@ public class damageCluster extends damage{
 			dY[jj] = clusters.getDist(jj+N);
 		}
 		
-		PrintUtil.printArrayToFile(getOutdir()+File.separator+"ClustersDX_"+(cycle+1)+".txt", dX,N,1);
-		PrintUtil.printArrayToFile(getOutdir()+File.separator+"ClustersDY_"+(cycle+1)+".txt", dY,N,1);
+		PrintUtil.printVectorToFile(getOutdir()+File.separator+"ClustersDX_"+(cycle+1)+".txt", dX);
+		PrintUtil.printVectorToFile(getOutdir()+File.separator+"ClustersDY_"+(cycle+1)+".txt", dY);
 		
 		return;
 	}

@@ -207,44 +207,6 @@ public class PrintUtil {
 			ex.printStackTrace();
 		}
 	}
-
-	
-	static public void printArrayToFile(String fileName, int[] array, int m, int n){
-		try{
-			
-			File file = new File(fileName);
-			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			
-			
-			// print info here
-//			pw.println("m by n array");
-//			pw.println("printing:");
-//			pw.println("i = 0, 1, 2, . . . m-1 ");
-//			pw.println("i = m, m+1 , . . . ");
-//			pw.println("    .");
-//			pw.println("    .");
-//			pw.println("    .");
-//			pw.println("    n, n+1, . . . n+m");
-//			pw.print("m = ");
-//			pw.println(m);
-//			pw.print("n = ");
-//			pw.println(n);
-			for (int ii = 0 ; ii < m*n ; ii++){
-				pw.print(array[ii]);
-				if ( (ii + 1)%n == 0){
-					pw.println();
-				}
-				else{
-					pw.print("\t");
-				}
-			}
-			
-			pw.close();
-
-		} catch (IOException ex){
-			ex.printStackTrace();
-		}
-	}
 	
 	static public void printWalkerData(String fileName, int[] array, int N, double offSet, double binWidth){
 		try{
@@ -312,26 +274,12 @@ public class PrintUtil {
 	}
 	
 	
-	static public void printArrayToFile(String fileName, double[] array, int m, int n){
+	static public void printVectorAsMatrixToFile(String fileName, double[] array, int m, int n){
 		try{
 			
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			
-			
-			// print info here
-//			pw.println("m by n array");
-//			pw.println("printing:");
-//			pw.println("i = 0, 1, 2, . . . m-1 ");
-//			pw.println("i = m, m+1 , . . . ");
-//			pw.println("    .");
-//			pw.println("    .");
-//			pw.println("    .");
-//			pw.println("    n, n+1, . . . n+m");
-//			pw.print("m = ");
-//			pw.println(m);
-//			pw.print("n = ");
-//			pw.println(n);
+
 			for (int ii = 0 ; ii < m*n ; ii++){
 				pw.print(array[ii]);
 				if ( (ii + 1)%n == 0){
@@ -349,25 +297,36 @@ public class PrintUtil {
 		}
 	}
 	
-	static public void printArrayToFile(String fileName, double[][] array, int m, int n){
+	static public void printVectorAsMatrixToFile(String fileName, int[] array, int m, int n){
+		try{
+			
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+
+			for (int ii = 0 ; ii < m*n ; ii++){
+				pw.print(array[ii]);
+				if ( (ii + 1)%n == 0){
+					pw.println();
+				}
+				else{
+					pw.print("\t");
+				}
+			}
+			
+			pw.close();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	
+	static public void printMxNarrayToFile(String fileName, double[][] array, int m, int n){
 		try{
 			
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 	
-			// print info here
-//			pw.println("m by n array");
-//			pw.println("printing:");
-//			pw.println("i = 0, 1, 2, . . . m-1 ");
-//			pw.println("i = m, m+1 , . . . ");
-//			pw.println("    .");
-//			pw.println("    .");
-//			pw.println("    .");
-//			pw.println("    n, n+1, . . . n+m");
-//			pw.print("m = ");
-//			pw.println(m);
-//			pw.print("n = ");
-//			pw.println(n);
 			for (int ii = 0 ; ii < m ; ii++){
 				for(int jj = 0 ; jj < n ; jj++){
 					pw.print(array[jj][ii]);
@@ -407,26 +366,6 @@ public class PrintUtil {
 		
 	}
 	
-	
-	static public void printTimeAndVectorToFile(String fileName, double T, double[] vector){
-
-		int Length = vector.length;	
-		try{
-			File file = new File(fileName);
-			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			pw.print(T);
-			pw.print("\t");
-			for (int ii = 0 ; ii<Length ; ii++){
-				pw.print(vector[ii]);
-				pw.print("\t");
-			}
-			pw.println();
-
-		} catch (IOException ex){
-			ex.printStackTrace();
-		}
-	}
-	
 	static public void printScalarsAndVectorToFile(String fileName, double t1, double t2, double[] vector){
 
 		int Length = vector.length;	
@@ -448,64 +387,16 @@ public class PrintUtil {
 		}
 	}
 	
-	/*
-	 * 
-	 * Replace this with the above method!!!!!
-	 * 
-	 */
-	
-	static public void print2TimeAndVectorToFile(String fileName, double T1, double T2, double[] vector){
+	static public void printScalarAndVectorToFile(String fileName, double t1, double[] vector){
 
 		int Length = vector.length;	
-		try{
-			File file = new File(fileName);
-			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			pw.print(T1);
-			pw.print("\t");
-			pw.print(T2);
-			pw.print("\t");
-			for (int ii = 0 ; ii<Length ; ii++){
-				pw.print(vector[ii]);
-				pw.print("\t");
-			}
-			pw.println();
-
-		} catch (IOException ex){
-			ex.printStackTrace();
-		}
-	}
-	
-	static public void print2TimeAndVectorToFile(String fileName, double T1, double T2, int[] vector){
-
-		int Length = vector.length;	
-		try{
-			File file = new File(fileName);
-			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			pw.print(T1);
-			pw.print("\t");
-			pw.print(T2);
-			pw.print("\t");
-			for (int ii = 0 ; ii<Length ; ii++){
-				pw.print(vector[ii]);
-				pw.print("\t");
-			}
-			pw.println();
-
-		} catch (IOException ex){
-			ex.printStackTrace();
-		}
-	}
-	
-	// this is ad hoc...delete it!!!!
-	static public void printTimeAndVectorToFile(String fileName, double t1, int[][] array, int index, int length){
-		int Length = length;	
 		try{
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.print(t1);
 			pw.print("\t");
 			for (int ii = 0 ; ii<Length ; ii++){
-				pw.print(array[index][ii]);
+				pw.print(vector[ii]);
 				pw.print("\t");
 			}
 			pw.println();
@@ -514,6 +405,26 @@ public class PrintUtil {
 			ex.printStackTrace();
 		}
 	}
+	
+	static public void printScalarAndVectorToFile(String fileName, double t1, int[] vector){
+
+		int Length = vector.length;	
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.print(t1);
+			pw.print("\t");
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.print(vector[ii]);
+				pw.print("\t");
+			}
+			pw.println();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 
 	static public void printlnToFile(String fileName, Boolean b1, Boolean b2){
 		try{
@@ -553,6 +464,79 @@ public class PrintUtil {
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}
+	}
+
+	public static void printArraysToFile(String fileName, int[] a1, int[] a2) {
+		int Length = a1.length;	
+		if(a2.length != Length) throw new IllegalArgumentException("Arrays have different lengths");
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.print(a1[ii]);
+				pw.print("\t");
+				pw.println(a2[ii]);
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	public static void printArraysToFile(String fileName, double[] a1, double[] a2) {
+		int Length = a1.length;	
+		if(a2.length != Length) throw new IllegalArgumentException("Arrays have different lengths");
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.print(a1[ii]);
+				pw.print("\t");
+				pw.println(a2[ii]);
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+
+	public static void printVectorToFile(String fileName, double[] vec, int Length){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.println(vec);
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+		
+	}
+	
+	public static void printVectorToFile(String fileName, int[] vec){
+		int Length = vec.length;
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.println(vec);
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+		
+	}
+	
+	public static void printVectorToFile(String fileName, double[] vec){
+		int Length = vec.length;
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.println(vec);
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+		
 	}
 	
 	

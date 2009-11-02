@@ -1151,7 +1151,7 @@ public class NfailDamage2DV2 extends SimpleDamage2D{
 		}
 
 		PrintUtil.printlnToFile(fout1,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
-		PrintUtil.printTimeAndVectorToFile(fout2, time, NlivesLeft);
+		PrintUtil.printScalarAndVectorToFile(fout2, time, NlivesLeft);
 
 
 		return;
@@ -1180,11 +1180,11 @@ public class NfailDamage2DV2 extends SimpleDamage2D{
 	public void CloneSim(Parameters prms){
 		
 		PrintParams(outdir + File.separator + "Params4Clone.txt", prms);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Alive.txt", alive, 2*L, L);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Stress.txt", stress, L, L);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Residual_Stress.txt", Sr, L, L);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Critical_Stress.txt", Sc, L, L);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Stress_so_Far.txt", SsoFar, L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Alive.txt", alive, 2*L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Stress.txt", stress, L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Residual_Stress.txt", Sr, L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Critical_Stress.txt", Sc, L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Stress_so_Far.txt", SsoFar, L, L);
 		WriteDataHeader(outdir + File.separator + "Data_LL.txt",1);
 		TakeData(outdir + File.separator + "Data_LL_1.txt",outdir + File.separator + "Data_LL_2.txt");
 		

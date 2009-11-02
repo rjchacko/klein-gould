@@ -1141,11 +1141,11 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 	public void CloneSim(Parameters prms){
 		
 		PrintParams(outdir + File.separator + "Params4Clone.txt", prms);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Alive.txt", alive, 2*L, L);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Stress.txt", stress, L, L);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Residual_Stress.txt", Sr, L, L);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Critical_Stress.txt", Sc, L, L);
-		PrintUtil.printArrayToFile(outdir + File.separator + "Stress_so_Far.txt", SsoFar, L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Alive.txt", alive, 2*L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Stress.txt", stress, L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Residual_Stress.txt", Sr, L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Critical_Stress.txt", Sc, L, L);
+		PrintUtil.printVectorAsMatrixToFile(outdir + File.separator + "Stress_so_Far.txt", SsoFar, L, L);
 		WriteDataHeader(outdir + File.separator + "Data_LL.txt",1);
 		TakeData(outdir + File.separator + "Data_LL_1.txt",outdir + File.separator + "Data_LL_2.txt");
 		
@@ -1160,12 +1160,12 @@ public class NfailDamageLag2D extends SimpleDamage2D{
 		String of5 = outdir+File.separator+"SB5.txt";
 		String of6 = outdir+File.separator+"SB6.txt";
 		
-		PrintUtil.printTimeAndVectorToFile(of1,time,Sband,1,Nbins);
-		PrintUtil.printTimeAndVectorToFile(of2,time,Sband,2,Nbins);
-		PrintUtil.printTimeAndVectorToFile(of3,time,Sband,3,Nbins);
-		PrintUtil.printTimeAndVectorToFile(of4,time,Sband,4,Nbins);
-		PrintUtil.printTimeAndVectorToFile(of5,time,Sband,5,Nbins);
-		PrintUtil.printTimeAndVectorToFile(of6,time,Sband,6,Nbins);
+		PrintUtil.printScalarAndVectorToFile(of1,time,Sband[0]);
+		PrintUtil.printScalarAndVectorToFile(of2,time,Sband[1]);
+		PrintUtil.printScalarAndVectorToFile(of3,time,Sband[2]);
+		PrintUtil.printScalarAndVectorToFile(of4,time,Sband[3]);
+		PrintUtil.printScalarAndVectorToFile(of5,time,Sband[4]);
+		PrintUtil.printScalarAndVectorToFile(of6,time,Sband[5]);
 	}
 
 		

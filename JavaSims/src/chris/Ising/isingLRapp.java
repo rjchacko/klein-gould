@@ -35,7 +35,7 @@ public class isingLRapp extends Simulation{
 	double ebar[], p;
 	IsingLR sim;
 	private static int dlength = 100000;
-	private static double eqt = 500;
+	private static double eqt = 200;
 	private static double rct = 5000;
 	
 	double data[] = new double[dlength]; 
@@ -51,7 +51,7 @@ public class isingLRapp extends Simulation{
 		params.add("R", 1<<4);
 		params.add("Initial magnetization", 0.);
 		params.add("Dilution", new DoubleValue(0.,0.,1.));
-		params.addm("T", 10.);
+		params.addm("T", 2.);
 		params.addm("J", 1.0);
 		params.addm("h", 0.0);
 		params.addm("dt", 1);
@@ -79,7 +79,8 @@ public class isingLRapp extends Simulation{
 	}
 	
 	public void run() {
-		double pnow = 0;
+		boolean pparams = true;
+		double pnow = params.fget("Dilution");
 				
 		while (pnow < 1){
 	
@@ -88,7 +89,7 @@ public class isingLRapp extends Simulation{
 
 			sim = new IsingLR(params);
 
-			sim.setDiluteField(params.fget("Initial magnetization"),params.fget("Dilution"));
+			sim.setDiluteField(params.fget("Initial magnetization"),pnow);
 
 			dx = Math.max(Integer.highestOneBit(sim.R)/8, 1);
 
@@ -97,12 +98,13 @@ public class isingLRapp extends Simulation{
 			p    = params.fget("Dilution");
 
 
-			if(pnow == 0){
+			if(pparams){
 				PrintUtil.printlnToFile("/Users/cserino/Desktop/ising1/Params.log",params.toString());
 				PrintUtil.printlnToFile("/Users/cserino/Desktop/ising1/Params.log", sim.getClass().getName());
 				DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
 		        Date date = new Date();
 		        PrintUtil.printlnToFile("/Users/cserino/Desktop/ising1/Params.log", dateFormat.format(date));
+		        pparams = false;
 			}
 			
 			double lastUpdate = 0;
@@ -129,11 +131,11 @@ public class isingLRapp extends Simulation{
 				Job.animate();
 			}
 			
-			pnow += 0.01;
-			pnow = (double)(Math.round(100*pnow))/100;
-			params.set("Dilution", pnow);
 			printData(pnow);
 			data = new double[dlength]; 
+			pnow += 0.05;
+			pnow = (double)(Math.round(100*pnow))/100;
+			params.set("Dilution", pnow);
 			
 		}
 	}
@@ -161,8 +163,13 @@ public class isingLRapp extends Simulation{
 			ebarbar  += ebar[jj];
 		}
 		ebarbar /= ((1.-p)*sim.L*sim.L);
-		for (int jj = 0 ; jj < sim.L*sim.L ; jj++)
-			omega += (ebar[jj]-ebarbar)*(ebar[jj]-ebarbar);
+		
+		for (int jj = 0 ; jj < sim.L*sim.L ; jj++){
+			x = jj%sim.L;
+			y = jj/sim.L;
+			s = sim.spins.get(x,y);
+			omega += Math.abs(s)*(ebar[jj]-ebarbar)*(ebar[jj]-ebarbar);
+		}
 		omega /= (sim.time()*sim.time());
 		return omega;
 	}

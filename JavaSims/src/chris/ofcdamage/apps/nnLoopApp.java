@@ -259,8 +259,8 @@ public void load(Control c) {
 		
 		PrintUtil.printlnToFile(model.getOutdir()+File.separator+"Clusters_"+(cycle+1)+".txt", 
 								"Percolating Cluster Number", model.pcnPC());
-		PrintUtil.printArrayToFile(model.getOutdir()+File.separator+"Clusters_"+(cycle+1)+".txt",
-								   model.getClusters(),model.getL()*model.getL(),1);
+		PrintUtil.printVectorToFile(model.getOutdir()+File.separator+"Clusters_"+(cycle+1)+".txt",
+								   model.getClusters());
 		model.printCdistance(cycle);
 		if(draw) model.takePicture(gridC, true, model.getOutdir()+File.separator+"PercolatingClusters_"+(cycle+1)+".png");
 		return;
