@@ -220,7 +220,7 @@ public class DamageClusters2D extends NfailDamage2D{
 		}
 		
 		PrintUtil.printlnToFile(outfile1,time,tkip,Nshowers,NdeadS,rgyr,EFmetric(),GetAve(SonFS,SonFSindex),DaboutFS);
-		PrintUtil.print2TimeAndVectorToFile(outfile2, time, tkip, NlivesLeft);
+		PrintUtil.printScalarsAndVectorToFile(outfile2, time, tkip, NlivesLeft);
 		if (Cdata) PrintUtil.printlnToFile(outfileC,time,tkip,(double)(cluster.getLargestCluster()));
 		
 		return;

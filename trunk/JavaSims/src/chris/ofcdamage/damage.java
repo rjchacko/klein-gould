@@ -488,12 +488,12 @@ public class damage {
 	}
 	
 	public void printStress(String fn){
-		PrintUtil.printArrayToFile(fn, stress, (int) L, (int) L);
+		PrintUtil.printVectorToFile(fn, stress);
 		return;
 	}
 	
 	public void printSr(String fn){
-		PrintUtil.printArrayToFile(fn, Sr, (int) L, 1);
+		PrintUtil.printVectorToFile(fn, Sr);
 		return;
 	}
 	

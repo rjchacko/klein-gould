@@ -101,7 +101,6 @@ public class ofc2Dfast {
 		return;
 	}
 	
-	
 	public void freezeIn(Parameters params, int[] liveNbs, int[] Lives){
 		
 		double p      = params.fget("\u03D5");
@@ -121,6 +120,17 @@ public class ofc2Dfast {
 			Lives[rs[jj]]  = 0;
 			failed[rs[jj]] = true;
 			for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
+		}
+		return;
+	}
+	
+	public void reRandomize(int newseed, int[] Lives){
+		rand = new Random(newseed);
+		for(int jj = 0 ; jj < N ; jj++){
+			if(Lives[jj] == 0) continue; // KEEP THE DEAD SITES THE SAME
+			sr[jj]     = srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
+			sf[jj]     = sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
+			stress[jj] = sr[jj] + (sf[jj]-sr[jj])*getRand().nextDouble();
 		}
 		return;
 	}
@@ -409,6 +419,15 @@ public class ofc2Dfast {
 		
 		bname = bn;
 		configOF();
+		return;
+	}
+	
+	public void setBname(String bn, boolean bl){
+		if(bl){
+			setBname(bn);
+			return;
+		}
+		bname = bn;
 		return;
 	}
 

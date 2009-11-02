@@ -62,34 +62,33 @@ public class fastFrozenApp extends Simulation{
 		simt = params.iget("Sim Time");
 		eqt  = params.iget("Equil Time");
 		
-		
-		if(params.sget("Pass Stress to").equals("Live Sites")){
-		
-			while (phin > 0){
+		while (phin > 0){
 
-				params.set("Mode", "Freeze");
-				params.set("\u03D5",1-phin);
-				Parameters dparams = dummyParamUtil.ofcParams(params);
-				model  = new damage2Dfast(dparams);
-				if(phin == 1) model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params,model);	
+			params.set("Mode", "Freeze");
+			params.set("\u03D5",1-phin);
+			Parameters dparams = dummyParamUtil.ofcParams(params);
+			model  = new damage2Dfast(dparams);
+			if(phin == 1) model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params,model);	
 
-				// equilibrate model			
-				params.set("Mode", "Equilibrating");
-				params.set("\u03D5",phin);
-				Job.animate();
-				for (int jj = 0 ; jj < eqt ; jj++){
-					model.evolveEQ(jj,false);
-					if(jj%1000 == 0){
-						params.set("Status", (jj-eqt));
-						Job.animate();
-					}
+			// equilibrate model			
+			params.set("Mode", "Equilibrating");
+			params.set("\u03D5",phin);
+			Job.animate();
+			for (int jj = 0 ; jj < eqt ; jj++){
+				model.evolveEQ(jj,false);
+				if(jj%1000 == 0){
+					params.set("Status", (jj-eqt));
+					Job.animate();
 				}
+			}
 
-				// simulate model for data
-				params.set("Mode", "Simulating");
-				params.set("\u03D5",phin);
-				Job.animate();
-				model.setBname(params.sget("Data File")+pfmt.format(100*phin));
+			// simulate model for data
+			params.set("Mode", "Simulating");
+			params.set("\u03D5",phin);
+			Job.animate();
+			model.setBname(params.sget("Data File")+pfmt.format(100*phin));
+			
+			if(params.sget("Pass Stress to").equals("Live Sites")){
 				for (int jj = 0 ; jj < simt ; jj++){
 					model.evolveEQ(jj,true);
 					if(jj%1000 == 0){
@@ -97,41 +96,8 @@ public class fastFrozenApp extends Simulation{
 						Job.animate();
 					}
 				}
-
-				if((simt-1)%damage2Dfast.dlength != 0) model.writeData(simt);
-				phin -= dphi;
-				phin = (double)(Math.round(100*phin))/100;
 			}
-			params.set("Mode", "Done");
-			Job.animate();
-			
-		}
-		else{
-			while (phin > 0){
-
-				params.set("Mode", "Freeze");
-				params.set("\u03D5",1-phin);
-				Parameters dparams = dummyParamUtil.ofcParams(params);
-				model  = new damage2Dfast(dparams);
-				if(phin == 1) model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params,model);	
-
-				// equilibrate model			
-				params.set("Mode", "Equilibrating");
-				params.set("\u03D5",phin);
-				Job.animate();
-				for (int jj = 0 ; jj < eqt ; jj++){
-					model.evolve(jj,false);
-					if(jj%1000 == 0){
-						params.set("Status", (jj-eqt));
-						Job.animate();
-					}
-				}
-
-				// simulate model for data
-				params.set("Mode", "Simulating");
-				params.set("\u03D5",phin);
-				Job.animate();
-				model.setBname(params.sget("Data File")+pfmt.format(100*phin));
+			else{
 				for (int jj = 0 ; jj < simt ; jj++){
 					//model.evolve(jj,true);	
 					// temp change
@@ -142,17 +108,15 @@ public class fastFrozenApp extends Simulation{
 						Job.animate();
 					}
 				}
-				// temp change
-				//if((simt-1)%damage2Dfast.dlength != 0) model.writeData(simt);
-				printHist(phin);
-				phin -= dphi;
-				phin = (double)(Math.round(100*phin))/100;
 			}
-			params.set("Mode", "Done");
-			Job.animate();
+
+			if(!(params.sget("Pass Stress to").equals("Live Sites"))) printHist(phin);
+			else if((simt-1)%damage2Dfast.dlength != 0) model.writeData(simt);
+			phin -= dphi;
+			phin = (double)(Math.round(100*phin))/100;
 		}
-		
-		
+		params.set("Mode", "Done");
+		Job.animate();
 		
 		return;
 	}
