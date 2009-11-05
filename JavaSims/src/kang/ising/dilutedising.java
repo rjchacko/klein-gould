@@ -1,26 +1,10 @@
-package kang.ising;// what is this used for?
-/**
- * Kang, this is used to organize things. So, for example, if you open 
- * one of my files, for example ergodicDiagramApp then you will see that the package
- * basically tells JAVA / Eclipse what directory and subdirectory to store the file in. 
- * 
- * Also, you can have public, private, and protected variables and classed e.g.
- * private double x = 0
- * public double x = 0
- * protected double = 0
- * 
- * and protected numbers can be accessed from any class in the same package as the 
- * protected variable / class.
- * 
- *  -- Chris
- * 
- */
+package kang.ising;
 
 import java.awt.Color;
 
 import chris.util.PrintUtil;
 
-import scikit.graphics.ColorGradient;
+//import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -29,9 +13,10 @@ import scikit.jobs.Simulation;
 //import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DoubleValue;
 
-public class ising extends Simulation{
-	Grid grid1 = new Grid("Ising lattice 2d");
-	Grid grid2 = new Grid("Coarsegrain Ising lattice 2d");
+
+public class dilutedising extends Simulation{
+	Grid grid1 = new Grid("Diluted Ising lattice 2d");
+
 	public int L1, L2, M; //parameters for the lattice
 	public int S1, S2, S; //parameters for the coarsegrain blocks, s is the total number of the spins in a block
 	public int B1, B2, B; //parameters for the numbers of the blocks in x and y direction, B is the total number
@@ -44,7 +29,8 @@ public class ising extends Simulation{
 	public double magnetization;
 	public int R;   //interaction range
 	public int CR;  //coarse grain range for magnetization
-	public int CGT;  //coarse grain time
+	
+	public int deadsites;
 	public int step; //Monte Carlo step
 	public int steplimit; //upperlimit of MC step
 	public int metricstart; //the start of metric calculation
@@ -58,10 +44,12 @@ public class ising extends Simulation{
 	public double CGEnergy[]; // the array of the CGblocks' energy
 	
 	public double timetotalE[];
-	public double cgtotalE[];  // time coarsegrain total energy within each coarsegrain time period
-	public double cgaverageE[];
+	public double timetotalS[];
+	
 	public double timeaverageE[]; //time average energy for metric
+	public double timeaverageS[];
 	public double Metric[];  //array for plotting metric
+	public double SMetric[];  //array for the magnetization metric
 	
 	public int Nneighber(int a,int i ){// function for the index of nearest neighbor
 		int nx,ny; //index for neighbor
@@ -219,31 +207,30 @@ public class ising extends Simulation{
 	}
 	
 	public static void main (String[] kangliu){
-		new Control(new ising(), "Kang Liu's ising model" );
+		new Control(new dilutedising(), "Kang Liu's diulted ising model" );
 	}
 	
-	public void load(Control liu){
-		liu.frame (grid1);
-		liu.frame (grid2);
+	public void load(Control liukang){
+		liukang.frame (grid1);
+
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
-		params.add("CGBlock's width", 10);
-		params.add("CGBlock's length", 10);
+		params.add("CGBlock's width", 1);
+		params.add("CGBlock's length", 1);
 		params.addm("Temperature", new DoubleValue(1, 0, 100).withSlider());
 		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
 		params.addm("Interaction Constant", 1);
 		params.add("Interaction range", 10);
 		params.add("Coarsegrain range", 0);
-		params.add("Coarsegrain time",1);
+
 		params.add("Monte Carlo step's limit", 1000000);
 		params.add("Metric Start at",5000);
 		params.add("Metric points", 2000);
 		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
-		
-		//params.add("Model", new ChoiceValue("noninteracting", "interacting"));
-		//params.add("Mechanics", new ChoiceValue("Metropolis", "Kawasaki"));
+
 		params.add("MC time");
 		params.add("Metric");
+		params.add("Magnetization Metric");
 		params.add("magnetization");
 		
 	}
@@ -271,7 +258,7 @@ public class ising extends Simulation{
 	
 	public void clear(){
 		grid1.clear();
-		//grid2.clear();
+	
 	}
 	
 	public void run(){
@@ -281,7 +268,7 @@ public class ising extends Simulation{
 		CR = (int)params.fget("Coarsegrain range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
 		metricstart = (int)params.fget("Metric Start at");
-		CGT= (int)params.fget("Coarsegrain time");
+		
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
@@ -299,17 +286,25 @@ public class ising extends Simulation{
 		
 		timetotalE = new double[B];
 		timeaverageE = new double[B];
-		cgtotalE = new double[B];
-		cgaverageE = new double[B];
+		timetotalS = new double[B];
+		timeaverageS = new double[B];
+
 		
 		N = (int)params.fget("Metric points");
 		Metric = new double[N];
+		SMetric = new double[N];
 		
 		P = params.fget("Diluted Percentage");
 		
 		double NMetric=0;
 		double totalE=0;
 		double averageE=0;// definition for metric variables
+		
+		double NSMetric=0;
+		double totalS=0;
+		double averageS=0;
+		
+		deadsites=0;
 		
 		
 		
@@ -318,14 +313,15 @@ public class ising extends Simulation{
 			isingspin[i]=-1;
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
-				//System.out.print("spin = ");
-				//System.out.println(isingspin[i]);
-				//PrintUtil.printlnToFile("/Users/cserino/Desktop/foo.txt","spin = ", isingspin[i]);
+				
 		}
 		
 		for (i=0; i<M; i++){
 			if(Math.random()< P)
+			{
 				isingspin[i]=0;
+				deadsites++;
+			}
 		}// here, the sequence of dilution and initialization is not important
 		
 		
@@ -339,11 +335,7 @@ public class ising extends Simulation{
 			
 				j=(int) (Math.random()*M); //choose a spin randomly
 				
-//				System.out.print("Step=");
-//				System.out.println(step);
-//				System.out.print("j=");
-//				System.out.println(j);
-				
+
 			
 				double ZeemanE1=-H*isingspin[j];// initial field energy
 				double InterE1=0;
@@ -372,14 +364,13 @@ public class ising extends Simulation{
 				double E2=ZeemanE2+InterE2;
 				
 				if (E1>E2){
-//					int tempS=isingspin[j];
-//					isingspin[j]=-tempS;
+
 					isingspin[j] = -isingspin[j];
 				}// flip the spin
 				
 				if (E1<E2){
 					if (Math.random()<Math.exp((E1-E2)/T)){
-						//int tempS=isingspin[j];
+
 						isingspin[j]=-isingspin[j];
 					
 					}
@@ -387,7 +378,8 @@ public class ising extends Simulation{
 			
 				if(step % 1 == 0) {
 					params.set("MC time", step);
-					params.set("Metric", NMetric/B);
+					params.set("Metric", NMetric/(M-deadsites));
+					params.set("Magnetization Metric", NSMetric/(M-deadsites));
 				}
 				Job.animate();
 			}
@@ -403,6 +395,7 @@ public class ising extends Simulation{
 			
 			
 			totalE=0;
+			totalS=0;
 			
 			
 			
@@ -416,13 +409,17 @@ public class ising extends Simulation{
 					if(CR==0)
 						{
 						if(B==M)
-							timetotalE[y]+=longrangeE(y);
-						if(B!=M)
+							{
+							 timetotalE[y]+=longrangeE(y);
+							 timetotalS[y]+=isingspin[y]; 
+							}
+						
+						/*if(B!=M)
 							{
 							CGEnergy[y]=BlockEnergy(y);
 							timetotalE[y]+=CGEnergy[y];
 								
-							}
+							}*/
 						
 						}
 					if(CR!=0)
@@ -431,67 +428,78 @@ public class ising extends Simulation{
 					}
 				
 				timeaverageE[y]=timetotalE[y]/(step-metricstart);
+				timeaverageS[y]=timetotalS[y]/(step-metricstart);
 			 
 			}
 			
-			for (int x=0; x< B; x++)
-			{
-				if (CGT!=1)
-					cgtotalE[x]+=timeaverageE[x];
-			}    //sum over the time average energy within the time coarse grain
 			
-			if((step-metricstart)%CGT==0) 
-			{	
-			
-				for (int z=0; z< B; z++)
-				{
-					cgaverageE[z]= cgtotalE[z]/CGT;
-					cgtotalE[z]=0;
-				}
+				
+		
 				for (int x=0; x< B; x++)
 			    {
-					if(CGT==1)
+
+					if(isingspin[x]!=0)
+						{
 						totalE+=timeaverageE[x];
-					if(CGT!=1)
-						totalE+=cgaverageE[x];
+						totalS+=timeaverageS[x];
+						}
+
 			    }
 			
-			averageE=totalE/B;
+			averageE=totalE/(M-deadsites);
+			averageS=totalS/(M-deadsites);
 
 			NMetric=0;
+			NSMetric=0;
 			
 			for (int z=0; z< B; z++)
 			{
-				if(CGT==1)
+				if (isingspin[z]!=0)
+					{
+					
 					NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
-				if(CGT!=1)
-					NMetric+=(cgaverageE[z]-averageE)*(cgaverageE[z]-averageE);
+					NSMetric+=(timeaverageS[z]-averageS)*(timeaverageS[z]-averageS);
+					}
+		
+				
 			}
 			
 		
-			if(step<N*CGT+metricstart+1)
+			if(step<N+metricstart+1)
 				{
-				Metric[(step-metricstart)/CGT-1]=NMetric/B;
-				PrintUtil.printlnToFile("F:/data/stmetric3.txt",(step-metricstart)/CGT, Metric[(step-metricstart)/CGT-1]);
+				Metric[step-metricstart-1]=NMetric/(M-deadsites);
+				SMetric[step-metricstart-1]=NSMetric/(M-deadsites);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt",step-metricstart, Metric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt",step-metricstart, SMetric[step-metricstart-1]);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
-			}
 			
-			if(step==metricstart+500*CGT)
+			
+			if(step==metricstart+500)
 			{
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","");
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Lattice length=", L1);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Lattice width=", L2);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Block length=", S1);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Block width=", S2);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","J=",NJ);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Interaction Range=",R);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Coarsegrain Range=",CR);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Coarsegrain Time=",CGT);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Mectric starts at", metricstart);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Final Tempearture=",T);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Final Field=",H);
-				PrintUtil.printlnToFile("F:/data/stmetric1.txt","Diluted Percentage=",P);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","");
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Lattice length=", L1);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Lattice width=", L2);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Block length=", S1);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Block width=", S2);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","J=",NJ);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Interaction Range=",R);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Mectric starts at", metricstart);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Final Tempearture=",T);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Final Field=",H);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Diluted Percentage=",P);
+				
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","");
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Lattice length=", L1);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Lattice width=", L2);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Block length=", S1);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Block width=", S2);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","J=",NJ);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Interaction Range=",R);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Mectric starts at", metricstart);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Final Tempearture=",T);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Final Field=",H);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt","Diluted Percentage=",P);
 				
 			}
 			
@@ -510,5 +518,3 @@ public class ising extends Simulation{
 				
 	}
 }
-	
-	
