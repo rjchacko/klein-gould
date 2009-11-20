@@ -18,7 +18,7 @@ public class fastTwoSysApp extends Simulation{
 	
 	private int simt, eqt;
 	private static int dl = 250000;
-	private DecimalFormat pfmt = new DecimalFormat("000");
+	private DecimalFormat pfmt = new DecimalFormat("00000");
 	private damage2Dfast model[] = new damage2Dfast[2];
 	private double st[];
 	private double data[] = new double[dl];
@@ -36,7 +36,7 @@ public class fastTwoSysApp extends Simulation{
 		params.add("Interaction Radius (R)", (int) 10);
 		params.add("Lattice Size", (int) 256);
 		params.add("Pass Stress to", new ChoiceValue("Live Sites","All Sites"));
-//		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
+		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
 		params.add("Equil Time", 500000);
 		params.add("Sim Time", 500000);
 //		params.add("Number of Lives",(int) 1);
@@ -53,30 +53,31 @@ public class fastTwoSysApp extends Simulation{
 	}
 	
 	public void run() {
-		
-		
-		
-		double phin = 1.0;
-		double dphi = 0.1; 
+
+		double dphi = 1/((double)(params.iget("Lattice Size"))*(params.iget("Lattice Size")));
+		double phin = 0.95;
+		double phis = phin;
+		int count   = (int)((1-phin)*(params.iget("Lattice Size"))*params.iget("Lattice Size"));
 		simt = params.iget("Sim Time");
 		eqt  = params.iget("Equil Time");
+	
 		
-		while (phin > 0){
+		while (phin < 1){
 			
 			params.set("Mode", "Freeze");
-			params.set("\u03D5",1-phin);
+			params.set("\u03D5",count);
 
 			model[0]  = new damage2Dfast(dummyParamUtil.ofcParams(params));
 			model[1]  = new damage2Dfast(dummyParamUtil.ofcParams(params));
 			// re-initialize the stress in second system with a new seed
 			model[1].reRandomize((params.iget("Random Seed") + 1), model[0].getDorA());
 			
-			if(phin == 1) model[0].PrintParams(model[0].getOutdir()+File.separator+"Params_"+model[0].getBname()+".log",params,model[0]);				
+			if(phin == phis) model[0].PrintParams(model[0].getOutdir()+File.separator+"Params_"+model[0].getBname()+".log",params,model[0]);				
 			st = new double[2*model[0].getN()];
 
 			// equilibrate model			
 			params.set("Mode", "Equilibrating");
-			params.set("\u03D5",phin);
+			//params.set("\u03D5",count);
 			Job.animate();
 			for (int jj = 0 ; jj < eqt ; jj++){
 				for(int kk = 0 ; kk < 2 ; kk++)
@@ -89,15 +90,16 @@ public class fastTwoSysApp extends Simulation{
 			// simulate model for data
 			params.set("Mode", "Simulating");
 			params.set("Status", 0);
-			params.set("\u03D5",phin);
+			params.set("\u03D5",count);
 			Job.animate();
-			model[0].setBname(params.sget("Data File")+pfmt.format(100*phin),false);
+			model[0].setBname(params.sget("Data File")+"_1_"+pfmt.format(count),false);
+			model[1].setBname(params.sget("Data File")+"_2_"+pfmt.format(count),false);
 			writeHeaders();
 			
 			if(params.sget("Pass Stress to").equals("Live Sites")){
 				for (int jj = 0 ; jj < simt ; jj++){
 					for(int kk = 0 ; kk < 2 ; kk++)
-						model[kk].evolveEQ(jj,false);
+						model[kk].evolveEQ(jj,true);
 					calcMetric(jj);
 					if(jj%1000 == 0){
 						params.set("Status", (jj));
@@ -117,9 +119,12 @@ public class fastTwoSysApp extends Simulation{
 				}
 			}
 			if((simt-1)%dl != 0) writeData(simt);
-			phin -= dphi;
-			phin = (double)(Math.round(100*phin))/100;
+			phin += dphi;
+			count--;
+			//phin = (double)(Math.round(100*phin))/100;
 			params.set("Random Seed", params.iget("Random Seed") + 2);
+//			model = null; // clear model for avoid memory overflow
+//			model = new damage2Dfast[2]; // re-initialize
 		}
 		params.set("Mode", "Done");
 		Job.animate();
@@ -166,7 +171,7 @@ public class fastTwoSysApp extends Simulation{
 		if(ub==0) ub = dl;
 		
 		try{
-			File file = new File(model[0].getOutdir()+File.separator+model[0].getBname()+".txt");
+			File file = new File(model[0].getOutdir()+File.separator+model[0].getBname()+"_II_"+".txt");
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int jj = 0 ; jj < ub ; jj++){
 				pw.print(jj+offset);
