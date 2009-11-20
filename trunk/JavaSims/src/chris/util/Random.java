@@ -1,8 +1,11 @@
 package chris.util;
 
-public class Random extends kip.util.Random{
+import java.io.Serializable;
 
-	/**
+
+public class Random extends kip.util.Random implements Serializable, Cloneable{
+
+	/** 
 	 * 	auto generated 
 	 */
 	private static final long serialVersionUID = -1772453101010620003L;
@@ -11,6 +14,14 @@ public class Random extends kip.util.Random{
 	 *  for the case d = 2
 	 */
 	private static final double twopi = 8*Math.atan(1);
+	
+	public Random clone() {
+		try {
+			return (Random)super.clone();
+		} catch (Exception e) {
+			return null;
+		}
+	}
 	
 	  /**
 	   * Generates the next pseudorandom double value vector, with 
