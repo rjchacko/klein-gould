@@ -60,7 +60,7 @@ public class dummyParamUtil {
 					continue;
 					
 				case 3:
-					dparms.add(pstr[3],"Diamond");
+					dparms.add(pstr[3],"Circle");
 					continue;
 
 				case 4:
@@ -72,7 +72,7 @@ public class dummyParamUtil {
 					continue;			
 
 				case 6:
-					dparms.add(pstr[6],"Periodic");
+					dparms.add(pstr[6],"Open");
 					continue;
 
 				case 7:
