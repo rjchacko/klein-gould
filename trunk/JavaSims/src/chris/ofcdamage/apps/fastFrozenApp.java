@@ -58,7 +58,7 @@ public class fastFrozenApp extends Simulation{
 	public void run() {
 		
 		double phin = 1;
-		double dphi = 0.1; 
+		double dphi = 0.025; 
 		simt = params.iget("Sim Time");
 		eqt  = params.iget("Equil Time");
 		
