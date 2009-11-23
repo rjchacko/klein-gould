@@ -15,6 +15,14 @@ public class damage2Dfast extends ofc2Dfast{
 		return;
 	}
 	
+	public damage2Dfast(Parameters params, double[] srIN, double[] sfIN, double sIN[], double sbIN[], double dIN[][], int grIN, boolean lsIN[], boolean fsIN[], int ndIN, int lnIN[], int lvIN[]){
+		
+		super(params, srIN, sfIN, sIN, sbIN, dIN, grIN, lsIN); //call to ofc2Dfast's constructor
+		contructor_damage2Dfast(params);
+		copy_sys(fsIN, ndIN, lnIN, lvIN);
+		return;
+	}
+	
 	public void contructor_damage2Dfast(Parameters params){
 		
 		liveNbs = new int[N];
@@ -54,6 +62,17 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		return;
 	}
+	
+	private void copy_sys(boolean fsIN[], int ndIN, int lnIN[], int lvIN[]){
+		
+		for(int jj = 0 ; jj < N ; jj++){
+			failed[jj]  = fsIN[jj];
+			liveNbs[jj] = lnIN[jj];
+			Lives[jj]   = lvIN[jj];
+		}
+		Ndead = ndIN;
+		return;
+	}
 	             
 	public void evolveEQ(int mct, boolean takedata){
 		// evolve the ofc model starting with a stable configuration
@@ -65,9 +84,6 @@ public class damage2Dfast extends ofc2Dfast{
 		
 		int a,b, tmpfail, tmpnb;
 		double release;
-	
-		// copy the old stress array
-		oldstress = stress;
 		
 		// force failure in the zero velocity limit
 		forceZeroVel(mct, takedata, true);
@@ -206,13 +222,29 @@ public class damage2Dfast extends ofc2Dfast{
 		return (dN > 0) ? Nl0 + getRand().nextInt(2*dN+1)-dN : Nl0; // rand in [0 , 2*dN]
 	}
 	
-	
-	// FOR TESTING ONLY
-	
 	public int getNL(int st){
 		
 		return Lives[st];
 	}
 	
+	public int Ndead(){
+		
+		return Ndead;
+	}
+	
+	public boolean[] getFailed(){
+		
+		return failed;
+	}
+	
+	public int[] getLN(){
+		
+		return liveNbs;
+	}
+	
+	public int[] getLives(){
+		
+		return Lives;
+	}
 	
 }

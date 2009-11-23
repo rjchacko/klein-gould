@@ -23,6 +23,19 @@ public class MathUtil {
 		return (bool) ? 1 : 0;
 	}
 	
+	public static int[] bool2bin(boolean bool[]){
+		if (bool == null) return null;
+		
+		int l = bool.length;
+		int[] ret = new int[l];
+		
+		for (int jj = 0 ; jj < l ; jj++){
+			ret[jj] = (bool[jj]) ? 1 : 0;
+		}
+		
+		return ret;
+	}
+	
 	public static boolean bin2bool(int bin){
 		
 		return (bin == 1);

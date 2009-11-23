@@ -128,9 +128,6 @@ public class damage2DfastCG extends ofc2DfastCG{
 		
 		int a,b, tmpfail, tmpnb;
 		double release;
-	
-		// copy the old stress array
-		oldstress = stress;
 		
 		// force failure in the zero velocity limit
 		forceZeroVel(mct, takedata, true);
