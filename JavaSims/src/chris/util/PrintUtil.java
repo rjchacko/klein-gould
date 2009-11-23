@@ -9,6 +9,7 @@ import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 
 public class PrintUtil {
+
 	static public void deleteFile(String fileName){
 		File file = new File(fileName);
 		boolean success = file.delete();
@@ -123,6 +124,16 @@ public class PrintUtil {
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.println(d1 + "\t" + d2);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void printlnToFile(String fileName, String s1, double d1, double d2){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(s1 + "\t" + d1 + "\t" + d2);
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}

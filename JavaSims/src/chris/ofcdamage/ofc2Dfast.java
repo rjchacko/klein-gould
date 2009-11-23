@@ -8,18 +8,17 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.Random;
-
 import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
 import chris.util.PrintUtil;
+import chris.util.Random;
 import chris.util.SortUtil;
 
-public class ofc2Dfast {
+public class ofc2Dfast{
 
 	private double sr0, sf0, a0, dsr, dsf, da;
-	protected double Omega, sr[], sf[], stress[], oldstress[], sbar[], data[][];
+	protected double Omega, sr[], sf[], stress[], sbar[], data[][];
 	private int L, R, nbArray[], nbSeed;
 	protected int N, qN, fs[], GR, index, newindex, Ndead;
 	private boolean srn, sfn, an;
@@ -34,6 +33,13 @@ public class ofc2Dfast {
 	public ofc2Dfast(Parameters params){
 		
 		constructor_ofc2Dfast(params);
+		return;
+	}
+
+	public ofc2Dfast(Parameters params, double[] srIN, double[] sfIN, double sIN[], double sbIN[], double dIN[][], int grIN, boolean lsIN[]){
+		
+		constructor_ofc2Dfast(params);
+		copy_sys(srIN, sfIN, sIN, sbIN, dIN, grIN, lsIN);
 		return;
 	}
 	
@@ -99,6 +105,31 @@ public class ofc2Dfast {
 		configOF();
 		
 		return;
+	}
+	
+	private void copy_sys(double[] srIN, double[] sfIN, double sIN[], double sbIN[], double dIN[][], int grIN, boolean lsIN[]){
+		
+		for(int jj = 0 ; jj < N ; jj++){
+			sr[jj]     = srIN[jj];
+			sf[jj]     = sfIN[jj];
+			stress[jj] = sIN[jj];
+			sbar[jj]   = sbIN[jj];
+			ftt[jj]    = lsIN[jj];
+
+		}
+		for(int jj = 0 ; jj < dcat ; jj++){
+			for (int kk = 0 ; kk < dlength ; kk++){
+				data[jj][kk]   = dIN[jj][kk];
+			}
+		}
+		GR = grIN;
+		
+		return;
+	}
+	
+	public void setRandToClone(Random r2clone){
+		
+		rand = r2clone.clone();
 	}
 	
 	public void freezeIn(Parameters params, int[] liveNbs, int[] Lives){
@@ -179,9 +210,6 @@ public class ofc2Dfast {
 		
 		int a,b, tmpfail, tmpnb;
 		double release;
-	
-		// copy the old stress array
-		oldstress = stress;
 		
 		// force failure in the zero velocity limit
 		forceZeroVel(mct, takedata, true);
@@ -431,7 +459,7 @@ public class ofc2Dfast {
 		return;
 	}
 
-	protected Random getRand() {
+	public Random getRand() {
 	
 		return rand;
 	}
@@ -507,16 +535,24 @@ public class ofc2Dfast {
 		return sf0;
 	}
 	
+	public double getAlpha0(){
+		
+		return a0;
+	}
+	
 	public int getGR(){
 		
 		return GR;
 	}
-	
-	// FOR TESTING ONLY 
-	
+		
 	public double getSr(int st){
 		
 		return sr[st];
+	}
+	
+	public double[] getSr(){
+		
+		return sr;
 	}
 	
 	public double getSf(int st){
@@ -524,5 +560,24 @@ public class ofc2Dfast {
 		return sf[st];
 	}
 	
+	public double[] getSf(){
+		
+		return sf;
+	}
+	
+	public boolean[] getLastShower(){
+		
+		return ftt;
+	}
+	
+	public double[] getSbar(){
+		
+		return sbar;
+	}
+	
+	public double[][] getData(){
+		
+		return data;
+	}
 	
 }
