@@ -97,8 +97,6 @@ public class dilutedising extends Simulation{
 		int b,k;
 		for(b=0; b<4;b++){
 			k=Nneighber(b,j);
-//			System.out.print("neighber=  ");
-//			System.out.println(k);
 			Energy=Energy+J*isingspin[j]*isingspin[k];
 		}
 		return Energy;
@@ -402,8 +400,10 @@ public class dilutedising extends Simulation{
 			for (int y=0; y<B; y++)
 			{
 				if(R==0)
+					{
 					timetotalE[y]+=interactionE(y);
-					
+					timetotalS[y]+=isingspin[y]; 
+					}
 				if(R!=0)
 					{
 					if(CR==0)
@@ -469,8 +469,8 @@ public class dilutedising extends Simulation{
 				{
 				Metric[step-metricstart-1]=NMetric/(M-deadsites);
 				SMetric[step-metricstart-1]=NSMetric/(M-deadsites);
-				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt",step-metricstart, Metric[step-metricstart-1]);
-				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric1.txt",step-metricstart, SMetric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric3.txt",step-metricstart, Metric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric3.txt",step-metricstart, SMetric[step-metricstart-1]);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
 			
