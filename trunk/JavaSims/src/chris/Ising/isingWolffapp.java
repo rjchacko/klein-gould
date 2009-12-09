@@ -136,7 +136,9 @@ public class isingWolffapp extends Simulation{
 		for (int jj = 0 ; jj < N ; jj++){
 			omega += (sbar[jj]-tmp)*(sbar[jj]-tmp);
 		}
-		omega = (N*t*t)/omega;
+		double NN = N;
+		double tt = t;
+		omega = (NN*tt*tt)/omega;
 		data[t] = omega;
 		return;
 	}

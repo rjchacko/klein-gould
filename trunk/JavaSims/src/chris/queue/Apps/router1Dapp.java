@@ -1,5 +1,7 @@
 package chris.queue.Apps;
 
+import scikit.graphics.ColorGradient;
+import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
@@ -11,7 +13,7 @@ public class router1Dapp extends Simulation{
 	Grid grid = new Grid("Buffers");
 	int N;
 	router1D model;
-//	ColorGradient cg;
+	private static final boolean draw = true;
 
 	public static void main(String[] args) {
 		new Control(new router1Dapp(), "1D Router Network");
@@ -35,12 +37,8 @@ public class router1Dapp extends Simulation{
 		
 		N     = params.iget("N");
 		model = new router1D(params); 
-		
-		// H E R E !!!
-	//	setupcolors();
-//		cg    = new ColorGradient();
-//		int v = new int[]
-//		grid.setColors(cg.getColor(v,0,5*lambda*l)
+
+		setupcolors(params.fget("\u03BB"),params.iget("l"),N);
 				
 		while(true){
 			model.step();
@@ -48,19 +46,38 @@ public class router1Dapp extends Simulation{
 		}
 		
 	}
+	
+	private void setupcolors(double lambda, int l, int L){
 
-	public void animate() {
+		int nmbar = (int)((lambda*lambda*(l-1)/(1-l*lambda) + l*lambda));
+		if(nmbar == 0){
+			nmbar = 5;
+		}
+		else{
+			nmbar = 2*(nmbar+1)*N;
+		}
+		setupcolors(nmbar);
+		return;
+	}
+
+	private void setupcolors(int mx){
 		
-//		ColorPalette palette = new ColorPalette();
-//		palette.setColor(0,Color.WHITE);
-//		palette.setColor(1,Color.BLACK);
-//		palette.setColor(2,Color.RED);
-//		palette.setColor(3,Color.BLUE);
-//		grid.setColors(palette);
+		ColorGradient cg = new ColorGradient();
+		ColorPalette cp  = new ColorPalette();
+
+		for (int jj = 0 ; jj <= mx ; jj++){
+			cp.setColor(mx-jj,cg.getColor(jj, 0, mx));
+		}
+		grid.setColors(cp);
+		return;
+	}
+	
+	public void animate() {
 		
 		params.set("t", model.getT());
 		params.set("messages",model.getNmsg());
-		grid.registerData(N,1,model.getDensity());
+		if(draw) 
+			grid.registerData(N,1,model.getDensity());
 		return;
 	}
 
