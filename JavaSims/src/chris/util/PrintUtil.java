@@ -514,7 +514,7 @@ public class PrintUtil {
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int ii = 0 ; ii<Length ; ii++){
-				pw.println(vec);
+				pw.println(vec[ii]);
 			}
 		} catch (IOException ex){
 			ex.printStackTrace();
@@ -528,7 +528,7 @@ public class PrintUtil {
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int ii = 0 ; ii<Length ; ii++){
-				pw.println(vec);
+				pw.println(vec[ii]);
 			}
 		} catch (IOException ex){
 			ex.printStackTrace();
@@ -542,7 +542,7 @@ public class PrintUtil {
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int ii = 0 ; ii<Length ; ii++){
-				pw.println(vec);
+				pw.println(vec[ii]);
 			}
 		} catch (IOException ex){
 			ex.printStackTrace();
