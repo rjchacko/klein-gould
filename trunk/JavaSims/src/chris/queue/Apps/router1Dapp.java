@@ -7,6 +7,7 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
+import scikit.jobs.params.DoubleValue;
 import chris.queue.router1D;
 
 public class router1Dapp extends Simulation{
@@ -26,7 +27,7 @@ public class router1Dapp extends Simulation{
 		params.add("Data File", "default");
 		params.add("N",20);
 		params.add("l",5);
-		params.add("\u03BB",0.01);
+		params.add("\u03BB",new DoubleValue(0.05,0,1));
 		params.add("seed",0);
 		params.add("messages");
 		params.set("messages",0);

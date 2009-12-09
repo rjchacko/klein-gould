@@ -1,15 +1,14 @@
 package chris.queue.Apps;
 
-import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
+import scikit.jobs.params.DoubleValue;
 import chris.queue.router1D;
 
 public class routerData1Dapp extends Simulation{
 
-	Grid grid = new Grid("Buffers");
 	int N, tmax;
 	router1D model;
 
@@ -23,26 +22,27 @@ public class routerData1Dapp extends Simulation{
 		params.add("Data File", "default");
 		params.add("N",50);
 		params.add("l",10);
-		params.add("\u03BB",0.05);
+		params.add("\u03BB",new DoubleValue(0.05,0,1));
 		params.add("seed",0);
 		params.add("messages");
 		params.set("messages",0);
-		params.add("t_max",1e7);
+		params.add("t_max",(int)(1e7));
 		params.add("t");
 		params.set("t",0);
-
-		c.frame(grid);
 	}
 
 	public void run() {
 		
-		N     = params.iget("N");
-		model = new router1D(params); 
 		int count = 0;
 		
+		N     = params.iget("N");
+		model = new router1D(params); 
+		tmax  = params.iget("t_max");
+			
 		while(count++ < tmax){
 			model.step();
-			if(count % 5000 == 0)
+			//if(count % 10000 == 0)
+			if(count % 1 == 0)
 				Job.animate();
 		}
 		
@@ -54,13 +54,11 @@ public class routerData1Dapp extends Simulation{
 		
 		params.set("t", model.getT());
 		params.set("messages",model.getNmsg());
-
 		return;
 	}
 
 	public void clear() {
-		
-		grid.clear();
+
 		return;
 	}	
 }
