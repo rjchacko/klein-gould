@@ -1,5 +1,9 @@
 package chris.queue;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.LinkedList;
 
 import scikit.jobs.params.Parameters;
@@ -7,11 +11,13 @@ import chris.util.Random;
 
 public class router1D {
 
+	private static final int dl = 500000;
 	private LinkedList<LinkedList<message>> buffer;
-	private double lambda;
+	private double lambda, data[], nbar[], omega;
 	private int N, L, Nmsg;
 	private int t;
 	private Random rand;
+	private String outdir, bname;
 	
 	public router1D(Parameters params){
 		
@@ -25,9 +31,13 @@ public class router1D {
 		N      = params.iget("N");
 		L      = params.iget("l");
 		lambda = params.fget("\u03BB");
+		outdir = params.sget("Data Directory");
+		bname  = params.sget("Data File");
 		rand   = new Random(params.iget("seed"));
 		buffer = new LinkedList<LinkedList<message>>();
 		Nmsg   = 0;
+		nbar   = new double[N];
+		data   = new double[dl];
 		
 		// create a list of buffers
 		for (int jj = 0 ; jj < N ; jj++){
@@ -49,13 +59,19 @@ public class router1D {
 
 			message[] tomove = new message[N];
 			int idx, nidx;
-			double r;
-
+			double r, tmp;
+			
 			t++;
+			tmp   = 0;
+			omega = 0;
 			
 			// Visit each router, select a message at random
 			// from its buffer, and move it to the next router's buffer
 			for (int kk = 0 ; kk < N ; kk++){
+				// use loop to calculate metric (PART I)
+				nbar[kk] += buffer.get(kk).size();
+				tmp      += nbar[kk];
+				
 				if(buffer.get(kk).isEmpty()) 
 					continue;
 				idx = rand.nextInt(buffer.get(kk).size());
@@ -64,9 +80,10 @@ public class router1D {
 				buffer.get(kk).remove(idx);
 			}
 			for (int kk = 0 ; kk < N ; kk++){
+				// use loop to calculate metric (PART II)
+				omega += (nbar[kk]-tmp)*(nbar[kk]-tmp);
 				if(tomove[kk] == null) 
 					continue;
-				//System.out.println(tomove[kk].getHops());
 				if(tomove[kk].getHops() == L){
 					// dissipate message
 					tomove[kk] = null; // clear from memory
@@ -79,10 +96,8 @@ public class router1D {
 						nidx = ((N-nidx)/(N+1))*(N-1); // maps -1 --> N-1 , N --> 0 
 					buffer.get(nidx).add(tomove[kk]);
 				}
-			}
-			
-			// generate new messages and add them to the buffers
-			for (int kk = 0 ; kk < N ; kk++){
+				
+				// generate new messages and add them to the buffers
 				r = rand.nextDouble();
 				if (r < lambda){
 					r = r < lambda/2 ? -1 : 1;
@@ -90,33 +105,43 @@ public class router1D {
 					Nmsg++;
 				}
 			}
-			
-//			/*
-//			 *  DEBUGGING
-//			 */
-//			if (t==1){
-//	
-//				buffer.get(0).add(new message(t,1));
-//				buffer.get(4).add(new message(t,-1));
-//				
-//				Nmsg++;
-//				Nmsg++;
-//			}
-//			if (t==3){
-//				
-//				buffer.get(2).add(new message(t,1));
-//				
-//				Nmsg++;
-//				Nmsg++;
-//			}
-//			
-//			/*
-//			 * DEBUGGING
-//			 * 
-//			 */
-			
+			omega /= ((double)(N)*(double)(t)*(double)(t));
+			takedata(omega);
 		}
+		return;
+	}
+	
+	public void takedata(double metric){
+
+		if(t%dl == 0)
+			writeData(t);
 		
+		data[t%dl] = 1/metric;
+		return;
+	}
+	
+	public void writeData(int tt){
+		
+		int ub;
+		int offset = (int)((tt-1)/dl);
+		offset = offset*dl;
+
+		ub = tt%dl;
+		if(ub==0) ub = dl;
+		
+		try{
+			File file = new File(outdir+File.separator+bname+".txt");
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int jj = 0 ; jj < ub ; jj++){
+				pw.print(jj+offset);
+				pw.print("\t");
+				pw.println(data[jj]);
+			}			
+			pw.close();
+		}
+		catch (IOException ex){
+			ex.printStackTrace();
+		}
 		return;
 	}
 	
