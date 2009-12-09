@@ -134,23 +134,44 @@ public class ofc2Dfast{
 	
 	public void freezeIn(Parameters params, int[] liveNbs, int[] Lives){
 		
-		double p      = params.fget("\u03D5");
-		double rseq[] = new double[N];
-		for (int jj = 0 ; jj < N ; jj++){
-			rseq[jj]    = getRand().nextDouble();
-			liveNbs[jj] = qN;
-			Lives[jj]   = 1;
+		double p = params.fget("\u03D5");
+		if(p < 1){
+			double rseq[] = new double[N];
+			for (int jj = 0 ; jj < N ; jj++){
+				rseq[jj]    = getRand().nextDouble();
+				liveNbs[jj] = qN;
+				Lives[jj]   = 1;
+			}
+
+			int[] rs = SortUtil.S2LindexSort(rseq);
+			Ndead = (int)(p*N);
+			for (int jj = 0 ; jj < Ndead ; jj++){
+				sr[rs[jj]]     = getSr0();
+				sf[rs[jj]]     = getSf0();
+				stress[rs[jj]] = 0;
+				Lives[rs[jj]]  = 0;
+				failed[rs[jj]] = true;
+				for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
+			}
 		}
-		
-		int[] rs = SortUtil.S2LindexSort(rseq);
-		Ndead = (int)(p*N);
-		for (int jj = 0 ; jj < Ndead ; jj++){
-			sr[rs[jj]]     = getSr0();
-			sf[rs[jj]]     = getSf0();
-			stress[rs[jj]] = 0;
-			Lives[rs[jj]]  = 0;
-			failed[rs[jj]] = true;
-			for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
+		else{
+			double rseq[] = new double[N];
+			for (int jj = 0 ; jj < N ; jj++){
+				rseq[jj]    = getRand().nextDouble();
+				liveNbs[jj] = qN;
+				Lives[jj]   = 1;
+			}
+
+			int[] rs = SortUtil.S2LindexSort(rseq);
+			Ndead = (int)(p);
+			for (int jj = 0 ; jj < Ndead ; jj++){
+				sr[rs[jj]]     = getSr0();
+				sf[rs[jj]]     = getSf0();
+				stress[rs[jj]] = 0;
+				Lives[rs[jj]]  = 0;
+				failed[rs[jj]] = true;
+				for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
+			}
 		}
 		return;
 	}

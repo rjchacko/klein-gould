@@ -6,6 +6,7 @@ import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
+import scikit.jobs.params.DirectoryValue;
 import chris.queue.router1D;
 
 public class router1Dapp extends Simulation{
@@ -21,6 +22,8 @@ public class router1Dapp extends Simulation{
 	
 	public void load(Control c) {
 		
+		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
+		params.add("Data File", "default");
 		params.add("N",20);
 		params.add("l",5);
 		params.add("\u03BB",0.01);
