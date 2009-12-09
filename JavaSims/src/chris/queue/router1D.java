@@ -65,13 +65,12 @@ public class router1D {
 			tmp   = 0;
 			omega = 0;
 			
-			// Visit each router, select a message at random
-			// from its buffer, and move it to the next router's buffer
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART I)
 				nbar[kk] += buffer.get(kk).size();
 				tmp      += nbar[kk];
 				
+				// select a message to move at random from the buffer
 				if(buffer.get(kk).isEmpty()) 
 					continue;
 				idx = rand.nextInt(buffer.get(kk).size());
@@ -82,6 +81,16 @@ public class router1D {
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART II)
 				omega += (nbar[kk]-tmp)*(nbar[kk]-tmp);
+				
+				// generate new messages and add them to the buffers
+				r = rand.nextDouble();
+				if (r < lambda){
+					r = r < lambda/2 ? -1 : 1;
+					buffer.get(kk).add(new message(t,(int)(r)));
+					Nmsg++;
+				}
+				
+				// move messages selected in previous loop to next router
 				if(tomove[kk] == null) 
 					continue;
 				if(tomove[kk].getHops() == L){
@@ -96,15 +105,9 @@ public class router1D {
 						nidx = ((N-nidx)/(N+1))*(N-1); // maps -1 --> N-1 , N --> 0 
 					buffer.get(nidx).add(tomove[kk]);
 				}
-				
-				// generate new messages and add them to the buffers
-				r = rand.nextDouble();
-				if (r < lambda){
-					r = r < lambda/2 ? -1 : 1;
-					buffer.get(kk).add(new message(t,(int)(r)));
-					Nmsg++;
-				}
 			}
+			System.out.println(omega);
+			// finish metric calculation
 			omega /= ((double)(N)*(double)(t)*(double)(t));
 			takedata(omega);
 		}
