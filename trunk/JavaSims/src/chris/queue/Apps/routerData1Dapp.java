@@ -26,7 +26,7 @@ public class routerData1Dapp extends Simulation{
 		params.add("seed",0);
 		params.add("messages");
 		params.set("messages",0);
-		params.add("t_max",(int)(1e7));
+		params.add("t_max",(int)(1e8));
 		params.add("t");
 		params.set("t",0);
 	}
@@ -41,8 +41,7 @@ public class routerData1Dapp extends Simulation{
 			
 		while(count++ < tmax){
 			model.step();
-			//if(count % 10000 == 0)
-			if(count % 1 == 0)
+			if(count % 10000 == 0)
 				Job.animate();
 		}
 		
