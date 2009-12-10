@@ -7,11 +7,12 @@ import java.io.PrintWriter;
 import java.util.LinkedList;
 
 import scikit.jobs.params.Parameters;
+import chris.util.PrintUtil;
 import chris.util.Random;
 
 public class router1D {
 
-	private static final int dl = 500000;
+	private static final int dl = 5000000;
 	private LinkedList<LinkedList<message>> buffer;
 	private double lambda, data[], nbar[], omega;
 	private int N, L, Nmsg;
@@ -38,6 +39,8 @@ public class router1D {
 		Nmsg   = 0;
 		nbar   = new double[N];
 		data   = new double[dl];
+		
+		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 		
 		// create a list of buffers
 		for (int jj = 0 ; jj < N ; jj++){
@@ -106,7 +109,7 @@ public class router1D {
 					buffer.get(nidx).add(tomove[kk]);
 				}
 			}
-			System.out.println(omega);
+			
 			// finish metric calculation
 			omega /= ((double)(N)*(double)(t)*(double)(t));
 			takedata(omega);
