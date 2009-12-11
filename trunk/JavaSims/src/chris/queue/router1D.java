@@ -15,8 +15,7 @@ public class router1D {
 	private static final int dl = 5000000;
 	private LinkedList<LinkedList<message>> buffer;
 	private double lambda, data[], nbar[], omega;
-	private int N, L, Nmsg;
-	private int t;
+	private int N, L, Nmsg, t;
 	private Random rand;
 	private String outdir, bname;
 	
@@ -34,6 +33,7 @@ public class router1D {
 		lambda = params.fget("\u03BB");
 		outdir = params.sget("Data Directory");
 		bname  = params.sget("Data File");
+		
 		rand   = new Random(params.iget("seed"));
 		buffer = new LinkedList<LinkedList<message>>();
 		Nmsg   = 0;
