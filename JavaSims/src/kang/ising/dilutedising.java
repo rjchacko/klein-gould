@@ -16,6 +16,7 @@ import scikit.jobs.params.DoubleValue;
 
 public class dilutedising extends Simulation{
 	Grid grid1 = new Grid("Diluted Ising lattice 2d");
+	Grid grid2 = new Grid("Diluted Ising lattice copy");
 
 	public int L1, L2, M; //parameters for the lattice
 	public int S1, S2, S; //parameters for the coarsegrain blocks, s is the total number of the spins in a block
@@ -40,15 +41,19 @@ public class dilutedising extends Simulation{
 	
 	
 	public int isingspin[];     //the array of the data
+	public int isingcopy[];
 	public double coarsegrain[]; //the array of the coarse grain magnetization
 	public double CGEnergy[]; // the array of the CGblocks' energy
 	
 	public double timetotalE[];
+	public double timetotalE2[];
 	public double timetotalS[];
 	
 	public double timeaverageE[]; //time average energy for metric
+	public double timeaverageE2[];
 	public double timeaverageS[];
 	public double Metric[];  //array for plotting metric
+	public double DoubleMetric[];
 	public double SMetric[];  //array for the magnetization metric
 	
 	public int Nneighber(int a,int i ){// function for the index of nearest neighbor
@@ -102,6 +107,19 @@ public class dilutedising extends Simulation{
 		return Energy;
 			
 	}
+	
+	public double interactionE2 (int j){ //function for interaction energy
+		double Energy=0;
+		int b,k;
+		for(b=0; b<4;b++){
+			k=Nneighber(b,j);
+			Energy=Energy+J*isingcopy[j]*isingcopy[k];
+		}
+		return Energy;
+			
+	}
+	
+	
 	
 
 	public double coarsegrainE (int i){
@@ -210,6 +228,7 @@ public class dilutedising extends Simulation{
 	
 	public void load(Control liukang){
 		liukang.frame (grid1);
+		liukang.frame (grid2);
 
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
@@ -228,6 +247,7 @@ public class dilutedising extends Simulation{
 
 		params.add("MC time");
 		params.add("Metric");
+		params.add("DoubleMetric");
 		params.add("Magnetization Metric");
 		params.add("magnetization");
 		
@@ -242,6 +262,8 @@ public class dilutedising extends Simulation{
 		
 		grid1.setColors(ising);
 		grid1.registerData(L1, L2, isingspin);
+		grid2.setColors(ising);
+		grid2.registerData(L1, L2, isingcopy);
 		
 		//ColorGradient smooth = new ColorGradient();
 
@@ -256,12 +278,13 @@ public class dilutedising extends Simulation{
 	
 	public void clear(){
 		grid1.clear();
+		grid2.clear();
 	
 	}
 	
 	public void run(){
 		
-		int i,j;
+		int i,j,k;
 		R = (int)params.fget("Interaction range");
 		CR = (int)params.fget("Coarsegrain range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
@@ -278,24 +301,31 @@ public class dilutedising extends Simulation{
 		B = B1 * B2;
 		
 		isingspin = new int[M];
+	    isingcopy = new int[M];
 		CGEnergy = new double[B];   // the energy of the blocks
 		
 		coarsegrain = new double[M]; // the magnetization of each site after coarsegraining
 		
 		timetotalE = new double[B];
+		timetotalE2 = new double[B];
 		timeaverageE = new double[B];
+		timeaverageE2 = new double[B];
 		timetotalS = new double[B];
 		timeaverageS = new double[B];
+		
 
 		
 		N = (int)params.fget("Metric points");
 		Metric = new double[N];
+		DoubleMetric = new double[N];
 		SMetric = new double[N];
 		
 		P = params.fget("Diluted Percentage");
 		
 		double NMetric=0;
+		double NMetric2=0;
 		double totalE=0;
+		double totalE2=0;
 		double averageE=0;// definition for metric variables
 		
 		double NSMetric=0;
@@ -309,8 +339,11 @@ public class dilutedising extends Simulation{
 		//randomize the initial state
 		for (i=0; i<M; i++){
 			isingspin[i]=-1;
+			isingcopy[i]=-1;
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
+			if (Math.random()> 0.5)
+				isingcopy[i]=1;
 				
 		}
 		
@@ -318,6 +351,7 @@ public class dilutedising extends Simulation{
 			if(Math.random()< P)
 			{
 				isingspin[i]=0;
+				isingcopy[i]=0;
 				deadsites++;
 			}
 		}// here, the sequence of dilution and initialization is not important
@@ -352,10 +386,7 @@ public class dilutedising extends Simulation{
 				}
 				
 				
-				
-				
 				double ZeemanE2=-H*(-isingspin[j]); //field energy after flipping
-				
 				
 				
 				double E1=ZeemanE1+InterE1;
@@ -373,10 +404,56 @@ public class dilutedising extends Simulation{
 					
 					}
 				}
+				
+				//////////////////////////////////////////////////////////////////////////
+				
+				k=(int) (Math.random()*M);
+				
+				double ZeemanE21=-H*isingcopy[k];// initial field energy
+				double InterE21=0;
+                double InterE22=0;
+				
+				if (R==0) {
+					J=NJ/4;
+					InterE21=interactionE2(k); // initial interaction energy
+					InterE22=-interactionE2(k);
+				}
+				
+				if (R!=0) {
+					J=NJ/((2*R+1)*(2*R+1)-1);
+					InterE1=longrangeE(k);
+					InterE2=-longrangeE(k)-2*J;
+				}
+				
+				
+				double ZeemanE22=-H*(-isingspin[k]); //field energy after flipping
+				
+				
+				double E21=ZeemanE21+InterE21;
+				double E22=ZeemanE22+InterE22;
+				
+				if (E21>E22){
+
+					isingcopy[k] = -isingcopy[k];
+				}// flip the spin
+				
+				if (E21<E22){
+					if (Math.random()<Math.exp((E21-E22)/T)){
+
+						isingcopy[k]=-isingcopy[k];
+					
+					}
+				}
+				
+				
+				
+				
+				
 			
 				if(step % 1 == 0) {
 					params.set("MC time", step);
 					params.set("Metric", NMetric/(M-deadsites));
+					params.set("DoubleMetric", NMetric2/(M-deadsites));
 					params.set("Magnetization Metric", NSMetric/(M-deadsites));
 				}
 				Job.animate();
@@ -393,6 +470,7 @@ public class dilutedising extends Simulation{
 			
 			
 			totalE=0;
+			totalE2=0;
 			totalS=0;
 			
 			
@@ -402,6 +480,7 @@ public class dilutedising extends Simulation{
 				if(R==0)
 					{
 					timetotalE[y]+=interactionE(y);
+					timetotalE2[y]+=interactionE2(y);
 					timetotalS[y]+=isingspin[y]; 
 					}
 				if(R!=0)
@@ -428,6 +507,7 @@ public class dilutedising extends Simulation{
 					}
 				
 				timeaverageE[y]=timetotalE[y]/(step-metricstart);
+				timeaverageE2[y]=timetotalE2[y]/(step-metricstart);
 				timeaverageS[y]=timetotalS[y]/(step-metricstart);
 			 
 			}
@@ -450,6 +530,7 @@ public class dilutedising extends Simulation{
 			averageS=totalS/(M-deadsites);
 
 			NMetric=0;
+			NMetric2=0;
 			NSMetric=0;
 			
 			for (int z=0; z< B; z++)
@@ -458,6 +539,7 @@ public class dilutedising extends Simulation{
 					{
 					
 					NMetric+=(timeaverageE[z]-averageE)*(timeaverageE[z]-averageE);
+					NMetric2+=(timeaverageE[z]-timeaverageE2[z])*(timeaverageE[z]-timeaverageE2[z]);
 					NSMetric+=(timeaverageS[z]-averageS)*(timeaverageS[z]-averageS);
 					}
 		
@@ -468,8 +550,10 @@ public class dilutedising extends Simulation{
 			if(step<N+metricstart+1)
 				{
 				Metric[step-metricstart-1]=NMetric/(M-deadsites);
+				DoubleMetric[step-metricstart-1]=NMetric2/(M-deadsites);
 				SMetric[step-metricstart-1]=NSMetric/(M-deadsites);
 				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric3.txt",step-metricstart, Metric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/d-metric3.txt",step-metricstart, DoubleMetric[step-metricstart-1]);
 				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric3.txt",step-metricstart, SMetric[step-metricstart-1]);
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
