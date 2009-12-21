@@ -12,7 +12,7 @@ import chris.util.Random;
 
 public class router1D {
 
-	private static final int dl = 5000000;
+	public static final int dl = 5000000;
 	private LinkedList<LinkedList<message>> buffer;
 	private double lambda, data[], nbar[], omega;
 	private int N, L, Nmsg, t;
@@ -50,29 +50,34 @@ public class router1D {
 		return;
 	}
 	
-	public void step(){
+	public void step(boolean rec){
 		
-		step(1);
+		step(1, rec);
 		return;
 	}
 	
-	public void step(int ns){
+	public void step(int ns, boolean rec){
+
+
+		message[] tomove = new message[N];
+		int idx, nidx;
+		double r;
+		
+		if(rec)
+			t++;
 		
 		for (int jj = 0 ; jj < ns ; jj++){
-
-			message[] tomove = new message[N];
-			int idx, nidx;
-			double r, tmp;
 			
-			t++;
-			tmp   = 0;
+			double tmp = 0;
 			omega = 0;
-			
+
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART I)
-				nbar[kk] += buffer.get(kk).size();
-				tmp      += nbar[kk];
-				
+				if(rec){
+					nbar[kk] += buffer.get(kk).size();
+					tmp      += nbar[kk];
+				}
+
 				// select a message to move at random from the buffer
 				if(buffer.get(kk).isEmpty()) 
 					continue;
@@ -81,10 +86,12 @@ public class router1D {
 				tomove[kk].hopped();
 				buffer.get(kk).remove(idx);
 			}
+			tmp /= N;
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART II)
-				omega += (nbar[kk]-tmp)*(nbar[kk]-tmp);
-				
+				if(rec)
+					omega += (nbar[kk]-tmp)*(nbar[kk]-tmp);
+
 				// generate new messages and add them to the buffers
 				r = rand.nextDouble();
 				if (r < lambda){
@@ -92,7 +99,7 @@ public class router1D {
 					buffer.get(kk).add(new message(t,(int)(r)));
 					Nmsg++;
 				}
-				
+
 				// move messages selected in previous loop to next router
 				if(tomove[kk] == null) 
 					continue;
@@ -109,11 +116,14 @@ public class router1D {
 					buffer.get(nidx).add(tomove[kk]);
 				}
 			}
-			
-			// finish metric calculation
+		}
+
+		// finish metric calculation
+		if(rec){
 			omega /= ((double)(N)*(double)(t)*(double)(t));
 			takedata(omega);
 		}
+		
 		return;
 	}
 	
