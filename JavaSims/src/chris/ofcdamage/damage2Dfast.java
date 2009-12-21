@@ -170,6 +170,61 @@ public class damage2Dfast extends ofc2Dfast{
 		return Ndead;
 	}
 	
+	public int evolveDDS(int mct, boolean takedata){
+		// evolve the ofc model *IN DAMAGE MODE* starting with a stable 
+		// configuration until the next stable configuration is reached.
+		//
+		// mct is the monte carlo time step or the number of forced failures
+		//
+		// takedata specifies whether or not to record data
+		
+		double release;
+		int a, b, tmpfail, tmpnb;
+		boolean lastlife = false;
+		
+		// force failure
+		forceZeroVel(mct, takedata, false);
+		GR = 1; // the seed site
+		
+		// discharge forced site(s) and repeat until lattice is stable
+		while(newindex > index){
+			a     = index;
+			b     = newindex;
+			index = newindex;
+			for (int jj = a ; jj < b ; jj++){
+				tmpfail = fs[jj];
+				if(liveNbs[tmpfail] == 0){
+					if(Lives[tmpfail] == 1){
+						killSite(tmpfail, mct);
+					}
+					else{
+						resetSiteD(tmpfail);
+					}
+					continue;
+				}
+				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN; // dead sites dissipate
+				if(Lives[tmpfail] == 1) lastlife = true;
+				for(int kk = 0 ; kk < qN ; kk++){
+					tmpnb = getNbr(fs[jj],kk);
+					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
+					stress[tmpnb] += release;
+					if((stress[tmpnb] > sf[tmpnb])){
+						fs[newindex++] = tmpnb;	
+						failSite(tmpnb);
+					}
+				}
+				if(lastlife){
+					lastlife = false;
+					killSite(tmpfail, mct);
+				}
+				else{
+					resetSiteD(tmpfail);
+				}
+			}
+		}
+		return Ndead;
+	}
+	
 	protected void killSite(int site){
 		
 		Ndead++;
