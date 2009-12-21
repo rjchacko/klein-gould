@@ -1,8 +1,14 @@
 package kang.ising;
 
 import java.awt.Color;
+import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
+
+import javax.imageio.ImageIO;
 
 import chris.util.PrintUtil;
+import chris.util.Random;
 
 //import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -15,6 +21,11 @@ import scikit.jobs.params.DoubleValue;
 
 
 public class dilutedising extends Simulation{
+	
+	private DecimalFormat fmt = new DecimalFormat("0000000");
+
+	private Random rand;
+	
 	Grid grid1 = new Grid("Diluted Ising lattice 2d");
 	Grid grid2 = new Grid("Diluted Ising lattice copy");
 
@@ -264,6 +275,16 @@ public class dilutedising extends Simulation{
 		grid1.registerData(L1, L2, isingspin);
 		grid2.setColors(ising);
 		grid2.registerData(L1, L2, isingcopy);
+//		String SaveAs = PicDir + File.separator + gridS.getTitle()+fmt.format(time)+".png";
+
+		
+		String SaveAs = "/Users/cserino/Desktop/p/pic_"+fmt.format(step)+".png";
+		try {
+			ImageIO.write(grid1.getImage(), "png", new File(SaveAs));
+		} catch (IOException e) {
+			System.err.println("Error in Writing File" + SaveAs);
+		}
+		
 		
 		//ColorGradient smooth = new ColorGradient();
 
@@ -299,6 +320,11 @@ public class dilutedising extends Simulation{
 		B1 = L1/S1;
 		B2 = L2/S2;
 		B = B1 * B2;
+
+		// rand = new Random(SEED)
+//		for(int jj = 0 ; jj < 100 ; jj++)
+//			rand.nextDouble();
+		//Random newr = rand.clone();
 		
 		isingspin = new int[M];
 	    isingcopy = new int[M];
@@ -340,6 +366,8 @@ public class dilutedising extends Simulation{
 		for (i=0; i<M; i++){
 			isingspin[i]=-1;
 			isingcopy[i]=-1;
+	//		if(rand.nextDouble() > 0.5) // in [0,1]
+		//		rand.nextInt(25) random integer in [0 24]
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
 			if (Math.random()> 0.5)
