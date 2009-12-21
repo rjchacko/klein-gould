@@ -9,7 +9,7 @@ import chris.queue.router1D;
 
 public class routerData1Dapp extends Simulation{
 
-	int N, tmax;
+	int N, tmax, tnow;
 	router1D model;
 
 	public static void main(String[] args) {
@@ -26,7 +26,8 @@ public class routerData1Dapp extends Simulation{
 		params.add("seed",0);
 		params.add("messages");
 		params.set("messages",0);
-		params.add("t_max",(int)(1e8));
+		params.add("t_ss",(int)(1e5));
+		params.add("t_max",(int)(1e6));
 		params.add("t");
 		params.set("t",0);
 	}
@@ -34,16 +35,32 @@ public class routerData1Dapp extends Simulation{
 	public void run() {
 		
 		int count = 0;
+		int tss;
 		
 		N     = params.iget("N");
 		model = new router1D(params); 
 		tmax  = params.iget("t_max");
+		tss   = params.iget("t_ss");
 			
-		while(count++ < tmax){
-			model.step();
-			if(count % 10000 == 0)
+		while(count++ < tss){
+			model.step(false);
+			if(count % 10000 == 0){
+				tnow = count - tss;
 				Job.animate();
+			}
 		}
+		
+		count = 0;
+		while(count++ < tmax){
+			model.step(true);
+			if(count % 10000 == 0){
+				tnow = count;
+				Job.animate();
+			}
+		}
+		
+		if(tmax%router1D.dl != 0)
+			model.writeData(tmax);
 		
 		Job.signalStop();
 		Job.animate();
@@ -51,13 +68,15 @@ public class routerData1Dapp extends Simulation{
 	
 	public void animate() {
 		
-		params.set("t", model.getT());
+		params.set("t", tnow);
 		params.set("messages",model.getNmsg());
 		return;
 	}
 
 	public void clear() {
 
+		params.set("t", "-");
+		params.set("messages","-");
 		return;
 	}	
 }

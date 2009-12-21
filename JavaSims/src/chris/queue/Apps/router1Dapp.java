@@ -45,7 +45,7 @@ public class router1Dapp extends Simulation{
 		setupcolors(params.fget("\u03BB"),params.iget("l"),N);
 				
 		while(true){
-			model.step();
+			model.step(true);
 			Job.animate();
 		}
 		
