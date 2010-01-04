@@ -245,7 +245,7 @@ public class dilutedising extends Simulation{
 		params.add("lattice's length", 100);
 		params.add("CGBlock's width", 1);
 		params.add("CGBlock's length", 1);
-		params.addm("Temperature", new DoubleValue(1, 0, 100).withSlider());
+		params.addm("Temperature", new DoubleValue(1, 0, 10).withSlider());
 		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
 		params.addm("Interaction Constant", 1);
 		params.add("Interaction range", 10);
@@ -278,12 +278,12 @@ public class dilutedising extends Simulation{
 //		String SaveAs = PicDir + File.separator + gridS.getTitle()+fmt.format(time)+".png";
 
 		
-		String SaveAs = "/Users/cserino/Desktop/p/pic_"+fmt.format(step)+".png";
+		/*String SaveAs = "/Users/cserino/Desktop/p/pic_"+fmt.format(step)+".png";
 		try {
 			ImageIO.write(grid1.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {
 			System.err.println("Error in Writing File" + SaveAs);
-		}
+		}*/
 		
 		
 		//ColorGradient smooth = new ColorGradient();
@@ -580,9 +580,12 @@ public class dilutedising extends Simulation{
 				Metric[step-metricstart-1]=NMetric/(M-deadsites);
 				DoubleMetric[step-metricstart-1]=NMetric2/(M-deadsites);
 				SMetric[step-metricstart-1]=NSMetric/(M-deadsites);
-				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric3.txt",step-metricstart, Metric[step-metricstart-1]);
-				PrintUtil.printlnToFile("F:/data/dilutedising/d-metric3.txt",step-metricstart, DoubleMetric[step-metricstart-1]);
-				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric3.txt",step-metricstart, SMetric[step-metricstart-1]);
+
+
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric8.txt",step-metricstart, Metric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/d-metric8.txt",step-metricstart, DoubleMetric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric8.txt",step-metricstart, SMetric[step-metricstart-1]);
+
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
 			
