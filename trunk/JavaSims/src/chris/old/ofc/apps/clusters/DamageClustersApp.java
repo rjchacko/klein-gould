@@ -1,4 +1,4 @@
-package chris.tests;
+package chris.old.ofc.apps.clusters;
 
 
 import java.awt.Color;
@@ -15,14 +15,14 @@ import scikit.jobs.params.DoubleValue;
 import chris.old.ofc.clusters.DamageClusters2D;
 import chris.old.ofc.old.NfailDamage2D;
 
-public class DamageClusterTest extends Simulation {
+public class DamageClustersApp extends Simulation {
 
 	Grid grid1 = new Grid ("Stress Lattice");
 	Grid grid2 = new Grid ("Failed Sites");
 	Grid grid3 = new Grid ("Clusters");
 
 	DamageClusters2D model;
-	double ScMax, rgyr;
+	double ScMax, rgyr, tOLD;
 	
 	ColorPalette palette1, palette2;
 	ColorGradient smooth;
@@ -31,7 +31,7 @@ public class DamageClusterTest extends Simulation {
 	
 
 	public static void main(String[] args) {
-		new Control(new DamageClusterTest(), "OFC Model");
+		new Control(new DamageClustersApp(), "OFC Model");
 	}
 	
 	public void load(Control c) {
@@ -41,7 +41,7 @@ public class DamageClusterTest extends Simulation {
 		params.add("Animation", new ChoiceValue("On","Off"));
 		params.add("Take Cluster Data", new ChoiceValue("On","Off"));
 		//params.addm("Auto Scale", new ChoiceValue("Yes", "No"));
-		params.add("Lattice Size",1<<5);
+		params.add("Lattice Size",1<<9);
 		params.add("Number of Lives",1);
 		params.add("Life Style", new ChoiceValue("Constant","Flat","Gaussian"));
 		params.add("Nlives Width",0.1);
@@ -76,22 +76,31 @@ public class DamageClusterTest extends Simulation {
 			int[] foo = new int[model.N];
 			int[] foo2 = new int[model.N];
 	
-				
-			for (int i=0 ; i<model.N ; i++){
-				smooth.getColor(model.stress[i],-2,ScMax);
-				foo[i]=model.alive[i];
-				foo2[i]=model.cluster.getClusterNumber(i);
+			if(model.Cdata){	
+				for (int i=0 ; i<model.N ; i++){
+					smooth.getColor(model.stress[i],-2,ScMax);
+					foo[i]=model.alive[i];
+					foo2[i]=model.cluster.getClusterNumber(i);
+				}
+			}
+			else{
+				for (int i=0 ; i<model.N ; i++){
+					smooth.getColor(model.stress[i],-2,ScMax);
+					foo[i]=model.alive[i];
+				}
+			
 			}
 				
 			grid1.setColors(smooth);
 			grid1.registerData(model.L,model.L,model.stress);
 			grid2.registerData(model.L, model.L, foo);
-			grid3.registerData(model.L, model.L, foo2);
+			if (model.Cdata) grid3.registerData(model.L, model.L, foo2);
 				
-			if (params.sget("Record").equals("On") && model.ShowGrid){
+			if ((model.time > tOLD) && params.sget("Record").equals("On") && model.ShowGrid){
 				model.TakePicture(grid1);
 				model.TakePicture(grid2);
-				model.TakePicture(grid3);
+				if (model.Cdata) model.TakePicture(grid3);
+				tOLD = model.time;
 			}
 		
 		}
@@ -106,6 +115,8 @@ public class DamageClusterTest extends Simulation {
 	}
 
 	public void run() {
+		
+		tOLD = 0;
 		
 		model = new DamageClusters2D(params);
 		
@@ -173,6 +184,9 @@ public class DamageClusterTest extends Simulation {
 			model.TakeData();
 			
 		}
+		
+		if(model.crack) System.out.println("All Sites have Failed!");
+		if(model.Percolate) System.out.println("The System has Percolated!");
 		
 	}
 

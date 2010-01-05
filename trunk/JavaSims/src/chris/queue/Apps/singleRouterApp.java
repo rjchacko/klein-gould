@@ -77,7 +77,7 @@ public class singleRouterApp extends Simulation{
 
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 
-		while(cycle < 1e7){
+		while(cycle < 1e5){
 
 			buffer = new LinkedList<message>();
 			rand   = new Random(params.iget("seed"));

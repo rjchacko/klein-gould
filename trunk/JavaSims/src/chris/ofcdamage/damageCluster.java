@@ -2,7 +2,7 @@ package chris.ofcdamage;
 
 import java.io.File;
 
-import chris.foo.ofc.clusters.ClustersV4;
+import chris.old.ofc.clusters.ClustersV4;
 import chris.util.PrintUtil;
 import scikit.jobs.params.Parameters;
 

@@ -13,8 +13,8 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.foo.ofc.Damage2D;
 import chris.ofcdamage.damage;
+import chris.old.ofc.Damage2D;
 import chris.util.ReadInUtil;
 
 public class ergodicDiagramApp extends Simulation{

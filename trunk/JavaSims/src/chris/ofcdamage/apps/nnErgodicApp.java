@@ -6,8 +6,8 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
-import chris.foo.ofc.Damage2D;
 import chris.ofcdamage.damage;
+import chris.old.ofc.Damage2D;
 
 public class nnErgodicApp extends Simulation {
 
