@@ -582,9 +582,9 @@ public class dilutedising extends Simulation{
 				SMetric[step-metricstart-1]=NSMetric/(M-deadsites);
 
 
-				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric8.txt",step-metricstart, Metric[step-metricstart-1]);
-				PrintUtil.printlnToFile("F:/data/dilutedising/d-metric8.txt",step-metricstart, DoubleMetric[step-metricstart-1]);
-				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric8.txt",step-metricstart, SMetric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric9.txt",step-metricstart, Metric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/d-metric9.txt",step-metricstart, DoubleMetric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric9.txt",step-metricstart, SMetric[step-metricstart-1]);
 
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
