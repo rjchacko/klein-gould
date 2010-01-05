@@ -49,6 +49,8 @@ public class fastDissDeadSiteApp extends Simulation{
 		params.add("Dissipation (\u03B1)", 0.05);
 		params.add("\u03B1 width", 0.);
 		params.add("Animate", new ChoiceValue("Off","Draw","Record"));
+		params.add("Mode");
+		params.set("Mode","Diss. Dead Sites");
 		params.add("Status");
 		params.add("Dead Sites");
 		

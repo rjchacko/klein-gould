@@ -1,0 +1,274 @@
+package chris.old.FBv2;
+
+import java.awt.Color;
+import java.io.File;
+import java.text.DecimalFormat;
+
+
+import scikit.graphics.ColorGradient;
+import scikit.graphics.ColorPalette;
+import scikit.graphics.dim2.Grid;
+import scikit.jobs.Control;
+import scikit.jobs.Job;
+import scikit.jobs.Simulation;
+import scikit.jobs.params.ChoiceValue;
+import scikit.jobs.params.DirectoryValue;
+import scikit.jobs.params.DoubleValue;
+import chris.old.ofc.Damage2D;
+
+public class FBmodelApp extends Simulation{
+
+	FibreBundle model;
+	
+	Grid gridS = new Grid ("Stress");
+	Grid gridL = new Grid ("Lives");
+	
+	ColorPalette palette1;
+	ColorGradient cGradient;
+	
+	DecimalFormat fmt = new DecimalFormat("0000.00");
+	
+	DecimalFormat op = new DecimalFormat("0.00");
+	
+	double lv;
+	
+	double ScMax;
+	Boolean pretime;
+	
+	public static void main(String[] args) {
+		new Control(new FBmodelApp(), "OFC Parameters");
+	}
+	
+public void load(Control c) {
+		
+		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
+		params.add("Mode");
+		params.add("Random Seed",0);
+		params.add("Interaction Shape", new ChoiceValue("All Sites","Circle","Square","Diamond"));
+		params.add("Interaction Radius (R)",(int)(30));
+		params.add("Lattice Size",1<<8);
+		params.add("Boundary Condtions", new ChoiceValue("Periodic","Bordered"));
+		params.add("Equilibrate Time", 100);
+		params.add("Number of Lives");
+		params.add("Life Distribution", new ChoiceValue("Constant","Gaussian", "Step Down"));
+		params.add("LD Width",0.0);
+		params.add("Failure Stress (\u03C3_f)", (double) 1.0);
+		params.add("\u03C3_f width",(double)(0));
+		params.add("Residual Stress (\u03C3_r)",(double) 0);
+		params.add("\u03C3_r width", (double) 0);
+		params.add("Dissipation (\u03B1)",new DoubleValue(.1,0,1));
+		params.add("\u03B1 Width", (double)(0));
+		params.add("Animation", new ChoiceValue("Off","On"));
+		params.addm("Record", new ChoiceValue("Off","On"));
+		params.add("Number of Plate Updates");
+		params.add("Last Avalanche Size");
+		params.add("<Lives Left>");
+		
+		params.set("Mode","Damage");
+		//params.set("Equilibrate Time",100);
+		params.set("Number of Lives",5);
+		
+		c.frameTogether("OFC Model with Damage", gridS, gridL);
+		
+}
+	public void animate() {
+	
+		if(pretime){
+			params.set("Number of Plate Updates",model.getTime(-1));
+			params.set("Last Avalanche Size",model.getAS());
+		}
+		else{
+			params.set("Number of Plate Updates",model.getTime(1));
+			params.set("Last Avalanche Size",model.getAS());
+			if(!(model.getEQmode())) params.set("<Lives Left>",fmt.format(model.getAveLL()));
+		}
+	
+		if(model.draw()){
+	
+	
+			int L = model.getL();
+			int N = L*L;
+	
+			int[] foo = model.getLives();
+	
+			double[] copyStress = model.getStress();
+	
+			for (int jj=0 ; jj < N ; jj++){
+				cGradient.getColor(copyStress[jj],-2,ScMax);
+			}
+	
+			gridS.setColors(cGradient);
+			gridS.registerData(L,L,copyStress);
+			gridL.registerData(L, L, foo);
+		}
+	
+	}
+
+//}
+//	public void animate() {
+//
+//
+//		params.set("Number of Plate Updates",model.getTime(1));
+//		params.set("Loop Val", lv);
+//		if(!(model.getEQmode())) params.set("<Lives Left>",fmt.format(model.getAveLL()));
+//	
+//		
+//		if(model.draw()){
+//			
+//			
+//			int L = model.getL();
+//			int N = L*L;
+//			
+//			int[] foo = model.getLives();
+//
+//			double[] copyStress = model.getStress();
+//			
+//			for (int jj=0 ; jj < N ; jj++){
+//				cGradient.getColor(copyStress[jj],-2,ScMax);
+//			}
+//
+//			gridS.setColors(cGradient);
+//			gridS.registerData(L,L,copyStress);
+//			gridL.registerData(L, L, foo);
+//			
+//		}
+//	
+//	}
+
+	public void clear() {
+		gridS.clear();
+		gridL.clear();
+	}
+
+	
+public void run() {
+		
+		
+		// Setup model
+		model = new FibreBundle(params);
+		model.Initialize();
+		
+		// Setup color scheme
+		palette1  = new ColorPalette();
+		cGradient = new ColorGradient();
+		
+		if(params.sget("Mode").equals("Damage")){
+			int MostLives = model.maxLives();
+			Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};		
+			palette1.setColor(0,Color.BLACK);
+			for (int jj = 1 ; jj <= MostLives ; jj++){
+				palette1.setColor(jj,Carray[jj%5]);
+			}
+
+			gridL.setColors(palette1);
+		}
+		
+		// Setup output files
+		Damage2D.PrintParams(model.getOutdir()+File.separator+"Params.txt",params);	
+		model.WriteDataHeaders();
+		
+		// Run the simulation
+		pretime = true;
+		if(model.getTime(-1) != 0){
+			params.set("<Lives Left>","Equilibrating");
+			while(model.Equilibrate()){
+				Job.animate();
+			}
+		}
+		
+		pretime = false;	
+		model.resetMode(params);	// resets model to Damage mode if specified by params
+
+		if(params.sget("Mode").equals("Earthquake")) params.set("<Lives Left>","Running");
+		
+		while(model.Avalanche()){
+			Job.animate();
+			model.TakeDate();
+			if (params.sget("Record").equals("On")){
+				// prevents taking multiple pics at a single time step
+				model.TakePicture(gridS);
+				model.TakePicture(gridL);
+			}
+		}
+		
+		params.set("<Lives Left>","Finished");
+		Job.animate();
+		
+		return;
+	}
+
+	
+//	
+//	
+//	public void run() {
+//		
+//		
+//		
+////		int rv = 10;
+////	
+////		lv = 0;
+////		
+////		while(true){
+////				
+////			// Setup model
+////			
+////			params.set("Random Seed",rv++);
+////			params.set("Dissipation (\u03B1)", lv);
+//			
+//			model = new FibreBundle(params);
+//			model.Initialize();
+//			
+//			//Damage2D.PrintParams(model.getOutdir()+File.separator+"Params"+ op.format(lv) + ".txt",params);
+//			Damage2D.PrintParams(model.getOutdir()+File.separator+"Params.txt",params);
+//
+//			// Setup color scheme
+//			palette1  = new ColorPalette();
+//			cGradient = new ColorGradient();
+//			
+//			if(params.sget("Mode").equals("Damage")){
+//				int MostLives = model.maxLives();
+//				Color[] Carray = new Color[]{Color.YELLOW,Color.RED,Color.GREEN,Color.BLUE,Color.GRAY};		
+//				palette1.setColor(0,Color.BLACK);
+//				for (int jj = 1 ; jj <= MostLives ; jj++){
+//					palette1.setColor(jj,Carray[jj%5]);
+//				}
+//
+//				gridL.setColors(palette1);
+//			}
+//			
+//			// Setup output files
+//	
+//			//model.setOutfile("alphaloop_" + op.format(lv));
+//			model.WriteDataHeaders();
+//
+//			while(model.Avalanche()){
+//				Job.animate();
+//				model.TakeDate();
+//				if (params.sget("Record").equals("On")){
+//					// prevents taking multiple pics at a single time step
+//					model.TakePicture(gridS);
+//					model.TakePicture(gridL);
+//				}
+//			}
+//		
+////			if( lv < 0.1){
+////				lv += 0.01;
+////			}
+////			else if (lv < 0.3){
+////				lv += 0.05;
+////			}
+////			else{
+////				lv += 0.1;
+////			}
+////			
+////			if(lv >= 1) break;
+////			
+////		}
+//		
+//		params.set("<Lives Left>","Finished");
+//		Job.animate();
+//		
+//		return;
+//	}
+
+}

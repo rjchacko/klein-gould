@@ -13,8 +13,8 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
-import chris.foo.ofc.clusters.ClustersV4;
-import chris.foo.ofc.old.NfailDamage2D;
+import chris.old.ofc.clusters.ClustersV4;
+import chris.old.ofc.old.NfailDamage2D;
 import chris.util.LatticeNeighbors;
 
 
