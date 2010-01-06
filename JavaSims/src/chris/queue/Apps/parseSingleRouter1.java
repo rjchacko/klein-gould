@@ -19,13 +19,13 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 
-public class parseSingleRouterMean extends Simulation{
+public class parseSingleRouter1 extends Simulation{
 
 	DecimalFormat fmtS = new DecimalFormat("00.0");
 	int tl;
 	
 	public static void main(String[] args) {
-		new Control(new parseSingleRouterMean(), "Merge Single Router Data");
+		new Control(new parseSingleRouter1(), "Merge Single Router Data");
 	}
 	
 	public void load(Control c) {

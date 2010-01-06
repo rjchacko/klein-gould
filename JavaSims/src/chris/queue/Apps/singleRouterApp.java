@@ -8,6 +8,7 @@ import java.text.DecimalFormat;
 import java.util.LinkedList;
 
 import chris.queue.message;
+import chris.util.DirUtil;
 import chris.util.PrintUtil;
 import chris.util.Random;
 import scikit.dataset.DatasetBuffer;
@@ -20,11 +21,19 @@ import scikit.jobs.params.DoubleValue;
 
 public class singleRouterApp extends Simulation{
 
+	/*
+	 * TO DO:
+	 * 		ADD DELIVERARY TIME DATA
+	 * 
+	 * 
+	 */
+	
+	
 	private LinkedList<message> buffer;
 	private double lambda;
-	private int L, Nmsg, dl, data[], Ns[], now;
+	private int L, N, dl, data[], nj[], now, Nmx;
 	private Random rand;
-	private String outdir, bname;
+	private String outdir, bname, outpath[];
 	
 	public static void main(String[] args) {
 		new Control(new singleRouterApp(), "Single Router");
@@ -32,7 +41,7 @@ public class singleRouterApp extends Simulation{
 	
 	public void animate() {
 		
-		params.set("messages",Nmsg);
+		params.set("messages",N);
 		params.set("t",now);
 		return;
 	}
@@ -61,7 +70,7 @@ public class singleRouterApp extends Simulation{
 	public void run() {
 		
 		int idx, s, cycle, tss, tmax;
-		Histogram h;
+		Histogram hN, hnj[], hjgn[];
 		
 		cycle = 0;
 	
@@ -72,21 +81,27 @@ public class singleRouterApp extends Simulation{
 		tmax   = params.iget("t_max");
 		tss    = params.iget("t_ss");
 		dl     = L*tss;
-
-
+		hnj    = new Histogram[L]; 
+		Nmx    = (int)(3*L*L/(1-lambda*L));	// go out to N = <N> + 3*dN where
+		hjgn   = new Histogram[Nmx];		// <N> ~ dN ~ L / (1 - lambda*L)	
 
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 
+		// create sub-directories
+		outpath = new String[]{outdir+"/ts",outdir+"/nt",outdir+"/nj",outdir+"/njn"};
+
+		for (int jj = 0 ; jj < 4 ; jj++){
+			DirUtil.MkDir(outpath[jj]);
+		}
+		
 		while(cycle < 1e5){
 
 			buffer = new LinkedList<message>();
 			rand   = new Random(params.iget("seed"));
 			data   = new int[dl];
-			Ns     = new int[L];
-			Nmsg   = 0;
+			nj     = new int[L];
+			N      = 0;
 
-			// etc.
-			
 			
 			// first simulate the approach to the steady state			
 			for (int jj = 0 ; jj < tss ; jj++){
@@ -99,27 +114,27 @@ public class singleRouterApp extends Simulation{
 					if(s == L - 1){
 						// dissipate
 						buffer.remove(idx);
-						Nmsg--;
-						Ns[s]--;
+						N--;
+						nj[s]--;
 					}
 					else{
 						// 
 						buffer.get(idx).hopped();
-						Ns[s]--;
-						Ns[s+1]++;
+						nj[s]--;
+						nj[s+1]++;
 					}
 				}
 
 				// try and generate a message
 				if (rand.nextDouble() < lambda){
 					buffer.add(new message(jj,0));
-					Nmsg++;
-					Ns[0]++;
+					N++;
+					nj[0]++;
 				}
 
 				// save distribution
 				for(int kk = 0 ; kk < L ; kk++){
-					data[kk+jj*L] = Ns[kk];  
+					data[kk+jj*L] = nj[kk];  
 				}
 
 				if (jj % 1000 == 0){
@@ -131,7 +146,16 @@ public class singleRouterApp extends Simulation{
 			saveData(cycle, tss);
 			
 			// now simulate the (assumed) steady state
-			h = new Histogram(1);
+			hN = new Histogram(1);
+			for(int jj = 0 ; jj < L ; jj++){
+				hnj[jj]  = new Histogram(1);
+				hjgn[jj] = new Histogram(1);
+			}
+			for(int jj = L ; jj < Nmx ; jj++){
+				hjgn[jj] = new Histogram(1);
+			}
+			
+			
 			for (int jj = 0 ; jj < tmax ; jj++){
 
 				// select a message at random and "pass" it 
@@ -142,46 +166,57 @@ public class singleRouterApp extends Simulation{
 					if(s == L - 1){
 						// dissipate
 						buffer.remove(idx);
-						Nmsg--;
-						Ns[s]--;
+						N--;
+						nj[s]--;
 					}
 					else{
 						// 
 						buffer.get(idx).hopped();
-						Ns[s]--;
-						Ns[s+1]++;
+						nj[s]--;
+						nj[s+1]++;
 					}
 				}
 
 				// try and generate a message
 				if (rand.nextDouble() < lambda){
 					buffer.add(new message(jj,0));
-					Nmsg++;
-					Ns[0]++;
+					N++;
+					nj[0]++;
 				}
 
-				h.accum(Nmsg);
+				hN.accum(N);
+				if(N < Nmx){
+					for (int kk = 0 ; kk < L ; kk++){
+						hjgn[L*N+kk].accum(nj[kk]); 
+					}
+				}
+				else{
+					for (int kk = 0 ; kk < L ; kk++){
+						hnj[kk].accum(nj[kk]); 
+					}
+				}
 				
-				if (jj % 1000 == 0){
+				if (jj % 10000 == 0){
 					now = jj;
 					Job.animate();
 				}
 
 			}
-			saveHist(cycle, h);
+
+			saveHists(cycle, hN, hnj, hjgn);
 			cycle++;
 			params.set("cycle",cycle);;
 			params.set("seed",params.iget("seed")+1);
 		}	
 	}
 	
-	public void saveData(int ccl, int tub){
+	private void saveData(int ccl, int tub){
 		
 		DecimalFormat fmtS = new DecimalFormat("00");
 		DecimalFormat fmtL = new DecimalFormat("0000000");
 
 		try{
-			File file = new File(outdir+File.separator+bname+fmtL.format(ccl)+".txt");
+			File file = new File(outpath[0]+File.separator+bname+fmtL.format(ccl)+".txt");
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.println("L = "+fmtS.format(L));
 			for (int jj = 0 ; jj < L*tub ; jj++){
@@ -195,13 +230,17 @@ public class singleRouterApp extends Simulation{
 		return;
 	}
 	
-	public void saveHist(int ccl, Histogram h){
-
+	private void saveHists(int ccl, Histogram h, Histogram[] g, Histogram[] f){
+	
+		int a,b;
+		
+		DecimalFormat fmts = new DecimalFormat("000");	
 		DecimalFormat fmtL = new DecimalFormat("0000000");	
-		DatasetBuffer hh   = h.copyData();
 
+		DatasetBuffer hh   = h.copyData();
+		
 		try{
-			File file = new File(outdir+File.separator+bname+"_hist"+fmtL.format(ccl)+".txt");
+			File file = new File(outpath[1]+File.separator+bname+"_histN"+fmtL.format(ccl)+".txt");
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int jj = 0 ; jj < hh.size(); jj++){
 				pw.print(hh.x(jj));
@@ -213,6 +252,46 @@ public class singleRouterApp extends Simulation{
 		catch (IOException ex){
 			ex.printStackTrace();
 		}
+
+		for(int jj = 0 ; jj < L ; jj++){
+			hh = g[jj].copyData();
+			try{
+				File file = new File(outpath[2]+File.separator+bname+"_histn"+fmts.format(jj)+"_"+fmtL.format(ccl)+".txt");
+				PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+				for (int kk = 0 ; kk < hh.size(); kk++){
+					pw.print(hh.x(kk));
+					pw.print("\t");
+					pw.println(hh.y(kk));
+				}			
+				pw.close();
+			}
+			catch (IOException ex){
+				ex.printStackTrace();
+			}
+		}
+		
+		for(int jj = 0 ; jj < Nmx ; jj++){
+			// check if f[jj] has any entries
+			if(f[jj].fullSum() == 0) 
+				continue;
+			hh = f[jj].copyData();
+			a  = jj%L;
+			b  = jj/L;
+			try{
+				File file = new File(outpath[3]+File.separator+bname+"_histn"+fmts.format(a)+"g"+fmts.format(b)+"_"+fmtL.format(ccl)+".txt");
+				PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+				for (int kk = 0 ; kk < hh.size(); kk++){
+					pw.print(hh.x(kk));
+					pw.print("\t");
+					pw.println(hh.y(kk));
+				}			
+				pw.close();
+			}
+			catch (IOException ex){
+				ex.printStackTrace();
+			}
+		}
+		
 		return;
 	}
 
