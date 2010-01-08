@@ -6,11 +6,6 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
-
-import chris.queue.message;
-import chris.util.DirUtil;
-import chris.util.PrintUtil;
-import chris.util.Random;
 import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 import scikit.jobs.Control;
@@ -18,6 +13,10 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
+import chris.queue.message;
+import chris.util.DirUtil;
+import chris.util.PrintUtil;
+import chris.util.Random;
 
 public class singleRouterApp extends Simulation{
 
@@ -30,7 +29,7 @@ public class singleRouterApp extends Simulation{
 	
 	
 	private LinkedList<message> buffer;
-	private double lambda;
+	private double lambda, tb[];
 	private int L, N, dl, data[], nj[], now, Nmx;
 	private Random rand;
 	private String outdir, bname, outpath[];
@@ -69,7 +68,8 @@ public class singleRouterApp extends Simulation{
 
 	public void run() {
 		
-		int idx, s, cycle, tss, tmax;
+		int idx, s, cycle, tss, tmax, tcount;
+		double tbar;
 		Histogram hN, hnj[], hjgn[];
 		
 		cycle = 0;
@@ -88,7 +88,7 @@ public class singleRouterApp extends Simulation{
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 
 		// create sub-directories
-		outpath = new String[]{outdir+"/ts",outdir+"/nt",outdir+"/nj",outdir+"/njn"};
+		outpath = new String[]{outdir+"/ts",outdir+"/nt",outdir+"/nj",outdir+"/njn", outdir+"tb"};
 
 		for (int jj = 0 ; jj < 4 ; jj++){
 			DirUtil.MkDir(outpath[jj]);
@@ -99,6 +99,7 @@ public class singleRouterApp extends Simulation{
 			buffer = new LinkedList<message>();
 			rand   = new Random(params.iget("seed"));
 			data   = new int[dl];
+			tb     = new double[tmax];
 			nj     = new int[L];
 			N      = 0;
 
@@ -119,7 +120,7 @@ public class singleRouterApp extends Simulation{
 					}
 					else{
 						// 
-						buffer.get(idx).hopped();
+						buffer.get(idx).hop();
 						nj[s]--;
 						nj[s+1]++;
 					}
@@ -127,7 +128,7 @@ public class singleRouterApp extends Simulation{
 
 				// try and generate a message
 				if (rand.nextDouble() < lambda){
-					buffer.add(new message(jj,0));
+					buffer.add(new message(jj));
 					N++;
 					nj[0]++;
 				}
@@ -157,7 +158,8 @@ public class singleRouterApp extends Simulation{
 			
 			
 			for (int jj = 0 ; jj < tmax ; jj++){
-
+				tbar     = 0;
+				tcount   = 0;
 				// select a message at random and "pass" it 
 				if(buffer.size() > 0){
 					idx = rand.nextInt(buffer.size());
@@ -165,13 +167,15 @@ public class singleRouterApp extends Simulation{
 					s = buffer.get(idx).getHops();
 					if(s == L - 1){
 						// dissipate
+						tbar += jj+tss-buffer.get(idx).getTcreate();
+						tcount++;
 						buffer.remove(idx);
 						N--;
 						nj[s]--;
 					}
 					else{
 						// 
-						buffer.get(idx).hopped();
+						buffer.get(idx).hop();
 						nj[s]--;
 						nj[s+1]++;
 					}
@@ -179,7 +183,7 @@ public class singleRouterApp extends Simulation{
 
 				// try and generate a message
 				if (rand.nextDouble() < lambda){
-					buffer.add(new message(jj,0));
+					buffer.add(new message(jj+tss));
 					N++;
 					nj[0]++;
 				}
@@ -196,6 +200,7 @@ public class singleRouterApp extends Simulation{
 					}
 				}
 				
+				tb[jj] = tbar / tcount;
 				if (jj % 10000 == 0){
 					now = jj;
 					Job.animate();
@@ -204,6 +209,7 @@ public class singleRouterApp extends Simulation{
 			}
 
 			saveHists(cycle, hN, hnj, hjgn);
+			writeTD(cycle, tmax);
 			cycle++;
 			params.set("cycle",cycle);;
 			params.set("seed",params.iget("seed")+1);
@@ -292,6 +298,25 @@ public class singleRouterApp extends Simulation{
 			}
 		}
 		
+		return;
+	}
+	
+	
+	private void writeTD(int ccl, int tub){
+		
+		DecimalFormat fmtL = new DecimalFormat("0000000");
+
+		try{
+			File file = new File(outpath[4]+File.separator+bname+fmtL.format(ccl)+".txt");
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int jj = 0 ; jj < tub ; jj++){
+				pw.println(tb[jj]);
+			}			
+			pw.close();
+		}
+		catch (IOException ex){
+			ex.printStackTrace();
+		}
 		return;
 	}
 
