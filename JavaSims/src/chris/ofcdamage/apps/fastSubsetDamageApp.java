@@ -16,7 +16,6 @@ import chris.ofcdamage.damage2Dfast;
 import chris.util.CloneUtil;
 import chris.util.DirUtil;
 import chris.util.MathUtil;
-import chris.util.PrintUtil;
 
 public class fastSubsetDamageApp extends Simulation{
 
@@ -101,17 +100,6 @@ public class fastSubsetDamageApp extends Simulation{
 				Job.animate();
 			}
 		}
-		/*
-		 * FOR DEBUGGING ONLY
-		 */
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","---------- END OF EQUIL ----------");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		
 		
 		// Setup I/O
 		if(params.sget("Animate").equals("Draw")){
@@ -127,15 +115,6 @@ public class fastSubsetDamageApp extends Simulation{
 		// Simulate the model without damage
 		for (int jj = 0 ; jj < simt ; jj++){
 			model.evolve(jj,false);
-			/*
-			 * 
-			 * for error checking only,
-			 * print sites that fail and
-			 * the Sr they get set to, to 
-			 * compare w/ second run through
-			 *
-			 * 
-			 */
 			if(jj%500 == 0){
 				params.set("Status", jj);
 			}
@@ -156,33 +135,12 @@ public class fastSubsetDamageApp extends Simulation{
 			dmt++;
 		}
 		
-		/*
-		 * FOR DEBUGGING ONLY
-		 */
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","---------- END OF RUN ----------");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt","");
-
-		
 		// re-run simulation
 		model = null; // clear from memory
 		
 		// Simulate the model without damage
 		for (int jj = 0 ; jj < simt ; jj++){
 			restore.evolve(jj,true);
-			/*
-			 * 
-			 * for error checking only,
-			 * print sites that fail and
-			 * the Sr they get set to, to 
-			 * compare w/ second run through
-			 *
-			 * 
-			 */
 			if(jj%500 == 0){
 				params.set("Status", jj);
 			}
