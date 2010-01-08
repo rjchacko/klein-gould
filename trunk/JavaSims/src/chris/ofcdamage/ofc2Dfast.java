@@ -398,10 +398,6 @@ public class ofc2Dfast{
 		sf[site]     = nextSf(site);
 		stress[site] = sr[site];
 		failed[site] = false;
-		/*
-		 * FOR DEBUGGING ONLY
-		 */
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt",site,sr[site]);
 		return;
 	}
 	
