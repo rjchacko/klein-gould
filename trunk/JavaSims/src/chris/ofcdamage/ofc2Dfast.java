@@ -20,7 +20,7 @@ public class ofc2Dfast{
 	private double sr0, sf0, a0, dsr, dsf, da;
 	protected double Omega, sr[], sf[], stress[], sbar[], data[][];
 	private int L, R, nbArray[], nbSeed;
-	protected int N, qN, fs[], GR, index, newindex, Ndead;
+	protected int N, qN, fs[], GR, index, newindex, Ndead, Nss;
 	private boolean srn, sfn, an;
 	protected boolean failed[], ftt[];
 	private String outdir, bcs, bname;
@@ -72,7 +72,8 @@ public class ofc2Dfast{
 		
 		N     = L*L;
 		Ndead = 0;
-		
+		Nss   = -1; // must be reset. If not, metric will be negative and 
+					// I'll know a problem occurred
 		sr      = new double[N];
 		sf      = new double[N];
 		stress  = new double[N];
@@ -322,6 +323,55 @@ public class ofc2Dfast{
 		failSite(jjmax,mct);		
 		return;
 	}
+	
+	protected void forceZeroVel(int mct, boolean[] ss, boolean eqmode){
+		// force failure in the zero velocity limit
+
+		double dsigma, tmpbar;
+		int jjmax, ndt;
+		index = 0;
+		ndt   = 0;
+		newindex = index;
+	
+		jjmax = 0;
+
+		tmpbar = 0;
+		Omega  = 0;
+		for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
+			// find next site to fail
+			if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
+			// calculate metric (PART 1)
+			sbar[jj] += MathUtil.bool2bin(ss[jj])*stress[jj];
+			tmpbar   += MathUtil.bool2bin(ss[jj])*sbar[jj];
+			// sum the sites from last time
+			ndt += MathUtil.bool2bin(ftt[jj]);
+		}
+		dsigma = sf[jjmax]-stress[jjmax];
+		tmpbar = tmpbar / (N-Ndead); // FIX NORMALIZATION
+		//tmpbar = tmpbar / N;
+		Omega  = 0;
+		for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
+			// add stress to fail site
+			stress[jj] += MathUtil.bool2bin(ss[jj])*dsigma;
+			//calculate metric (PART 2)
+			Omega += MathUtil.bool2bin(ss[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+			// reset ftt
+			ftt[jj] = false;
+		}
+		//calculate metric (PART 3)
+		//Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
+		Omega = Omega/((double)(mct)*(double)(mct)*(double)(N)); // FIX NORMALIZATION
+
+		// save and/or write data
+		if(mct%dlength == 0 && mct > 0){
+			writeData(mct);
+		}
+		saveData(mct, eqmode, dsigma, ndt);
+
+		fs[newindex++] = jjmax;
+		failSite(jjmax,mct);		
+		return;
+	}
 
 	protected void failSite(int index, int mct){
 		
@@ -348,6 +398,10 @@ public class ofc2Dfast{
 		sf[site]     = nextSf(site);
 		stress[site] = sr[site];
 		failed[site] = false;
+		/*
+		 * FOR DEBUGGING ONLY
+		 */
+		PrintUtil.printlnToFile("/Users/cserino/Desktop/Echeck.txt",site,sr[site]);
 		return;
 	}
 	
