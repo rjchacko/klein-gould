@@ -10,36 +10,37 @@ import scikit.jobs.params.Parameters;
 import chris.util.PrintUtil;
 import chris.util.Random;
 
-public class router1D {
+public class router2D {
 
 	public static final int dl = 500000;
 	public static final int dc = 2;
 	private LinkedList<LinkedList<message>> buffer;
 	private double lambda, data[][], nbar[], omega;
-	private int N, L, Nmsg, t;
+	private int N, LL, L, Nmsg, t;
 	private Random rand;
 	private String outdir, bname;
 	
-	public router1D(Parameters params){
+	public router2D(Parameters params){
 		
-		constructor_router1D(params);
+		constructor_router2D(params);
 		return;
 	}
 	
-	public void constructor_router1D(Parameters params){
+	public void constructor_router2D(Parameters params){
 		
 		t      = 0;
-		N      = params.iget("N");
+		LL     = params.iget("L");
+		N      = LL*LL;
 		L      = params.iget("l");
 		lambda = params.fget("\u03BB");
 		outdir = params.sget("Data Directory");
 		bname  = params.sget("Data File");
 		
 		rand   = new Random(params.iget("seed"));
-		buffer = new LinkedList<LinkedList<message>>();
+		buffer = new LinkedList<LinkedList<message>>(); // a list of the list's of buffers
 		Nmsg   = 0;
 		nbar   = new double[N];
-		data   = new double[2][dl];
+		data   = new double[dc][dl];
 		
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 		
@@ -62,12 +63,11 @@ public class router1D {
 
 		message[] tomove = new message[N];
 		int idx, h;
-		double r;
 		int tcount  = 0;
 		double tbar = 0;
 		
 		for (int jj = 0 ; jj < ns ; jj++){
-	
+		
 			if(rec)
 				t++;
 			
@@ -95,10 +95,8 @@ public class router1D {
 					omega += (nbar[kk]-tmp)*(nbar[kk]-tmp);
 
 				// generate new messages and add them to the buffers
-				r = rand.nextDouble();
-				if (r < lambda){
-					r = r < lambda/2 ? -1 : 1;
-					buffer.get(kk).add(new message(t,L,N,kk,(int)(r)));
+				if (rand.nextDouble() < lambda){
+					buffer.get(kk).add(new message(t,L,LL,kk,rand));
 					Nmsg++;
 				}
 

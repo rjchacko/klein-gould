@@ -34,5 +34,39 @@ public class SortUtil {
 		Arrays.sort(list);
 		return list;
 	}
+	
+	public static int[] shuffleArray(int[] array, Random rand){
+		
+		double[] s = new double[array.length];
+		int[] idx  = new int[array.length];
+		int[] ret  = new int[array.length];
+		
+		for (int jj = 0 ; jj < array.length ; jj++){
+			s[jj] = rand.nextDouble();
+		}
+		idx = S2LindexSort(s);
+		for (int jj = 0 ; jj < array.length ; jj++){
+			ret[jj] = array[idx[jj]];
+		}
+		
+		return ret;
+	}
+	
+	public static boolean[] shuffleArray(boolean[] array, Random rand){
+		
+		double[] s    = new double[array.length];
+		int[] idx     = new int[array.length];
+		boolean[] ret = new boolean[array.length];
+		
+		for (int jj = 0 ; jj < array.length ; jj++){
+			s[jj] = rand.nextDouble();
+		}
+		idx = S2LindexSort(s);
+		for (int jj = 0 ; jj < array.length ; jj++){
+			ret[jj] = array[idx[jj]];
+		}
+		
+		return ret;
+	}
 
 }

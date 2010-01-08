@@ -21,6 +21,12 @@ import scikit.jobs.params.DirectoryValue;
 
 public class parseSingleRouter1 extends Simulation{
 
+	/*
+	 * THIS IS OUTDATED AND SHOULD BE ROMOVED ONCE parseSingleRouter2
+	 * IS TESTED AND DEBUGGED
+	 * 
+	 */
+	
 	DecimalFormat fmtS = new DecimalFormat("00.0");
 	int tl;
 	
