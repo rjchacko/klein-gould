@@ -37,7 +37,7 @@ public class message {
 	// Ring geometry constructor
 	public void constructor_message(int tc, int L, int N, int x, int dir){
 		
-		L = L-1;
+
 		hops        = 0;
 		this.dir    = new int[L];
 		this.tc     = tc;
@@ -45,11 +45,8 @@ public class message {
 		if(dir < 0){
 			// find end point and walk backward
 			int ep = x-L;
-			if(ep<0)
-				ep += N;
-			
 			for (int jj = 0 ; jj < L ; jj++){
-				this.dir[L-1-jj] = (ep+jj)%N;
+				this.dir[L-1-jj] = (ep+N+jj)%N;
 			}
 		
 		}
@@ -65,8 +62,7 @@ public class message {
 	public void constructor_message(int tc, int L, int LL, int r, Random rand){
 		
 		int dest, dx, dy, rx, ry;
-		L = L-1; 
-		
+
 		hops          = 0;
 		this.tc       = tc;
 		dir           = new int[L];
@@ -104,6 +100,11 @@ public class message {
 	public int getMove(int step){
 		
 		return dir[step];
+	}
+	
+	public int getMove(){
+		
+		return dir[hops];
 	}
 	
 	public int getTcreate(){

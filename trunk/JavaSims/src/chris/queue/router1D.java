@@ -14,10 +14,10 @@ public class router1D {
 
 	public static final int dl = 500000;
 	public static final int dc = 2;
-	private LinkedList<LinkedList<message>> buffer;
-	private double lambda, data[][], nbar[], omega;
-	private int N, L, Nmsg, t;
-	private Random rand;
+	protected LinkedList<LinkedList<message>> buffer;
+	protected double lambda, data[][], nbar[], omega;
+	protected int L, Nmsg, N, t;
+	protected Random rand;
 	private String outdir, bname;
 	
 	public router1D(Parameters params){
