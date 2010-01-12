@@ -183,10 +183,7 @@ public class parseSingleRouter2 extends Simulation{
 					pw.print("\t");
 				}
 				pw.println();
-			}
-			for (int jj = 0 ; jj < tl ; jj++){
-				pw.println(n[jj]);
-			}			
+			}	
 			pw.close();
 		}
 		catch (IOException ex){

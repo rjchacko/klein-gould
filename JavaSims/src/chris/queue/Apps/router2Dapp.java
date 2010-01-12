@@ -15,7 +15,7 @@ public class router2Dapp extends Simulation{
 	Grid grid = new Grid("Buffers");
 	int L, N;
 	router2D model;
-	private static final boolean draw = true;
+	private final boolean draw = false;
 
 	public static void main(String[] args) {
 		new Control(new router2Dapp(), "2D Router Network");
@@ -25,8 +25,8 @@ public class router2Dapp extends Simulation{
 		
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Data File", "default");
-		params.add("L",10);
-		params.add("l",4);
+		params.add("L",16);
+		params.add("l",5);
 		params.add("\u03BB",new DoubleValue(0.05,0,1));
 		params.add("seed",0);
 		params.add("messages");
@@ -44,11 +44,30 @@ public class router2Dapp extends Simulation{
 		model = new router2D(params); 
 
 		setupcolors(params.fget("\u03BB"),params.iget("l"));
-				
-		while(true){
-			model.step(true);
-			Job.animate();
+		
+		int tss  = (int)(1e6);
+		int tmax = (int)(1e7);
+		int t    = 0;
+		
+		while(t++ < tss){
+			model.step(false);
+			if(t%1e4 ==0){
+				params.set("t",t-tss);
+				Job.animate();
+			}
 		}
+		t = 0;
+		while(t++ < tmax){
+			model.step(true);
+			if(t%1e4 ==0){
+				params.set("t",t);
+				Job.animate();
+			}
+		}
+		
+		params.set("t","Done");
+		Job.signalStop();
+		Job.animate();
 		
 	}
 	
@@ -79,7 +98,7 @@ public class router2Dapp extends Simulation{
 	
 	public void animate() {
 		
-		params.set("t", model.getT());
+		//params.set("t", model.getT());
 		params.set("messages",model.getNmsg());
 		if(draw) 
 			grid.registerData(L,L,model.getDensity());

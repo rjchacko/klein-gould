@@ -30,7 +30,7 @@ public class singleRouterApp extends Simulation{
 	
 	private LinkedList<message> buffer;
 	private double lambda, tb[];
-	private int L, N, dl, data[], nj[], now, Nmx;
+	private int L, N, dl, data[], nj[], now;// Nmx;
 	private Random rand;
 	private String outdir, bname, outpath[];
 	
@@ -70,7 +70,7 @@ public class singleRouterApp extends Simulation{
 		
 		int idx, s, cycle, tss, tmax, tcount;
 		double tbar;
-		Histogram hN, hnj[], hjgn[];
+		Histogram hN, hnj[]; // hjgn[];
 		
 		cycle = 0;
 	
@@ -82,13 +82,13 @@ public class singleRouterApp extends Simulation{
 		tss    = params.iget("t_ss");
 		dl     = L*tss;
 		hnj    = new Histogram[L]; 
-		Nmx    = (int)(3*L*L/(1-lambda*L));	// go out to N = <N> + 3*dN where
-		hjgn   = new Histogram[Nmx];		// <N> ~ dN ~ L / (1 - lambda*L)	
+//		Nmx    = (int)(3*L*L/(1-lambda*L));	// go out to N = <N> + 3*dN where
+	//	hjgn   = new Histogram[Nmx];		// <N> ~ dN ~ L / (1 - lambda*L)	
 
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 
 		// create sub-directories
-		outpath = new String[]{outdir+"/ts",outdir+"/nt",outdir+"/nj",outdir+"/njn", outdir+"tb"};
+		outpath = new String[]{outdir+"/ts",outdir+"/nt",outdir+"/nj",outdir+"/njn", outdir+"/tb"};
 
 		for (int jj = 0 ; jj < 4 ; jj++){
 			DirUtil.MkDir(outpath[jj]);
@@ -99,14 +99,16 @@ public class singleRouterApp extends Simulation{
 			buffer = new LinkedList<message>();
 			rand   = new Random(params.iget("seed"));
 			data   = new int[dl];
-			tb     = new double[tmax];
+			tb     = new double[tmax+tss];
 			nj     = new int[L];
 			N      = 0;
 
 			
 			// first simulate the approach to the steady state			
 			for (int jj = 0 ; jj < tss ; jj++){
-
+				tbar     = 0;
+				tcount   = 0;
+				
 				// select a message at random and "pass" it 
 				if(buffer.size() > 0){
 					idx = rand.nextInt(buffer.size());
@@ -137,6 +139,8 @@ public class singleRouterApp extends Simulation{
 				for(int kk = 0 ; kk < L ; kk++){
 					data[kk+jj*L] = nj[kk];  
 				}
+				tb[jj] = tbar / tcount;
+
 
 				if (jj % 1000 == 0){
 					now = jj - tss;
@@ -150,11 +154,11 @@ public class singleRouterApp extends Simulation{
 			hN = new Histogram(1);
 			for(int jj = 0 ; jj < L ; jj++){
 				hnj[jj]  = new Histogram(1);
-				hjgn[jj] = new Histogram(1);
+//				hjgn[jj] = new Histogram(1);
 			}
-			for(int jj = L ; jj < Nmx ; jj++){
-				hjgn[jj] = new Histogram(1);
-			}
+//			for(int jj = L ; jj < Nmx ; jj++){
+//				hjgn[jj] = new Histogram(1);
+//			}
 			
 			
 			for (int jj = 0 ; jj < tmax ; jj++){
@@ -189,27 +193,31 @@ public class singleRouterApp extends Simulation{
 				}
 
 				hN.accum(N);
-				if(N < Nmx){
-					for (int kk = 0 ; kk < L ; kk++){
-						hjgn[L*N+kk].accum(nj[kk]); 
-					}
+				for (int kk = 0 ; kk < L ; kk++){
+					hnj[kk].accum(nj[kk]); 
 				}
-				else{
-					for (int kk = 0 ; kk < L ; kk++){
-						hnj[kk].accum(nj[kk]); 
-					}
-				}
-				
+//				if(N < Nmx){
+//					for (int kk = 0 ; kk < L ; kk++){
+//						hnj[kk].accum(nj[kk]); 
+//						hjgn[L*N+kk].accum(nj[kk]); 
+//					}
+//				}
+//				else{
+//					for (int kk = 0 ; kk < L ; kk++){
+//						hnj[kk].accum(nj[kk]); 
+//					}
+//				}
+//				
 				tb[jj] = tbar / tcount;
-				if (jj % 10000 == 0){
+				if (jj % 100000 == 0){
 					now = jj;
 					Job.animate();
 				}
 
 			}
 
-			saveHists(cycle, hN, hnj, hjgn);
-			writeTD(cycle, tmax);
+			saveHists(cycle, hN, hnj, null); // replace null with hnjn
+//			writeTD(cycle, tmax+tss);
 			cycle++;
 			params.set("cycle",cycle);;
 			params.set("seed",params.iget("seed")+1);
@@ -238,7 +246,7 @@ public class singleRouterApp extends Simulation{
 	
 	private void saveHists(int ccl, Histogram h, Histogram[] g, Histogram[] f){
 	
-		int a,b;
+//		int a,b;
 		
 		DecimalFormat fmts = new DecimalFormat("000");	
 		DecimalFormat fmtL = new DecimalFormat("0000000");	
@@ -276,32 +284,33 @@ public class singleRouterApp extends Simulation{
 			}
 		}
 		
-		for(int jj = 0 ; jj < Nmx ; jj++){
-			// check if f[jj] has any entries
-			if(f[jj].fullSum() == 0) 
-				continue;
-			hh = f[jj].copyData();
-			a  = jj%L;
-			b  = jj/L;
-			try{
-				File file = new File(outpath[3]+File.separator+bname+"_histn"+fmts.format(a)+"g"+fmts.format(b)+"_"+fmtL.format(ccl)+".txt");
-				PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-				for (int kk = 0 ; kk < hh.size(); kk++){
-					pw.print(hh.x(kk));
-					pw.print("\t");
-					pw.println(hh.y(kk));
-				}			
-				pw.close();
-			}
-			catch (IOException ex){
-				ex.printStackTrace();
-			}
-		}
+//		for(int jj = 0 ; jj < Nmx ; jj++){
+//			// check if f[jj] has any entries
+//			if(f[jj].fullSum() == 0) 
+//				continue;
+//			hh = f[jj].copyData();
+//			a  = jj%L;
+//			b  = jj/L;
+//			try{
+//				File file = new File(outpath[3]+File.separator+bname+"_histn"+fmts.format(a)+"g"+fmts.format(b)+"_"+fmtL.format(ccl)+".txt");
+//				PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+//				for (int kk = 0 ; kk < hh.size(); kk++){
+//					pw.print(hh.x(kk));
+//					pw.print("\t");
+//					pw.println(hh.y(kk));
+//				}			
+//				pw.close();
+//			}
+//			catch (IOException ex){
+//				ex.printStackTrace();
+//			}
+//		}
 		
 		return;
 	}
 	
 	
+	@SuppressWarnings("unused")
 	private void writeTD(int ccl, int tub){
 		
 		DecimalFormat fmtL = new DecimalFormat("0000000");
