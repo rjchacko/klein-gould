@@ -262,6 +262,46 @@ public class ofc2Dfast{
 		return;
 	}
 	
+	public void evolve(int mct, boolean[] ss){
+		// evolve the ofc model starting with a stable configuration
+		// until the next stable configuration is reached.
+		//
+		// mct is the monte carlo time step or the number of forced failures
+		//
+		// takedata specifies whether or not to record data
+		
+		int a,b, tmpfail, tmpnb;
+		double release;
+		
+		// force failure in the zero velocity limit
+		forceZeroVel(mct, ss, true);
+		GR = 1; // the seed site
+		
+		// discharge site and repeat until lattice is stable
+		while(newindex > index){
+			a     = index;
+			b     = newindex;
+			index = newindex;
+			for (int jj = a ; jj < b ; jj++){
+				tmpfail = fs[jj];
+				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
+				for(int kk = 0 ; kk < qN ; kk++){
+					tmpnb = getNbr(fs[jj],kk);
+					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
+					stress[tmpnb] += release;
+					if(stress[tmpnb] > sf[tmpnb]){
+						fs[newindex++] = tmpnb;	
+						failSite(tmpnb);
+					}
+				}
+				resetSite(tmpfail);
+			}
+//			Job.animate();
+//			// FOR DEBUGGING ONLY
+		}
+		return;
+	}
+	
 	protected void forceZeroVel(int mct, boolean takedata, boolean eqmode){
 		// force failure in the zero velocity limit
 

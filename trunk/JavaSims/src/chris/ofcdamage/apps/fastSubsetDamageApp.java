@@ -62,7 +62,7 @@ public class fastSubsetDamageApp extends Simulation{
 		params.add("Status");
 		params.add("Dead Sites");
 		params.add("Mode");
-		params.set("Mode","Subset");
+		params.set("Mode","Cycle 1");
 
 
 		
@@ -137,10 +137,20 @@ public class fastSubsetDamageApp extends Simulation{
 		
 		// re-run simulation
 		model = null; // clear from memory
-		
+		dmt   = simt;
+		Ndead = 0;
+		int nss = 0;
+		for (int jj = 0 ; jj < N ; jj++){
+			nss += MathUtil.bool2bin(doa[jj]);
+		}
+		restore.setNss(nss);
+		params.set("Dead Sites", Ndead);
+		params.set("Mode","Cycle 2");
+		Job.animate();
+
 		// Simulate the model without damage
 		for (int jj = 0 ; jj < simt ; jj++){
-			restore.evolve(jj,true);
+			restore.evolve(jj,doa);
 			if(jj%500 == 0){
 				params.set("Status", jj);
 			}
@@ -148,14 +158,9 @@ public class fastSubsetDamageApp extends Simulation{
 			if(record) takePicture(jj);
 		}
 
-		int nss = 0;
-		for (int jj = 0 ; jj < N ; jj++){
-			nss += MathUtil.bool2bin(doa[jj]);
-		}
+
 		
 		// Simulate the model with damage
-		dmt   = simt;
-		Ndead = 0;
 		while(Ndead < N){
 			Ndead = restore.evolveD(dmt,doa);
 			if(dmt%500 == 0){
