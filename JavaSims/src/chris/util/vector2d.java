@@ -53,7 +53,7 @@ public class vector2d {
 	this.x = v.x;
 	this.y = v.y;
     }
-
+    
     /**
      * Constructs and initializes a vector2d to (0,0).
      */

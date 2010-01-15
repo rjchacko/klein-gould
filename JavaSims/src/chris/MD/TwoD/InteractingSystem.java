@@ -1,24 +1,54 @@
 package chris.MD.TwoD;
 
+import scikit.jobs.params.Parameters;
 import chris.util.vector2d;
 
 public abstract class InteractingSystem {
 	
 	// this class should be in charge of evolving the system
+	// this should be a system
+	// it has particles, temperature, etc
 
 	public int N, Lx, Ly;
 	public String BC;
 	private particle phase[];
-	private double dt;
-	public static enum Solvers {EULER, VERLET, NOotherOPTIONS};
+	private double dt, t;
+	public static enum Solvers {EULER, VERLET};
 	private Solvers solver;
 	
+	public InteractingSystem(Parameters params){
+		
+		IS_constructor(params);
+	}
 	
+	public void IS_constructor(Parameters params){
+	
+		t = 0;
+	}
+	
+	
+	/**
+	 * Abstract method that will return central potential for
+	 * two particles separated by a scalar distance r.
+	 * 
+	 * @param r the distance between the two interacting particles
+	 * @return the value of the potential between particles one and two
+	 */
 	public abstract double potential(double r);
 	
-	public abstract vector2d force(double r);
+	/**
+	 * Abstract method that will return central force for
+	 * two particles separated by relative coordinates x and y.
+	 * 
+	 * @param x the relative separation is the x_1 direction
+	 * @param y the relative separation is the x_1 direction
+	 * @return a vector2d that is the force on particle one due to the second
+	 */
+	public abstract vector2d force(double x, double y);
 
 	public void step(){
+		
+		t += dt;
 		
 		switch (solver) {
 		
