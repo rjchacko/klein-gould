@@ -74,6 +74,8 @@ public class finiteRouter2Dapp extends Simulation{
 		for (int jj = 0 ; jj <= mx ; jj++){
 			cp.setColor(mx-jj,cg.getColor(jj, 0, mx));
 		}
+		//public static void saveLegend(int min, int max, ColorPalette cp, String pth){
+
 		grid.setColors(cp);
 		movie.setColors(cp);
 		return;

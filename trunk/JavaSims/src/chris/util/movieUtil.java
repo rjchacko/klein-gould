@@ -6,6 +6,7 @@ import java.text.DecimalFormat;
 
 import javax.imageio.ImageIO;
 
+import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 
 
@@ -44,6 +45,20 @@ public class movieUtil {
 		} catch (IOException e) {
 			System.err.println("Error in Writing File" + SaveAs);
 		}
+		return;
+	}
+	
+	public static void saveLegend(int min, int max, ColorPalette cp, String pth){
+		
+		int[] legend = new int[max-min];
+		Grid g = new Grid("Legend");
+		
+		for(int jj = 0 ; jj < legend.length ; jj++){
+			legend[jj] = jj;
+		}
+		g.setColors(cp);
+		
+		saveImage(legend, 1, max-min, 10, g, pth, 0);
 		return;
 	}
 }
