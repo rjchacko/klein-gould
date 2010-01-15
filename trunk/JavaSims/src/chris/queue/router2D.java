@@ -52,13 +52,13 @@ public class router2D {
 		return;
 	}
 	
-	public void step(boolean rec){
+	
+	public int step(boolean rec){
 		
-		step(1, rec);
-		return;
+		return step(1, rec);
 	}
 	
-	public void step(int ns, boolean rec){
+	public int step(int ns, boolean rec){
 
 
 		message[] tomove = new message[N];
@@ -122,7 +122,7 @@ public class router2D {
 			takedata(omega, tbar/tcount);
 		}
 		
-		return;
+		return Nmsg;
 	}
 	
 	public void takedata(double metric, double tb){

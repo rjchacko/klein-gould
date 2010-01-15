@@ -18,17 +18,9 @@ import chris.util.DirUtil;
 import chris.util.MathUtil;
 
 public class fastSubsetDamageApp extends Simulation{
-
-	/*
-	 * Currently, the animation is not
-	 * setup correctly. Only model (and 
-	 * not restore) is shown in the 
-	 * animation. Fix this if needed.
-	 * 
-	 */
 	
 	private int simt, eqt, dmt, Ndead, L, N;
-	private boolean draw, record, doa[];
+	private boolean draw, record, doa[], c1;
 	private String PicDir;
 	private Grid gridS, gridD;
 	//private ColorGradient cg = new ColorGradient();
@@ -88,6 +80,7 @@ public class fastSubsetDamageApp extends Simulation{
 		simt   = params.iget("Sim Time");
 		dmt    = simt;
 		Ndead  = 0;
+		c1     = true;
 		params.set("Status", "Ready");
 		Job.animate();
 		
@@ -136,6 +129,7 @@ public class fastSubsetDamageApp extends Simulation{
 		}
 		
 		// re-run simulation
+		c1    = false;
 		model = null; // clear from memory
 		dmt   = simt;
 		Ndead = 0;
@@ -183,8 +177,12 @@ public class fastSubsetDamageApp extends Simulation{
 	public void animate() {
 		
 		if(!draw) return;
-		
-		gridS.registerData(L, L, model.getStress());
+		if(c1){
+			gridS.registerData(L, L, model.getStress());
+		}
+		else{
+			gridS.registerData(L, L, restore.getStress());
+			}
 		//gridD.registerData(L, L, model.getDorA());
 
 		return;

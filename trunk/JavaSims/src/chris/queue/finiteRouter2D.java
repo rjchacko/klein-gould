@@ -19,7 +19,7 @@ public class finiteRouter2D extends router2D{
 		return;
 	}
 	
-	public void step(int ns, boolean rec){
+	public int step(int ns, boolean rec){
 
 		message[] tomove = new message[N];
 		int idx, h;
@@ -95,6 +95,6 @@ public class finiteRouter2D extends router2D{
 			omega /= ((double)(N)*(double)(t)*(double)(t));
 			takedata(omega, tbar/tcount);
 		}
-		return;
+		return Nmsg;
 	}
 }
