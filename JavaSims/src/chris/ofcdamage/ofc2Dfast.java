@@ -387,8 +387,7 @@ public class ofc2Dfast{
 			ndt += MathUtil.bool2bin(ftt[jj]);
 		}
 		dsigma = sf[jjmax]-stress[jjmax];
-		tmpbar = tmpbar / (N-Ndead); // FIX NORMALIZATION
-		//tmpbar = tmpbar / N;
+		tmpbar = tmpbar / Nss; 
 		Omega  = 0;
 		for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
 			// add stress to fail site
@@ -399,8 +398,7 @@ public class ofc2Dfast{
 			ftt[jj] = false;
 		}
 		//calculate metric (PART 3)
-		//Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
-		Omega = Omega/((double)(mct)*(double)(mct)*(double)(N)); // FIX NORMALIZATION
+		Omega = Omega/((double)(mct)*(double)(mct)*(double)(Nss)); 
 
 		// save and/or write data
 		if(mct%dlength == 0 && mct > 0){
