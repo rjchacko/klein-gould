@@ -135,7 +135,7 @@ public class spingas extends Simulation{
 		kang.frame (grid1);
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
-		params.addm("Temperature", new DoubleValue(1, 0, 100).withSlider());
+		params.addm("Temperature", new DoubleValue(1, 0, 10).withSlider());
 		//params.addm("Chemical potential", new DoubleValue(0, -2, 2).withSlider());
 		params.addm("Interaction Constant", new DoubleValue(1, -100,100).withSlider());
 		params.add("Interaction range", 10);
