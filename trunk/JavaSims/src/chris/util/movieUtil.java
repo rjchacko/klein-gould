@@ -34,7 +34,7 @@ public class movieUtil {
 		int[] sd = new int[sLx*sLy];
 		for(int jj = 0 ; jj < sLy; jj++){
 			for(int kk = 0 ; kk < sLx; kk++){
-				sd[kk+jj*sLy] = data[(int)(kk/s)+(int)(jj/s)*Ly];
+				sd[kk+jj*sLx] = data[(int)(kk/s)+(int)(jj/s)*Lx];
 			}
 		}
 		
@@ -50,15 +50,17 @@ public class movieUtil {
 	
 	public static void saveLegend(int min, int max, ColorPalette cp, String pth){
 		
+		max++; // Include max in legend
+		
 		int[] legend = new int[max-min];
 		Grid g = new Grid("Legend");
 		
-		for(int jj = 0 ; jj < legend.length ; jj++){
+		for(int jj = 0 ; jj < max-min ; jj++){
 			legend[jj] = jj;
 		}
 		g.setColors(cp);
 		
-		saveImage(legend, 1, max-min, 10, g, pth, 0);
+		saveImage(legend, 1, max-min, 60, g, pth, 0);
 		return;
 	}
 }
