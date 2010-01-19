@@ -49,6 +49,8 @@ public class dilutedising extends Simulation{
 	public int N; //how many points in the metric plot
 	public double P;
 	
+	public int movie;
+	
 	
 	
 	public int isingspin[];     //the array of the data
@@ -239,7 +241,7 @@ public class dilutedising extends Simulation{
 	
 	public void load(Control liukang){
 		liukang.frame (grid1);
-		liukang.frame (grid2);
+		//liukang.frame (grid2);
 
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
@@ -247,12 +249,13 @@ public class dilutedising extends Simulation{
 		params.add("CGBlock's length", 1);
 		params.addm("Temperature", new DoubleValue(1, 0, 10).withSlider());
 		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
-		params.addm("Interaction Constant", 1);
-		params.add("Interaction range", 10);
+		params.addm("Interaction Constant", -1);
+		params.add("Interaction range", 0);
 		params.add("Coarsegrain range", 0);
+		params.add("run the movie", 0);
 
 		params.add("Monte Carlo step's limit", 1000000);
-		params.add("Metric Start at",5000);
+		params.add("Metric Start at",50000000);
 		params.add("Metric points", 2000);
 		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
 
@@ -261,6 +264,7 @@ public class dilutedising extends Simulation{
 		params.add("DoubleMetric");
 		params.add("Magnetization Metric");
 		params.add("magnetization");
+		
 		
 	}
 	
@@ -273,17 +277,20 @@ public class dilutedising extends Simulation{
 		
 		grid1.setColors(ising);
 		grid1.registerData(L1, L2, isingspin);
-		grid2.setColors(ising);
-		grid2.registerData(L1, L2, isingcopy);
+		//grid2.setColors(ising);
+		//grid2.registerData(L1, L2, isingcopy);
 //		String SaveAs = PicDir + File.separator + gridS.getTitle()+fmt.format(time)+".png";
 
-		
-		/*String SaveAs = "/Users/cserino/Desktop/p/pic_"+fmt.format(step)+".png";
+		if (movie==1 & H<0)
+		{
+			String SaveAs = "/Users/liukang2002507/Desktop/p/p=0.25/pic_"+fmt.format(step)+".png";
 		try {
 			ImageIO.write(grid1.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {
 			System.err.println("Error in Writing File" + SaveAs);
-		}*/
+		}
+		
+		}
 		
 		
 		//ColorGradient smooth = new ColorGradient();
@@ -299,7 +306,7 @@ public class dilutedising extends Simulation{
 	
 	public void clear(){
 		grid1.clear();
-		grid2.clear();
+		//grid2.clear();
 	
 	}
 	
@@ -310,6 +317,7 @@ public class dilutedising extends Simulation{
 		CR = (int)params.fget("Coarsegrain range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
 		metricstart = (int)params.fget("Metric Start at");
+		movie = (int)params.fget("run the movie");
 		
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
@@ -365,13 +373,13 @@ public class dilutedising extends Simulation{
 		//randomize the initial state
 		for (i=0; i<M; i++){
 			isingspin[i]=-1;
-			isingcopy[i]=-1;
+			//isingcopy[i]=-1;
 	//		if(rand.nextDouble() > 0.5) // in [0,1]
 		//		rand.nextInt(25) random integer in [0 24]
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
-			if (Math.random()> 0.5)
-				isingcopy[i]=1;
+			/*if (Math.random()> 0.5)
+				isingcopy[i]=1;*/
 				
 		}
 		
@@ -379,7 +387,7 @@ public class dilutedising extends Simulation{
 			if(Math.random()< P)
 			{
 				isingspin[i]=0;
-				isingcopy[i]=0;
+				//isingcopy[i]=0;
 				deadsites++;
 			}
 		}// here, the sequence of dilution and initialization is not important
@@ -424,8 +432,8 @@ public class dilutedising extends Simulation{
 
 					isingspin[j] = -isingspin[j];
 				}// flip the spin
-				
-				if (E1<E2){
+				else{
+//				if (E1<E2){
 					if (Math.random()<Math.exp((E1-E2)/T)){
 
 						isingspin[j]=-isingspin[j];
@@ -435,7 +443,7 @@ public class dilutedising extends Simulation{
 				
 				//////////////////////////////////////////////////////////////////////////
 				
-				k=(int) (Math.random()*M);
+				/*k=(int) (Math.random()*M);
 				
 				double ZeemanE21=-H*isingcopy[k];// initial field energy
 				double InterE21=0;
@@ -454,7 +462,7 @@ public class dilutedising extends Simulation{
 				}
 				
 				
-				double ZeemanE22=-H*(-isingspin[k]); //field energy after flipping
+				double ZeemanE22=-H*(-isingcopy[k]); //field energy after flipping
 				
 				
 				double E21=ZeemanE21+InterE21;
@@ -471,7 +479,7 @@ public class dilutedising extends Simulation{
 						isingcopy[k]=-isingcopy[k];
 					
 					}
-				}
+				}*/
 				
 				
 				
