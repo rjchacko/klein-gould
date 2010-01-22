@@ -12,13 +12,13 @@ import chris.util.Random;
 
 public class router2D {
 
-	public static final int dl = 500000;
+	public static final int dl = 5000; 
 	public static final int dc = 2;
 	protected LinkedList<LinkedList<message>> buffer;
 	protected double lambda, data[][], nbar[], omega;
 	protected int N, LL, L, Nmsg, t;
 	protected Random rand;
-	private String outdir, bname;
+	protected String outdir, bname;
 	
 	public router2D(Parameters params){
 		
@@ -39,8 +39,8 @@ public class router2D {
 		rand   = new Random(params.iget("seed"));
 		buffer = new LinkedList<LinkedList<message>>(); // a list of the list's of buffers
 		Nmsg   = 0;
-		nbar   = new double[N];
-		data   = new double[dc][dl];
+//		nbar   = new double[N];
+//		data   = new double[dc][dl];
 		
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 		
@@ -68,8 +68,7 @@ public class router2D {
 		
 		for (int jj = 0 ; jj < ns ; jj++){
 		
-			if(rec)
-				t++;
+			t++;
 			
 			double tmp = 0;
 			omega = 0;
