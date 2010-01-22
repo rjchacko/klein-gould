@@ -6,6 +6,17 @@ import chris.util.vector2d;
 
 public class particle {
 	
+	public particle(){
+		
+		r     = new vector2d();
+		v     = new vector2d();
+		m     = 0;
+		q     = 0;
+		s     = 0;
+		color = Color.WHITE;
+	}
+	
+	
 	/**
 	 * the position of the particle
 	 */
@@ -22,6 +33,11 @@ public class particle {
 	public double m;
 	
 	/**
+	 * the electric charge of the particle
+	 */
+	public double q;
+	
+	/**
 	 * the radius of the particle
 	 */
 	public double s;
@@ -29,17 +45,17 @@ public class particle {
 	/**
 	 * the net force on the particle
 	 */
-	public vector2d f;
-	
-	/**
-	 * the potential energy of the particle
-	 */
-	public double U;
-	
-	/**
-	 * the kinetic energy of the particle
-	 */
-	public double T;
+//	public vector2d f;
+//	
+//	/**
+//	 * the potential energy of the particle
+//	 */
+//	public double U;
+//	
+//	/**
+//	 * the kinetic energy of the particle
+//	 */
+//	public double T;
 	
 	/**
 	 * for graphics
