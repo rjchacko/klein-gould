@@ -92,6 +92,17 @@ public class wanglandau extends Simulation{
 			
 	}
 	
+	public double totalE (int spin[], double J, int length1, int length2)
+	{
+		double energy=0;
+		int i, spinnumber;
+		spinnumber=length1*length2;
+		for(i=0; i<spinnumber; i++)
+			energy+=interactionE(i, spin, J, length1, length2);
+		return energy/2;
+		
+	}
+	
 	public int beamposition(double energy)
 	{
 		int p;// the position in the energy space
@@ -109,8 +120,8 @@ public class wanglandau extends Simulation{
 		
 		if (R==0) {
 			J=NJ/4;
-			InterE1=interactionE(i, spin, J, L1, L2); // initial interaction energy
-			InterE2=-interactionE(i, spin, J, L1, L2); //interaction energy after flip
+			InterE1=totalE(spin, J, L1, L2); // initial interaction energy
+			InterE2=InterE1-2*interactionE(i,spin, J, L1, L2); //interaction energy after flip
 		}
 		
 			
@@ -208,9 +219,9 @@ public class wanglandau extends Simulation{
 		M = L1 * L2;
 		
 		isingspin= new int[M];
-		histogram= new int[N];
-		densityG= new double[N];
-		logdensityG= new double[N];
+		histogram= new int[N+1];
+		densityG= new double[N+1];
+		logdensityG= new double[N+1];
 		
 		//randomize the initial state
 		for (i=0; i<M; i++){
@@ -224,7 +235,7 @@ public class wanglandau extends Simulation{
 				isingspin[i]=0;
 		}// here, the sequence of dilution and initialization is not important
 		
-		for(k=0; k<N; k++){
+		for(k=0; k<N+1; k++){
 			histogram[k]=0;
 			densityG[k]=1;
 			logdensityG[k]=0;
@@ -265,7 +276,7 @@ public class wanglandau extends Simulation{
 			
 			if(step % wanglandaustep ==0)
 			{
-				for(int d=0; d<N; d++)
+				for(int d=0; d<N+1; d++)
 					histogram[d]=0;
 				f=Math.sqrt(f);
 			}
@@ -273,7 +284,7 @@ public class wanglandau extends Simulation{
 			
 			
 			if(step==outputstep-1){
-				for(int b=0; b<N; b++)
+				for(int b=0; b<N+1; b++)
 					{
 					densityG[b]=Math.exp(logdensityG[b]-logdensityG[N/2]);
 					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/histogram.txt",b, histogram[b]);
