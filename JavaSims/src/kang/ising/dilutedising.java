@@ -35,6 +35,8 @@ public class dilutedising extends Simulation{
 	public int i, x, y;  //parameters for the index
 	public double T;     //temperature 
 	public double H;     //field
+	public double initialH; //initial field
+	
 	public double J;     //interaction constant after normalization
 	public double NJ;    //interaction constant before normalization
 	public double totalmagnetization;
@@ -48,6 +50,15 @@ public class dilutedising extends Simulation{
 	public int metricstart; //the start of metric calculation
 	public int N; //how many points in the metric plot
 	public double P;
+	public double Ms; //saturated magnetization
+	public double percentage; // criteria of nucleation
+	public int totalruns;
+	public int run;
+	public int quenchtime;
+	public int nucleationtime;
+	public int waitingtime; //waiting time for equilibrium
+	
+	
 	
 	public int movie;
 	
@@ -55,6 +66,8 @@ public class dilutedising extends Simulation{
 	
 	public int isingspin[];     //the array of the data
 	public int isingcopy[];
+	public int nucleationevents[];
+	
 	public double coarsegrain[]; //the array of the coarse grain magnetization
 	public double CGEnergy[]; // the array of the CGblocks' energy
 	
@@ -245,25 +258,34 @@ public class dilutedising extends Simulation{
 
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
-		params.add("CGBlock's width", 1);
-		params.add("CGBlock's length", 1);
+		//params.add("CGBlock's width", 1);
+		//params.add("CGBlock's length", 1);
 		params.addm("Temperature", new DoubleValue(1, 0, 10).withSlider());
 		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
-		params.addm("Interaction Constant", -1);
-		params.add("Interaction range", 0);
-		params.add("Coarsegrain range", 0);
-		params.add("run the movie", 0);
+		params.addm("Interaction Constant", -4);
+		
+		//params.add("Coarsegrain range", 0);
+		
+		params.add("Total number of runs", 100);  //if this=0 means we don't run multiple runs
+		params.add("Waiting time",100);
+		params.add("Saturated Magnetization", new DoubleValue(1, -1, 1).withSlider());
+		params.add("Percentage for nucleation", new DoubleValue(1, 0, 1).withSlider());
+		params.add("magnetization");
+		params.add("MC time");
+		params.add("run");
 
-		params.add("Monte Carlo step's limit", 1000000);
-		params.add("Metric Start at",50000000);
+		params.add("Monte Carlo step's limit", 1000000000);
+		params.add("Metric Start at",500000000);
 		params.add("Metric points", 2000);
 		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
+		params.add("run the movie", 0);
+		params.add("Interaction range", 0);
 
-		params.add("MC time");
-		params.add("Metric");
-		params.add("DoubleMetric");
-		params.add("Magnetization Metric");
-		params.add("magnetization");
+		
+		//params.add("Metric");
+		//params.add("DoubleMetric");
+		//params.add("Magnetization Metric");
+		
 		
 		
 	}
@@ -314,20 +336,26 @@ public class dilutedising extends Simulation{
 		
 		int i,j,k;
 		R = (int)params.fget("Interaction range");
-		CR = (int)params.fget("Coarsegrain range");
+		//CR = (int)params.fget("Coarsegrain range");
 		steplimit = (int)params.fget("Monte Carlo step's limit");
 		metricstart = (int)params.fget("Metric Start at");
 		movie = (int)params.fget("run the movie");
 		
+		percentage = params.fget("Percentage for nucleation");
+		totalruns = (int)params.fget("Total number of runs");
+		waitingtime= (int)params.fget("Waiting time");
+		
+		
+		
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
 		M = L1 * L2;
-		S1 =(int)params.fget("CGBlock's width");
-		S2 =(int)params.fget("CGBlock's width");
-		S= S1 * S2;
-		B1 = L1/S1;
-		B2 = L2/S2;
-		B = B1 * B2;
+		//S1 =(int)params.fget("CGBlock's width");
+		//S2 =(int)params.fget("CGBlock's width");
+		//S= S1 * S2;
+		//B1 = L1/S1;
+		//B2 = L2/S2;
+		//B = B1 * B2;
 
 		// rand = new Random(SEED)
 //		for(int jj = 0 ; jj < 100 ; jj++)
@@ -336,7 +364,11 @@ public class dilutedising extends Simulation{
 		
 		isingspin = new int[M];
 	    isingcopy = new int[M];
-		CGEnergy = new double[B];   // the energy of the blocks
+	    nucleationevents = new int [totalruns+1];
+	    
+	    
+	    
+		/*CGEnergy = new double[B];   // the energy of the blocks
 		
 		coarsegrain = new double[M]; // the magnetization of each site after coarsegraining
 		
@@ -345,8 +377,8 @@ public class dilutedising extends Simulation{
 		timeaverageE = new double[B];
 		timeaverageE2 = new double[B];
 		timetotalS = new double[B];
-		timeaverageS = new double[B];
-		
+		timeaverageS = new double[B];*/
+		initialH = params.fget("Field");
 
 		
 		N = (int)params.fget("Metric points");
@@ -386,11 +418,27 @@ public class dilutedising extends Simulation{
 				isingspin[i]=0;
 				deadsites++;
 			}
-			isingcopy[i]=isingspin[i];
+			isingcopy[i]=isingspin[i];  // here, make the copy of the system
 		}// here, the sequence of dilution and initialization is not important
 		
 		
+		nucleationtime=0;
+		run=0;
+		
+		
+		
 		for (step=0; step< steplimit; step++){
+			
+			params.set("run", run);
+			
+			if(step==nucleationtime+waitingtime)
+			{
+				Ms=magnetization;
+				params.set("Saturated Magnetization",Ms);
+				params.set("Field", -initialH);
+				quenchtime = step;
+			}
+				
 			
 			for (int f=0; f< M; f++){
 			
@@ -459,6 +507,7 @@ public class dilutedising extends Simulation{
 				}
 				
 				
+				/*
 				double ZeemanE22=-H*(-isingcopy[k]); //field energy after flipping
 				
 				
@@ -476,7 +525,7 @@ public class dilutedising extends Simulation{
 						isingcopy[k]=-isingcopy[k];
 					
 					}
-				}
+				}*/
 				
 				
 				
@@ -485,9 +534,9 @@ public class dilutedising extends Simulation{
 			
 				if(step % 1 == 0) {
 					params.set("MC time", step);
-					params.set("Metric", NMetric/(M-deadsites));
-					params.set("DoubleMetric", NMetric2/(M-deadsites));
-					params.set("Magnetization Metric", NSMetric/(M-deadsites));
+					//params.set("Metric", NMetric/(M-deadsites));
+					//params.set("DoubleMetric", NMetric2/(M-deadsites));
+					//params.set("Magnetization Metric", NSMetric/(M-deadsites));
 				}
 				Job.animate();
 			}
@@ -595,7 +644,7 @@ public class dilutedising extends Simulation{
 				}
 			
 			
-			if(step==metricstart+500)
+			if(metricstart<100000&step==metricstart+500)
 			{
 				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","");
 				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric1.txt","Lattice length=", L1);
@@ -632,9 +681,31 @@ public class dilutedising extends Simulation{
 		}
 		magnetization=totalmagnetization/M;
 		params.set("magnetization", magnetization);
+		
+		
+		if(magnetization<(Ms*percentage)&step>nucleationtime+waitingtime)
+		{
+			for(int s=0; s<M; s++ )
+				isingspin[s]=isingcopy[s];
+			nucleationtime=step;
+			if (run<totalruns)
+				nucleationevents[run]=nucleationtime-quenchtime;
+			run++;
+			params.set("Field", initialH);
+			
 		}
 		
-			
+		if(run==totalruns+1)
+		{
+			for (int e=0; e< totalruns; e++)
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/nucleation.txt",e, nucleationevents[e]);
+		}
+		
+		
+		
+		}
+		
+		
 				
 	}
 }
