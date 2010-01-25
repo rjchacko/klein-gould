@@ -241,7 +241,7 @@ public class dilutedising extends Simulation{
 	
 	public void load(Control liukang){
 		liukang.frame (grid1);
-		//liukang.frame (grid2);
+		liukang.frame (grid2);
 
 		params.add("lattice's width", 100);
 		params.add("lattice's length", 100);
@@ -277,8 +277,8 @@ public class dilutedising extends Simulation{
 		
 		grid1.setColors(ising);
 		grid1.registerData(L1, L2, isingspin);
-		//grid2.setColors(ising);
-		//grid2.registerData(L1, L2, isingcopy);
+		grid2.setColors(ising);
+		grid2.registerData(L1, L2, isingcopy);
 //		String SaveAs = PicDir + File.separator + gridS.getTitle()+fmt.format(time)+".png";
 
 		if (movie==1 & H<0)
@@ -306,7 +306,7 @@ public class dilutedising extends Simulation{
 	
 	public void clear(){
 		grid1.clear();
-		//grid2.clear();
+		grid2.clear();
 	
 	}
 	
@@ -373,13 +373,10 @@ public class dilutedising extends Simulation{
 		//randomize the initial state
 		for (i=0; i<M; i++){
 			isingspin[i]=-1;
-			//isingcopy[i]=-1;
 	//		if(rand.nextDouble() > 0.5) // in [0,1]
 		//		rand.nextInt(25) random integer in [0 24]
 			if (Math.random()> 0.5)
 				isingspin[i]=1;
-			/*if (Math.random()> 0.5)
-				isingcopy[i]=1;*/
 				
 		}
 		
@@ -387,9 +384,9 @@ public class dilutedising extends Simulation{
 			if(Math.random()< P)
 			{
 				isingspin[i]=0;
-				//isingcopy[i]=0;
 				deadsites++;
 			}
+			isingcopy[i]=isingspin[i];
 		}// here, the sequence of dilution and initialization is not important
 		
 		
@@ -443,7 +440,7 @@ public class dilutedising extends Simulation{
 				
 				//////////////////////////////////////////////////////////////////////////
 				
-				/*k=(int) (Math.random()*M);
+				k=(int) (Math.random()*M);
 				
 				double ZeemanE21=-H*isingcopy[k];// initial field energy
 				double InterE21=0;
@@ -479,7 +476,7 @@ public class dilutedising extends Simulation{
 						isingcopy[k]=-isingcopy[k];
 					
 					}
-				}*/
+				}
 				
 				
 				
@@ -590,9 +587,9 @@ public class dilutedising extends Simulation{
 				SMetric[step-metricstart-1]=NSMetric/(M-deadsites);
 
 
-				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric9.txt",step-metricstart, Metric[step-metricstart-1]);
-				PrintUtil.printlnToFile("F:/data/dilutedising/d-metric9.txt",step-metricstart, DoubleMetric[step-metricstart-1]);
-				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric9.txt",step-metricstart, SMetric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/e-metric10.txt",step-metricstart, Metric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/d-metric10.txt",step-metricstart, DoubleMetric[step-metricstart-1]);
+				PrintUtil.printlnToFile("F:/data/dilutedising/s-metric10.txt",step-metricstart, SMetric[step-metricstart-1]);
 
 				//PrintUtil.printlnToFile("/Users/cserino/Desktop/metric2.txt",step-metricstart, NMetric/B);
 				}
