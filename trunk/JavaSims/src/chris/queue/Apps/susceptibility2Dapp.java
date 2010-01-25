@@ -29,7 +29,7 @@ public class susceptibility2Dapp extends Simulation{
 		params.add("M",10);
 		params.add("L",32);
 		params.add("l",5);
-		params.add("\u03BB",new DoubleValue(0.12,0,1));
+		params.add("\u03BB",new DoubleValue(0.1,0,1));
 		params.add("seed",0);
 		params.add("messages");
 		params.set("messages",0);
@@ -47,21 +47,21 @@ public class susceptibility2Dapp extends Simulation{
 		pth   = params.sget("Data Directory");
 		
 		double lambda = params.fget("\u03BB");
-		while(lambda < 0.2){
+		while(lambda < 0.145){
 			Histogram h = new Histogram(1);
-			for(int jj = 0 ; jj < 250 ; jj++){
+			for(int jj = 0 ; jj < 100 ; jj++){
 				params.set("cycle",jj);
 				model = new finiteRouter2D(params); 
 				params.set("seed", params.iget("seed")+1);
 				int count = 0;
-				while(model.step(false) < Mx && count < 1e6)
+				while(model.step(false) < Mx && count < 2e3)
 					if((count++ % 500) == 0) 
 						Job.animate();
 				model.writePPdata(model.getT(), jj);
 				h.accum(model.getT());
 				model = null;
 			}
-			lambda += 0.002;
+			lambda += 0.005;
 			params.set("\u03BB",lambda);
 			PrintUtil.printHistToFile(pth+File.separator+"tfHist"+finiteRouter2D.cmt.format(lambda*1000)+".txt", h);
 		}
