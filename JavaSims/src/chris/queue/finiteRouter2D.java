@@ -26,12 +26,14 @@ public class finiteRouter2D extends router2D{
 		M   = params.iget("M");
 		nad = new int[dl*2];
 		npp = new int[dl*N];
-		ccl = params.iget("cycle");
-		
+		ccl = -1;
+		if(params.containsKey("cycle"))
+			ccl = params.iget("cycle");
+
 		return;
 	}
 	
-	public int step(int ns, boolean rec){
+	public int step(int ns, boolean takeData){
 
 		message[] tomove = new message[N];
 		int idx, h;
@@ -52,7 +54,7 @@ public class finiteRouter2D extends router2D{
 
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART I)
-				if(rec){
+				if(takeData){
 					nbar[kk] += buffer.get(kk).size();
 					tmp      += nbar[kk];
 				}
@@ -85,7 +87,7 @@ public class finiteRouter2D extends router2D{
 			}
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART II)
-				if(rec)
+				if(takeData)
 					omega += (nbar[kk]-tmp)*(nbar[kk]-tmp);
 
 				// move messages selected in previous loop to next router
@@ -109,7 +111,7 @@ public class finiteRouter2D extends router2D{
 		}
 		
 		// finish metric calculation
-		if(rec){
+		if(takeData){
 			omega /= ((double)(N)*(double)(t)*(double)(t));
 			takedata(omega, tbar/tcount);
 		}
@@ -120,6 +122,9 @@ public class finiteRouter2D extends router2D{
 	}
 	
 	public void writePPdata(int tt, int cycle){
+		
+		if(ccl < 0)
+			return;
 		
 		int ub;
 		int offset = (int)((tt-1)/dl);
