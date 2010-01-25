@@ -151,6 +151,7 @@ public class vector2d {
 	this.x = v1.x - v2.x;
 	this.y = v1.y - v2.y;
     }
+    
  
     /**  
      * Sets the value of this vector2d to the difference
@@ -362,4 +363,44 @@ public class vector2d {
     	this.x =  Math.cos(theta)*cpx + Math.sin(theta)*cpy;
     	this.y = -Math.sin(theta)*cpx + Math.cos(theta)*cpy;
     }
+    
+    /**
+     * Returns the vector difference between vector1 and vector2. 
+     * 
+     * @param v1 the first vector
+     * @param v2 the second vector
+     * @return the vector v1 - v2
+     */
+    public static final vector2d subtract(vector2d v1, vector2d v2)
+    {
+    	
+    	return new vector2d(v1.x-v2.x,v1.y-v2.y);
+    }
+    
+    /**
+     * Returns the vector difference sum vector1 and vector2. 
+     * 
+     * @param v1 the first vector
+     * @param v2 the second vector
+     * @return the vector v1 + v2
+     */
+    public static final vector2d addition(vector2d v1, vector2d v2)
+    {
+    	
+    	return new vector2d(v1.x+v2.x,v1.y+v2.y);
+    }
+    
+    /**
+     * Returns the vector after scalar multiplication. 
+     * 
+     * @param v the first vector
+     * @param s the scalar
+     * @return the vector s * v1
+     */
+    public static final vector2d addition(vector2d v, double s)
+    {
+    	
+    	return new vector2d(s*v.x,s*v.y);
+    }
+    
 }
