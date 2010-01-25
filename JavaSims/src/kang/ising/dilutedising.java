@@ -57,7 +57,8 @@ public class dilutedising extends Simulation{
 	public int quenchtime;
 	public int nucleationtime;
 	public int waitingtime; //waiting time for equilibrium
-	
+	public int meanlifetime;
+	public int totallifetime;
 	
 	
 	public int movie;
@@ -273,6 +274,7 @@ public class dilutedising extends Simulation{
 		params.add("magnetization");
 		params.add("MC time");
 		params.add("run");
+		params.add("lifetime");
 
 		params.add("Monte Carlo step's limit", 1000000000);
 		params.add("Metric Start at",500000000);
@@ -697,8 +699,16 @@ public class dilutedising extends Simulation{
 		
 		if(run==totalruns+1)
 		{
+			totallifetime=0;
 			for (int e=0; e< totalruns; e++)
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/nucleation.txt",e, nucleationevents[e]);
+				{
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/nucleation0.txt",e, nucleationevents[e]);
+				totallifetime+=nucleationevents[e];
+				}
+			run++;
+			meanlifetime=(int)(totallifetime/totalruns);
+			params.set("lifetime", meanlifetime);
+				
 		}
 		
 		
