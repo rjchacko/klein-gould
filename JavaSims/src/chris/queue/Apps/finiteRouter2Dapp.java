@@ -19,7 +19,7 @@ public class finiteRouter2Dapp extends Simulation{
 	private int L, N, Mx, msg[];
 	private String pth;
 	private finiteRouter2D model;
-	private final boolean draw = true;
+	private final boolean draw = false;
 
 	public static void main(String[] args) {
 		new Control(new finiteRouter2Dapp(), "2D Router Network");
@@ -30,7 +30,7 @@ public class finiteRouter2Dapp extends Simulation{
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Data File", "default");
 		params.add("M",10);
-		params.add("L",64);
+		params.add("L",32);
 		params.add("l",5);
 		params.add("\u03BB",new DoubleValue(0.05,0,1));
 		params.add("seed",0);
@@ -53,7 +53,7 @@ public class finiteRouter2Dapp extends Simulation{
 
 		setupcolors(params.iget("M"));
 		
-		while(model.step(true) < Mx){
+		while(model.step(false) < Mx){
 			msg[model.getT()] = model.getNmsg();
 			Job.animate();
 		}
@@ -85,7 +85,7 @@ public class finiteRouter2Dapp extends Simulation{
 
 		params.set("t", model.getT());
 		params.set("messages",model.getNmsg());
-//		grid.registerData(L,L,model.getDensity());
+		grid.registerData(L,L,model.getDensity());
 		if(draw) movieUtil.saveImage(model.getDensity(), L, L, 20, movie, pth, model.getT());
 		return;
 
