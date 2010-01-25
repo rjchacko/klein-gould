@@ -28,6 +28,16 @@ public class singleRouterApp extends Simulation{
 	 */
 	
 	
+	/*
+	 * 
+	 * DO SOON!!!!!
+	 * 
+	 * find <N>(\lambda) and
+	 * <N^2> - <N>^2 of \lambda 
+	 * 
+	 * 
+	 */
+	
 	private LinkedList<message> buffer;
 	private double lambda, tb[];
 	private int L, N, dl, data[], nj[], now;// Nmx;
