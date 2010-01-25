@@ -39,8 +39,8 @@ public class router2D {
 		rand   = new Random(params.iget("seed"));
 		buffer = new LinkedList<LinkedList<message>>(); // a list of the list's of buffers
 		Nmsg   = 0;
-//		nbar   = new double[N];
-//		data   = new double[dc][dl];
+		nbar   = new double[N];
+		data   = new double[dc][dl];
 		
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 		
