@@ -11,7 +11,7 @@ import scikit.jobs.params.Parameters;
 
 public class finiteRouter2D extends router2D{
 	
-	private int M, npp[], nad[], ccl;
+	private int M, nad[][], ccl;
 	public static final DecimalFormat cmt = new DecimalFormat("000");
 
 	
@@ -24,8 +24,7 @@ public class finiteRouter2D extends router2D{
 	public void constructor_finiteRouter2D(Parameters params){
 	
 		M   = params.iget("M");
-		nad = new int[dl*2];
-		npp = new int[dl*N];
+		nad = new int[2][dl];
 		ccl = -1;
 		if(params.containsKey("cycle"))
 			ccl = params.iget("cycle");
@@ -45,10 +44,11 @@ public class finiteRouter2D extends router2D{
 		for (int jj = 0 ; jj < ns ; jj++){
 			
 			t++;
+			if(takeData)
+				tm++;
 			if(t%dl == 0)
 				writePPdata(getT(), ccl);
-				
-				
+			
 			double tmp = 0;
 			omega = 0;
 
@@ -106,17 +106,16 @@ public class finiteRouter2D extends router2D{
 				else{	// pass message to next router
 					buffer.get(tomove[kk].getMove(h)).add(tomove[kk]);
 				}
-				npp[(kk+N*t)%dl] = buffer.get(kk).size();
 			}
 		}
 		
 		// finish metric calculation
 		if(takeData){
-			omega /= ((double)(N)*(double)(t)*(double)(t));
-			takedata(omega, tbar/tcount);
+			omega /= ((double)(N)*(double)(tm)*(double)(tm));
+			takedata(omega, tbar/tcount, Nmsg);
 		}
-		nad[(2*t)%dl]   = na;
-		nad[(1+2*t)%dl] = nd;
+		nad[0][t%dl]   = na;
+		nad[1][t%dl]   = nd;
 		
 		return Nmsg;
 	}
@@ -134,26 +133,14 @@ public class finiteRouter2D extends router2D{
 		if(ub==0) ub = dl;
 		
 		try{
-			File file = new File(outdir+File.separator+bname+"_NofT"+cmt.format(1000*lambda)+"_"+cmt.format(cycle)+".txt");
-			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			pw.println("N = " + N);
-			for (int jj = 0 ; jj < ub ; jj++)
-				for (int kk = 0 ; kk < N ; kk++)
-					pw.println(npp[kk+jj*N]);
-			pw.close();
-		}
-		catch (IOException ex){
-			ex.printStackTrace();
-		}
-		try{
 			File file = new File(outdir+File.separator+bname+"_Nad"+cmt.format(1000*lambda)+"_"+cmt.format(cycle)+".txt");
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int jj = 0 ; jj < ub ; jj++){
 				pw.print(jj+offset);
 				pw.print("\t");
-				pw.print(nad[2*jj]);
+				pw.print(nad[0][jj]);
 				pw.print("\t");
-				pw.println(nad[2*jj+1]);
+				pw.println(nad[1][jj]);
 			}
 			pw.close();
 		}
