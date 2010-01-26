@@ -12,11 +12,11 @@ import chris.util.Random;
 
 public class router2D {
 
-	public static final int dl = 5000; 
-	public static final int dc = 2;
+	public static final int dl = 100000; 
+	public static final int dc = 3;
 	protected LinkedList<LinkedList<message>> buffer;
 	protected double lambda, data[][], nbar[], omega;
-	protected int N, LL, L, Nmsg, t;
+	protected int N, LL, L, Nmsg, t, tm;
 	protected Random rand;
 	protected String outdir, bname;
 	
@@ -29,6 +29,7 @@ public class router2D {
 	public void constructor_router2D(Parameters params){
 		
 		t      = 0;
+		tm     = 0;
 		LL     = params.iget("L");
 		N      = LL*LL;
 		L      = params.iget("l");
@@ -69,6 +70,8 @@ public class router2D {
 		for (int jj = 0 ; jj < ns ; jj++){
 		
 			t++;
+			if(rec)
+				tm++;
 			
 			double tmp = 0;
 			omega = 0;
@@ -117,20 +120,21 @@ public class router2D {
 
 		// finish metric calculation
 		if(rec){
-			omega /= ((double)(N)*(double)(t)*(double)(t));
-			takedata(omega, tbar/tcount);
+			omega /= ((double)(N)*(double)(tm)*(double)(tm));
+			takedata(omega, tbar/tcount, Nmsg);
 		}
 		
 		return Nmsg;
 	}
 	
-	public void takedata(double metric, double tb){
+	public void takedata(double metric, double tb, int N){
 
-		if(t%dl == 0)
-			writeData(t);
+		if(tm%dl == 0)
+			writeData(tm);
 		
-		data[0][t%dl] = 1/metric;
-		data[1][t%dl] = tb;
+		data[0][tm%dl] = 1/metric;
+		data[1][tm%dl] = tb;
+		data[2][tm%dl] = N;
 		return;
 	}
 	

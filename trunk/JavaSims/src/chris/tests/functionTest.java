@@ -31,7 +31,7 @@ public class functionTest extends Simulation{
 		double[] Frc = new double[N];
 		
 		for(int jj = 0 ; jj < N ; jj++){
-			r[jj]   = 1.6+ jj*0.8*params.fget("\u03C3")/N ;
+			r[jj]   =jj*1.6*params.fget("\u03C3")/N + 0.9;
 			phi[jj] = lj.potential(r[jj]);
 			Frc[jj] = lj.force(r[jj],0).x;
 		}
@@ -70,6 +70,15 @@ public class functionTest extends Simulation{
 
 		lj = new LennardJones(params);
 
+		
+		System.out.println(lj.force(2.5-1./10,0).x);
+		System.out.println(lj.force(2.5-1./100,0).x);
+		System.out.println(lj.force(2.5-1./1000,0).x);
+		System.out.println(lj.force(2.5-1./10000,0).x);
+		System.out.println(lj.force(2.5-1./100000,0).x);
+		System.out.println(lj.force(2.5-1./1000000,0).x);
+
+		
 		while(true)
 			Job.animate();
 		
