@@ -702,7 +702,7 @@ public class dilutedising extends Simulation{
 			totallifetime=0;
 			for (int e=0; e< totalruns; e++)
 				{
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/nucleation0.txt",e, nucleationevents[e]);
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/nucleation3.txt",e, nucleationevents[e]);
 				totallifetime+=nucleationevents[e];
 				}
 			run++;
