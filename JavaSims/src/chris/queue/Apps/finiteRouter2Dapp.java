@@ -29,10 +29,10 @@ public class finiteRouter2Dapp extends Simulation{
 		
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Data File", "default");
-		params.add("M",10);
+		params.addm("M",10);
 		params.add("L",32);
 		params.add("l",5);
-		params.add("\u03BB",new DoubleValue(0.05,0,1));
+		params.addm("\u03BB",new DoubleValue(0.05,0,1).withSlider());
 		params.add("seed",0);
 		params.add("messages");
 		params.set("messages",0);
@@ -83,6 +83,8 @@ public class finiteRouter2Dapp extends Simulation{
 	
 	public void animate() {
 
+		model.setM(params.iget("M"));
+		model.resetLambda(params.fget("\u03BB"));
 		params.set("t", model.getT());
 		params.set("messages",model.getNmsg());
 		grid.registerData(L,L,model.getDensity());

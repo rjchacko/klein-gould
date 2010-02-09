@@ -13,7 +13,7 @@ import chris.util.Random;
 public class router2D {
 
 	public static final int dl = 100000; 
-	public static final int dc = 3;
+	public static final int dc = 5;
 	protected LinkedList<LinkedList<message>> buffer;
 	protected double lambda, data[][], nbar[], omega;
 	protected int N, LL, L, Nmsg, t, tm;
@@ -54,23 +54,27 @@ public class router2D {
 	}
 	
 	
-	public int step(boolean rec){
+	public int step(boolean takeData){
 		
-		return step(1, rec);
+		return step(1, takeData);
 	}
 	
-	public int step(int ns, boolean rec){
+	public int step(int ns, boolean takeData){
 
 
 		message[] tomove = new message[N];
-		int idx, h;
-		int tcount  = 0;
-		double tbar = 0;
+		int idx, h;		
+
 		
 		for (int jj = 0 ; jj < ns ; jj++){
-		
+			
+			int na = 0;
+			int nd = 0;
+			int tcount  = 0;
+			double tbar = 0;
+			
 			t++;
-			if(rec)
+			if(takeData)
 				tm++;
 			
 			double tmp = 0;
@@ -78,7 +82,7 @@ public class router2D {
 
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART I)
-				if(rec){
+				if(takeData){
 					nbar[kk] += buffer.get(kk).size();
 					tmp      += nbar[kk];
 				}
@@ -93,13 +97,14 @@ public class router2D {
 			tmp /= N;
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART II)
-				if(rec)
+				if(takeData)
 					omega += (nbar[kk]-tmp)*(nbar[kk]-tmp);
 
 				// generate new messages and add them to the buffers
 				if (rand.nextDouble() < lambda){
 					buffer.get(kk).add(new message(t,L,LL,kk,rand));
 					Nmsg++;
+					na++;
 				}
 
 				// move messages selected in previous loop to next router
@@ -111,23 +116,24 @@ public class router2D {
 					tcount++;
 					tomove[kk] = null; // clear from memory
 					Nmsg--;
+					nd++;
 				}
 				else{	// pass message to next router
 					buffer.get(tomove[kk].getMove(h)).add(tomove[kk]);
 				}
 			}
+			// finish metric calculation
+			if(takeData){
+				omega /= ((double)(N)*(double)(tm)*(double)(tm));
+				takedata(omega, tbar/tcount, Nmsg, na, nd);
+			}			
 		}
 
-		// finish metric calculation
-		if(rec){
-			omega /= ((double)(N)*(double)(tm)*(double)(tm));
-			takedata(omega, tbar/tcount, Nmsg);
-		}
 		
 		return Nmsg;
 	}
 	
-	public void takedata(double metric, double tb, int N){
+	public void takedata(double metric, double tb, int N, int na, int nd){
 
 		if(tm%dl == 0)
 			writeData(tm);
@@ -135,6 +141,32 @@ public class router2D {
 		data[0][tm%dl] = 1/metric;
 		data[1][tm%dl] = tb;
 		data[2][tm%dl] = N;
+		data[3][tm%dl] = na;
+		data[4][tm%dl] = nd;
+		return;
+	}
+	
+	public void writeDataHeader(){
+		try{
+			File file = new File(outdir+File.separator+bname+".txt");
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.print("t");
+			pw.print("\t");
+			pw.print("1/omega");
+			pw.print("\t");
+			pw.print("<t_d>");
+			pw.print("\t");
+			pw.print("N");
+			pw.print("\t");
+			pw.print("N_add");
+			pw.print("\t");
+			pw.print("N_del");
+			pw.println();
+			pw.close();
+		}
+		catch (IOException ex){
+			ex.printStackTrace();
+		}
 		return;
 	}
 	
@@ -174,7 +206,6 @@ public class router2D {
 		for (int jj = 0 ; jj < N ; jj++){
 			ret[jj] = buffer.get(jj).size();
 		}
-		
 		return ret;
 	}
 	
@@ -186,6 +217,12 @@ public class router2D {
 	public int getNmsg(){
 		
 		return Nmsg;
+	}
+	
+	public void resetLambda(double l){
+		
+		lambda = l;
+		return;
 	}
 
 }

@@ -40,17 +40,16 @@ public class finiteRouterData2Dapp extends Simulation{
 		N     = L*L;
 		Mx    = N*params.iget("M");
 		model = new finiteRouter2D(params); 
-		
+		model.writeDataHeader();
 		
 		for(int jj = 0 ; jj < 100 ; jj++){
 			model.step(false);
 		}
-		
+
 		while(model.step(true) < Mx)
 			if(model.getT() % 1000 == 0) 
 				Job.animate();
 		model.writeData(model.getT());
-		model.writePPdata(model.getT(), params.iget("cycle"));
 		
 		params.set("t","Done");
 		Job.signalStop();

@@ -1,9 +1,5 @@
 package chris.queue;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import java.text.DecimalFormat;
 
 import scikit.jobs.params.Parameters;
@@ -11,7 +7,7 @@ import scikit.jobs.params.Parameters;
 
 public class finiteRouter2D extends router2D{
 	
-	private int M, nad[][], ccl;
+	private int M;
 	public static final DecimalFormat cmt = new DecimalFormat("000");
 
 	
@@ -23,12 +19,7 @@ public class finiteRouter2D extends router2D{
 
 	public void constructor_finiteRouter2D(Parameters params){
 	
-		M   = params.iget("M");
-		nad = new int[2][dl];
-		ccl = -1;
-		if(params.containsKey("cycle"))
-			ccl = params.iget("cycle");
-
+		M = params.iget("M");
 		return;
 	}
 	
@@ -36,18 +27,17 @@ public class finiteRouter2D extends router2D{
 
 		message[] tomove = new message[N];
 		int idx, h;
-		int tcount  = 0;
-		double tbar = 0;
-		int na = 0;
-		int nd = 0;
 		
 		for (int jj = 0 ; jj < ns ; jj++){
+			
+			int tcount  = 0;
+			double tbar = 0;
+			int na = 0;
+			int nd = 0;
 			
 			t++;
 			if(takeData)
 				tm++;
-			if(t%dl == 0)
-				writePPdata(getT(), ccl);
 			
 			double tmp = 0;
 			omega = 0;
@@ -85,6 +75,7 @@ public class finiteRouter2D extends router2D{
 					tomove[kk] = buffer.get(kk).get(idx);
 				}
 			}
+			tmp /= N;
 			for (int kk = 0 ; kk < N ; kk++){
 				// use loop to calculate metric (PART II)
 				if(takeData)
@@ -107,48 +98,18 @@ public class finiteRouter2D extends router2D{
 					buffer.get(tomove[kk].getMove(h)).add(tomove[kk]);
 				}
 			}
+			// finish metric calculation
+			if(takeData){
+				omega /= ((double)(N)*(double)(tm)*(double)(tm));
+				takedata(omega, tbar/tcount, Nmsg, na, nd);
+			}
 		}
-		
-		// finish metric calculation
-		if(takeData){
-			omega /= ((double)(N)*(double)(tm)*(double)(tm));
-			takedata(omega, tbar/tcount, Nmsg);
-		}
-		nad[0][t%dl]   = na;
-		nad[1][t%dl]   = nd;
-		
+
 		return Nmsg;
 	}
 	
-	public void writePPdata(int tt, int cycle){
+	public void setM(int M){
 		
-		if(ccl < 0)
-			return;
-		
-		int ub;
-		int offset = (int)((tt-1)/dl);
-		offset = offset*dl;
-
-		ub = tt%dl;
-		if(ub==0) ub = dl;
-		
-		try{
-			File file = new File(outdir+File.separator+bname+"_Nad"+cmt.format(1000*lambda)+"_"+cmt.format(cycle)+".txt");
-			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			for (int jj = 0 ; jj < ub ; jj++){
-				pw.print(jj+offset);
-				pw.print("\t");
-				pw.print(nad[0][jj]);
-				pw.print("\t");
-				pw.println(nad[1][jj]);
-			}
-			pw.close();
-		}
-		catch (IOException ex){
-			ex.printStackTrace();
-		}
-		
-		
-		return;
+		this.M = M;
 	}
 }

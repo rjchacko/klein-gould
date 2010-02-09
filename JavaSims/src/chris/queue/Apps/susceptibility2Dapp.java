@@ -57,7 +57,6 @@ public class susceptibility2Dapp extends Simulation{
 				while(model.step(false) < Mx && count < 2e3)
 					if((count++ % 500) == 0) 
 						Job.animate();
-				model.writePPdata(model.getT(), jj);
 				h.accum(model.getT());
 				model = null;
 			}
