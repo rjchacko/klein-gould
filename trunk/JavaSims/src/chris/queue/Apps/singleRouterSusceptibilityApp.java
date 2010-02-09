@@ -9,7 +9,6 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
-import scikit.jobs.params.DoubleValue;
 import chris.queue.message;
 import chris.util.PrintUtil;
 import chris.util.Random;
@@ -18,7 +17,7 @@ public class singleRouterSusceptibilityApp extends Simulation{
 
 	private LinkedList<message> buffer;
 	private double lambda;
-	private int L, N, now, cycle;
+	private int L, N, now, cycle, p;
 	private Random rand;
 	private String outdir, bname;
 	DecimalFormat fmt  = new DecimalFormat("000");
@@ -46,40 +45,45 @@ public class singleRouterSusceptibilityApp extends Simulation{
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Data File", "default");
 		params.add("l",5);
-		params.add("\u03BB",new DoubleValue(0.05,0,1));
+		//params.add("\u03BB",new DoubleValue(0.05,0,1));
 		params.add("seed",0);
-		params.add("t_max",(int)(1e6));
+		params.add("t_sim",(int)(1e7));
 		params.add("messages");
 		params.set("messages",0);
 		params.add("t");
 		params.set("t",0);
 		params.add("cycle");
-		params.set("cycle",0);
+
+
 	}
 
 	public void run() {
 		
 		int idx, s, tss, tmax;
 		Histogram hN, td;
-		double dlambda = 0.05;
+		//double dlambda = 0.001;
 		boolean ss;
 		
+		p      = 1;
 		L      = params.iget("l");
-		lambda = params.fget("\u03BB");
+		lambda = 0.1;
 		outdir = params.sget("Data Directory");
 		bname  = params.sget("Data File");
-		tmax   = params.iget("t_max");
+		tmax   = params.iget("t_sim");
 		tss    = 0;
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 
-		while(lambda < 0.2){
+		while(p < 10){
 			cycle = 0;
-			while(cycle++ < 20){
-
+			System.out.println("Starting New Cycle");
+			while(cycle++ < 10){
+				System.out.println("Here 1");
+				params.set("cycle",cycle);
 				buffer = new LinkedList<message>();
 				rand   = new Random(params.iget("seed"));
 				N      = 0;
 				ss     = false;
+				System.out.println("Here 2");
 
 				// first simulate the approach to the steady state			
 				while(!ss){
@@ -106,16 +110,17 @@ public class singleRouterSusceptibilityApp extends Simulation{
 						N++;
 					}
 					
-					if(tss % 100000 == 0){
-						now = -tss;
+					if(tss % 500000 == 0){
+						now = (int)(100/(N*(1-lambda*L)));
 						Job.animate();
 					}
 					
 					ss = (N > 1/(1-lambda*L));
 				}
+				System.out.println("Here 3");
 
-				// now simulate for 1e6 more time steps
-				for(int jj = 0 ; jj < 1e6 ; jj++){
+				// now simulate for 1e7 more time steps
+				for(int jj = 0 ; jj < 1e7 ; jj++){
 					tss++;
 					// select a message at random and "pass" it 
 					if(buffer.size() > 0){
@@ -139,12 +144,13 @@ public class singleRouterSusceptibilityApp extends Simulation{
 						N++;
 					}
 					
-					if(tss % 100000 == 0){
-						now = -tss;
+					if(jj % 500000 == 0){
+						now = (int)(jj-1e7);
 						Job.animate();
 					}					
 				}
-				
+				System.out.println("Here 4");
+
 				// now simulate the (assumed) steady state
 				hN = new Histogram(1);
 				td = new Histogram(1);
@@ -174,7 +180,7 @@ public class singleRouterSusceptibilityApp extends Simulation{
 					}
 
 					hN.accum(N);
-					if (jj % 100000 == 0){
+					if (jj % 500000 == 0){
 						now = jj;
 						Job.animate();
 					}
@@ -182,15 +188,19 @@ public class singleRouterSusceptibilityApp extends Simulation{
 				saveHist(hN,td);
 				params.set("seed",params.iget("seed")+1);
 			}
-		lambda += dlambda;
+			System.out.println("Next p");
+		lambda = 2. - Math.pow(10,-p);
+		p++;
 		}
 	}	
 
 	
 	private void saveHist(Histogram h1, Histogram h2){
 		
-		PrintUtil.printHistToFile(outdir+File.separator+"n"+fmt.format(1000*lambda)+"_"+fmt.format(cycle)+".txt", h1);
-		PrintUtil.printHistToFile(outdir+File.separator+"t"+fmt.format(1000*lambda)+"_"+fmt.format(cycle)+".txt", h2);
+//		PrintUtil.printHistToFile(outdir+File.separator+"n"+fmt.format(1000*lambda)+"_"+fmt.format(cycle)+".txt", h1);
+//		PrintUtil.printHistToFile(outdir+File.separator+"t"+fmt.format(1000*lambda)+"_"+fmt.format(cycle)+".txt", h2);
+		PrintUtil.printHistToFile(outdir+File.separator+"n"+fmt.format(p)+"_"+fmt.format(cycle)+".txt", h1);
+		PrintUtil.printHistToFile(outdir+File.separator+"t"+fmt.format(p)+"_"+fmt.format(cycle)+".txt", h2);
 		return;
 	}
 }

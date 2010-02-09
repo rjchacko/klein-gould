@@ -25,7 +25,7 @@ public class router2Dapp extends Simulation{
 		
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Data File", "default");
-		params.add("L",16);
+		params.add("L",32);
 		params.add("l",5);
 		params.add("\u03BB",new DoubleValue(0.05,0,1));
 		params.add("seed",0);
@@ -42,16 +42,17 @@ public class router2Dapp extends Simulation{
 		L     = params.iget("L");
 		N     = L*L;
 		model = new router2D(params); 
+		model.writeDataHeader();
 
 		setupcolors(params.fget("\u03BB"),params.iget("l"));
 		
-		int tss  = (int)(1e6);
-		int tmax = (int)(1e7);
+		int tss  = (int)(1e2);
+		int tmax = (int)(2e5);
 		int t    = 0;
 		
 		while(t++ < tss){
 			model.step(false);
-			if(t%1e4 ==0){
+			if(t%1e3 ==0){
 				params.set("t",t-tss);
 				Job.animate();
 			}
