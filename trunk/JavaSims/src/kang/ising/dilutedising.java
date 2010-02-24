@@ -261,16 +261,16 @@ public class dilutedising extends Simulation{
 		params.add("lattice's length", 100);
 		//params.add("CGBlock's width", 1);
 		//params.add("CGBlock's length", 1);
-		params.addm("Temperature", new DoubleValue(1, 0, 10).withSlider());
+		params.addm("Temperature", new DoubleValue(0.57563, 0, 10).withSlider());
 		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
 		params.addm("Interaction Constant", -4);
 		
 		//params.add("Coarsegrain range", 0);
 		
-		params.add("Total number of runs", 100);  //if this=0 means we don't run multiple runs
-		params.add("Waiting time",100);
+		params.add("Total number of runs", 20);  //if this=0 means we don't run multiple runs
+		params.add("Waiting time",2000);
 		params.add("Saturated Magnetization", new DoubleValue(1, -1, 1).withSlider());
-		params.add("Percentage for nucleation", new DoubleValue(1, 0, 1).withSlider());
+		params.add("Percentage for nucleation", new DoubleValue(0.9, 0, 1).withSlider());
 		params.add("magnetization");
 		params.add("MC time");
 		params.add("run");
@@ -279,7 +279,7 @@ public class dilutedising extends Simulation{
 		params.add("Monte Carlo step's limit", 1000000000);
 		params.add("Metric Start at",500000000);
 		params.add("Metric points", 2000);
-		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
+		params.add("Diluted Percentage", new DoubleValue( 0.25,0,1).withSlider());
 		params.add("run the movie", 0);
 		params.add("Interaction range", 0);
 
@@ -702,7 +702,7 @@ public class dilutedising extends Simulation{
 			totallifetime=0;
 			for (int e=0; e< totalruns; e++)
 				{
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/nucleation3.txt",e, nucleationevents[e]);
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/nucleation4.txt",e, nucleationevents[e]);
 				totallifetime+=nucleationevents[e];
 				}
 			run++;
