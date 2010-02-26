@@ -1,29 +1,24 @@
 package chris.queue;
 
-import java.text.DecimalFormat;
-
 import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
 
-
-public class finiteRouter2D extends router2D{
+public class damagedFiniteRouter2D extends damagedRouter2D{
 	
 	private int M;
-	public static final DecimalFormat cmt = new DecimalFormat("000");
 
-	
-	public finiteRouter2D(Parameters params) {
+	public damagedFiniteRouter2D(Parameters params){
 		
 		super(params);
-		constructor_finiteRouter2D(params);
+		damagedFiniteRouter2D_contructor(params);
 	}
 
-	public void constructor_finiteRouter2D(Parameters params){
-	
+	public void damagedFiniteRouter2D_contructor(Parameters params){
+		
 		M = params.iget("M");
 		return;
 	}
-
+	
 	public int step(int ns, boolean takeData, Histogram hh){
 		/// add hist collection
 		message[] tomove = new message[N];
@@ -44,6 +39,8 @@ public class finiteRouter2D extends router2D{
 			omega = 0;
 
 			for (int kk = 0 ; kk < N ; kk++){
+				if(dn[kk])
+					continue;
 				// use loop to calculate metric (PART I)
 				if(takeData){
 					nbar[kk] += buffer.get(kk).size();
@@ -88,7 +85,7 @@ public class finiteRouter2D extends router2D{
 			
 				buffer.get(kk).remove(tomove[kk]);
 				h = tomove[kk].hop();
-				if(h == L-1){	// dissipate message
+				if(h == L-1 || dn[tomove[kk].getMove(h)]){	// dissipate message
 					tbar += t-tomove[kk].getTcreate();
 					tcount++;
 					tomove[kk] = null; // clear from memory

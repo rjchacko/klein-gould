@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.LinkedList;
 
+import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
 import chris.util.PrintUtil;
 import chris.util.Random;
@@ -19,6 +20,7 @@ public class router2D {
 	protected int N, LL, L, Nmsg, t, tm;
 	protected Random rand;
 	protected String outdir, bname;
+	protected final static Histogram foo = new Histogram(1000);
 	
 	public router2D(Parameters params){
 		
@@ -42,6 +44,7 @@ public class router2D {
 		Nmsg   = 0;
 		nbar   = new double[N];
 		data   = new double[dc][dl];
+	
 		
 		PrintUtil.printlnToFile(outdir+File.separator+"Params_"+bname+".log",params.toString());
 		
@@ -52,14 +55,8 @@ public class router2D {
 		
 		return;
 	}
-	
-	
-	public int step(boolean takeData){
-		
-		return step(1, takeData);
-	}
-	
-	public int step(int ns, boolean takeData){
+
+	public int step(int ns, boolean takeData, Histogram hh){
 
 
 		message[] tomove = new message[N];
@@ -113,6 +110,7 @@ public class router2D {
 				h = tomove[kk].hop();
 				if(h == L-1){	// dissipate message
 					tbar += t-tomove[kk].getTcreate();
+					hh.accum(t-tomove[kk].getTcreate());
 					tcount++;
 					tomove[kk] = null; // clear from memory
 					Nmsg--;
@@ -222,6 +220,30 @@ public class router2D {
 	public void resetLambda(double l){
 		
 		lambda = l;
+		return;
+	}
+	
+	public void printMessages(String fout){
+		for (int jj = 0 ; jj < N ; jj++){
+			if(buffer.get(jj).size()==0)
+				continue;
+			try{
+				File file = new File(fout+jj+".txt");
+				PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+				for(int kk = 0 ; kk < buffer.get(jj).size(); kk++){
+					int tmp[] = buffer.get(jj).get(kk).getPath();
+					pw.print(jj+"\t");
+					for(int mm = 0 ; mm < tmp.length ; mm++){
+						pw.print(tmp[mm]+"\t");
+					}
+					pw.println();
+				}
+
+
+			} catch (IOException ex){
+				ex.printStackTrace();
+			}
+		}
 		return;
 	}
 

@@ -107,6 +107,11 @@ public class message {
 		return dir[hops];
 	}
 	
+	public int[] getPath(){
+		
+		return dir;
+	}
+	
 	public int getTcreate(){
 		
 		return tc;

@@ -1,5 +1,6 @@
 package chris.queue.Apps;
 
+import scikit.dataset.Histogram;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -39,6 +40,8 @@ public class router2Dapp extends Simulation{
 
 	public void run() {
 		
+		Histogram foo = new Histogram(1000.);
+
 		L     = params.iget("L");
 		N     = L*L;
 		model = new router2D(params); 
@@ -51,7 +54,7 @@ public class router2Dapp extends Simulation{
 		int t    = 0;
 		
 		while(t++ < tss){
-			model.step(false);
+			model.step(1,false,foo);
 			if(t%1e3 ==0){
 				params.set("t",t-tss);
 				Job.animate();
@@ -59,7 +62,7 @@ public class router2Dapp extends Simulation{
 		}
 		t = 0;
 		while(t++ < tmax){
-			model.step(true);
+			model.step(1,true,foo);
 			if(t%1e4 ==0){
 				params.set("t",t);
 				Job.animate();

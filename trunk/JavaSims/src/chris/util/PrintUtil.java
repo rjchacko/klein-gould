@@ -522,6 +522,19 @@ public class PrintUtil {
 		
 	}
 	
+	public static void printVectorToFile(String fileName, int[] vec, int Length){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.println(vec[ii]);
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+		
+	}
+	
 	public static void printVectorToFile(String fileName, int[] vec){
 		int Length = vec.length;
 		try{

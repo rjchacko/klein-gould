@@ -1,5 +1,6 @@
 package chris.queue.Apps;
 
+import scikit.dataset.Histogram;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
@@ -36,6 +37,8 @@ public class finiteRouterData2Dapp extends Simulation{
 
 	public void run() {
 		
+		Histogram foo = new Histogram(1000.);
+		
 		L     = params.iget("L");
 		N     = L*L;
 		Mx    = N*params.iget("M");
@@ -43,10 +46,10 @@ public class finiteRouterData2Dapp extends Simulation{
 		model.writeDataHeader();
 		
 		for(int jj = 0 ; jj < 100 ; jj++){
-			model.step(false);
+			model.step(1,false,foo);
 		}
 
-		while(model.step(true) < Mx)
+		while(model.step(1,true,foo) < Mx)
 			if(model.getT() % 1000 == 0) 
 				Job.animate();
 		model.writeData(model.getT());
