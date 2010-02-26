@@ -1,6 +1,8 @@
 package chris.queue.Apps;
 
 import java.io.File;
+
+import scikit.dataset.Histogram;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
@@ -8,7 +10,7 @@ import scikit.jobs.params.DirectoryValue;
 import chris.queue.finiteRouter2D;
 import chris.util.PrintUtil;
 
-public class flambdaVell2Dapp extends Simulation{
+public class lambdaVell2Dapp extends Simulation{
 
 	private int L, N, ell, Mx, tw;
 	private double lambda;
@@ -16,7 +18,7 @@ public class flambdaVell2Dapp extends Simulation{
 	private finiteRouter2D model;
 
 	public static void main(String[] args) {
-		new Control(new flambdaVell2Dapp(), "2D Router Network");
+		new Control(new lambdaVell2Dapp(), "2D Router Network");
 	}
 	
 	public void load(Control c) {
@@ -38,6 +40,7 @@ public class flambdaVell2Dapp extends Simulation{
 	public void run() {
 	
 		int count;
+		Histogram foo = new Histogram(1000.);
 		
 		L   = params.iget("L");
 		N   = L*L;
@@ -59,7 +62,7 @@ public class flambdaVell2Dapp extends Simulation{
 				params.set("seed",params.iget("seed")+1);
 				Job.animate();
 				count = 0;
-				while(model.step(false) < Mx && count++ < tw)
+				while(model.step(1,false,foo) < Mx && count++ < tw)
 					maybeAnimate(count);
 
 				params.set("t","Done");

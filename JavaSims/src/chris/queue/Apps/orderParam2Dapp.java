@@ -45,7 +45,9 @@ public class orderParam2Dapp extends Simulation{
 
 	public void run() {
 		
-		int tmx = (int)(1e5);
+		int tmx       = (int)(1e5);
+		Histogram foo = new Histogram(1000.);
+
 		nOFt    = new int[tmx+1];
 		L       = params.iget("L");
 		N       = L*L;
@@ -57,7 +59,7 @@ public class orderParam2Dapp extends Simulation{
 			model = new finiteRouter2D(params); 
 			params.set("cycle",cycle);
 			Job.animate();
-			while(model.step(true) < Mx && model.getT() < tmx){
+			while(model.step(1,false,foo) < Mx && model.getT() < tmx){
 				nOFt[model.getT()] += model.getNmsg();
 			if(model.getT() % 1e3 == 0)
 					Job.animate();

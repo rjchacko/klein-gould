@@ -1,25 +1,26 @@
 package chris.queue.Apps;
 
+import scikit.dataset.Histogram;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
+import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.queue.finiteRouter2D;
-import chris.util.PrintUtil;
 import chris.util.movieUtil;
 
 public class finiteRouter2Dapp extends Simulation{
 
 	Grid grid  = new Grid("Buffers");
 	Grid movie = new Grid("buffers");
-	private int L, N, Mx, msg[];
+	private int L, N, Mx;
 	private String pth;
 	private finiteRouter2D model;
-	private final boolean draw = false;
+	private boolean draw, rec;
 
 	public static void main(String[] args) {
 		new Control(new finiteRouter2Dapp(), "2D Router Network");
@@ -29,6 +30,7 @@ public class finiteRouter2Dapp extends Simulation{
 		
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Data File", "default");
+		params.add("Draw", new ChoiceValue("Animate","Record","Off"));
 		params.addm("M",10);
 		params.add("L",32);
 		params.add("l",5);
@@ -43,22 +45,27 @@ public class finiteRouter2Dapp extends Simulation{
 	}
 
 	public void run() {
+		Histogram foo = new Histogram(1000.);
 		
 		L     = params.iget("L");
 		N     = L*L;
 		Mx    = N*params.iget("M");
-		msg   = new int[10000];
+		//msg   = new int[10000];
 		model = new finiteRouter2D(params); 
 		pth   = params.sget("Data Directory");
-
-		setupcolors(params.iget("M"));
+        draw  = !(params.sget("Draw").equals("Off")); 
+		rec   = false;
 		
-		while(model.step(false) < Mx){
-			msg[model.getT()] = model.getNmsg();
+        if(draw)
+        	setupcolors(params.iget("M"));
+		
+		while(model.step(1,false,foo) < Mx){
+			//msg[model.getT()] = model.getNmsg();
 			Job.animate();
 		}
-		
-		PrintUtil.printVectorToFile("/Users/cserino/Desktop/NmsgT.txt",msg);
+		Job.animate();
+
+		//PrintUtil.printVectorToFile("/Users/cserino/Desktop/NmsgT.txt",msg,(int)(model.getT()));
 		
 		params.set("t","Done");
 		Job.signalStop();
@@ -78,6 +85,8 @@ public class finiteRouter2Dapp extends Simulation{
 
 		grid.setColors(cp);
 		movie.setColors(cp);
+		
+		rec = params.sget("Draw").equals("Record"); 
 		return;
 	}
 	
@@ -87,10 +96,12 @@ public class finiteRouter2Dapp extends Simulation{
 		model.resetLambda(params.fget("\u03BB"));
 		params.set("t", model.getT());
 		params.set("messages",model.getNmsg());
-		grid.registerData(L,L,model.getDensity());
-		if(draw) movieUtil.saveImage(model.getDensity(), L, L, 20, movie, pth, model.getT());
+		if(draw){ 
+			grid.registerData(L,L,model.getDensity());
+			if(rec) 
+				movieUtil.saveImage(model.getDensity(), L, L, 20, movie, pth, model.getT());
+		}
 		return;
-
 	}
 
 	public void clear() {

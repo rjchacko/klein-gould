@@ -238,13 +238,18 @@ public class ofc2Dfast{
 		GR = 1; // the seed site
 		
 		// discharge site and repeat until lattice is stable
+		
+		// QUICK ALTERATION THAT SHOULD BE RETUNRED TO NORMAL 
+		// ALGORITHM. LET ALPHA VARY ONLY BETWEEN PLATE UPDATES
+		// NOT DURING A PLATE UPDATE	
+		double alphanow = 1-nextAlpha();
 		while(newindex > index){
 			a     = index;
 			b     = newindex;
 			index = newindex;
 			for (int jj = a ; jj < b ; jj++){
 				tmpfail = fs[jj];
-				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
+				release = (alphanow)*(stress[tmpfail]-sr[tmpfail])/qN;
 				for(int kk = 0 ; kk < qN ; kk++){
 					tmpnb = getNbr(fs[jj],kk);
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC

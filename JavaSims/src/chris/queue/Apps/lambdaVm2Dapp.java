@@ -1,6 +1,8 @@
 package chris.queue.Apps;
 
 import java.io.File;
+
+import scikit.dataset.Histogram;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
@@ -26,31 +28,34 @@ public class lambdaVm2Dapp extends Simulation{
 		params.add("seed",0);
 		params.add("L",32);
 		params.add("l",5);
+		params.add("M",10);
 		params.add("t_wait",(int)(1e6));
 		params.add("messages");
 		params.set("messages",0);
 		params.add("t");
 		params.set("t",0);
-		params.add("M");
 		params.add("\u03BB");
 	}
 
 	public void run() {
 	
 		int count;
+		Histogram foo = new Histogram(1000.);
+
 		
 		L   = params.iget("L");
 		N   = L*L;
 		pth = params.sget("Data Directory") + File.separator + params.sget("Data File") + ".txt";
 		tw  = params.iget("t_wait");
-		M   = 50;
+		M   = params.iget("M");
 		PrintUtil.printlnToFile(pth,"M","lambda");
 
 		while(true){ // loop on m
 		
 			params.set("M",M);
 			Mx = M*N;	
-			lambda = 0.1999;
+			//lambda = 0.1999;
+			lambda = 0.12;
 			
 			while(true){ // loop on lambda
 				params.set("\u03BB",lambda);
@@ -59,7 +64,7 @@ public class lambdaVm2Dapp extends Simulation{
 				params.set("seed",params.iget("seed")+1);
 				Job.animate();
 				count = 0;
-				while(model.step(false) < Mx && count++ < tw)
+				while(model.step(1,false,foo) < Mx && count++ < tw)
 					maybeAnimate(count);
 
 				params.set("t","Done");
@@ -71,9 +76,6 @@ public class lambdaVm2Dapp extends Simulation{
 				}
 				else if(lambda == 0.1999){
 					lambda = 0.199;
-				}
-				else if(lambda == 0.199){
-					lambda = 0.19;
 				}
 				else{
 					lambda -= 0.001;
