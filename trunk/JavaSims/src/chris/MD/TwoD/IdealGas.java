@@ -15,7 +15,7 @@ public class IdealGas extends InteractingSystem{
 		return new vector2d();
 	}
 
-	public double potential(double r) {
+	public double potential(vector2d r1, vector2d r2)  {
 
 		return 0;
 	}

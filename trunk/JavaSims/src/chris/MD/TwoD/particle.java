@@ -10,7 +10,6 @@ public class particle {
 		
 		r     = new vector2d();
 		v     = new vector2d();
-		m     = 0;
 		q     = 0;
 		s     = 0;
 		color = Color.WHITE;
@@ -26,11 +25,6 @@ public class particle {
 	 * the velocity of the particle
 	 */
 	public vector2d v;
-	
-	/**
-	 * the mass of the particle
-	 */
-	public double m;
 	
 	/**
 	 * the electric charge of the particle
