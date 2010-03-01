@@ -41,5 +41,30 @@ public class MathUtil {
 		return (bin == 1);
 	}
 	
-
+	public static double[] linspace(double xmin, double xmax, int Npts){
+		
+		double[] ret = new double[Npts];
+		for (int jj = 0 ; jj < Npts ; jj++){
+			ret[jj] = xmin + jj*xmax/(Npts-1.);
+		}
+		return ret;
+	}
+	
+	public static double[] logspace(double pmin, double pmax, int Npts){
+		
+		double[] ret = new double[Npts];
+		for (int jj = 0 ; jj < Npts ; jj++){
+			ret[jj] = Math.pow(10,pmin + jj*pmax/(Npts-1.));
+		}
+		return ret;
+	}
+	
+	public static double[] lnspace(double pmin, double pmax, int Npts){
+		
+		double[] ret = new double[Npts];
+		for (int jj = 0 ; jj < Npts ; jj++){
+			ret[jj] = Math.exp(pmin + jj*pmax/(Npts-1.));
+		}
+		return ret;
+	}
 }
