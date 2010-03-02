@@ -155,8 +155,20 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 				}else{
 					noFails[i] = -1;
 				}
-
 			}
+			
+//			//insert some dead sites
+//			if(i < L*L/8){
+//				//the site is dead
+//				noDeadSites+=1;
+//				//assign a heal time uniformly between -1 and -healtime+1
+//				if(mode == "healFrozen"){
+//					noFails[i] = -((int)(random.nextDouble()*(double)(healTime[i]-1))+1);
+//					System.out.println(i + " dead healTime = " + healTime[i] + " noFails = " + noFails[i]);
+//				}else{
+//					noFails[i] = -1;
+//				}
+//			}
 	
 
 		}

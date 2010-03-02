@@ -28,6 +28,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public int [] cgFailCount; //Counts 1 in a cg block if there is any site that fails in that block.
 	public int [] epicenterSize;
 	boolean [] failList;
+	public double am_sq_ave, am_ave_sq, sam_sq_ave, sam_ave_sq;
 	
 	public OFC_Lattice(Parameters params) {
 		setParameters(params);
@@ -449,6 +450,15 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		CG_metric /= (double)Np;
 		lastCG_RecordTimePU = plateUpdates;
 		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
+		
+		//calc of breakdown of metric
+		am_ave_sq = CG_SpaceAve*CG_SpaceAve*(double)(plateUpdates*plateUpdates);
+		double sqSum = 0;
+		for (int i = 0; i < Np; i++){
+			sqSum += Math.pow(CG_ActivityTimeAve[i],2);
+		}
+		am_sq_ave = sqSum*(double)(plateUpdates*plateUpdates) / (double)Np;
+		
 		return CG_metric; 
 	}
 
@@ -466,6 +476,15 @@ public class OFC_Lattice extends AbstractCG_OFC{
 		CG_metric /= (double)Np;
 		lastCG_SizeActRecordTimePU = plateUpdates;
 		for (int i = 0; i < Np; i++) epicenterSize[i] = 0;
+		
+		//calc of breakdown of metric
+		sam_ave_sq = CG_SpaceAve*CG_SpaceAve*(double)(plateUpdates*plateUpdates);
+		double sqSum = 0;
+		for (int i = 0; i < Np; i++){
+			sqSum += Math.pow(CG_SizeActTimeAve[i],2);
+		}
+		sam_sq_ave = sqSum*(double)(plateUpdates*plateUpdates) / (double)Np;
+		
 		return CG_metric; 
 	}
 	

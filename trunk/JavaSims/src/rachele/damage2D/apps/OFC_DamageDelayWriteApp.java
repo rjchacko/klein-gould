@@ -50,6 +50,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 	Accumulator invSizeActMetTempAcc = new Accumulator();
 	Accumulator	cgMaxSizeActBoxTempAcc = new Accumulator();
 	Accumulator timeAveForMaxCGSizeActTempAcc = new Accumulator();
+
 	
 	public static void main(String[] args) {
 		new Control(new OFC_DamageDelayWriteApp(), "OFC Damage Model");
@@ -62,16 +63,16 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/testRuns"));
 		params.add("Interaction", new ChoiceValue( "Circle", "Fully Connected", "Square", "Small World") );
 		params.addm("Random Seed", 1);
-		params.addm("CG size", 64);
-		params.addm("dx", 4);
+		params.addm("CG size", 16);
+		params.addm("dx", 2);
 		params.addm("Coarse Grained dt (PU)", 1);
-		params.addm("Equilibration Updates", 50000);
+		params.addm("Equilibration Updates", 500);
 		params.addm("Max PU", 1000000);
 		params.addm("Data points per write", 100);
-		params.addm("R", 16);// 0 -> fully connected
+		params.addm("R", 4);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
-		params.addm("Dissipation Param", 0.3);
+		params.addm("Dissipation Param", 0.4);
 		params.addm("Lower Cutoff", 1);
 		params.addm("Mean Max Failures", 0);
 		params.addm("Failures Max Noise", 0);
