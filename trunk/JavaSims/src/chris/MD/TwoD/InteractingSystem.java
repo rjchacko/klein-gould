@@ -12,13 +12,10 @@ import scikit.graphics.dim2.Gfx2D;
 import scikit.jobs.params.Parameters;
 import scikit.util.Bounds;
 import chris.util.Random;
+import chris.util.ReadInUtil;
 import chris.util.vector2d;
 
 public abstract class InteractingSystem {
-	
-	// this class should be in charge of evolving the system
-	// this should be a system
-	// it has particles, temperature, etc
 
 	public static enum Solvers {EULER, VERLET};
 	public static enum BC {PERIODIC, CLOSED}
@@ -40,22 +37,20 @@ public abstract class InteractingSystem {
 	
 	public void IS_constructor(Parameters params){
 	
-		E         = new double[2];
-		dt        = params.fget("dt");
-		Tw        = params.fget("T");
-		t         = 0;
-		N         = params.iget("N");
+		E  = new double[2];
+		dt = params.fget("dt");
+		Tw = params.fget("T");
+		t  = 0;
+		N  = params.iget("N");
 		if(params.containsKey("L")){
 			Lx = params.iget("L");
 			Ly = Lx;
 		}
 		else{
-			Lx        = params.iget("Lx");
-			Ly        = params.iget("Ly"); 
+			Lx = params.iget("Lx");
+			Ly = params.iget("Ly"); 
 		}
-		accel     = new vector2d[N]; 
-		phase     = new particle[N];
-		rand      = new Random(params.iget("seed"));
+		rand = new Random(params.iget("seed"));
 		
 		if(params.sget("ODE Solver").equals("Velocity Verlet"))
 			solver    = Solvers.VERLET;	
@@ -281,7 +276,6 @@ public abstract class InteractingSystem {
 			double pcmX, pcmY, KE0; 
 			int Nx, Ny;
 
-			double m  = params.fget("M");
 			double RR = params.fget("R"); 
 
 			if(Lx == Ly){
@@ -296,10 +290,12 @@ public abstract class InteractingSystem {
 				Ny += N - Nx*Ny;
 			}
 
-			pcmX = 0;
-			pcmY = 0;
-			KE0 = 0;
-
+			pcmX  = 0;
+			pcmY  = 0;
+			KE0   = 0;
+			phase = new particle[N];
+			accel = new vector2d[N]; 
+			
 			for(int jj = 0 ; jj < N ; jj++){
 				phase[jj] = new particle();
 				phase[jj].q     = 0;
@@ -308,9 +304,9 @@ public abstract class InteractingSystem {
 				phase[jj].r.x   = (jj%Nx)*Lx/Nx+(1.01)*RR;
 				phase[jj].r.y   = ((int)(jj/Nx))*Ly/Ny+(1.01)*RR;
 				phase[jj].v.x   = 0.5-rand.nextDouble();
-				pcmX            += m*phase[jj].v.x;
+				pcmX            += phase[jj].v.x;
 				phase[jj].v.y   = 0.5-rand.nextDouble();
-				pcmY		    += m*phase[jj].v.y;
+				pcmY		    += phase[jj].v.y;
 			}
 			vector2d pcm = new vector2d(pcmX/N, pcmY/N);
 			for(int jj = 0 ; jj < N ; jj++){
@@ -324,18 +320,36 @@ public abstract class InteractingSystem {
 		
 		break;
 		
+		case READ_IN:
+			
+			ReadInUtil ri = new ReadInUtil("/Users/cserino/Documents/BU/Research/MD/IC.txt");
+			double ic[][] = ri.getData(new int[]{2,3,4,5}, 2);
+			N = ic[0].length;
+			phase = new particle[N];
+			accel = new vector2d[N]; 
+			params.set("N", N);
+			
+			for(int jj = 0 ; jj < N ; jj++){
+				phase[jj] = new particle();
+				phase[jj].q     = 0;					// FIX THIS
+				phase[jj].s     = params.fget("R"); 	// AND THIS
+				phase[jj].color = Color.red;			// AND THIS
+				phase[jj].r.x   = ic[0][jj];
+				phase[jj].r.y   = ic[1][jj];
+				phase[jj].v.x   = ic[2][jj];
+				phase[jj].v.y   = ic[3][jj];
+			}
+
+		break;
+		
 		case VISCOUS:
 			
 		case COPY:
 			
-		case READ_IN:
-			
 			throw new IllegalStateException("Not coded yet.");
-
 		default:
 
 			throw new IllegalStateException("Initialization scheme does not exist.");
-		
 		}
 		
 		getAccel();		
@@ -433,49 +447,48 @@ public abstract class InteractingSystem {
 		}
 	return;
 	}
-}
 	
-/*
- * 	periodic boundary condition debugging data
- */
+	public double structureFactor(int pID, int nx, int ny, int Lx, int Ly){
 	
-//phase[0] = new particle();
-//phase[0].m     = m;
-//phase[0].q     = 0;
-//phase[0].s     = RR;
-//phase[0].color = Color.red;
-//phase[0].r.x   = 45.30531741317776;
-//phase[0].r.y   = 13.696366621853066;
-//phase[0].v.x   = -0.016131747215712464;
-//phase[0].v.y   = 0.03230476536155055;
-//
-//phase[1] = new particle();
-//phase[1].m     = m;
-//phase[1].q     = 0;
-//phase[1].s     = RR;
-//phase[1].color = Color.red;
-//phase[1].r.x   = 29.045508522457197;
-//phase[1].r.y   = 42.13277977321583;
-//phase[1].v.x   = -0.028468880134714613;
-//phase[1].v.y   = -0.0024605691974465614;
-//
-//phase[2] = new particle();
-//phase[2].m     = m;
-//phase[2].q     = 0;
-//phase[2].s     = RR;
-//phase[2].color = Color.red;
-//phase[2].r.x   = 14.576730072738897;
-//phase[2].r.y   = 0.45182210819004354;
-//phase[2].v.x   = 0.037416089146865096;
-//phase[2].v.y   = -0.037073919915994055;
-//
-//phase[3] = new particle();
-//phase[3].m     = m;
-//phase[3].q     = 0;
-//phase[3].s     = RR;
-//phase[3].color = Color.red;
-//phase[3].r.x   = 16.05978527112019;
-//phase[3].r.y   = 48.850946642337206;
-//phase[3].v.x   = -0.07665533054105472;
-//phase[3].v.y   = 0.09827745829828256;
+		double dt;		
+		vector2d k = new vector2d(Math.PI*nx/Lx, Math.PI*ny/Ly);
+		vector2d r = phase[pID].r;
+		double rp  = 0;
+		double ip  = 0;
+		
+		for(int jj = 0 ; jj < pID ; jj++){
+			dt = vector2d.dot(k,dr(phase[jj].r,r));
+			rp += Math.cos(dt);
+			ip += Math.sin(dt);
+		}		
+		for(int jj = pID+1 ; jj < N ; jj++){
+			dt = vector2d.dot(k,dr(phase[jj].r,r));
+			rp += Math.cos(dt);
+			ip += Math.sin(dt);
+		}  
+		return (rp*rp+ip*ip)/(N*N);
+	}
+	
+	public vector2d dr(vector2d r1, vector2d r2){
+		
+		switch (boundCond){
+		
+			case PERIODIC: 
+				
+				double dx = r1.x-r2.x;
+				double dy = r1.y-r2.y;
+				if(dx*dx > 0.25*Lx*Lx)
+					dx = -Math.signum(dx)*(Lx-Math.abs(dx));
+				if(dy*dy > 0.25*Ly*Ly)
+					dy = -Math.signum(dy)*(Ly-Math.abs(dy));
+				return new vector2d(dx, dy);
+		
+			case CLOSED:
+			
+				return new vector2d(r1.x-r2.x, r1.y-r2.y);
 
+			default:
+				throw new IllegalStateException("Boundary condition does not exist.");
+		}
+	}
+}
