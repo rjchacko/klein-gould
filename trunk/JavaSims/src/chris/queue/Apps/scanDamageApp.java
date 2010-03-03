@@ -15,8 +15,11 @@ public class scanDamageApp extends Simulation{
 
 	private String pth, fout;
 	private damagedRouter2D model;
-	private Histogram hN, ht;
-	public static final DecimalFormat ifmt = new DecimalFormat("000");
+	private static final int teql = 50000;
+	private static final int tmax = 100000;
+//	private static final int teql = 500;
+//	private static final int tmax = 500;
+	public static final DecimalFormat ifmt = new DecimalFormat("00");
 
 	public static void main(String[] args) {
 		new Control(new scanDamageApp(), "2D Router Network");
@@ -24,8 +27,6 @@ public class scanDamageApp extends Simulation{
 	
 	public void animate() {
 		
-		params.set("t", model.getT());
-		params.set("messages",model.getNmsg());
 		return;
 	}
 
@@ -38,66 +39,82 @@ public class scanDamageApp extends Simulation{
 		
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop/"));
 		params.add("Data File", "default");
-		params.add("L");
-		params.add("l");
-		params.add("\u03BB");
-		params.add("p");
 		params.add("seed",0);
+		params.add("L", 32);
+		params.add("l", 5);
+		params.add("\u03BB",0.19);
+		params.add("p");
 		params.add("messages");
 		params.add("t");
-		params.add("cycle");
 		params.set("t",0);
 		params.set("messages",0);
-		params.set("L",32);
 
 
 	}
 
 	public void run() {
+
+		double pp = 0;
+		Histogram hN, ht;
+
 		pth   = params.sget("Data Directory");
 		fout  = params.sget("Data File");
-		
-		double[] pv = new double[]{0., 0.01, 0.05, 0.1, 0.25}; 
-		for(int ll = 5 ; ll < 25 ; ll += 5){
-			params.set("l",ll);
-			for(int aa = 0 ; aa < 20 ; aa++){
-				params.set("\u03BB",1./(ll*(19.-aa)));
-				for(int pp = 0 ; pp < 5 ; pp++){
-					params.set("p",pv[pp]);
-					model = new damagedRouter2D(params); 
-					params.set("seed", params.iget("seed")+1);
-					
-					int count = 0;
-					ht = new Histogram(1.);
-					// equilibrate
-					while(count < 1e4){
-						model.step(1,false,ht);
-						if((count++ % 500) == 0) 
-							Job.animate();
-					}		
 
-					hN = new Histogram(1.);
-					ht = new Histogram(1.);
-					count = 0;
-					// simulate model for data
-					while(count < 1e6){
-						model.step(1,false,ht);
-						hN.accum(model.getNmsg());
-						if((count++ % 500) == 0) 
-							Job.animate();
-					}
-					printData(ll,aa,pp);
+		while(pp < 1){
+			params.set("p",pp);
+			params.set("seed", params.iget("seed")+1);
+			model = new damagedRouter2D(params); 
+
+			int count = 0;
+			ht        = new Histogram(1.);
+			// equilibrate
+			while(count < teql){
+				model.step(1,false,ht);
+				if((count++ % 500) == 0){
+					params.set("t", model.getT()-teql);
+					params.set("messages",model.getNmsg());
+					Job.animate();
 				}
+			}
+
+			count = 0;
+			int[] ts  = new int[tmax];
+			hN = new Histogram(1.);
+			ht = new Histogram(1.);
+			// simulate model for data
+			while(count < tmax){
+				model.step(1,false,ht);
+				hN.accum(model.getNmsg());
+				ts[count] = model.getNmsg();
+				if((count++ % 500) == 0){ 
+					params.set("t", model.getT());
+					params.set("messages",model.getNmsg());
+					Job.animate();
+				}
+			}
+			printData(pp, hN, ht, ts);
+
+			if(pp < 0.1){
+				pp = Math.round(100*(pp+0.01))/100.; 
+			}
+			else if(pp < 0.2){
+				pp = Math.round(100*(pp+0.1))/100.; 
+			}
+			else{
+				pp = Math.round(100*(pp+0.2))/100.; 
 			}
 		}
 	}
 
-	private void printData(int x, int y, int z){
-		String f1 = pth + File.separator + fout+"_nhist" +ifmt.format(x) +"_"+ifmt.format(y) +"_"+ifmt.format(z) +".txt";
-		String f2 = pth + File.separator + fout+"_thist" +ifmt.format(x) +"_"+ifmt.format(y) +"_"+ifmt.format(z) +".txt";
 
-		PrintUtil.printHistToFile(f1, ht);
-		PrintUtil.printHistToFile(f2, hN);					
+	private void printData(double pp, Histogram h1, Histogram h2, int[] v){
+		String f1 = pth + File.separator + fout+"_nhist_" +ifmt.format(100*pp)+".txt";
+		String f2 = pth + File.separator + fout+"_thist_" +ifmt.format(100*pp)+".txt";
+		String f3 = pth + File.separator + fout+"_tsers_" +ifmt.format(100*pp)+".txt";
+
+		PrintUtil.printHistToFile(f1, h1);
+		PrintUtil.printHistToFile(f2, h2);	
+		PrintUtil.printVectorToFile(f3,v);
 		return;
 	}
 }

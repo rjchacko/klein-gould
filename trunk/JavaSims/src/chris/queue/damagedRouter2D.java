@@ -76,6 +76,8 @@ public class damagedRouter2D extends router2D{
 			}
 			tmp /= N;
 			for (int kk = 0 ; kk < N ; kk++){
+				if(dn[kk])
+					continue;
 				// use loop to calculate metric (PART II)
 				if(takeData)
 					omega += (nbar[kk]-tmp)*(nbar[kk]-tmp);
