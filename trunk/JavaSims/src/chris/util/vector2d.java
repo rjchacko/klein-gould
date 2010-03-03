@@ -1,18 +1,18 @@
 package chris.util;
 
 
+/**
+ * A 2-element vector that is represented by double-precision floating point 
+ * <code>(x<sub>1</sub>,x<sub>2</sub>)</code> coordinates.  The vector is 
+ * assumed to live in <code>E<sup>2</sup></code>. If this value represents a 
+ * normal, then it should be normalized.
+ * 
+ * Based on K. Barros's Tuple3d from SciKit
+ *
+ */
 public class vector2d {
 
 	/**
-	 * A 2-element vector that is represented by double-precision floating point 
-	 * x,y,z coordinates.  The vector is assumed to live in E^2. 
-	 * If this value represents a normal, then it should be normalized.
-	 * 
-	 * Based on K. Barros's Tuple3d from SciKit
-	 *
-	 */
-	
-    /**
      * The x_1 coordinate.
      */
     public	double	x;
@@ -23,6 +23,11 @@ public class vector2d {
     public	double	y;
 
 
+    /*	====================================================================================
+     * 		CONSTRUCTORS
+     * 	====================================================================================
+     */    
+    
     /**
      * Constructs and initializes a vector2d from the specified xy coordinates.
      * @param x the x coordinate
@@ -63,6 +68,107 @@ public class vector2d {
 	this.y = (double) 0.0;
     }
 
+    
+    /*	====================================================================================
+     * 		STATIC METHODS
+     * 	====================================================================================
+     */
+    
+    /**
+     * Returns the vector difference sum vector1 and vector2. 
+     * 
+     * @param v1 the first vector
+     * @param v2 the second vector
+     * @return the vector v1 + v2
+     */
+    public static final vector2d add(vector2d v1, vector2d v2)
+    {
+    	
+    	return new vector2d(v1.x+v2.x,v1.y+v2.y);
+    }
+    
+    /**
+     * Returns the vector difference between vector1 and vector2. 
+     * 
+     * @param v1 the first vector
+     * @param v2 the second vector
+     * @return the vector v1 - v2
+     */
+    public static final vector2d sub(vector2d v1, vector2d v2)
+    {
+    	
+    	return new vector2d(v1.x-v2.x,v1.y-v2.y);
+    }
+    
+    
+    /**
+     * Sets the value of this vector2d to the negation of vector2d v.
+     * @param v the source tuple
+     */
+    public static final vector2d negate(vector2d v)
+    {
+    	return(new vector2d(-v.x,-v.y));
+    }
+
+    
+    /**
+     * Returns the vector after scalar multiplication. 
+     * 
+     * @param v the first vector
+     * @param s the scalar
+     * @return the vector s * v1
+     */
+    
+    public static final vector2d scale(vector2d v, double s)
+    {
+    	
+    	return new vector2d(s*v.x,s*v.y);
+    }
+    
+    
+    /**
+     * Returns a string that contains the values of this Tuple3d.
+     * The form is (x,y).\
+     * @param v the vector
+     * @return the String representation
+     */  
+    public static final String toString(vector2d v) {
+        return "(" + v.x + ", " + v.y + ")";
+    }
+
+
+
+   /**
+     * Returns true if the vectors are equal, element by element.
+     * Returns false otherwise.
+     * @param v1 the first vector
+     * @param v2 the second vector
+     * @return  true or false
+     */  
+    public static final boolean equals(vector2d v1, vector2d v2)
+    {
+      try {
+        return(v1.x == v2.x && v1.y == v2.y);
+      }
+      catch (NullPointerException e2) {return false;}
+    }
+    
+	/**
+	 * Returns the dot product (using a Euclidean metric) of vector v1 and v2.
+	 * @param v1 the first vector
+	 * @param v2 the second vector
+	 * @return the dot product of v1 and v2
+	 */
+	public static final double dot(vector2d v1, vector2d v2){
+		
+		return v1.x*v2.x + v1.y*v2.y;
+	}
+    /*	====================================================================================
+     * 		PUBLIC SET / GET METHODS 
+     * 	====================================================================================
+     */
+    
+    
     /**
      * Sets the value of this vector2d to the specified xy coordinates.
      * @param x the x coordinate
@@ -119,140 +225,6 @@ public class vector2d {
 
 
     /**
-     * Sets the value of this tuple to the sum of vector2d v1 and v2.
-     * @param v1 the first vector2d
-     * @param v2 the second vector2d
-     */
-    public final void add(vector2d v1, vector2d v2)
-    {
-	this.x = v1.x + v2.x;
-	this.y = v1.y + v2.y;
-    }
-
-
-    /**  
-     * Sets the value of this tuple to the sum of itself and v.
-     * @param v the other vector2d
-     */  
-    public final void add(vector2d v)
-    { 
-        this.x += v.x;
-        this.y += v.y;
-    }
-
-    /**
-     * Sets the value of this vector2d to the difference of vector2ds
-     * v1 and v2 (this = v1 - v2).
-     * @param v1 the first tuple
-     * @param v2 the second tuple
-     */
-    public final void sub(vector2d v1, vector2d v2)
-    {
-	this.x = v1.x - v2.x;
-	this.y = v1.y - v2.y;
-    }
-    
- 
-    /**  
-     * Sets the value of this vector2d to the difference
-     * of itself and v (this = this - v).
-     * @param v the other tuple
-     */  
-    public final void sub(vector2d v)
-    { 
-        this.x -= v.x;
-        this.y -= v.y;
-    }
-
-
-    /**
-     * Sets the value of this vector2d to the negation of vector2d v.
-     * @param v the source tuple
-     */
-    public final void negate(vector2d v)
-    {
-	this.x = -v.x;
-	this.y = -v.y;
-    }
-
-
-    /**
-     * Negates the value of this vector2d in place.
-     */
-    public final void negate()
-    {
-	this.x = -this.x;
-	this.y = -this.y;
-    }
-
-
-    /**
-     * Sets the value of this vector2d to the scalar multiplication
-     * of tuple vector2d.
-     * @param s the scalar value
-     * @param t1 the source tuple
-     */
-    public final void scale(double s, vector2d v)
-    {
-	this.x = s*v.x;
-	this.y = s*v.y;
-    }
-
-
-    /**
-     * Sets the value of this vector2d to the scalar multiplication
-     * of itself.
-     * @param s the scalar value
-     */
-    public final void scale(double s)
-    {
-        this.x *= s;
-        this.y *= s;
-    }
-
-
-   /**
-     * Returns a string that contains the values of this Tuple3d.
-     * The form is (x,y,z).
-     * @return the String representation
-     */  
-    public String toString() {
-        return "(" + this.x + ", " + this.y + ")";
-    }
-
-
-
-   /**
-     * Returns true if all of the data members of Tuple3d t1 are
-     * equal to the corresponding data members in this Tuple3d.
-     * @param t1  the tuple with which the comparison is made
-     * @return  true or false
-     */  
-    public boolean equals(vector2d v)
-    {
-      try {
-        return(this.x == v.x && this.y == v.y);
-      }
-      catch (NullPointerException e2) {return false;}
-    }
-
-  
-  public final void abs(vector2d v)
-  {
-       x = Math.abs(v.x);
-       y = Math.abs(v.y);
-  } 
-
-
-   
-  public final void abs()
-  {
-     x = Math.abs(x);
-     y = Math.abs(y);
-  }
-
-
-    /**
 	 * Get the <i>x_1</i> coordinate.
 	 * 
 	 * @return the <i>x_1</i> coordinate.
@@ -290,6 +262,93 @@ public class vector2d {
 		this.y = y;
 	}
 	
+    
+	 /*	====================================================================================
+     * 		PUBLIC MATHEMATICAL MANIPULATION METHODS 
+     * 	====================================================================================
+     */
+    
+    
+    /**  
+     * Sets the value of this tuple to the sum of itself and v.
+     * @param v the other vector2d
+     */  
+    public final void add(vector2d v)
+    { 
+        this.x += v.x;
+        this.y += v.y;
+    }
+
+    /**
+     * Sets the value of this vector2d to the difference of vector2ds
+     * v1 and v2 (this = v1 - v2).
+     * @param v1 the first tuple
+     * @param v2 the second tuple
+     */
+    
+ 
+    /**  
+     * Sets the value of this vector2d to the difference
+     * of itself and v (this = this - v).
+     * @param v the other tuple
+     */  
+    public final void sub(vector2d v)
+    { 
+        this.x -= v.x;
+        this.y -= v.y;
+    }
+
+
+    /**
+     * Negates the value of this vector2d in place.
+     */
+    public final void negate()
+    {
+	this.x = -this.x;
+	this.y = -this.y;
+    }
+
+
+    /**
+     * Sets the value of this vector2d to the scalar multiplication
+     * of tuple vector2d.
+     * @param s the scalar value
+     * @param v the source tuple
+     */
+    public final void scale(double s, vector2d v)
+    {
+	this.x = s*v.x;
+	this.y = s*v.y;
+    }
+
+
+    /**
+     * Sets the value of this vector2d to the scalar multiplication
+     * of itself.
+     * @param s the scalar value
+     */
+    public final void scale(double s)
+    {
+        this.x *= s;
+        this.y *= s;
+    }
+
+
+   /**
+     * Returns true if all of the data members of Tuple3d t1 are
+     * equal to the corresponding data members in this Tuple3d.
+     * @param t1  the tuple with which the comparison is made
+     * @return  true or false
+     */  
+    public boolean equals(vector2d v)
+    {
+      try {
+        return(this.x == v.x && this.y == v.y);
+      }
+      catch (NullPointerException e2) {return false;}
+    }
+
+
 	/**
 	 * Returns the dot product (using a Euclidean metric) of this vector and vector v1.
 	 * @param v the other vector
@@ -364,43 +423,19 @@ public class vector2d {
     	this.y = -Math.sin(theta)*cpx + Math.cos(theta)*cpy;
     }
     
-    /**
-     * Returns the vector difference between vector1 and vector2. 
-     * 
-     * @param v1 the first vector
-     * @param v2 the second vector
-     * @return the vector v1 - v2
+	 /*	====================================================================================
+     * 		PUBOIC I/O METHODS 
+     * 	====================================================================================
      */
-    public static final vector2d subtract(vector2d v1, vector2d v2)
-    {
-    	
-    	return new vector2d(v1.x-v2.x,v1.y-v2.y);
-    }
     
     /**
-     * Returns the vector difference sum vector1 and vector2. 
-     * 
-     * @param v1 the first vector
-     * @param v2 the second vector
-     * @return the vector v1 + v2
-     */
-    public static final vector2d addition(vector2d v1, vector2d v2)
-    {
-    	
-    	return new vector2d(v1.x+v2.x,v1.y+v2.y);
+     * Returns a string that contains the values of this Tuple3d.
+     * The form is (x,y).
+     * @return the String representation
+     */  
+    public String toString() {
+        return "(" + this.x + ", " + this.y + ")";
     }
     
-    /**
-     * Returns the vector after scalar multiplication. 
-     * 
-     * @param v the first vector
-     * @param s the scalar
-     * @return the vector s * v1
-     */
-    public static final vector2d addition(vector2d v, double s)
-    {
-    	
-    	return new vector2d(s*v.x,s*v.y);
-    }
     
 }
