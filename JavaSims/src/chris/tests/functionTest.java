@@ -7,13 +7,15 @@ import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
+import scikit.jobs.params.ChoiceValue;
 import chris.MD.TwoD.LennardJones;
 
 public class functionTest extends Simulation{
 
-	private Plot Vplot = new Plot("Potential");
-	private Plot Fplot = new Plot("Force");
-	private PointSet V, F;
+	private Plot Vplot  = new Plot("Potential");
+	private Plot Fplot1 = new Plot("Force Num. Der.");
+	private Plot Fplot2 = new Plot("Force Hard Coded");
+	private PointSet V, F1, F2;
 	
 	// for L-J potential
 	private LennardJones lj;
@@ -26,21 +28,33 @@ public class functionTest extends Simulation{
 	public void animate() {
 		
 		int N = 10000;
-		double[] r   = new double[N];
-		double[] phi = new double[N];
-		double[] Frc = new double[N];
+		double rmin = 1.999;
+		double rmax = 2.001;
+		double[] r   = new double[N+1];
+		double[] phi = new double[N+1];
+		double[] Frc = new double[N+1];
+		double[] dph = new double[N+1];
+
 		
-		for(int jj = 0 ; jj < N ; jj++){
-			r[jj]   =jj*1.6*params.fget("\u03C3")/N + 0.9;
-			phi[jj] = lj.potential(r[jj]);
-			Frc[jj] = lj.force(r[jj],0).x;
+		for(int jj = 0 ; jj < N+1 ; jj++){
+			r[jj]   =jj*(rmax-rmin)*params.fget("\u03C3")/N + rmin;
+			phi[jj] = lj.potentialR2(r[jj]*r[jj]);
+//			Frc[jj] = lj.force(r[jj]).x;
 		}
+		for(int jj = 1 ; jj < N ; jj++){
+			dph[jj] = -(phi[jj+1]-phi[jj-1])/(r[jj+1]-r[jj-1]);
+		}
+		dph[0] = dph[1];
+		dph[N] = dph[N-1];
 		
 		//gEnergy = new PointSet(crd,model.gLandscape());
-		V = new PointSet(r,phi);
-		F = new PointSet(r,Frc);
+		V  = new PointSet(r,phi);
+		F1 = new PointSet(r,dph);
+		F2 = new PointSet(r,Frc);
+
 		Vplot.registerLines("Potential", V, Color.BLACK);
-		Fplot.registerLines("Force", F, Color.BLACK);
+		Fplot1.registerLines("Force", F1, Color.BLACK);
+		Fplot2.registerLines("Force", F2, Color.BLACK);
 
 		return;
 	}
@@ -52,31 +66,36 @@ public class functionTest extends Simulation{
 	public void load(Control c) {
 		
 		// for L-J potential
-		params.add("\u03C3",1.);
-		params.add("dt",1);
-		params.add("N",2);
-		params.add("Lx",2);
-		params.add("Ly",2); 
 		params.add("seed",0); 
-		params.add("Boundary Conditions","Periodic");
-		params.add("Initial Conditions","Kinetic Energy");
+		params.add("Lx",50);
+		params.add("Ly",50); 
+		params.add("Boundary Conditions", new ChoiceValue("Periodic","Closed"));
+		params.add("Initial Conditions", new ChoiceValue("Melt", "Viscous", "Copy", "Read In"));
+		params.add("ODE Solver", new ChoiceValue("Velocity Verlet","First Order Euler"));
+		params.add("N",100);
 		params.add("M",1);
-		params.add("R",1); 
+		params.add("R",1.); 
+		params.add("\u03C3",1.);
+		params.add("dt",1e-2);
+		params.addm("d\u03C4",1.);
+		params.add("t");
+		params.add("E");
+		params.add("T");
 
-		c.frameTogether("MD Potential and Force", Vplot, Fplot);
+		c.frameTogether("MD Potential and Force", Vplot, Fplot1,Fplot2);
 	}
 
 	public void run() {
 
 		lj = new LennardJones(params);
 
-		
-		System.out.println(lj.force(2.5-1./10,0).x);
-		System.out.println(lj.force(2.5-1./100,0).x);
-		System.out.println(lj.force(2.5-1./1000,0).x);
-		System.out.println(lj.force(2.5-1./10000,0).x);
-		System.out.println(lj.force(2.5-1./100000,0).x);
-		System.out.println(lj.force(2.5-1./1000000,0).x);
+		System.out.println(lj.potentialR2(2.5*2.5));
+		System.out.println(lj.potentialR2((2.5-1./10)*(2.5-1./10)));
+		System.out.println(lj.potentialR2((2.5-1./100)*(2.5-1./100)));
+		System.out.println(lj.potentialR2((2.5-1./1000)*(2.5-1./1000)));
+		System.out.println(lj.potentialR2((2.5-1./10000)*(2.5-1./10000)));
+		System.out.println(lj.potentialR2((2.5-1./100000)*(2.5-1./100000)));
+		System.out.println(lj.potentialR2((2.5-1./1000000)*(2.5-1./1000000)));
 
 		
 		while(true)
