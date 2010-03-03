@@ -1,5 +1,7 @@
 package chris.queue.Apps;
 
+import java.io.File;
+
 import scikit.dataset.Histogram;
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
@@ -10,6 +12,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.queue.router2D;
+import chris.util.PrintUtil;
 
 public class router2Dapp extends Simulation{
 
@@ -17,7 +20,8 @@ public class router2Dapp extends Simulation{
 	int L, N;
 	router2D model;
 	private final boolean draw = false;
-
+	String pth, fout;
+	
 	public static void main(String[] args) {
 		new Control(new router2Dapp(), "2D Router Network");
 	}
@@ -49,8 +53,12 @@ public class router2Dapp extends Simulation{
 
 		setupcolors(params.fget("\u03BB"),params.iget("l"));
 		
-		int tss  = (int)(1e2);
-		int tmax = (int)(2e5);
+		pth   = params.sget("Data Directory");
+		fout  = params.sget("Data File");
+		
+		
+		int tss  = 50000;
+		int tmax = 500000;
 		int t    = 0;
 		
 		while(t++ < tss){
@@ -61,18 +69,35 @@ public class router2Dapp extends Simulation{
 			}
 		}
 		t = 0;
+		int[] ts     = new int[tmax];
+		Histogram hN = new Histogram(1.);
+		Histogram ht = new Histogram(1.);
 		while(t++ < tmax){
-			model.step(1,true,foo);
+			model.step(1,false,ht);
+			hN.accum(model.getNmsg());
+			ts[t-1] = model.getNmsg();
 			if(t%1e4 ==0){
 				params.set("t",t);
 				Job.animate();
 			}
 		}
+		printData(hN, ht, ts);
 		
 		params.set("t","Done");
 		Job.signalStop();
 		Job.animate();
 		
+	}
+	
+	private void printData(Histogram h1, Histogram h2, int[] v){
+		String f1 = pth + File.separator + fout+"_nhist_.txt";
+		String f2 = pth + File.separator + fout+"_thist_.txt";
+		String f3 = pth + File.separator + fout+"_tsers_.txt";
+
+		PrintUtil.printHistToFile(f1, h1);
+		PrintUtil.printHistToFile(f2, h2);	
+		PrintUtil.printVectorToFile(f3,v);
+		return;
 	}
 	
 	private void setupcolors(double lambda, int l){
