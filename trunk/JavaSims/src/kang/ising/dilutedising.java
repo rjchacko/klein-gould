@@ -261,8 +261,8 @@ public class dilutedising extends Simulation{
 		params.add("lattice's length", 100);
 		//params.add("CGBlock's width", 1);
 		//params.add("CGBlock's length", 1);
-		params.addm("Temperature", new DoubleValue(0.57563, 0, 10).withSlider());
-		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
+		params.addm("Temperature", new DoubleValue(0.82606, 0, 10).withSlider());
+		params.addm("Field", new DoubleValue(0.2384, -2, 2).withSlider());
 		params.addm("Interaction Constant", -4);
 		
 		//params.add("Coarsegrain range", 0);
@@ -279,7 +279,7 @@ public class dilutedising extends Simulation{
 		params.add("Monte Carlo step's limit", 1000000000);
 		params.add("Metric Start at",500000000);
 		params.add("Metric points", 2000);
-		params.add("Diluted Percentage", new DoubleValue( 0.25,0,1).withSlider());
+		params.add("Diluted Percentage", new DoubleValue(0.111,0,1).withSlider());
 		params.add("run the movie", 0);
 		params.add("Interaction range", 0);
 
