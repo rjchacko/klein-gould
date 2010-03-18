@@ -74,7 +74,7 @@ public class OFC_DelayWriteApp extends Simulation{
 		params.addm("Data points per write", 1);
 		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
-		params.addm("Dissipation Param", 0.3);
+		params.addm("Dissipation Param", 0.15);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Lower Cutoff", 1);
 		params.add("L");

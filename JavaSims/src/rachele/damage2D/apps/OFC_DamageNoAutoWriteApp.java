@@ -117,7 +117,7 @@ public class OFC_DamageNoAutoWriteApp extends Simulation{
 				ofc.healStepIter();
 				Job.animate();
 			}
-			if (ofc.avSize >= ofc.lowerCutoff) 	ofc.epicenterCount[ofc.findCG_site(ofc.epicenterSite)] +=1;
+			if (ofc.avSize >= ofc.lowerCutoff) 	ofc.epicenterCount[ofc.findCG_site(ofc.epicenterSite, ofc.dx)] +=1;
 
 			int size = ofc.avSize;
 //			System.out.println(" av size = " + size + " at time " + ofc.plateUpdates);

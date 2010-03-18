@@ -22,8 +22,10 @@ public class FileUtil {
 	static public void deleteFile(String fileName){
 		File file = new File(fileName);
 		boolean success = file.delete();
+		int i=0;
 		if (success)
-			System.out.println("File " + fileName + " deleted");
+			i+=1;
+//			System.out.println("File " + fileName + " deleted");
 		else
 			System.out.println("File delete failed");			
 	}
@@ -43,6 +45,16 @@ public class FileUtil {
 			File file = new File(fileName);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.println(text + " " + data);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void printlnToFile(String fileName, String text, boolean bool){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(text + " " + bool);
 		} catch (IOException ex){
 			ex.printStackTrace();
 		}

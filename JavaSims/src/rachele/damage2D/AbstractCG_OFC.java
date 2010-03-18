@@ -25,11 +25,11 @@ public class AbstractCG_OFC {
 	public double [] stress;
 	Random random = new Random();
 	
-	public int findCG_site(int s){
+	public int findCG_site(int s, int blockSize){
 		int x = s % L;
 		int y = s / L;
-		int xp = x / dx;
-		int yp = y / dx;
+		int xp = x / blockSize;
+		int yp = y / blockSize;
 		int cgSite = yp *Lp + xp;
 		return cgSite;
 	}
