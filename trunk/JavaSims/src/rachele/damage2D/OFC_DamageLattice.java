@@ -1,7 +1,10 @@
 package rachele.damage2D;
 
+import java.io.File;
+
 import scikit.jobs.params.Parameters;
 import scikit.util.DoubleArray;
+import rachele.util.FileUtil;
 
 /**
 * Extention of OFC_Lattice.  Probably will replace OFC_Lattice-- 
@@ -31,6 +34,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public double [] CG_ActivityTimeAve;
 	public double [] CG_SizeActTimeAve;
 	public double [] CG_StressTimeAve;
+	
 	public double [] CG_Stress;
 	boolean [] failList;  // Temporary list of failures
 	public int [] noFails;  // No of failures at each site: once a site is dead -> = -1;
@@ -43,22 +47,38 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public int [] cgFailCount; //Counts 1 in a cg block if there is any site that fails in that block.
 	public int [] epicenterSize;
 	
+	public int noLiveSites; //For frozen damage mode only
+	public int [] liveSiteLocs; // size = noLiveSites
+	
+	public String infoFileName;
+	boolean deadStrip;
+	boolean randomBlockDamage;
+	String mode;
+	String damageType;
+	double maxPercentDamage;
+	double [] cgBlockDamage;
+	
 	public OFC_DamageLattice(Parameters params, String mode) {
+		infoFileName = params.sget("Data Dir") + File.separator + "info.txt";
+		FileUtil.initFile(infoFileName, params);
+		FileUtil.printlnToFile(infoFileName, "Runlog for OFC_DamageLattice");
 		setParameters(params, mode);
 		initLattice(mode);
 	}
 	
 	public void setParameters(Parameters params, String mode) {
-		System.out.println("Setting params");
+	
+		FileUtil.printlnToFile(infoFileName, "Setting params");
 		meanMaxFail = params.iget("Mean Max Failures");
 		noiseMaxFail = params.iget("Failures Max Noise");
 		if(mode == "healFrozen"){
 			meanHealTime = params.iget("Mean Heal Time");
-			System.out.println("mean heal time = " + meanHealTime);
+			FileUtil.printlnToFile(infoFileName, "mean heal time = " , meanHealTime);
 			noiseHealTime = params.iget("Heal Time Noise");
 		}else if(mode == "healProb"){
 			healProb = params.fget("Heal Probability");
 		}
+		maxPercentDamage = params.fget("Max Percent Damage");
 //		if (meanMaxFail == 0) deadMode = false;
 //		else deadMode = true;
 		deadMode = true;
@@ -93,9 +113,10 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		
 		lowerCutoff = params.iget("Lower Cutoff");
 		initPercentDead = params.fget("Init Percent Dead");
+		damageType = params.sget("Type of Damage");
 	}
 	
-	public void initLattice(String mode){
+	public void initLattice(String importMode){
 		System.out.println("Initializing lattice");
 		stress = new double [N];
 		stressTimeAve = new double [N];
@@ -110,68 +131,92 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		failList = new boolean [N];
 		noFails = new int [N];
 		maxNoFails = new int [N];
-		if(mode == "healFrozen"){
+		mode=importMode;
+		if(mode == "healFrozen")
 			healTime = new int [N];
-		}
 		noNborsForSite = new int [N];
 		maxNbors = findMaxNoNbors();	
 		System.out.println("max no nbors = " + maxNbors);
-		if(interactionTopology == "Circle"){
+		FileUtil.printlnToFile(infoFileName, "max no nbors = " , maxNbors);
+		if(interactionTopology == "Circle")
 			nborList = new int [N][maxNbors];						
-		}
 
 		findNbors();
 		noDeadSites = 0;
+		noLiveSites = N;
 		
 		System.out.println("Setting max fails, heal times, and noFails");
+		FileUtil.printlnToFile(infoFileName, "Setting max fails, heal times, and noFails");
 		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;
 			stressTimeAve[i] = stress[i];
 			failList[i] = false;
-
+			maxNoFails[i] = meanMaxFail;	
 			CG_StressTimeAve[i] = 0;
-			if(deadMode){
+//			FileUtil.printlnToFile(infoFileName, "deadmode = ", deadMode);
+//			if(deadMode){
+////				maxNoFails[i] = meanMaxFail;									
+//				maxNoFails[i] = meanMaxFail + (int)(random.nextDouble()*(double)(2*noiseMaxFail+1))-noiseMaxFail;
+//				if(mode == "healFrozen") healTime[i] = meanHealTime +  (int)(random.nextDouble()*(double)(2*noiseHealTime+1))-noiseHealTime;
+////				if (i<L) System.out.println("no of fails = " + maxNoFails[i]);
+//			}else{
 //				maxNoFails[i] = meanMaxFail;									
-				maxNoFails[i] = meanMaxFail + (int)(random.nextDouble()*(double)(2*noiseMaxFail+1))-noiseMaxFail;
-				if(mode == "healFrozen") healTime[i] = meanHealTime +  (int)(random.nextDouble()*(double)(2*noiseHealTime+1))-noiseHealTime;
-//				if (i<L) System.out.println("no of fails = " + maxNoFails[i]);
-			}else{
-				maxNoFails[i] = meanMaxFail;									
-			}
-//			noFails[i] = 0;
-			
-			if(random.nextDouble() > initPercentDead){
-				//the site is alive
-				//assign no of fails uniformly between 0 and maxNoFails - 1
-				noFails[i] = (int)(random.nextDouble()*((double)maxNoFails[i]+1.0));
-//				System.out.println(i + " alive maxNoFails = " + maxNoFails[i] + " noFails = " + noFails[i]);
-			}else{
-				//the site is dead
-				noDeadSites+=1;
-				//assign a heal time uniformly between -1 and -healtime+1
-				if(mode == "healFrozen"){
-					noFails[i] = -((int)(random.nextDouble()*(double)(healTime[i]-1))+1);
-					System.out.println(i + " dead healTime = " + healTime[i] + " noFails = " + noFails[i]);
+//			}
+////			noFails[i] = 0;
+		}
+		
+		//Choose one type of damage
+		if(damageType=="Random"){
+			for(int i = 0; i < N; i++){
+				if(random.nextDouble() > initPercentDead){
+					setSite(i);
 				}else{
-					noFails[i] = -1;
+					killSite(i);
 				}
 			}
+		}else if(damageType=="Dead Strip"){
+			int width = (int)(L*initPercentDead);
+			for(int i  = 0; i < N; i++){
+				int y = i%L;
+				if(y < width){
+					killSite(i);
+				}else{
+					setSite(i);
+				}
+			}
+		}else if (damageType=="Random + Dead Strip"){
+			System.out.println("Error!");
+		}else if(damageType=="Random Blocks"){
+			int damageBlockSize = 8;
+			FileUtil.printlnToFile(infoFileName, "Damage block size", damageBlockSize);
+			double [] damageBlockDamage = new double [damageBlockSize*damageBlockSize];
+			for (int j = 0; j < damageBlockSize*damageBlockSize; j++){
+				//assign a random amount of damage
+				//half of blocks have no damage
+				damageBlockDamage[j] = random.nextGaussian()*0.2;
+				System.out.println("damage = " + j + " "+ damageBlockDamage[j]);
+			}
+			for (int i = 0; i < N; i++){
+				int block = findCG_site(i, damageBlockSize);
+				if (random.nextDouble() < damageBlockDamage[block]){
+					killSite(i);
+				}else{
+					setSite(i);
+				}
+			}
+			//find block damage for cged blocks
+			cgBlockDamage = new double [Np];
+			for (int i = 0; i < N; i++)
+				if (noFails[i]<0) cgBlockDamage[findCG_site(i,dx)] +=1.0;	
+			for (int j = 0; j < Np; j++)
+				cgBlockDamage[j] /= (double)(dx*dx);
 			
-//			//insert some dead sites
-//			if(i < L*L/8){
-//				//the site is dead
-//				noDeadSites+=1;
-//				//assign a heal time uniformly between -1 and -healtime+1
-//				if(mode == "healFrozen"){
-//					noFails[i] = -((int)(random.nextDouble()*(double)(healTime[i]-1))+1);
-//					System.out.println(i + " dead healTime = " + healTime[i] + " noFails = " + noFails[i]);
-//				}else{
-//					noFails[i] = -1;
-//				}
-//			}
-	
-
+		}else{
+			System.out.println("Error!");	
 		}
+			
+		liveSiteLocs = new int [noLiveSites];
+
 		for (int i = 0; i < Np; i++){
 			epicenterCount[i] = 0;
 			CG_ActivityTimeAve[i] = 0;
@@ -180,6 +225,25 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		cg_time = 0;
 		plateUpdates = 0;
 
+	}
+	
+	void killSite(int site){
+		noDeadSites+=1;
+		noLiveSites-=1;
+		//assign a heal time uniformly between -1 and -healtime+1
+		if(mode == "healFrozen"){
+			noFails[site] = -((int)(random.nextDouble()*(double)(healTime[site]-1))+1);
+			System.out.println(site + " dead healTime = " + healTime[site] + " noFails = " + noFails[site]);
+		}else{
+			noFails[site] = -1;
+		}
+	}
+	
+	void setSite(int site){
+		//the site is alive
+		//assign no of fails uniformly between 0 and maxNoFails - 1
+		noFails[site] = (int)(random.nextDouble()*((double)maxNoFails[site]+1.0));
+//		System.out.println(i + " alive maxNoFails = " + maxNoFails[i] + " noFails = " + noFails[i]);
 	}
 	
 	public void findNbors(){
@@ -331,7 +395,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	
 	public void cgEpicenterSizeAccum(){
 		if (avSize >= lowerCutoff){
-			int cgSite = findCG_site(epicenterSite);
+			int cgSite = findCG_site(epicenterSite, dx);
 			epicenterCount[cgSite] +=1;
 			epicenterSize[cgSite] += avSize;
 		}
@@ -528,7 +592,28 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	}
 
 	/**
-	* Only includes sites that are alive in the metric calculation
+	* Calculate the coarse grained stress metric using all sites (dead or alive).  Fixed to CG in space and time.
+	*/
+	public double calcCG_stressMetric(){
+		double del_t = cg_time - lastCG_StressRecordTime;
+		//		double [] cgStressConfig = findCG_StressConfig();
+		CG_Stress = findCG_StressConfig();
+		// accumulate the most recent time step into the time ave
+		for (int i = 0; i < Np; i++)
+			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*CG_Stress[i]) / (cg_time);
+		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)Np;
+		double CG_metric = 0;
+		//take the space ave
+		for (int i = 0; i < Np; i++){
+			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
+		}
+		CG_metric /= (double)Np;
+		lastCG_StressRecordTime = cg_time;
+		return CG_metric; 
+	}
+	
+	/**
+	* Calculate the stress metric using only sites that are alive
 	*/
 	public double calcLiveStressMetric(){
 		double del_t = cg_time -lastRecordTime;
@@ -548,33 +633,69 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			if(noFails[i] >= 0) metricSum += Math.pow(stressTimeAve[i] - spaceTimeStressAve, 2);
 		}
 		double stressMetric = metricSum/(double)noAlive;
+//		System.out.println("no alive = " + noAlive);
 		lastRecordTime = cg_time;
 		return stressMetric;
 	}
 	
-	//fixed to CG in space and time
-	public double calcCG_stressMetric(){
+	/**
+	* Calculate the coarse grained stress metric using only sites that are alive.
+	*/
+	public double calcLiveCG_stressMetric(){
 		double del_t = cg_time - lastCG_StressRecordTime;
-		//		double [] cgStressConfig = findCG_StressConfig();
-		CG_Stress = findCG_StressConfig();
-		// accumulate the most recent time step into the time ave
-		for (int i = 0; i < Np; i++)
-			CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*CG_Stress[i]) / (cg_time);
-		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)Np;
-		double CG_metric = 0;
-		//take the space ave
+		CG_Stress = findCG_StressConfigNoDead();
+		int noLiveCgedBlocks = 0;
 		for (int i = 0; i < Np; i++){
-			CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
+			if(CG_Stress[i]!=0){
+				CG_StressTimeAve[i] = (lastCG_StressRecordTime*CG_StressTimeAve[i] + del_t*CG_Stress[i]) / (cg_time);
+				noLiveCgedBlocks+=1;
+			}
 		}
-		CG_metric /= (double)Np;
+		double CG_SpaceAve = DoubleArray.sum(CG_StressTimeAve)/(double)noLiveCgedBlocks;
+		double CG_metric = 0;
+		for (int i = 0; i < Np; i++){
+			if(CG_Stress[i]!=0){
+				CG_metric += Math.pow(CG_StressTimeAve[i] - CG_SpaceAve,2);
+			}
+		}
+		CG_metric /= (double)noLiveCgedBlocks;
 		lastCG_StressRecordTime = cg_time;
 		return CG_metric; 
+	}
+
+	/**
+	* Find the average stress on each coarse grained block.  
+	* If sites are dead, they do not contribute to the average.
+	* If all sites in a coarse grained block are dead, then the 
+	* coarse grained block itself is dead- the average stress is zero
+	*  and it is not included in the 
+	* final coarse grained stress metric calculation.  
+	* 
+	* This is pretty weird and needs to be thought about if used for something important:
+	* why should one block with one live site be worth the same as one block with all live sites.
+	* Unequal weighting because we take a average of stresses.
+	*/
+	public double [] findCG_StressConfigNoDead(){
+		double [] cgSpaceStressConfig = new double [Np];
+		int [] noLiveSitesInBlock = new int [Np];
+		for(int i = 0; i < N; i++){
+			if(noFails[i] >= 0){//only add stress for live sites
+				int cgSite = findCG_site(i, dx);
+				cgSpaceStressConfig[cgSite] += stress[i];
+				noLiveSitesInBlock[cgSite] += 1;
+			}
+		}
+		for(int cgSite = 0; cgSite < Np; cgSite++){
+			if(noLiveSitesInBlock[cgSite]!=0)
+				cgSpaceStressConfig[cgSite] /= (double) noLiveSitesInBlock[cgSite];
+		}
+		return cgSpaceStressConfig;
 	}
 	
 	public double [] findCG_StressConfig(){
 		double [] cgSpaceStressConfig = new double [Np];
 		for(int i = 0; i < N; i++){
-			int cgSite = findCG_site(i);
+			int cgSite = findCG_site(i, dx);
 			cgSpaceStressConfig[cgSite] += stress[i];
 		}
 		int cgBoxSize = N/Np;
@@ -603,7 +724,12 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 
 		}
 	}
+
+
 	
+	/**
+	* Calculate the coarse grained activity metric using all sites (dead or alive).
+	*/
 	public double calcCG_activityMetric(){
 		double del_t = cg_time - lastCG_RecordTime;
 //		System.out.println("del_t = " + del_t + " cg_time = " + cg_time + " lasCG_recordTime = " + lastCG_RecordTime);
@@ -625,6 +751,141 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		return CG_metric; 
 	}
 
+	/**
+	* Calculate the coarse grained activity metric using only alive coarse grained sites.
+	* Add up all hits in each coarse grained box.
+	* If there are boxes with no hits, do not include them in the 
+	* metric calculation.
+	* We calculate the activity time average at each step, but we do not include
+	* boxes in the metric calculation that do not have any hits.
+	* 
+	* There is a problem for dt too small- get large no: divide by zero?
+	*/
+	public double calcLiveCG_activityMetric(){
+		double del_t = cg_time - lastCG_RecordTime;
+		for (int i = 0; i < Np; i++){
+			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*epicenterCount[i]) / (cg_time);
+		}
+		int noCgBoxesWithHits = 0;
+		double CG_SpaceAve = 0;
+		for (int i = 0; i < Np; i++){
+			if(epicenterCount[i] !=0){
+				noCgBoxesWithHits += 1;
+				CG_SpaceAve += CG_ActivityTimeAve[i];
+			}
+		}
+//		System.out.println(" no of cg boxes with hits " + noCgBoxesWithHits);
+		CG_SpaceAve /=(double) noCgBoxesWithHits;
+//		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
+		double CG_metric = 0;
+
+		for (int i = 0; i < Np; i++){
+			if(epicenterCount[i] !=0){
+				CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
+			}
+		}
+		CG_metric /= (double)noCgBoxesWithHits;
+		lastCG_RecordTime = cg_time;
+		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
+		return CG_metric; 
+	}
+	
+	/**
+	* Calculate the coarse grained size-activity metric using alive sites only.
+	*/
+	public double calcLiveCG_sizeActMetric(){
+		double del_t = cg_time - lastCG_SizeActRecordTime;
+		for (int i = 0; i < Np; i++){
+			CG_SizeActTimeAve[i] = (lastCG_SizeActRecordTime*CG_SizeActTimeAve[i] + del_t*epicenterSize[i]) / (cg_time);
+		}
+		int noCgBoxesWithHits = 0;
+		double CG_SpaceAve = 0;
+		for (int i = 0; i < Np; i++){
+			if(epicenterSize[i] !=0){
+				noCgBoxesWithHits += 1;
+				CG_SpaceAve += CG_SizeActTimeAve[i];
+			}
+		}
+		CG_SpaceAve /=(double) noCgBoxesWithHits;
+		double CG_metric = 0;
+		for (int i = 0; i < Np; i++){
+			if(epicenterSize[i] !=0){
+				CG_metric += Math.pow(CG_SizeActTimeAve[i] - CG_SpaceAve,2);
+			}
+		}
+		CG_metric /= (double)noCgBoxesWithHits;
+		lastCG_SizeActRecordTime = cg_time;
+		for (int i = 0; i < Np; i++) epicenterSize[i] = 0;
+		return CG_metric; 
+	}
+	
+	public double calcUndamagedCG_activityMetric(){
+		double blockDamageTolerance = maxPercentDamage;
+		double del_t = cg_time - lastCG_RecordTime;
+		for (int i = 0; i < Np; i++){
+			CG_ActivityTimeAve[i] = (lastCG_RecordTime*CG_ActivityTimeAve[i] + del_t*epicenterCount[i]) / (cg_time);
+		}
+		int noCgBoxesWithHits = 0;
+		double CG_SpaceAve = 0;
+		for (int i = 0; i < Np; i++){
+			if(cgBlockDamage[i] < blockDamageTolerance){
+				noCgBoxesWithHits += 1;
+				CG_SpaceAve += CG_ActivityTimeAve[i];
+			}
+		}
+//		System.out.println(" no of cg boxes with hits " + noCgBoxesWithHits);
+		CG_SpaceAve /=(double) noCgBoxesWithHits;
+//		double CG_SpaceAve = DoubleArray.sum(CG_ActivityTimeAve)/(double)Np;
+		double CG_metric = 0;
+
+		for (int i = 0; i < Np; i++){
+			if(cgBlockDamage[i] < blockDamageTolerance){
+				CG_metric += Math.pow(CG_ActivityTimeAve[i] - CG_SpaceAve,2);
+			}
+		}
+		CG_metric /= (double)noCgBoxesWithHits;
+//		System.out.println("max no nbors = " + noCgBoxesWithHits);
+		lastCG_RecordTime = cg_time;
+		for (int i = 0; i < Np; i++) epicenterCount[i] = 0;
+		return CG_metric; 
+
+	}
+	
+	/**
+	* Calculate the coarse grained size-activity metric using alive sites only.
+	*/
+	public double calcUndamagedCG_sizeActMetric(){
+		double blockDamageTolerance = maxPercentDamage;
+		double del_t = cg_time - lastCG_SizeActRecordTime;
+		for (int i = 0; i < Np; i++){
+			CG_SizeActTimeAve[i] = (lastCG_SizeActRecordTime*CG_SizeActTimeAve[i] + del_t*epicenterSize[i]) / (cg_time);
+		}
+		int noCgBoxesWithHits = 0;
+		double CG_SpaceAve = 0;
+		for (int i = 0; i < Np; i++){
+			if(cgBlockDamage[i] < blockDamageTolerance){
+				noCgBoxesWithHits += 1;
+				CG_SpaceAve += CG_SizeActTimeAve[i];
+			}
+		}
+		CG_SpaceAve /=(double) noCgBoxesWithHits;
+		double CG_metric = 0;
+		for (int i = 0; i < Np; i++){
+			if(cgBlockDamage[i] < blockDamageTolerance){
+				CG_metric += Math.pow(CG_SizeActTimeAve[i] - CG_SpaceAve,2);
+			}
+		}
+		CG_metric /= (double)noCgBoxesWithHits;
+		lastCG_SizeActRecordTime = cg_time;
+		for (int i = 0; i < Np; i++) epicenterSize[i] = 0;
+		if(plateUpdates <= 2*dt) FileUtil.printlnToFile(infoFileName, "No of coarse grained boxes with hits = ", noCgBoxesWithHits);
+		return CG_metric; 
+	}
+	
+	
+	/**
+	* Calculate the coarse grained size-activity metric using all sites (dead or alive).
+	*/
 	public double calcCG_sizeActMetric(){
 		double del_t = cg_time - lastCG_SizeActRecordTime;
 		for (int i = 0; i < Np; i++){
@@ -709,6 +970,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		double stressPerNbor = ((1-dissParam)*(stress[s] - rStressWithNoise))/(double)noNbors;
 		return stressPerNbor;
 	}
+
 	
 	
 	

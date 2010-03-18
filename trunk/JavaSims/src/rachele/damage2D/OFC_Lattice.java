@@ -202,7 +202,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 			}
 		}
 		if (avSize >= lowerCutoff){
-			int cgSite = findCG_site(epicenterSite);
+			int cgSite = findCG_site(epicenterSite, dx);
 			epicenterCount[cgSite] +=1;
 			epicenterSize[cgSite] += avSize;
 		}
@@ -303,7 +303,7 @@ public class OFC_Lattice extends AbstractCG_OFC{
 	public double [] findCG_StressConfig(){
 		double [] cgSpaceStressConfig = new double [Np];
 		for(int i = 0; i < N; i++){
-			int cgSite = findCG_site(i);
+			int cgSite = findCG_site(i, dx);
 			cgSpaceStressConfig[cgSite] += stress[i];
 		}
 		int cgBoxSize = N/Np;
