@@ -37,9 +37,9 @@ public class fastDamageApp extends Simulation{
 		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
 		params.add("Interaction Radius (R)", (int) 10);
 		params.add("Lattice Size", (int) 256);
-		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
-		params.add("Equil Time", 500000);
-		params.add("Sim Time", 500000);
+		params.add("Boundary Condtions", new ChoiceValue("Open","Periodic"));
+		params.add("Equil Time", 100000);
+		params.add("Sim Time", 100000);
 		params.add("Number of Lives",(int) 5);
 		params.add("NL width", (int) 0);
 		params.add("Failure Stress (\u03C3_f)", 2.);
@@ -49,7 +49,7 @@ public class fastDamageApp extends Simulation{
 		params.add("Dissipation (\u03B1)", 0.05);
 		params.add("\u03B1 width", 0.);
 		params.add("Animate", new ChoiceValue("Off","Draw","Record"));
-		params.add("Status");
+		params.add("Mode");
 		params.add("Dead Sites");
 		
 		gridS = new Grid("Stress");
@@ -62,7 +62,7 @@ public class fastDamageApp extends Simulation{
 	public void run() {
 				
 		// Setup model
-		params.set("Status", "Intializing");
+		params.set("Mode", "Intializing");
 		params.set("Dead Sites", "-");
 		Job.animate();
 		L      = params.iget("Lattice Size");
@@ -73,7 +73,7 @@ public class fastDamageApp extends Simulation{
 		simt   = params.iget("Sim Time");
 		dmt    = simt;
 		Ndead  = 0;
-		params.set("Status", "Ready");
+		params.set("Mode", "Ready");
 		Job.animate();
 		
 		draw = false;
@@ -81,7 +81,7 @@ public class fastDamageApp extends Simulation{
 		for (int jj = 0 ; jj < eqt ; jj++){
 			model.evolve(jj,false);
 			if(jj%500 == 0){
-				params.set("Status", (jj-eqt));
+				params.set("Mode", (jj-eqt));
 				Job.animate();
 			}
 		}
@@ -97,9 +97,9 @@ public class fastDamageApp extends Simulation{
 		// Simulate the model without damage
 		for (int jj = 0 ; jj < simt ; jj++){
 			model.evolve(jj,true);
-			if(jj%500 == 0){
-				params.set("Status", jj);
-			}
+			//if(jj%500 == 0){
+				params.set("Mode", jj);
+			//}
 			Job.animate();
 			if(record) takePicture(jj);
 		}
@@ -107,9 +107,9 @@ public class fastDamageApp extends Simulation{
 		// Simulate the model with damage
 		while(Ndead < N){
 			Ndead = model.evolveD(dmt,true);
-			if(dmt%500 == 0){
-				params.set("Status", (dmt));
-			}
+			//if(dmt%500 == 0){
+				params.set("Mode", (dmt));
+			//}
 			params.set("Dead Sites", Ndead);
 			Job.animate();
 			if(record) takePicture(dmt);
@@ -118,7 +118,7 @@ public class fastDamageApp extends Simulation{
 
 		if((dmt-1)%damage2Dfast.dlength != 0) model.writeData(dmt);
 		
-		params.set("Status", "Done");
+		params.set("Mode", "Done");
 		Job.animate();
 		
 		return;
@@ -129,7 +129,7 @@ public class fastDamageApp extends Simulation{
 		if(!draw) return;
 		
 		gridS.registerData(L, L, model.getStress());
-		//gridD.registerData(L, L, model.getDorA());
+		gridD.registerData(L, L, model.getDorA());
 
 		return;
 	}

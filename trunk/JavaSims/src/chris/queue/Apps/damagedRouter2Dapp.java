@@ -11,6 +11,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import chris.queue.damagedRouter2D;
+import chris.util.PrintUtil;
 import chris.util.movieUtil;
 
 public class damagedRouter2Dapp extends Simulation{
@@ -35,7 +36,7 @@ public class damagedRouter2Dapp extends Simulation{
 		params.add("L",32);
 		params.add("l",5);
 		params.add("p",new DoubleValue(0.,0,1));
-		params.addm("\u03BB",new DoubleValue(0.05,0,1).withSlider());
+		params.add("\u03BB",new DoubleValue(0.05,0,1).withSlider());
 		params.add("seed",0);
 		params.add("messages");
 		params.set("messages",0);
@@ -64,6 +65,7 @@ public class damagedRouter2Dapp extends Simulation{
 			if(count++ % 1000 == 0)
 				Job.animate();
 		}
+		PrintUtil.printVectorToFile("/Users/cserino/Desktop/tequil2/teq_tser2.txt", ts);
 		
 	}
 	
@@ -74,7 +76,7 @@ public class damagedRouter2Dapp extends Simulation{
 		if(la - 1./ell < 1e-4)
 			mx = (int)(1e4);
 
-		System.out.println(mx);
+//		System.out.println(mx);
 		ColorGradient cg = new ColorGradient();
 		ColorPalette cp  = new ColorPalette();
 

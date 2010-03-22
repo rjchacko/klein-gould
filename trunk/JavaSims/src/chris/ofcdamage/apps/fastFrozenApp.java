@@ -57,7 +57,7 @@ public class fastFrozenApp extends Simulation{
 	
 	public void run() {
 		
-		double phin = 1;
+		double phin = 1.00;
 		double dphi = 0.025; 
 		simt = params.iget("Sim Time");
 		eqt  = params.iget("Equil Time");
@@ -67,6 +67,7 @@ public class fastFrozenApp extends Simulation{
 			params.set("Mode", "Freeze");
 			params.set("\u03D5",1-phin);
 			Parameters dparams = dummyParamUtil.ofcParams(params);
+			Job.animate();
 			model  = new damage2Dfast(dparams);
 			if(phin == 1) model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params,model);	
 
@@ -86,7 +87,7 @@ public class fastFrozenApp extends Simulation{
 			params.set("Mode", "Simulating");
 			params.set("\u03D5",phin);
 			Job.animate();
-			model.setBname(params.sget("Data File")+pfmt.format(100*phin));
+			model.setBname(params.sget("Data File")+"_"+pfmt.format(100*phin));
 			
 			if(params.sget("Pass Stress to").equals("Live Sites")){
 				for (int jj = 0 ; jj < simt ; jj++){
@@ -114,6 +115,7 @@ public class fastFrozenApp extends Simulation{
 			else if((simt-1)%damage2Dfast.dlength != 0) model.writeData(simt);
 			phin -= dphi;
 			phin = (double)(Math.round(100*phin))/100;
+			model = null;
 		}
 		params.set("Mode", "Done");
 		Job.animate();
