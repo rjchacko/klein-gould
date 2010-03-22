@@ -19,15 +19,16 @@ public abstract class InteractingSystem {
 
 	public static enum Solvers {EULER, VERLET};
 	public static enum BC {PERIODIC, CLOSED}
-	public static enum IC {MELT, VISCOUS, COPY, READ_IN}
+	public static enum IC {MELT, VISCOUS, COPY, READ_IN, DEBUG}
 	
-	public int N, Lx, Ly;
+	public int N;
+	public double Lx, Ly;
 	private particle phase[];
 	private double dt, t, Tw, E[];
 	private Solvers solver;
 	protected BC boundCond;
 	private IC initcond;
-	private vector2d accel[];
+	private vector2d accel[], rij[][]; // rij[i][j] is r_i - r_j
 	private Random rand;
 	
 	public InteractingSystem(Parameters params){
@@ -43,12 +44,12 @@ public abstract class InteractingSystem {
 		t  = 0;
 		N  = params.iget("N");
 		if(params.containsKey("L")){
-			Lx = params.iget("L");
+			Lx = params.fget("L");
 			Ly = Lx;
 		}
 		else{
-			Lx = params.iget("Lx");
-			Ly = params.iget("Ly"); 
+			Lx = params.fget("Lx");
+			Ly = params.fget("Ly"); 
 		}
 		rand = new Random(params.iget("seed"));
 		
@@ -65,6 +66,8 @@ public abstract class InteractingSystem {
 			initcond = IC.COPY;
 		else if(params.sget("Initial Conditions").equals("Read In"))
 			initcond = IC.READ_IN;
+		else if(params.sget("Initial Conditions").equals("Debug"))
+			initcond = IC.DEBUG;
 		
 		if(params.sget("Boundary Conditions").equals("Closed"))
 			boundCond = BC.CLOSED;
@@ -82,7 +85,7 @@ public abstract class InteractingSystem {
 	 * @param r the (scalar) distance between the two interacting particles
 	 * @return the value of the potential between particles one and two
 	 */
-	public abstract double potential(vector2d r1, vector2d r2);
+	public abstract double potential(vector2d deltaR);
 	
 	/**
 	 * Abstract method that will return central force for
@@ -92,7 +95,7 @@ public abstract class InteractingSystem {
 	 * @param r2 the vector displacement of particle 2
 	 * @return a vector2d that is the force on particle one due to the second
 	 */
-	public abstract vector2d force(vector2d r1, vector2d r2);
+	public abstract vector2d force(vector2d deltaR);
 	
 	public double stepWT(){
 		step();
@@ -258,10 +261,16 @@ public abstract class InteractingSystem {
 		for(int jj = 0 ; jj < N-1 ; jj++){
 			E[0] += 0.5*phase[jj].v.length2();
 			for(int kk = jj+1 ; kk < N ; kk++){
-				tmp = force(phase[jj].r,phase[kk].r);
+				// get distance between jj and kk
+				rij[jj][kk] = dr(phase[jj].r,phase[kk].r);
+				// simple vector maths for the opposite relative distance
+				rij[kk][jj] = rij[jj][kk].negate();
+				// get the force
+				tmp = force(rij[jj][kk]);
 				accel[jj].add(tmp);
+				// use Newton III
 				accel[kk].sub(tmp);
-				E[1] += potential(phase[jj].r,phase[kk].r);
+				E[1] += potential(rij[jj][kk]);
 			}
 		}
 		return;
@@ -344,15 +353,64 @@ public abstract class InteractingSystem {
 		
 		case VISCOUS:
 			
+		case DEBUG:
+
+			params.set("L",30);
+			params.set("N",900);
+			params.set("M",1);
+			params.set("T",0);
+			
+			N  = params.iget("N");
+			Lx = params.fget("L");
+			Ly = Lx;
+			
+			phase = new particle[N];
+			accel = new vector2d[N]; 
+
+			for(int kk = 0 ; kk < Ly ; kk++){
+				for(int jj = 0 ; jj < Lx ; jj++){
+					phase[jj+kk*(int)Ly] = new particle();
+					phase[jj+kk*(int)Ly].q     = 0;
+					phase[jj+kk*(int)Ly].s     = 0.01;
+					phase[jj+kk*(int)Ly].color = Color.red;
+					phase[jj+kk*(int)Ly].v.x   = 0;
+					phase[jj+kk*(int)Ly].v.y   = 0;
+					phase[jj+kk*(int)Ly].r.y   = jj/(double)(Lx);
+					if(jj%2 == 0)
+						phase[jj+kk*(int)Ly].r.x = kk/(double)(Ly);
+					else
+						phase[jj+kk*(int)Ly].r.x = (2*kk+1)/(2.*Ly);
+				}
+			}
+//			printPhase("/Users/cserino/Desktop/debugConfig.txt");
+			
+			params.set("L",1);
+			Lx = params.iget("L");
+			Ly = Lx;
+
+		break;
+			
 		case COPY:
 			
 			throw new IllegalStateException("Not coded yet.");
+						
 		default:
 
 			throw new IllegalStateException("Initialization scheme does not exist.");
 		}
 		
+		rij = new vector2d[N][N];
+		for(int jj = 0 ; jj  < N ; jj++){ // the off diagonal terms are computed in getAccel()
+			rij[jj][jj] = new vector2d();
+			
+		}
 		getAccel();		
+		
+		if(initcond.equals(IC.READ_IN)){
+			params.set("T",E[0]/N);
+		}
+		
+		
 		return;
 	}	
 	
@@ -421,7 +479,7 @@ public abstract class InteractingSystem {
 		return T/N;
 	}
 	
-	public void printPhase(String fout){
+	public void printPhase(String fout, Parameters params){
 		
 		try{
 			File file = new File(fout);
@@ -440,6 +498,8 @@ public abstract class InteractingSystem {
 				pw.print(phase[jj].v.y);
 				pw.println();
 			}
+			pw.println("-------- Parameters --------");
+			pw.println(params.toString());
 			pw.close();
 		}
 		catch (IOException ex){
@@ -448,25 +508,22 @@ public abstract class InteractingSystem {
 	return;
 	}
 	
-	public double structureFactor(int pID, int nx, int ny, int Lx, int Ly){
+	public double structureFactor(int nx, int ny, double Lx, double Ly){
 	
-		double dt;		
+		double dot;		
 		vector2d k = new vector2d(Math.PI*nx/Lx, Math.PI*ny/Ly);
-		vector2d r = phase[pID].r;
-		double rp  = 0;
-		double ip  = 0;
+		double rp, ip, sf;  
+		rp = ip = sf = 0;
 		
-		for(int jj = 0 ; jj < pID ; jj++){
-			dt = vector2d.dot(k,dr(phase[jj].r,r));
-			rp += Math.cos(dt);
-			ip += Math.sin(dt);
-		}		
-		for(int jj = pID+1 ; jj < N ; jj++){
-			dt = vector2d.dot(k,dr(phase[jj].r,r));
-			rp += Math.cos(dt);
-			ip += Math.sin(dt);
-		}  
-		return (rp*rp+ip*ip)/(N*N);
+		for(int jj = 0 ; jj < N ; jj++){
+			for(int kk = 0 ; kk < N ; kk++){
+				dot = vector2d.dot(k, rij[jj][kk]);
+				rp += Math.cos(dot);
+				ip += Math.sin(dot);
+			}
+			sf += (rp*rp+ip*ip);
+		}
+		return sf/N;
 	}
 	
 	public vector2d dr(vector2d r1, vector2d r2){

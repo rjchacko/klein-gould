@@ -300,12 +300,12 @@ public class vector2d {
 
 
     /**
-     * Negates the value of this vector2d in place.
+     * Returns the negated vector2d.
+     * @return -v
      */
-    public final void negate()
-    {
-	this.x = -this.x;
-	this.y = -this.y;
+    public final vector2d negate(){
+    
+    	return new vector2d(-this.x,-this.y);
     }
 
 

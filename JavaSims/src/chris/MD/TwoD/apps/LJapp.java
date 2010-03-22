@@ -54,22 +54,20 @@ public class LJapp extends Simulation{
 
 
 		params.add("seed",0); 
-		params.add("Lx",50);
-		params.add("Ly",50); 
+		params.add("L",14.);
 		params.add("Boundary Conditions", new ChoiceValue("Periodic","Closed"));
 		params.add("Initial Conditions", new ChoiceValue("Melt","Read In", "Copy", "Viscous"));
 		params.add("ODE Solver", new ChoiceValue("Velocity Verlet","First Order Euler"));
-		params.add("N",20);
+		params.add("N",225);
 		params.add("M",1);
-		params.add("R",1.25); 
-		params.add("\u03C3",1.);
+		params.add("R",0.25); 
 		params.add("dt",5e-3);
 		params.addm("d\u03C4",1.);
 		params.addm("T",1e-6);
 		params.add("t");
 		params.add("E");
 		params.add("T_m");
-		
+
 		c.frame(canvas);				
 	}
 

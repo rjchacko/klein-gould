@@ -9,6 +9,7 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import chris.MD.TwoD.LennardJones;
+import chris.util.vector2d;
 
 public class functionTest extends Simulation{
 
@@ -38,8 +39,8 @@ public class functionTest extends Simulation{
 		
 		for(int jj = 0 ; jj < N+1 ; jj++){
 			r[jj]   =jj*(rmax-rmin)*params.fget("\u03C3")/N + rmin;
-			phi[jj] = lj.potentialR2(r[jj]*r[jj]);
-//			Frc[jj] = lj.force(r[jj]).x;
+			phi[jj] = lj.potential(new vector2d(r[jj],0));
+			Frc[jj] = lj.force(new vector2d(r[jj],0)).x;
 		}
 		for(int jj = 1 ; jj < N ; jj++){
 			dph[jj] = -(phi[jj+1]-phi[jj-1])/(r[jj+1]-r[jj-1]);
@@ -88,15 +89,6 @@ public class functionTest extends Simulation{
 	public void run() {
 
 		lj = new LennardJones(params);
-
-		System.out.println(lj.potentialR2(2.5*2.5));
-		System.out.println(lj.potentialR2((2.5-1./10)*(2.5-1./10)));
-		System.out.println(lj.potentialR2((2.5-1./100)*(2.5-1./100)));
-		System.out.println(lj.potentialR2((2.5-1./1000)*(2.5-1./1000)));
-		System.out.println(lj.potentialR2((2.5-1./10000)*(2.5-1./10000)));
-		System.out.println(lj.potentialR2((2.5-1./100000)*(2.5-1./100000)));
-		System.out.println(lj.potentialR2((2.5-1./1000000)*(2.5-1./1000000)));
-
 		
 		while(true)
 			Job.animate();
