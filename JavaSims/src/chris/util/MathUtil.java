@@ -45,7 +45,7 @@ public class MathUtil {
 		
 		double[] ret = new double[Npts];
 		for (int jj = 0 ; jj < Npts ; jj++){
-			ret[jj] = xmin + jj*xmax/(Npts-1.);
+			ret[jj] = xmin + jj*(xmax-xmin)/(Npts-1.);
 		}
 		return ret;
 	}
@@ -54,7 +54,7 @@ public class MathUtil {
 		
 		double[] ret = new double[Npts];
 		for (int jj = 0 ; jj < Npts ; jj++){
-			ret[jj] = Math.pow(10,pmin + jj*pmax/(Npts-1.));
+			ret[jj] = Math.pow(10,pmin + jj*(pmax-pmin)/(Npts-1.));
 		}
 		return ret;
 	}
@@ -63,7 +63,7 @@ public class MathUtil {
 		
 		double[] ret = new double[Npts];
 		for (int jj = 0 ; jj < Npts ; jj++){
-			ret[jj] = Math.exp(pmin + jj*pmax/(Npts-1.));
+			ret[jj] = Math.exp(pmin + jj*(pmax-pmin)/(Npts-1.));
 		}
 		return ret;
 	}

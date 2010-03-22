@@ -81,7 +81,7 @@ public class router2Dapp extends Simulation{
 				Job.animate();
 			}
 		}
-		printData(hN, ht, ts);
+		printData(hN, ht, ts, model.getNmsgHist());
 		
 		params.set("t","Done");
 		Job.signalStop();
@@ -89,14 +89,17 @@ public class router2Dapp extends Simulation{
 		
 	}
 	
-	private void printData(Histogram h1, Histogram h2, int[] v){
+	private void printData(Histogram h1, Histogram h2, int[] v, Histogram h3){
 		String f1 = pth + File.separator + fout+"_nhist_.txt";
 		String f2 = pth + File.separator + fout+"_thist_.txt";
 		String f3 = pth + File.separator + fout+"_tsers_.txt";
-
+		String f4 = pth + File.separator + fout+"_nindv_.txt";
+		
 		PrintUtil.printHistToFile(f1, h1);
 		PrintUtil.printHistToFile(f2, h2);	
 		PrintUtil.printVectorToFile(f3,v);
+		PrintUtil.printHistToFile(f4, h3);	
+
 		return;
 	}
 	

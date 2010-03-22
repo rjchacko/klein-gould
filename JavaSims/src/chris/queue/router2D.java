@@ -21,6 +21,7 @@ public class router2D {
 	protected Random rand;
 	protected String outdir, bname;
 	protected final static Histogram foo = new Histogram(1000);
+	private Histogram hnmsg = new Histogram(1.);
 	
 	public router2D(Parameters params){
 		
@@ -83,6 +84,7 @@ public class router2D {
 					nbar[kk] += buffer.get(kk).size();
 					tmp      += nbar[kk];
 				}
+				hnmsg.accum(buffer.get(kk).size());
 
 				// select a message to move at random from the buffer
 				if(buffer.get(kk).isEmpty()) 
@@ -245,6 +247,11 @@ public class router2D {
 			}
 		}
 		return;
+	}
+	
+	public Histogram getNmsgHist(){
+		
+		return hnmsg;
 	}
 
 }
