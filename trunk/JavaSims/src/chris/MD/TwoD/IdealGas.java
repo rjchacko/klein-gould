@@ -10,12 +10,13 @@ public class IdealGas extends InteractingSystem{
 		super(params);
 	}
 
-	public vector2d force(vector2d r1, vector2d r2) {
-		
+
+	public vector2d force(vector2d deltaR) {
+
 		return new vector2d();
 	}
 
-	public double potential(vector2d r1, vector2d r2)  {
+	public double potential(vector2d deltaR) {
 
 		return 0;
 	}
