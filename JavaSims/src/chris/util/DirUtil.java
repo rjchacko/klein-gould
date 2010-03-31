@@ -1,6 +1,8 @@
 package chris.util;
 
 import java.io.File;
+import java.io.FileFilter;
+import java.io.FilenameFilter;
 
 public class DirUtil {
 	
@@ -42,6 +44,26 @@ public class DirUtil {
 		}
 
 		return;
+	}
+	
+	public static File[] getFiles(String din){
+		File dir     = new File("dir");
+		FileFilter fileFilter = new FileFilter(){
+			public boolean accept(File file) {
+				return file.isFile();
+			}
+		};
+		return dir.listFiles(fileFilter);
+	}
+	
+	public static File[] getFiles(String din, final String fltr){
+		File dir     = new File("dir");
+		FilenameFilter fileFilter = new FilenameFilter(){
+			public boolean accept(File file, String name) {
+				return name.contains(fltr);
+			}
+		};
+		return dir.listFiles(fileFilter);
 	}
 
 }
