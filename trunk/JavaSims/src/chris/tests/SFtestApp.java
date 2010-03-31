@@ -19,7 +19,7 @@ public class SFtestApp extends Simulation{
 	public LennardJones model;
 	static DecimalFormat tf = new DecimalFormat("######.00");
 	static DecimalFormat Ef = new DecimalFormat("0.###E0");
-	private double now, then, tau, T, L;
+	private double now, T, L, then, tau;
 	private String fout;
 	
 	
@@ -51,7 +51,7 @@ public class SFtestApp extends Simulation{
 		params.add("seed",0); 
 		params.add("L",13.);
 		params.add("Boundary Conditions", new ChoiceValue("Periodic","Closed"));
-		params.add("Initial Conditions", new ChoiceValue("Read In", "Melt", "Copy", "Viscous"));
+		params.add("Initial Conditions", new ChoiceValue("Debug","Read In", "Melt", "Copy", "Viscous"));
 		params.add("ODE Solver", new ChoiceValue("Velocity Verlet","First Order Euler"));
 		params.add("N",0);
 		params.add("M",1);
@@ -69,33 +69,22 @@ public class SFtestApp extends Simulation{
 //		model = new LennardJones(params);
 //		L     = params.iget("L");
 //		fout  = params.sget("Data Directory") + File.separator + params.sget("Data File") + ".txt";
-//
-//		double sf[]   = new double[(int)(1e4)];
+//		int nmx = (int)(1e3);
+//		double sf[][][]   = new double[1][nmx][nmx];
 //
 //		Job.animate();
 //		
-//		for(int nx = 0; nx < 1e4 ; nx++){	// using k^2 < 200
-//			sf[nx] = model.structureFactor(nx, 0, L, L);
-//			params.set("T_m",nx/1e2);
+//		for(int nx = 0; nx < nmx ; nx++){	// using k^2 < 200
+//			for(int ny = 0; ny < nmx ; ny++){	// using k^2 < 200
+//				sf[0][nx][ny] = model.structureFactor(nx, ny, L, L);
+//				params.set("t",ny);
+//				Job.animate();
+//			}
+//			params.set("T_m",100.*nx/nmx);
 //			Job.animate();
 //		};
 //
-//
-//		try{
-//			File file = new File(fout);
-//			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-//			pw.println("k \t S[k]");
-//
-//			for(int jj = 0 ; jj < 1e4 ; jj++){
-//				pw.print(jj*Math.PI+"\t"); // L = 1;
-//				pw.println(sf[jj]);
-//			}
-//			pw.close();
-//		}
-//		catch (IOException ex){
-//			ex.printStackTrace();
-//		}
-//
+//		printSF(sf,nmx,1);
 //		return;
 //	}
 	
@@ -109,40 +98,44 @@ public class SFtestApp extends Simulation{
 		PrintUtil.printlnToFile(params.sget("Data Directory") + File.separator + "Params_" + params.sget("Data File") + ".log", params.toString());
 		Job.animate();
 		
-		int count       = 0;
-		int nkm         = 1000;
-		int mxdp        = 100;
-		double sf[][]   = new double[nkm][mxdp];
-		int ny = 0;
+		int tmx = 1000;
+		int count = 0;
+		int nmx = (int)(1e2);
+		double sf[][][]   = new double[tmx][nmx][nmx];
 
-		while(count < mxdp){
+		while(count < tmx){
 			now = model.stepWT();
 			Job.animate();
 			if(now - then >= tau){
 				then = now;
-				for(int nx = 0; nx < nkm ; nx++){
-					sf[nx][count] = model.structureFactor(nx, ny, L, L);
+				for(int nx = 0; nx < nmx ; nx++){	// using k^2 < 200
+					for(int ny = 0; ny < nmx ; ny++){	// using k^2 < 200
+						sf[count][nx][ny] = model.structureFactor(nx, ny, L, L);
+						params.set("t",ny);
+						Job.animate();
+					}
+					params.set("T_m",100.*nx/nmx);
+					Job.animate();
 				}
 				count++;
 				Job.animate();
 			}
 		}
 
-		printSF(sf, mxdp);
+		printSF(sf,nmx,tmx);
 		return;
 	}
 	
-	private void printSF(double[][]sf, int lngth){
+	private void printSF(double[][][]sf, int nmx, int tmx){
 		try{
 			File file = new File(fout);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			pw.println("nx \t S(k,t=0) \t S(k,t=1) \t S(k,t=2) \t . . . ");
-			for(int nx = 0; nx < sf.length ; nx++){
-				for(int cc = 0 ; cc < lngth ; cc++){
-				pw.print(nx*Math.PI+"\t");
-				pw.print(sf[nx][cc]+"\t");
+			pw.println("t \t nx \t ny \t S(k)");
+			for(int t = 0; t < tmx ; t++){
+				for(int nx = 0; nx < nmx ; nx++){
+					for(int ny = 0; ny < nmx ; ny++)
+						pw.println(t+"\t"+nx+"\t"+ny+"\t"+sf[t][nx][ny]);
 				}
-				pw.println();
 			}
 			pw.close();
 		}

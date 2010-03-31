@@ -332,7 +332,7 @@ public abstract class InteractingSystem {
 		case READ_IN:
 			
 			ReadInUtil ri = new ReadInUtil("/Users/cserino/Documents/BU/Research/MD/IC.txt");
-			double ic[][] = ri.getData(new int[]{2,3,4,5}, 2);
+			double ic[][] = ri.getDataBeforeString(new int[]{2,3,4,5}, 2,"-------- Parameters --------");
 			N = ic[0].length;
 			phase = new particle[N];
 			accel = new vector2d[N]; 
@@ -355,8 +355,8 @@ public abstract class InteractingSystem {
 			
 		case DEBUG:
 
-			params.set("L",30);
-			params.set("N",900);
+			params.set("L",15);
+			params.set("N",225);
 			params.set("M",1);
 			params.set("T",0);
 			
