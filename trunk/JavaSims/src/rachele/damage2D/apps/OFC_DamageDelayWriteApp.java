@@ -62,21 +62,21 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("Grids", grid, cgGrid, plateUpdateGrid, cgGridTimeAverage);
+//		c.frameTogether("Grids", grid, cgGrid, plateUpdateGrid, cgGridTimeAverage);
 		c.frame(deadGrid);
 
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testRuns"));
 		params.add("Interaction", new ChoiceValue( "Circle", "Fully Connected", "Square", "Small World") );
-		params.add("Type of Damage", new ChoiceValue("Random Blocks", "Random", "Dead Strip", "Random + Dead Strip"));
-		params.add("With Dead?", new ChoiceValue( "No", "Yes") );
+		params.add("Type of Damage", new ChoiceValue("Random","Random Blocks","Dead Strip","Place Random Dead", "Random + Dead Strip"));
+		params.add("With Dead?", new ChoiceValue( "Yes", "No" ) );
 		params.addm("Random Seed", 1);
-		params.addm("CG size",8);
-		params.addm("dx", 8);
-		params.addm("Coarse Grained dt (PU)", 5000);
+		params.addm("CG size",128);
+		params.addm("dx", 1);
+		params.addm("Coarse Grained dt (PU)", 20000);
 		params.addm("Equilibration Updates", 50000);
 		params.addm("Max PU", 1000000);
 		params.addm("Data points per write", 1);
-		params.addm("R", 4);// 0 -> fully connected
+		params.addm("R", 8);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Dissipation Param", 0.4);
@@ -85,8 +85,9 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		params.addm("Failures Max Noise", 0);
 //		params.addm("Mean Heal Time", 2);
 //		params.addm("Heal Time Noise", 1);
-		params.addm("Init Percent Dead", 0.0);
-		params.addm("Max Percent Damage", .01);
+		params.addm("Init Percent Dead", 0.75);
+		params.addm("Max Percent Damage", .1);
+		params.addm("No of Dead", 403);
 		params.add("L");
 		params.add("Time");
 		params.add("Av Size");
