@@ -57,6 +57,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	String damageType;
 	double maxPercentDamage;
 	double [] cgBlockDamage;
+	int noDeadToPlace;
 	
 	public OFC_DamageLattice(Parameters params, String mode) {
 		infoFileName = params.sget("Data Dir") + File.separator + "info.txt";
@@ -114,6 +115,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		lowerCutoff = params.iget("Lower Cutoff");
 		initPercentDead = params.fget("Init Percent Dead");
 		damageType = params.sget("Type of Damage");
+		noDeadToPlace = params.iget("No of Dead");
 	}
 	
 	public void initLattice(String importMode){
@@ -174,27 +176,37 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 					killSite(i);
 				}
 			}
-		}else if(damageType=="Dead Strip"){
-			int width = (int)(L*initPercentDead);
-			for(int i  = 0; i < N; i++){
-				int y = i%L;
-				if(y < width){
-					killSite(i);
-				}else{
-					setSite(i);
+		}else if(damageType == "Place Random Dead"){
+			while(noDeadSites < noDeadToPlace){
+				int randSite = (int)(random.nextDouble()*(double)N);
+				if (noFails[randSite] == 0){
+					killSite(randSite);
 				}
+			}
+
+		}else if(damageType=="Dead Strip"){
+//			int width = (int)(L*initPercentDead);
+			for(int i  = 0; i < N; i++){
+				if(i < noDeadToPlace) killSite(i);
+				else setSite(i);
+//				int y = i%L;
+//				if(y < width){
+//					killSite(i);
+//				}else{
+//					setSite(i);
+//				}
 			}
 		}else if (damageType=="Random + Dead Strip"){
 			System.out.println("Error!");
 		}else if(damageType=="Random Blocks"){
-			int damageBlockSize = 8;
+			int damageBlockSize = 4;
 			FileUtil.printlnToFile(infoFileName, "Damage block size", damageBlockSize);
-			double [] damageBlockDamage = new double [damageBlockSize*damageBlockSize];
-			for (int j = 0; j < damageBlockSize*damageBlockSize; j++){
+			int noDamageBlocks = N/(damageBlockSize*damageBlockSize);
+			double [] damageBlockDamage = new double [noDamageBlocks];
+			for (int j = 0; j < noDamageBlocks; j++){
 				//assign a random amount of damage
 				//half of blocks have no damage
-				damageBlockDamage[j] = random.nextGaussian()*0.2;
-				System.out.println("damage = " + j + " "+ damageBlockDamage[j]);
+				damageBlockDamage[j] = random.nextGaussian()*0.07;
 			}
 			for (int i = 0; i < N; i++){
 				int block = findCG_site(i, damageBlockSize);
@@ -206,14 +218,32 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			}
 			//find block damage for cged blocks
 			cgBlockDamage = new double [Np];
-			for (int i = 0; i < N; i++)
-				if (noFails[i]<0) cgBlockDamage[findCG_site(i,dx)] +=1.0;	
+			for (int i = 0; i < N; i++){
+				if (noFails[i]<0){
+					cgBlockDamage[findCG_site(i,dx)] +=1.0;	
+				}
+			}
 			for (int j = 0; j < Np; j++)
 				cgBlockDamage[j] /= (double)(dx*dx);
-			
+			int noUndamagedBlocks = 0;
+			int noBlocksBelowDamageTolerance = 0;
+			for (int j = 0; j < Np; j++){
+				if(cgBlockDamage[j] == 0) noUndamagedBlocks += 1;
+				if(cgBlockDamage[j] < maxPercentDamage) noBlocksBelowDamageTolerance += 1;
+			}
+			System.out.println("No of undamaged blocks = " + noUndamagedBlocks);
+			System.out.println("No of blocks below tolerance = " + noBlocksBelowDamageTolerance);
+			FileUtil.printlnToFile(infoFileName, "No of undamaged blocks = " , noUndamagedBlocks);
+			FileUtil.printlnToFile(infoFileName, "No of blocks below tolerance = " , noBlocksBelowDamageTolerance);
+			double percentBlocksIncluded = (double)noBlocksBelowDamageTolerance/(double)(Lp*Lp);
+			FileUtil.printlnToFile(infoFileName, "Percent of blocks included = ", percentBlocksIncluded);
+
 		}else{
 			System.out.println("Error!");	
 		}
+		double percentSitesDamaged = (double)noDeadSites/(double)N;
+		FileUtil.printlnToFile(infoFileName, "No of sites damaged = " , noDeadSites);
+		FileUtil.printlnToFile(infoFileName, "Percent of sites damaged = ", percentSitesDamaged);
 			
 		liveSiteLocs = new int [noLiveSites];
 
@@ -878,7 +908,11 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		CG_metric /= (double)noCgBoxesWithHits;
 		lastCG_SizeActRecordTime = cg_time;
 		for (int i = 0; i < Np; i++) epicenterSize[i] = 0;
-		if(plateUpdates <= 2*dt) FileUtil.printlnToFile(infoFileName, "No of coarse grained boxes with hits = ", noCgBoxesWithHits);
+		if(plateUpdates <= 2*dt){
+			FileUtil.printlnToFile(infoFileName, "No of coarse grained boxes with hits = ", noCgBoxesWithHits);
+			System.out.println("max percent damage = " + maxPercentDamage);
+			System.out.println("No of coarse grained boxes with hits = "+ noCgBoxesWithHits);
+		}
 		return CG_metric; 
 	}
 	

@@ -30,7 +30,7 @@ public class AbstractCG_OFC {
 		int y = s / L;
 		int xp = x / blockSize;
 		int yp = y / blockSize;
-		int cgSite = yp *Lp + xp;
+		int cgSite = yp *(L/blockSize) + xp;
 		return cgSite;
 	}
 
