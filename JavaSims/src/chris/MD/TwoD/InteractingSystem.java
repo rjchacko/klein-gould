@@ -11,6 +11,7 @@ import scikit.graphics.dim2.Geom2D;
 import scikit.graphics.dim2.Gfx2D;
 import scikit.jobs.params.Parameters;
 import scikit.util.Bounds;
+import chris.util.DirUtil;
 import chris.util.Random;
 import chris.util.ReadInUtil;
 import chris.util.vector2d;
@@ -350,8 +351,6 @@ public abstract class InteractingSystem {
 			}
 
 		break;
-		
-		case VISCOUS:
 			
 		case DEBUG:
 
@@ -392,6 +391,71 @@ public abstract class InteractingSystem {
 			
 		case COPY:
 			
+			ReadInUtil ric;
+			double icc[][] = new double[0][0];
+			int Lc = (int)(params.fget("L"));
+			// how many tiles do we have?
+			File[] fins = DirUtil.getFiles("/Users/cserino/Documents/BU/Research/MD/Tiles/", "tile_");
+			int Nf  = fins.length;
+			int npb = params.iget("N");
+			// pick the first file 
+			ric      = new ReadInUtil(fins[rand.nextInt(Nf)].toString());
+			ric.getDataandParams(new int[]{2,3,4,5}, 2, icc, "-------- Parameters --------", params);
+			double dL = params.fget("L");
+			N         = Lc*Lc*npb;
+			params.set("N",N);
+			Lx = Lc*dL;
+			Ly = Lx;
+			params.set("L",Lx);
+			for(int jj = 0 ; jj < npb ; jj++){
+				phase[jj] = new particle();
+				phase[jj].q     = 0;					// FIX THIS
+				phase[jj].s     = params.fget("R"); 	// AND THIS
+				phase[jj].color = Color.red;			// AND THIS
+				phase[jj].r.x   = icc[0][jj];
+				phase[jj].r.y   = icc[1][jj];
+				phase[jj].v.x   = icc[2][jj];
+				phase[jj].v.y   = icc[3][jj];
+			}
+			// now fill the rest of the cells
+			for(int jj = 0 ; jj < Lc ; jj++){
+				for(int kk = 0 ; kk < Lc ; kk++){
+					//first cell has bottom left at 0,0
+					// jj loops left to right
+					// kk loops bottom to top
+					if( jj == 0 && kk == 0)
+						continue;
+					ric = new ReadInUtil(fins[rand.nextInt(Nf)].toString());
+					icc = ric.getDataBeforeString(new int[]{2,3,4,5}, 2,"-------- Parameters --------");
+					for(int ll = 0 ; ll < npb ; ll++){
+						// phase[ll + offset] = new particle();
+						// phase[ll + offset].rx = icc[0][ll]+x_offset
+						// phase[ll + offset].vx = icc[2][ll]
+						// same for y
+//						phase[ll] = new particle();
+//						phase[ll].q     = 0;					// FIX THIS
+//						phase[ll].s     = params.fget("R"); 	// AND THIS
+//						phase[ll].color = Color.red;			// AND THIS
+//						phase[ll].r.x   = icc[0][ll];
+//						phase[ll].r.y   = icc[1][ll];
+//						phase[ll].v.x   = icc[2][ll];
+//						phase[ll].v.y   = icc[3][ll];
+					}
+				}
+			}
+			
+
+//			ReadInUtil ri = new ReadInUtil("/Users/cserino/Documents/BU/Research/MD/IC.txt");
+//			double ic[][] = ri.getDataBeforeString(new int[]{2,3,4,5}, 2,"-------- Parameters --------");
+//			N = ic[0].length;
+//			phase = new particle[N];
+//			accel = new vector2d[N]; 
+//			params.set("N", N);
+			
+		break;
+			
+		case VISCOUS:
+			
 			throw new IllegalStateException("Not coded yet.");
 						
 		default:
@@ -401,7 +465,7 @@ public abstract class InteractingSystem {
 		
 		rij = new vector2d[N][N];
 		for(int jj = 0 ; jj  < N ; jj++){ // the off diagonal terms are computed in getAccel()
-			rij[jj][jj] = new vector2d();
+			rij[jj][jj] = new vector2d(); // the zero vector
 			
 		}
 		getAccel();		
