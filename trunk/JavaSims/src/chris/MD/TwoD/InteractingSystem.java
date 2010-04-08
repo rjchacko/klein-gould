@@ -76,6 +76,18 @@ public abstract class InteractingSystem {
 			boundCond = BC.PERIODIC;
 		
 		initialise(params);
+		dt = params.fget("dt");
+		Tw = params.fget("T");
+		t  = 0;
+		N  = params.iget("N");
+		if(params.containsKey("L")){
+			Lx = params.fget("L");
+			Ly = Lx;
+		}
+		else{
+			Lx = params.fget("Lx");
+			Ly = params.fget("Ly"); 
+		}
 	}
 	
 	
@@ -333,8 +345,12 @@ public abstract class InteractingSystem {
 		case READ_IN:
 			
 			ReadInUtil ri = new ReadInUtil("/Users/cserino/Documents/BU/Research/MD/IC.txt");
-			double ic[][] = ri.getDataBeforeString(new int[]{2,3,4,5}, 2,"-------- Parameters --------");
-			N = ic[0].length;
+			double ic[][] = new double[4][ri.countTo(2,"-------- Parameters --------")]; 
+			ri.getDataandParams(new int[]{2,3,4,5}, 2, ic, "-------- Parameters --------", params);
+			
+			N     = params.iget("N");
+			Lx    = params.fget("L");
+			Ly    = Lx;
 			phase = new particle[N];
 			accel = new vector2d[N]; 
 			params.set("N", N);
@@ -352,6 +368,64 @@ public abstract class InteractingSystem {
 
 		break;
 			
+		case COPY:
+			
+			ReadInUtil ric;
+			int ofs;
+			int Lc = (int)(params.fget("L"));
+			// how many tiles do we have?
+			File[] fins = DirUtil.getFiles("/Users/cserino/Documents/BU/Research/MD/Tiles/", "tile_");
+			int Nf  = fins.length;
+			// pick the first file 
+			ric = new ReadInUtil(fins[rand.nextInt(Nf)].toString());			
+			double icc[][] = new double[4][ric.countTo(2,"-------- Parameters --------")];
+			ric.getDataandParams(new int[]{2,3,4,5}, 2, icc, "-------- Parameters --------", params);
+			int npb   = params.iget("N");
+			double dL = params.fget("L")+LennardJones.rco; // initialize with non-interacting cells
+			N         = Lc*Lc*npb;
+			params.set("N",N);
+			Lx = Lc*dL;
+			Ly = Lx;
+			params.set("L",Lx);
+			phase = new particle[N];
+			accel = new vector2d[N]; 
+			params.set("N", N);
+			for(int jj = 0 ; jj < npb ; jj++){
+				phase[jj] = new particle();
+				phase[jj].q     = 0;					// FIX THIS
+				phase[jj].s     = params.fget("R"); 	// AND THIS
+				phase[jj].color = Color.red;			// AND THIS
+				phase[jj].r.x   = icc[0][jj];
+				phase[jj].r.y   = icc[1][jj];
+				phase[jj].v.x   = icc[2][jj];
+				phase[jj].v.y   = icc[3][jj];
+			}
+			// now fill the rest of the cells
+			for(int jj = 0 ; jj < Lc ; jj++){
+				for(int kk = 0 ; kk < Lc ; kk++){
+					//first cell has bottom left at 0,0
+					// jj loops left to right
+					// kk loops bottom to top
+					if( jj == 0 && kk == 0 )
+						continue;
+					ric = new ReadInUtil(fins[rand.nextInt(Nf)].toString());
+					icc = ric.getDataBeforeString(new int[]{2,3,4,5}, 2,"-------- Parameters --------");
+					for(int ll = 0 ; ll < npb ; ll++){
+						ofs = (jj*Lc + kk)*npb;
+						phase[ll+ofs] = new particle();
+						phase[ll+ofs].q     = 0;					// FIX THIS
+						phase[ll+ofs].s     = params.fget("R"); 	// AND THIS
+						phase[ll+ofs].color = Color.red;			// AND THIS
+						phase[ll+ofs].r.x   = icc[0][ll] + jj*dL;
+						phase[ll+ofs].r.y   = icc[1][ll] + kk*dL;
+						phase[ll+ofs].v.x   = icc[2][ll];
+						phase[ll+ofs].v.y   = icc[3][ll];
+					}
+				}
+			}
+			
+		break;
+		
 		case DEBUG:
 
 			params.set("L",15);
@@ -381,77 +455,11 @@ public abstract class InteractingSystem {
 						phase[jj+kk*(int)Ly].r.x = (2*kk+1)/(2.*Ly);
 				}
 			}
-//			printPhase("/Users/cserino/Desktop/debugConfig.txt");
 			
 			params.set("L",1);
 			Lx = params.iget("L");
 			Ly = Lx;
 
-		break;
-			
-		case COPY:
-			
-			ReadInUtil ric;
-			double icc[][] = new double[0][0];
-			int Lc = (int)(params.fget("L"));
-			// how many tiles do we have?
-			File[] fins = DirUtil.getFiles("/Users/cserino/Documents/BU/Research/MD/Tiles/", "tile_");
-			int Nf  = fins.length;
-			int npb = params.iget("N");
-			// pick the first file 
-			ric      = new ReadInUtil(fins[rand.nextInt(Nf)].toString());
-			ric.getDataandParams(new int[]{2,3,4,5}, 2, icc, "-------- Parameters --------", params);
-			double dL = params.fget("L");
-			N         = Lc*Lc*npb;
-			params.set("N",N);
-			Lx = Lc*dL;
-			Ly = Lx;
-			params.set("L",Lx);
-			for(int jj = 0 ; jj < npb ; jj++){
-				phase[jj] = new particle();
-				phase[jj].q     = 0;					// FIX THIS
-				phase[jj].s     = params.fget("R"); 	// AND THIS
-				phase[jj].color = Color.red;			// AND THIS
-				phase[jj].r.x   = icc[0][jj];
-				phase[jj].r.y   = icc[1][jj];
-				phase[jj].v.x   = icc[2][jj];
-				phase[jj].v.y   = icc[3][jj];
-			}
-			// now fill the rest of the cells
-			for(int jj = 0 ; jj < Lc ; jj++){
-				for(int kk = 0 ; kk < Lc ; kk++){
-					//first cell has bottom left at 0,0
-					// jj loops left to right
-					// kk loops bottom to top
-					if( jj == 0 && kk == 0)
-						continue;
-					ric = new ReadInUtil(fins[rand.nextInt(Nf)].toString());
-					icc = ric.getDataBeforeString(new int[]{2,3,4,5}, 2,"-------- Parameters --------");
-					for(int ll = 0 ; ll < npb ; ll++){
-						// phase[ll + offset] = new particle();
-						// phase[ll + offset].rx = icc[0][ll]+x_offset
-						// phase[ll + offset].vx = icc[2][ll]
-						// same for y
-//						phase[ll] = new particle();
-//						phase[ll].q     = 0;					// FIX THIS
-//						phase[ll].s     = params.fget("R"); 	// AND THIS
-//						phase[ll].color = Color.red;			// AND THIS
-//						phase[ll].r.x   = icc[0][ll];
-//						phase[ll].r.y   = icc[1][ll];
-//						phase[ll].v.x   = icc[2][ll];
-//						phase[ll].v.y   = icc[3][ll];
-					}
-				}
-			}
-			
-
-//			ReadInUtil ri = new ReadInUtil("/Users/cserino/Documents/BU/Research/MD/IC.txt");
-//			double ic[][] = ri.getDataBeforeString(new int[]{2,3,4,5}, 2,"-------- Parameters --------");
-//			N = ic[0].length;
-//			phase = new particle[N];
-//			accel = new vector2d[N]; 
-//			params.set("N", N);
-			
 		break;
 			
 		case VISCOUS:
@@ -464,17 +472,14 @@ public abstract class InteractingSystem {
 		}
 		
 		rij = new vector2d[N][N];
-		for(int jj = 0 ; jj  < N ; jj++){ // the off diagonal terms are computed in getAccel()
+		for(int jj = 0 ; jj  < N ; jj++) // the off diagonal terms are computed in getAccel()
 			rij[jj][jj] = new vector2d(); // the zero vector
-			
-		}
+	
 		getAccel();		
 		
-		if(initcond.equals(IC.READ_IN)){
+		if(initcond.equals(IC.READ_IN) || initcond.equals(IC.COPY))
 			params.set("T",E[0]/N);
-		}
-		
-		
+
 		return;
 	}	
 	

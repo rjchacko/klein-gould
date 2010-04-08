@@ -133,6 +133,35 @@ public class ReadInUtil {
 		return;
 	}
 
+	public int countTo(int skip, String str){
+		
+		int counter = 0;
+
+		try {
+
+			FileInputStream fis = new FileInputStream(fin);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			BufferedReader bir = new BufferedReader(new InputStreamReader(bis));
+
+			String rin;
+			for (int jj = 0 ; jj < skip ; jj++)
+				rin = bir.readLine();
+			
+			while ( (rin = bir.readLine()) != null){
+				if(rin.equals(str))
+					break;
+				counter++;
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+
+		return counter;
+	}
+	
 	public double[][] getDataBeforeString(int[] cns, int skip, String str){
 		int counter = 0;
 		int Ncols   = cns.length;
@@ -238,8 +267,6 @@ public class ReadInUtil {
 			}
 		}
 
-		data = new double[Ncols][counter];
-
 		for (int jj = 0 ; jj < counter ; jj++){
 			for(int kk = 0 ; kk < Ncols ; kk++){
 				data[kk][jj] = values[kk][jj];
@@ -258,20 +285,22 @@ public class ReadInUtil {
 			rin = bir.readLine(); // seed, throw it away
 			rin = bir.readLine();
 			pd  = rin.indexOf('=');
-			p.set("L",Double.parseDouble(rin.substring(pd + 1)));
+			p.set("L",Double.parseDouble(rin.substring(pd + 2)));
 			rin = bir.readLine(); 
-			p.set("Boundary Conditions",rin.substring(pd + 1));
-			pd  = rin.indexOf('='); // IC, throw it away
-			rin = bir.readLine();
-			p.set("ODE Solver",rin.substring(pd + 1));
+			pd  = rin.indexOf('=');
+			p.set("Boundary Conditions",rin.substring(pd + 2));
+			rin = bir.readLine(); // IC, throw it away
 			rin = bir.readLine();
 			pd  = rin.indexOf('=');
-			p.set("N",Integer.parseInt(rin.substring(pd + 1)));
-			pd  = rin.indexOf('='); // M, throw it away
-			pd  = rin.indexOf('='); // R, throw it away
+			p.set("ODE Solver",rin.substring(pd + 2));
 			rin = bir.readLine();
 			pd  = rin.indexOf('=');
-			p.set("dt",Double.parseDouble(rin.substring(pd + 1)));
+			p.set("N",Integer.parseInt(rin.substring(pd + 2)));
+			rin = bir.readLine(); // M, throw it away
+			rin = bir.readLine(); // R, throw it away
+			rin = bir.readLine();
+			pd  = rin.indexOf('=');
+			p.set("dt",Double.parseDouble(rin.substring(pd + 2)));
 			// throw away everything else
 		}
 		catch (IOException e) {
