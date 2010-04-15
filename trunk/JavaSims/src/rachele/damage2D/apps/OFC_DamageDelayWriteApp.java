@@ -67,25 +67,26 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testRuns"));
 		params.add("Interaction", new ChoiceValue( "Circle", "Fully Connected", "Square", "Small World") );
-		params.add("Type of Damage", new ChoiceValue("Random","Random Blocks","Dead Strip","Place Random Dead", "Random + Dead Strip"));
+		params.add("Type of Damage", new ChoiceValue("Random Blocks","Random","Dead Strip","Place Random Dead", "Random + Dead Strip"));
 		params.add("With Dead?", new ChoiceValue( "Yes", "No" ) );
+		params.add("Dead dissipation?", new ChoiceValue( "Yes", "No" ) );
 		params.addm("Random Seed", 1);
-		params.addm("CG size",128);
+		params.addm("CG size",256);
 		params.addm("dx", 1);
 		params.addm("Coarse Grained dt (PU)", 20000);
 		params.addm("Equilibration Updates", 50000);
 		params.addm("Max PU", 1000000);
 		params.addm("Data points per write", 1);
-		params.addm("R", 8);// 0 -> fully connected
+		params.addm("R", 16);// 0 -> fully connected
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
-		params.addm("Dissipation Param", 0.4);
+		params.addm("Dissipation Param", 0.04);
 		params.addm("Lower Cutoff", 1);
 		params.addm("Mean Max Failures", 0);
 		params.addm("Failures Max Noise", 0);
 //		params.addm("Mean Heal Time", 2);
 //		params.addm("Heal Time Noise", 1);
-		params.addm("Init Percent Dead", 0.75);
+		params.addm("Init Percent Dead", 0.0625);
 		params.addm("Max Percent Damage", .1);
 		params.addm("No of Dead", 403);
 		params.add("L");
@@ -115,6 +116,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 		percentDead = (double)ofc.noDeadSites/(double)(ofc.L*ofc.L);
 		params.set("Percent dead sites", Utilities.format(percentDead));
 		params.set("Av Size", ofc.avSize);
+
 
 	}
 
@@ -203,7 +205,7 @@ public class OFC_DamageDelayWriteApp extends Simulation{
 				writeAccumulatedData();
 				dataPointsCount = 0;
 			}
-			
+			maxTime = params.iget("Max PU");
 			if(ofc.plateUpdates > maxTime) Job.signalStop();
 		}
 	}

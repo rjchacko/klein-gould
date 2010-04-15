@@ -23,7 +23,6 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public int noiseMaxFail; 		// Max fail value = meanMaxFail +- eta where max eta = maxFailNoise
 	public int meanHealTime;			// average time before sites heal
 	public int noiseHealTime;		// heal time for site = aveHealTime +- eta where max eta = noiseHealTime
-	public boolean deadMode;
 	public int noDeadSites;
 	public int nextSiteToFail;
 	public double initPercentDead;
@@ -40,6 +39,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 	public int [] noFails;  // No of failures at each site: once a site is dead -> = -1;
 	public int [][]nborList;  // List of neighbors for each site: nborList[site = 0..N-1][nbor index = 0..maxNbors]  This is gonna be really big
 	public int [] noNborsForSite;  // No of nbors at each site (for when different for each site.)
+	public boolean deadDissipation;
 	public int [] maxNoFails; //  Max no of fails for each site
 	public int [] healTime; // Time before site heals
 	public String interactionTopology;
@@ -64,7 +64,8 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		FileUtil.initFile(infoFileName, params);
 		FileUtil.printlnToFile(infoFileName, "Runlog for OFC_DamageLattice");
 		setParameters(params, mode);
-		initLattice(mode);
+		initLattice(params, mode);
+		
 	}
 	
 	public void setParameters(Parameters params, String mode) {
@@ -79,10 +80,10 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		}else if(mode == "healProb"){
 			healProb = params.fget("Heal Probability");
 		}
+		if(params.sget("Dead dissipation?")=="yes") deadDissipation = true;
+		else deadDissipation = false;
+		System.out.println("Dead dissipation = " + deadDissipation);
 		maxPercentDamage = params.fget("Max Percent Damage");
-//		if (meanMaxFail == 0) deadMode = false;
-//		else deadMode = true;
-		deadMode = true;
 		Lp = params.iget("CG size");
 		dx = params.iget("dx");
 		L = Lp*dx;
@@ -98,10 +99,7 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			noNbors = findCircleNbors(R);
 		}
 
-		interactionTopology = params.sget("Interaction");
-//		CG_dt = params.fget("Coarse Grained dt");
-//		dt = params.fget("dt");
-		
+		interactionTopology = params.sget("Interaction");		
 		random.setSeed(params.iget("Random Seed"));
 		
 		tStress = 1.0;
@@ -118,7 +116,8 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		noDeadToPlace = params.iget("No of Dead");
 	}
 	
-	public void initLattice(String importMode){
+	public void initLattice(Parameters params, String importMode){
+		
 		System.out.println("Initializing lattice");
 		stress = new double [N];
 		stressTimeAve = new double [N];
@@ -155,16 +154,6 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 			failList[i] = false;
 			maxNoFails[i] = meanMaxFail;	
 			CG_StressTimeAve[i] = 0;
-//			FileUtil.printlnToFile(infoFileName, "deadmode = ", deadMode);
-//			if(deadMode){
-////				maxNoFails[i] = meanMaxFail;									
-//				maxNoFails[i] = meanMaxFail + (int)(random.nextDouble()*(double)(2*noiseMaxFail+1))-noiseMaxFail;
-//				if(mode == "healFrozen") healTime[i] = meanHealTime +  (int)(random.nextDouble()*(double)(2*noiseHealTime+1))-noiseHealTime;
-////				if (i<L) System.out.println("no of fails = " + maxNoFails[i]);
-//			}else{
-//				maxNoFails[i] = meanMaxFail;									
-//			}
-////			noFails[i] = 0;
 		}
 		
 		//Choose one type of damage
@@ -183,23 +172,15 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 					killSite(randSite);
 				}
 			}
-
 		}else if(damageType=="Dead Strip"){
-//			int width = (int)(L*initPercentDead);
 			for(int i  = 0; i < N; i++){
 				if(i < noDeadToPlace) killSite(i);
 				else setSite(i);
-//				int y = i%L;
-//				if(y < width){
-//					killSite(i);
-//				}else{
-//					setSite(i);
-//				}
 			}
 		}else if (damageType=="Random + Dead Strip"){
 			System.out.println("Error!");
 		}else if(damageType=="Random Blocks"){
-			int damageBlockSize = 4;
+			int damageBlockSize = 8;
 			FileUtil.printlnToFile(infoFileName, "Damage block size", damageBlockSize);
 			int noDamageBlocks = N/(damageBlockSize*damageBlockSize);
 			double [] damageBlockDamage = new double [noDamageBlocks];
@@ -241,8 +222,11 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		}else{
 			System.out.println("Error!");	
 		}
+		makeNborLists();
+		
 		double percentSitesDamaged = (double)noDeadSites/(double)N;
 		FileUtil.printlnToFile(infoFileName, "No of sites damaged = " , noDeadSites);
+		params.set("No of Dead", noDeadSites);
 		FileUtil.printlnToFile(infoFileName, "Percent of sites damaged = ", percentSitesDamaged);
 			
 		liveSiteLocs = new int [noLiveSites];
@@ -292,19 +276,15 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		}
 	}
 	
-	public int findMaxNoNbors(){
+	int findMaxNoNbors(){
 		System.out.println(interactionTopology);
 		int noNbors = 0;
 		if (interactionTopology == "Circle"){
 			noNbors = findNoCircleNbors();
-			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
 		}else if (interactionTopology == "Square"){	
 			noNbors = (2*R+1)*(2*R+1)-1;
-			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
 		}else if (interactionTopology == "Fully Connected"){	
 			noNbors = N-1;
-			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
-			System.out.println("nbors = " + noNbors);
 		}else if (interactionTopology == "Small World"){	
 			System.out.println("Need small world code for findMaxNbors");
 		}		
@@ -312,7 +292,24 @@ public class OFC_DamageLattice extends AbstractCG_OFC{
 		return noNbors;
 	}
 	
-	public int findNoCircleNbors(){
+	void makeNborLists(){
+		if(deadDissipation==true){
+			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
+		}else if (deadDissipation==false){
+			for (int i = 0; i < N; i++){
+				int ct = 0;
+				for (int j = 0; j < maxNbors; j++){
+					if (noFails[nborList[i][j]] >= 0){
+						ct += 1;
+					}
+					noNborsForSite[i]=ct;
+				}
+			}
+
+		}
+	}
+	
+	int findNoCircleNbors(){
 		int count = 0;
 		 for(int dy = -R; dy <= R; dy++){
 			 for(int dx = -R; dx <= R; dx++){
