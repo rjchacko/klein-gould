@@ -12,6 +12,7 @@ import scikit.graphics.dim2.Gfx2D;
 import scikit.jobs.params.Parameters;
 import scikit.util.Bounds;
 import chris.util.DirUtil;
+import chris.util.PrintUtil;
 import chris.util.Random;
 import chris.util.ReadInUtil;
 import chris.util.vector2d;
@@ -349,8 +350,14 @@ public abstract class InteractingSystem {
 			ri.getDataandParams(new int[]{2,3,4,5}, 2, ic, "-------- Parameters --------", params);
 			
 			N     = params.iget("N");
-			Lx    = params.fget("L");
-			Ly    = Lx;
+			if(params.containsKey("L")){
+				Lx = params.fget("L");
+				Ly = Lx;
+			}
+			else{
+				Lx = params.fget("Lx");
+				Ly = params.fget("Ly"); 
+			}
 			phase = new particle[N];
 			accel = new vector2d[N]; 
 			params.set("N", N);
@@ -428,38 +435,37 @@ public abstract class InteractingSystem {
 		
 		case DEBUG:
 
-			params.set("L",15);
-			params.set("N",225);
+			double s = Math.sqrt(3)/2.;
+			int nx   = 25;
+			int ny   = 25;
+			N        = nx*ny;
+			
+			params.set("N",N);
 			params.set("M",1);
 			params.set("T",0);
-			
-			N  = params.iget("N");
-			Lx = params.fget("L");
-			Ly = Lx;
 			
 			phase = new particle[N];
 			accel = new vector2d[N]; 
 
-			for(int kk = 0 ; kk < Ly ; kk++){
-				for(int jj = 0 ; jj < Lx ; jj++){
-					phase[jj+kk*(int)Ly] = new particle();
-					phase[jj+kk*(int)Ly].q     = 0;
-					phase[jj+kk*(int)Ly].s     = 0.01;
-					phase[jj+kk*(int)Ly].color = Color.red;
-					phase[jj+kk*(int)Ly].v.x   = 0;
-					phase[jj+kk*(int)Ly].v.y   = 0;
-					phase[jj+kk*(int)Ly].r.y   = jj/(double)(Lx);
-					if(jj%2 == 0)
-						phase[jj+kk*(int)Ly].r.x = kk/(double)(Ly);
-					else
-						phase[jj+kk*(int)Ly].r.x = (2*kk+1)/(2.*Ly);
+			for(int kk = 0 ; kk < ny ; kk++){
+				for(int jj = 0 ; jj < nx ; jj++){
+					phase[jj+kk*ny] = new particle();
+					phase[jj+kk*ny].q     = 0;
+					phase[jj+kk*ny].s     = 0.01;
+					phase[jj+kk*ny].color = Color.red;
+					phase[jj+kk*ny].v.x   = 0;
+					phase[jj+kk*ny].v.y   = 0;
+					phase[jj+kk*ny].r.x   = 10*(jj+(kk%2)/2.);
+					phase[jj+kk*ny].r.y   = 10*(kk*s);
 				}
 			}
 			
-			params.set("L",1);
-			Lx = params.iget("L");
-			Ly = Lx;
+			Lx = 10*(nx+0.5);
+			Ly = 10*(ny*s);
+			params.set("Lx",Lx);
+			params.set("Ly",Ly);
 
+			printPhase("/Users/cserino/Desktop/debug_IC.txt",params);
 		break;
 			
 		case VISCOUS:
@@ -577,20 +583,30 @@ public abstract class InteractingSystem {
 	return;
 	}
 	
-	public double structureFactor(int nx, int ny, double Lx, double Ly){
+	public double structureFactor(int nx, int ny){
 	
 		double dot;		
-		vector2d k = new vector2d(Math.PI*nx/Lx, Math.PI*ny/Ly);
+		vector2d k = new vector2d(2*Math.PI*nx/Lx, 2*Math.PI*ny/Ly);
 		double rp, ip, sf;  
-		rp = ip = sf = 0;
+		sf = 0;
 		
 		for(int jj = 0 ; jj < N ; jj++){
+			rp = ip = 0;
 			for(int kk = 0 ; kk < N ; kk++){
+				if(jj==kk)
+					continue;
 				dot = vector2d.dot(k, rij[jj][kk]);
 				rp += Math.cos(dot);
 				ip += Math.sin(dot);
+			}				
+			sf += Math.sqrt((rp*rp+ip*ip))/(N-1);
+			if(nx == 0 && ny == 0){
+				PrintUtil.printlnToFile("/Users/cserino/Desktop/debug.txt",rp,ip,sf);
 			}
-			sf += (rp*rp+ip*ip);
+		}
+		if(nx == 0 && ny == 0){
+			PrintUtil.printlnToFile("/Users/cserino/Desktop/debug.txt","-------------------------");
+			PrintUtil.printlnToFile("/Users/cserino/Desktop/debug.txt",sf,sf/N);
 		}
 		return sf/N;
 	}

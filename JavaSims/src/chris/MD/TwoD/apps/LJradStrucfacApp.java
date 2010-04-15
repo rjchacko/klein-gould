@@ -5,6 +5,10 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.SortedSet;
+import java.util.TreeSet;
 
 import chris.MD.TwoD.LennardJones;
 import chris.util.PrintUtil;
@@ -14,7 +18,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 
-public class LJstrucfacApp extends Simulation{
+public class LJradStrucfacApp extends Simulation{
 	
 	public LennardJones model;
 	static DecimalFormat tf = new DecimalFormat("######.00");
@@ -24,7 +28,7 @@ public class LJstrucfacApp extends Simulation{
 	
 	
 	public static void main(String[] args) {
-		new Control(new LJstrucfacApp(), "Lennard-Jones System");
+		new Control(new LJradStrucfacApp(), "Lennard-Jones System");
 	}
 
 	public void animate() {
@@ -63,10 +67,36 @@ public class LJstrucfacApp extends Simulation{
 		params.add("E");
 		params.add("T_m");
 		params.add("SF");
+
 		
 	}
 
 	public void run() {
+		
+		double sf[][];
+		int idx, countDG[];
+		int countT                   = 0;
+		int mxdp                     = 10;
+		int nk2m                     = 1000*1000;
+		SortedSet<Integer> ks2       = new TreeSet<Integer>();  
+	    HashMap<Integer, Integer> hm = new HashMap<Integer, Integer>();
+	    
+		for(int jj = 0 ; (jj*jj) <= nk2m ; jj++){
+			for(int kk = 0 ; (jj*jj + kk*kk) <= nk2m ; kk++){
+				ks2.add(jj*jj+kk*kk);
+			}
+		}
+		Iterator<Integer> it = ks2.iterator();
+		while(it.hasNext()){
+			hm.put(it.next(), countT++);
+		}
+		it     = null;
+		countT = 0;
+		
+		sf      = new double[ks2.size()][mxdp];
+		countDG = new int[ks2.size()];       
+
+		
 		model = new LennardJones(params);
 		tau   = params.fget("d\u03C4");
 		T     = params.fget("T");
@@ -74,47 +104,48 @@ public class LJstrucfacApp extends Simulation{
 		fout  = params.sget("Data Directory") + File.separator + params.sget("Data File") + ".txt";
 		PrintUtil.printlnToFile(params.sget("Data Directory") + File.separator + "Params_" + params.sget("Data File") + ".log", params.toString());
 		Job.animate();
-		
-		int count       = 0;
-		int mxdp        = 10;
-		int nkx2m       = 1000*1000;
-		int nky2m       = nkx2m;
-		double sf[][]   = new double[(int)(Math.sqrt(nkx2m))+1][(int)(Math.sqrt(nky2m))+1];
 
-		while(count < mxdp){
+		while(countT < mxdp){
 			now = model.stepWT();
 			Job.animate();
 			if(now - then >= tau){
 				then = now;
-				for(int nx = 0; nx*nx <= nkx2m ; nx++){
-					for(int ny = 0; ny*ny+nx*nx <= nky2m ; ny++){
-						sf[nx][ny] = model.structureFactor(nx, ny);
+				for(int nx = 0; (nx*nx) <= nk2m ; nx++){
+					for(int ny = 0; (idx = ny*ny+nx*nx) <= nk2m ; ny++){
+						sf[hm.get(idx).intValue()][countT] = model.structureFactor(nx, ny);
+						countDG[hm.get(idx).intValue()]++;
 					}
-					params.set("SF",Ef.format(100.*nx*nx/(double)(nkx2m)));
+					params.set("SF",Ef.format(100.*nx*nx/(double)(nk2m)));
 					Job.animate();
 				}
-				printSF(sf, count, (int)(Math.sqrt(nkx2m))+1, (int)(Math.sqrt(nky2m))+1);
-				count++;
+				for(int jj = 0 ; jj < countDG.length ; jj++){
+					sf[jj][countT] /= countDG[jj];
+					countDG[jj]     = 0;
+				}
+				countT++;
 			}
 		}
 
+		printSF(sf, mxdp, ks2);
 		return;
 	}
 	
-	private void printSF(double[][] sf, int t, int xm, int ym){
+	private void printSF(double[][] sf, int lngth, SortedSet<Integer> ss){
+		
+		Iterator<Integer> it;
+		int count;
+
 		try{
 			File file = new File(fout);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			if(t == 0)
-				pw.println("t \t nx \t ny \t S(k)");
-			for(int nx = 0; nx*nx <= xm ; nx++){
-				for(int ny = 0; ny*ny <= ym ; ny++){
-					if(sf[nx][ny] == 0)
-						continue;
-					pw.print(t +"\t");
-					pw.print(nx+"\t");
-					pw.print(ny+"\t");
-					pw.println(sf[nx][ny]);
+			pw.println("t \t k^2 S(k)");
+			for (int jj = 0 ; jj < lngth ; jj++){
+				it = ss.iterator();
+				count = 0;
+				while(it.hasNext()){
+					pw.print(jj+"\t");
+					pw.print(it.next()+"\t");
+					pw.println(sf[count++][jj]);
 				}
 			}
 			pw.close();
@@ -122,6 +153,6 @@ public class LJstrucfacApp extends Simulation{
 		catch (IOException ex){
 			ex.printStackTrace();
 		}
-		return;
+	return;
 	}
 }

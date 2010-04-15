@@ -19,7 +19,7 @@ public class SFtestApp extends Simulation{
 	public LennardJones model;
 	static DecimalFormat tf = new DecimalFormat("######.00");
 	static DecimalFormat Ef = new DecimalFormat("0.###E0");
-	private double now, T, L, then, tau;
+	private double now, T, then, tau;
 	private String fout;
 	
 	
@@ -93,7 +93,6 @@ public class SFtestApp extends Simulation{
 		tau   = params.fget("d\u03C4");
 		T     = params.fget("T");
 		then  = 0;
-		L     = params.fget("L");
 		fout  = params.sget("Data Directory") + File.separator + params.sget("Data File") + ".txt";
 		PrintUtil.printlnToFile(params.sget("Data Directory") + File.separator + "Params_" + params.sget("Data File") + ".log", params.toString());
 		Job.animate();
@@ -110,7 +109,7 @@ public class SFtestApp extends Simulation{
 				then = now;
 				for(int nx = 0; nx < nmx ; nx++){	// using k^2 < 200
 					for(int ny = 0; ny < nmx ; ny++){	// using k^2 < 200
-						sf[count][nx][ny] = model.structureFactor(nx, ny, L, L);
+						sf[count][nx][ny] = model.structureFactor(nx, ny);
 						params.set("t",ny);
 						Job.animate();
 					}
