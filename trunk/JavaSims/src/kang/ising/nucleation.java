@@ -32,6 +32,7 @@ public class nucleation extends Simulation{
 	public double T;     //temperature
 	public double QuenchT;  //the temperature after the quench
 	public double H;     //field
+	public double field;
 	public double J;     //interaction constant after normalization
 	public double NJ;    //interaction constant before normalization
 	public double percent;  //diluted percent
@@ -209,7 +210,7 @@ public class nucleation extends Simulation{
 	public void movie(Grid grid, int number, int copynumber)   //function to capture the grid
 	{
 		
-			String SaveAs = "/Users/liukang2002507/Desktop/longrangemovie/p=0seed1001/pic_"+fmt.format(copynumber)+"_"+fmt.format(number)+".png";
+			String SaveAs = "/Users/liukang2002507/Desktop/nucleationmovie/p=0.2/pic_"+fmt.format(copynumber)+"_"+fmt.format(number)+".png";
 		try {
 			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {
@@ -265,7 +266,6 @@ public class nucleation extends Simulation{
 		   spinflip(R, NJ, spin, j, flip, T, H);
 		  
 	    }
-	    //PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/random3.txt", prestep, j);
 	    magnetization=magnetization(spin);
 	    params.set("magnetization", magnetization);
 	    
@@ -291,7 +291,7 @@ public class nucleation extends Simulation{
 		for(int k=0; k<copies; k++)
 		{
 			//newpositionrand=new Random(k);
-			newspinfliprand=new Random(k);
+			newspinfliprand=new Random(k+spinflipseed);
 
 			for(int l=0; l<M; l++)
 				isingcopy[l]=interventioncopy[l];
@@ -323,8 +323,8 @@ public class nucleation extends Simulation{
 		double m2=0;
 		for(int r=Xstart; r<Xend; r++)
 		{
-			m+=Mag[r];
-			m2+=(Mag[r]*Mag[r]);
+			m+=M[r];
+			m2+=(M[r]*M[r]);
 		}
 		X=(m2/(Xend-Xstart))-(m*m)/((Xend-Xstart)*(Xend-Xstart));
 		params.set("susceptibility", X);
@@ -363,20 +363,20 @@ public class nucleation extends Simulation{
 		nucleation.frame (grid2);
 		nucleation.frame (grid3);
 		
-		params.add("lattice's width", 300);
-		params.add("lattice's length", 300);
-		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
-		params.add("Intervention copies", 1000);
-		params.add("Quench starts at", 50);
-		params.add("Intervention starts at",1000000000);
-		params.add("Mag ends", 1000);
-		params.add("Xstart",200);
-		params.add("Xend",800);
+		params.add("lattice's width", 400);
+		params.add("lattice's length", 400);
+		params.add("Diluted Percentage", new DoubleValue(0.30,0,1).withSlider());
+		params.add("Intervention copies", 20);
+		params.add("Quench starts at", 100);
+		params.add("Intervention starts at",1034000000);
+		params.add("Mag ends", 500);
+		params.add("Xstart",100);
+		params.add("Xend",400);
 		params.add("Intervention threshold",new DoubleValue(0.7,-1,1).withSlider());
-		params.add("Intervention steplimit", 25);
+		params.add("Intervention steplimit", 20);
 		
 		params.addm("Interaction Constant before normalization", -4);
-		params.add("Interaction range", 15);
+		params.add("Interaction range", 20);
 		
 		params.add("Monte Carlo step's limit", 1000000);
 		//params.add("Position seed", 1001);
@@ -385,9 +385,9 @@ public class nucleation extends Simulation{
 		params.add("Dilution seed", 1);
 		params.add("Initialization type", 0);
 		
-		params.addm("Quench temperature", new DoubleValue(1.778, 0, 10).withSlider());
+		params.addm("Quench temperature", new DoubleValue(2.835, 0, 10).withSlider());
 		params.addm("Temperature", new DoubleValue(9, 0, 10).withSlider());
-		params.addm("Field", new DoubleValue(1.16, -5, 5).withSlider());
+		params.addm("Field", new DoubleValue(0, -5, 5).withSlider());
 		params.add("MC time");
 		params.add("Metastable state time");
 		params.add("magnetization");
@@ -397,7 +397,7 @@ public class nucleation extends Simulation{
  
         params.add("grow");
         params.add("decay");
-       // params.add("positionrand");
+       // params.add("positionrand");  
         params.add("spinfliprand");
         params.add("spinrand");
         params.add("dilutionrand");
@@ -433,7 +433,7 @@ public class nucleation extends Simulation{
 		Xstart= (int)params.fget("Xstart");
 		Xend= (int)params.fget("Xend");
 	//	positionseed = (int)params.fget("Position seed");
-		spinflipseed = (int)params.fget("Spinflip seed");
+		//spinflipseed = (int)params.fget("Spinflip seed");
 		spinseed = (int)params.fget("Spin seed");
 		dilutionseed = (int)params.fget("Dilution seed");
 		
@@ -441,59 +441,82 @@ public class nucleation extends Simulation{
 		type = (int)params.fget("Initialization type");
 		
 	//	positionrand= new Random (positionseed);
-		spinfliprand= new Random (spinflipseed);
+		field = params.fget("Field");
+
+		
+
 
 		
 		initialize(isingspin, type, percent, spinseed, dilutionseed);
 		
 		Job.animate();
 		//movie(grid1, 99999, 1);
-		
+		//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/errorbar200HX.txt", "         ");
+		for(int u=0; u<16; u++)
+		{
+			params.set("Temperature",9);	//reset the high temperature everytime
+			params.set("Field",field);
+			params.set("Quench temperature",2.835-0.005*u);
+			QuenchT=params.fget("Quench temperature");
+			spinflipseed = (int)((field+1)*QuenchT*10000+u);
+			spinfliprand= new Random (spinflipseed);
+	
 		for (prestep=0; prestep < 50; prestep++)
 			{
 			MCS(isingspin, spinfliprand);
+			params.set("MC time", prestep-50);
 			Job.animate();
 			}
 		
-		params.set("spinfliprand", spinfliprand.nextDouble());
-		params.set("spinrand", spinrand.nextDouble());
+		params.set("spinfliprand", spinflipseed);
+		params.set("spinrand", u);
 		params.set("dilutionrand",dilutionrand.nextDouble());
 		temperaturequench(QuenchT);
 		
-		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/newlargep000.txt","field = ", H);
-		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/newlargep000.txt","             ");
+		//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/errorbar200.txt","field = ", H , u);
+		//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/errorbar200.txt","             ");
 		
-		for (step=0; step-quenchstart<interventionstart; step++)
+		for (step=0; step-quenchstart<Mend+1; step++)
 		{
 
 			if(step==quenchstart)
 				{
-				Ms=magnetization;
-				params.set("Saturated magnetization", Ms);
 				fieldquench();
 				}
+			if(step==quenchstart+100)
+			{
+				Ms=magnetization;
+				params.set("Saturated magnetization", Ms);
+			}
 			MCS(isingspin, spinfliprand);
 			params.set("MC time", step);
 			Job.animate();
 			//movie(grid1, step, 1001);
 			params.set("Metastable state time", step-quenchstart);
-			if(((step-quenchstart)%1==0)&((step-quenchstart)>=0)&((step-quenchstart)<Mend)&(interventionstart>1000000))
+			if(((step-quenchstart)%1==0)&((step-quenchstart)>=0)&(interventionstart>100000)&(step-quenchstart<Mend))
 				
 				{
-				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/newlargep000.txt",step-quenchstart, (magnetization/Ms));
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/nucleationmovie/data200.txt",step-quenchstart, (magnetization/Ms));
 				Mag[step-quenchstart]=magnetization;
 				//movie(grid1,step-quenchstart, 1001);
 				}
 			if((step-quenchstart)==Mend)
 				{
+				/*if(magnetization<0)
+					{
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/errorbar200.txt","lifetime too short", H , u );
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/errorbar200HX.txt","lifetime too short", H , u );
+					}*/
 				susceptibility(Mag);
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/newlargep000.txt",H , Mend, Xend-Xstart, X);
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/newlargep000HX.txt",H , Mend, Xend-Xstart, X);
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/400large300Tc.txt",H , QuenchT, u, Mend, Xend-Xstart, X);
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/spinodaldata/errorbar200HX.txt",H , QuenchT, u, Mend, Xend-Xstart, X);
 				}
 
 		    	
 		}
-		for (int h=0; h<M; h++)
+		
+	}
+		/*for (int h=0; h<M; h++)
 			{
 			interventioncopy[h]=isingspin[h];
 			criticaldroplet[h]=interventioncopy[h];
@@ -506,7 +529,7 @@ public class nucleation extends Simulation{
 		intervention(numberofcopies, interventionsteplimit, interventionthreshold);
 	
 		Job.animate();
-		movie(grid3, interventionstart, 88888);
+		movie(grid3, interventionstart, 88888);*/
 
         
 		//end of all MCS steps
