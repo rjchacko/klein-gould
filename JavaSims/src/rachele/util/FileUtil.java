@@ -69,6 +69,16 @@ public class FileUtil {
 			ex.printStackTrace();
 		}
 	}
+
+	static public void printlnToFile(String fileName, String text, String text2, String text3){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(text + " " + text2 + " " + text3);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
 	
 	static public void printlnToFile(String fileName, double d1, double d2){
 		try{
@@ -283,6 +293,8 @@ public class FileUtil {
 		}
 	}
 	
+
+	
 	static public double [][] readDoubleData(String FileName){
 		//Counts number of lines that contains data (means does not start with a "#" and is not blank.)
 
@@ -345,6 +357,11 @@ public class FileUtil {
 //		}
 		return output;
 		
+	}
+	
+	public static void makeDirs(String dirs){
+		   boolean status = new File(dirs).mkdirs();
+		   System.out.println(status ? "success " : "failure " + "creating dir " + dirs);
 	}
 	
 }
