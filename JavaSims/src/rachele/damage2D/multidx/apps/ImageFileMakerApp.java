@@ -1,8 +1,8 @@
 package rachele.damage2D.multidx.apps;
 
 import java.io.*;
-import java.util.*;
-import java.io.IOException;
+//import java.util.*;
+//import java.io.IOException;
 
 
 import rachele.util.*;
@@ -46,15 +46,15 @@ public class ImageFileMakerApp extends Simulation{
 	void makeShFiles(){
 		//dd (dead dissipation files)
 		String ddbrshFile = "dd" + File.separator + "br" + File.separator + "sh.txt";
-		String ddrdshFile = "dd" + File.separator + "rd" + File.separator + "sh.txt";
-		String dddsshFile = "dd" + File.separator + "ds" + File.separator + "sh.txt";
-		String dddbshFile = "dd" + File.separator + "db" + File.separator + "sh.txt";
+//		String ddrdshFile = "dd" + File.separator + "rd" + File.separator + "sh.txt";
+//		String dddsshFile = "dd" + File.separator + "ds" + File.separator + "sh.txt";
+//		String dddbshFile = "dd" + File.separator + "db" + File.separator + "sh.txt";
 
 		//nd (no dissipation files)
 		String ndbrshFile = "nd" + File.separator + "br" + File.separator + "sh.txt";
-		String ndrdshFile = "nd" + File.separator + "rd" + File.separator + "sh.txt";
-		String nddsshFile = "nd" + File.separator + "ds" + File.separator + "sh.txt";
-		String nddbshFile = "nd" + File.separator + "db" + File.separator + "sh.txt";
+//		String ndrdshFile = "nd" + File.separator + "rd" + File.separator + "sh.txt";
+//		String nddsshFile = "nd" + File.separator + "ds" + File.separator + "sh.txt";
+//		String nddbshFile = "nd" + File.separator + "db" + File.separator + "sh.txt";
 		
 		//make new pyxplot files
 		String BRshFile = parentDir + "pyxplotShBR.txt";

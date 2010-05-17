@@ -53,7 +53,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	
 	void initLattice(Parameters params){
 		
-		System.out.println("Initializing lattice");
+		p("Initializing lattice");
 		stress = new double [N];
 		epicenterCount = new int [N];
 		epicenterSize = new int [N];
@@ -62,18 +62,23 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		maxNbors = findNoCircleNbors();	
 		System.out.println("max no nbors = " + maxNbors);
 		FileUtil.printlnToFile(infoFileName, "max no nbors = " , maxNbors);
-		nborList = new int [N][maxNbors];						
-
+		p("Allocating nbor list...");
+		nborList = new int [N][maxNbors];	
+		
+		p("Finding neighbors...");
 		findCircleNbors();
 		noDeadSites = 0;
 		noLiveSites = N;
 		
+		p("Finding stress...");
 		for (int i = 0; i < N; i++){
 			stress[i] = random.nextFloat()*(tStress-rStress)+rStress;	
 		}
 		
-		System.out.println("Setting damage");
+		p("Setting damage...");
 		setDamage(damage, params.iget("Dead Parameter"), params.fget("Init Percent Dead"));
+		
+		p("Making neighbor lists...");
 		makeNborLists();
 		
 		double percentSitesDamaged = (double)noDeadSites/(double)N;
@@ -90,6 +95,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		cg_time = 0;
 		plateUpdates = 0;
 
+		p("Lattice init complete.");
 	}
 	
 	void killSite(int site){
@@ -109,72 +115,136 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		for(int i = 0; i < N; i ++){
 			aliveLattice[i] = true;
 		}
-		if(damageType=="Random"){
-			for(int i = 0; i < N; i++){
-				if(random.nextDouble() > initPercentDead){
-					setSite(i);
-				}else{
-					killSite(i);
-				}
-			}
-		}else if(damageType == "Place Random Dead"){
-			System.out.println(" no of dead to place = " + noDeadToPlace);
-			while(noDeadSites < noDeadToPlace){
-				int randSite = (int)(random.nextDouble()*(double)N);
-				if (aliveLattice[randSite]){
-					killSite(randSite);
-				}
-			}
-		}else if(damageType=="Dead Strip"){
-			for(int i  = 0; i < N; i++){
-				if(i < noDeadToPlace) killSite(i);
-				else setSite(i);
-			}
-		}else if (damageType=="Random + Dead Strip"){
-			System.out.println("Error!");
-		}else if(damageType=="Random Blocks"){
-			int damageBlockSize = deadParam;
-			FileUtil.printlnToFile(infoFileName, "Damage block size", damageBlockSize);
-			int noDamageBlocks = N/(damageBlockSize*damageBlockSize);
-			double [] damageBlockDamage = new double [noDamageBlocks];
-			for (int j = 0; j < noDamageBlocks; j++){
-				//assign a random amount of damage
-				//half of blocks have no damage
-//				damageBlockDamage[j] = random.nextGaussian()*0.07;   // this gives about 3 % damage
-//				damageBlockDamage[j] = random.nextGaussian()*0.115;  // this gives about 5 % damage
-				damageBlockDamage[j] = random.nextGaussian()*0.25;  // this gives about 10 % damage
-//				damageBlockDamage[j] = random.nextGaussian()*0.59;  // this gives about 25 % damage
-//				damageBlockDamage[j] = Math.abs(random.nextGaussian());  // this gives about ? % damage
-			}
-			for (int i = 0; i < N; i++){
-				int block = findCG_site(i, damageBlockSize);
-				if (random.nextDouble() < damageBlockDamage[block]){
-					killSite(i);
-				}else{
-					setSite(i);
-				}
-			}
-		}else if(damageType == "Dead Block"){
-			int sq = (int) Math.sqrt(noDeadToPlace);
-			int initialBlock = sq*sq;
-			for (int x = 0; x < sq; x++){
-				for (int y = 0; y < sq; y++){
-					int s = y*L+x;
-					killSite(s);
-				}
-			}
-			int extra = noDeadToPlace - initialBlock;
-			if(extra > sq){
-				for(int i = 0; i < sq; i++) killSite(i*L + sq);
-				for (int i = 0; i <= extra-sq; i++) killSite(sq*L + i);
-			}else{
-				for (int i = 0; i < extra; i++) killSite(i*L + sq);
-			}
+		if(damageType=="Random") setRandom(initPercentDead);
+		else if(damageType == "Place Random Dead")	setPlaceDeadRandom(noDeadToPlace);
+		else if(damageType=="Dead Strip") setDeadStrip(noDeadToPlace);
+		else if(damageType=="Random Blocks") setRandomBlockDamage(deadParam);
+		else if(damageType == "Dead Block") setDeadBlock(noDeadToPlace);
+		else if(damageType == "Cascade") setCascadeDamage(initPercentDead);
+		else System.out.println("Error!");	
+		
+	}
+	
+	void setCascadeDamage(double p){
+		System.out.println("Setting Cascading Damage");
+		int maxPow = pow-2;
+		//largest lattice size is 8 x 8
 
-			
-		}else{
-			System.out.println("Error!");	
+		for (int ip = maxPow; ip >= 0; ip--){
+			int dx = (int)Math.pow(2 ,ip);
+			int Lp = L/dx;
+			int Np = Lp*Lp;
+			System.out.println("dx = " + dx + " Lp = " + Lp);	
+			for (int i = 0; i < Np; i++){
+				// kill alive blocks with probability p
+				if(liveBlockTest(i, ip)){
+					if (random.nextDouble()<p) 
+						killBlock(dx, i);
+				}
+			}
+				
 		}
+	}
+	
+	
+	boolean liveBlockTest(int blockNo, int ip){
+		boolean ret = false;
+		int dx = (int)Math.pow(2, ip);
+		int Lp = L/dx;
+		int xp = blockNo%Lp;
+		int yp = blockNo/Lp;
+		int x = dx*xp;
+		int y = dx*yp;
+		int site = y*L+x;
+		if(aliveLattice[site]) ret = true;
+		return ret;
+	}
+	
+	void killBlock(int dx, int block){
+		//kill sites in block
+		int Lp = L/dx;
+		int xp = block%Lp;
+		int yp = block/Lp;
+		for (int y = yp*dx; y < yp*dx+dx; y++){
+			for (int x = xp*dx; x < xp*dx + dx; x++){
+				int site = y*L+x; 
+				killSite(site);
+			}
+		}
+//		for (int i = 0; i < N; i++){
+//			if(findCG_site(i, blockSize)== block) killSite(i);
+//		}
+	}
+
+
+	
+	void setDeadStrip(int noDeadToPlace){
+		for(int i  = 0; i < N; i++){
+			if(i < noDeadToPlace) killSite(i);
+			else setSite(i);
+		}
+	}
+	
+	void setPlaceDeadRandom(int noDeadToPlace){
+		while(noDeadSites < noDeadToPlace){
+			int randSite = (int)(random.nextDouble()*(double)N);
+			if (aliveLattice[randSite]){
+				killSite(randSite);
+			}
+		}
+	}
+	
+	void setRandom(double initPercentDead){
+		for(int i = 0; i < N; i++){
+			if(random.nextDouble() > initPercentDead){
+				setSite(i);
+			}else{
+				killSite(i);
+			}
+		}
+	}
+	
+	void setDeadBlock(int noDeadToPlace){
+		int sq = (int) Math.sqrt(noDeadToPlace);
+		int initialBlock = sq*sq;
+		for (int x = 0; x < sq; x++){
+			for (int y = 0; y < sq; y++){
+				int s = y*L+x;
+				killSite(s);
+			}
+		}
+		int extra = noDeadToPlace - initialBlock;
+		if(extra > sq){
+			for(int i = 0; i < sq; i++) killSite(i*L + sq);
+			for (int i = 0; i <= extra-sq; i++) killSite(sq*L + i);
+		}else{
+			for (int i = 0; i < extra; i++) killSite(i*L + sq);
+		}
+
+	}
+	
+	void setRandomBlockDamage(int damageBlockSize){
+		FileUtil.printlnToFile(infoFileName, "Damage block size", damageBlockSize);
+		int noDamageBlocks = N/(damageBlockSize*damageBlockSize);
+		double [] damageBlockDamage = new double [noDamageBlocks];
+		for (int j = 0; j < noDamageBlocks; j++){
+			//assign a random amount of damage
+			//half of blocks have no damage
+//			damageBlockDamage[j] = random.nextGaussian()*0.07;   // this gives about 3 % damage
+//			damageBlockDamage[j] = random.nextGaussian()*0.115;  // this gives about 5 % damage
+			damageBlockDamage[j] = random.nextGaussian()*0.25;  // this gives about 10 % damage
+//			damageBlockDamage[j] = random.nextGaussian()*0.59;  // this gives about 25 % damage
+//			damageBlockDamage[j] = Math.abs(random.nextGaussian());  // this gives about ? % damage
+		}
+		for (int i = 0; i < N; i++){
+			int block = findCG_site(i, damageBlockSize);
+			if (random.nextDouble() < damageBlockDamage[block]){
+				killSite(i);
+			}else{
+				setSite(i);
+			}
+		}
+		
 	}
 	
 	void makeNborLists(){
@@ -305,6 +375,9 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 				checkAliveCount += 1;
 			}
 		}
+	}
+	void p(String s){
+		System.out.println(s);
 	}
 
 }
