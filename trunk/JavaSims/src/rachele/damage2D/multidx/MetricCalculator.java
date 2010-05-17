@@ -173,7 +173,7 @@ public class MetricCalculator {
 				percentAlive[j] = (double)aliveCt[j] / (double)boxSize;
 			for (int j = 0; j < Np; j++){
 				int index = findAliveIndex(j, i);
-				if(percentAlive[j] < 1.0 - tolerance) alive[index] = false;
+				if(percentAlive[j] <= 1.0 - tolerance) alive[index] = false;
 				else alive [index] = true;
 			}
 		}
@@ -182,7 +182,8 @@ public class MetricCalculator {
 	public int findAliveIndex(int cgSite, int ip){
 		int ret = 0;
 		for(int i = 0; i < ip; i++){
-			int Np = N/((int) Math.pow(Math.pow(2, i), 2));
+			int dx = (int)Math.pow(2, i);
+			int Np = N/((int) Math.pow(dx, 2));
 			ret += Np;
 		}
 		ret += cgSite;

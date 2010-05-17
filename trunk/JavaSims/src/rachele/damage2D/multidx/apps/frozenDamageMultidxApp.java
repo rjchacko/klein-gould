@@ -64,14 +64,14 @@ public class frozenDamageMultidxApp extends Simulation{
 		String br = "Random Blocks";
 		String ds = "Dead Strip";
 		String pr = "Place Random Dead";
-		String rs = "Random + Dead Strip";
 		String db = "Dead Block";
-		params.add("Type of Damage", new ChoiceValue(br, ds, pr, br, rd, rs, db));
+		String cs = "Cascade";
+		params.add("Type of Damage", new ChoiceValue(cs, br, ds, pr, br, rd, db));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
-		params.addm("Random Seed", 1);
+		params.addm("Random Seed", 6);
 		params.addm("Size Power",9);
 		params.addm("R", 16);
-		params.addm("Init Percent Dead", 0.0625);
+		params.addm("Init Percent Dead", 0.1);
 		params.addm("Dead Parameter", 8);
 		params.addm("Coarse Grained dt (PU)", 10000);
 		params.addm("Equilibration Updates", 100000);
@@ -80,7 +80,7 @@ public class frozenDamageMultidxApp extends Simulation{
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Dissipation Param", 0.04);
-		params.addm("Damage Tolerance", 0.05);
+		params.addm("Damage Tolerance", 1.0);
 		params.add("Av Size");
 		params.add("Plate Updates");
 	}
