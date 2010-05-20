@@ -58,7 +58,7 @@ public class nucleation extends Simulation{
 	public int interventioncopy[];   //the array of the isingspin at the beginning of intervention
 	public int isingcopy[];     //the array of the copy
 	public int criticaldroplet[];
-	public int initialtype;     //the type of initialization 0-random 1-all up 2-all down
+
 	public double Mag[];   //the array for magnetization used for the susceptibiliy
 	
 	//public Random positionrand;

@@ -20,7 +20,7 @@ import java.awt.Color;
 
 import chris.util.PrintUtil;
 
-import scikit.graphics.ColorGradient;
+//import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;

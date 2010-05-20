@@ -1,13 +1,13 @@
 package kang.ising;
 
 import java.awt.Color;
-import java.io.File;
-import java.io.IOException;
+//import java.io.File;
+//import java.io.IOException;
 import java.text.DecimalFormat;
 
-import javax.imageio.ImageIO;
+//import javax.imageio.ImageIO;
 
-import chris.util.PrintUtil;
+//import chris.util.PrintUtil;
 import chris.util.Random;
 
 import scikit.graphics.ColorPalette;
@@ -15,7 +15,7 @@ import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
-import scikit.jobs.params.DoubleValue;
+//import scikit.jobs.params.DoubleValue;
 
 public class randomnumbertest extends Simulation{
 	
