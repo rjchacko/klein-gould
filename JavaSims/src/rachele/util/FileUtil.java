@@ -80,6 +80,16 @@ public class FileUtil {
 		}
 	}
 	
+	static public void printlnToFile(String fileName, String s1, double d1, String s2, double d2){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(s1 + " " + d1 + " " + s2 + " "+ d2);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	static public void printlnToFile(String fileName, double d1, double d2){
 		try{
 			File file = new File(fileName);
@@ -172,6 +182,37 @@ public class FileUtil {
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int i = 0; i < size; i++){
 				pw.println(data.x(i) + " " + data.y(i));
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void printAccumsToFile(String fileName, Accumulator acc1, Accumulator acc2){
+		DatasetBuffer data1 = acc1.copyData();
+		DatasetBuffer data2 = acc2.copyData();
+		int size = data1.size();
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int i = 0; i < size; i++){
+				pw.println(data1.x(i) + " " + data1.y(i) + " " + data2.y(i));
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	static public void printAccumsToFile(String fileName, Accumulator acc1, Accumulator acc2, Accumulator acc3){
+		DatasetBuffer data1 = acc1.copyData();
+		DatasetBuffer data2 = acc2.copyData();
+		DatasetBuffer data3 = acc3.copyData();
+		int size = data1.size();
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int i = 0; i < size; i++){
+				pw.println(data1.x(i) + " " + data1.y(i) + " " + data2.y(i) + " " + data3.y(i));
 			}
 		} catch (IOException ex){
 			ex.printStackTrace();

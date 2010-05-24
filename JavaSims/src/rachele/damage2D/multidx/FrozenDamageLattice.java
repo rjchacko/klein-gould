@@ -4,11 +4,13 @@ import scikit.jobs.params.Parameters;
 
 public class FrozenDamageLattice extends AbstractOFC_Multidx{
 
-	public boolean [] aliveLattice;  // No of failures at each site: once a site is dead -> = -1;	
+	public boolean [] aliveLattice;  // No of failures at each site: once a site is dead -> = -1;
 	public int [] epicenterSize;
+	public double alphaDissRate;
+	public double deadDissRate;
+	public int noLiveSites; 
 	
 	int noDeadSites;
-	int noLiveSites; 
 	int nextSiteToFail;
 	int maxNbors;
 	int [] noNborsForSite;  // No of nbors at each site (for when different for each site.)
@@ -16,7 +18,12 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	
 	double maxPercentDamage;
 	double [] cgBlockDamage;
+	double [] fracDeadNbors;
+	double alphaDissAccum;
+	double deadDissAccum;
+	double rateCt;
 	
+	boolean [] setLattice;
 	boolean deadStrip;
 	boolean randomBlockDamage;
 	boolean deadDissipation;
@@ -27,14 +34,14 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	public FrozenDamageLattice(Parameters params, String name) {
 		infoFileName = name;
 		FileUtil.initFile(infoFileName, params);
-		FileUtil.printlnToFile(infoFileName, "Runlog for OFC_DamageLattice");
+		FileUtil.printlnToFile(infoFileName, "# Runlog for OFC_DamageLattice");
 		setParameters(params);
 		initLattice(params);
 	}
 	
 	public void setParameters(Parameters params) {
 	
-		FileUtil.printlnToFile(infoFileName, "Setting params");
+		FileUtil.printlnToFile(infoFileName, "# Setting params");
 		if(params.sget("Dead dissipation?")=="Yes") deadDissipation = true;
 		else deadDissipation = false;
 		System.out.println("Dead dissipation = " + deadDissipation);
@@ -49,6 +56,9 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		rStress = params.fget("Residual Stress");
 		maxResNoise = params.fget("Res. Max Noise");
 		damage = params.sget("Type of Damage");
+		deadDissRate = 0.0;
+		alphaDissRate = 0.0;
+		rateCt = 0;
 	}
 	
 	void initLattice(Parameters params){
@@ -58,10 +68,12 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		epicenterCount = new int [N];
 		epicenterSize = new int [N];
 		aliveLattice = new boolean [N];
+		setLattice = new boolean [N];
 		noNborsForSite = new int [N];
+		fracDeadNbors = new double [N];
 		maxNbors = findNoCircleNbors();	
 		System.out.println("max no nbors = " + maxNbors);
-		FileUtil.printlnToFile(infoFileName, "max no nbors = " , maxNbors);
+		FileUtil.printlnToFile(infoFileName, "# max no nbors = " , maxNbors);
 		p("Allocating nbor list...");
 		nborList = new int [N][maxNbors];	
 		
@@ -82,10 +94,10 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		makeNborLists();
 		
 		double percentSitesDamaged = (double)noDeadSites/(double)N;
-		FileUtil.printlnToFile(infoFileName, "No of sites damaged = " , noDeadSites);
+		FileUtil.printlnToFile(infoFileName, "# No of sites damaged = " , noDeadSites);
 		
 		params.set("Dead Parameter", noDeadSites);
-		FileUtil.printlnToFile(infoFileName, "Percent of sites damaged = ", percentSitesDamaged);
+		FileUtil.printlnToFile(infoFileName, "# Percent of sites damaged = ", percentSitesDamaged);
 		System.out.println("Percent of sites damaged = "+ percentSitesDamaged);
 
 		for (int i = 0; i < N; i++){
@@ -121,8 +133,83 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		else if(damageType=="Random Blocks") setRandomBlockDamage(deadParam);
 		else if(damageType == "Dead Block") setDeadBlock(noDeadToPlace);
 		else if(damageType == "Cascade") setCascadeDamage(initPercentDead);
+		else if(damageType == "Cascade Random") setCascadeRandom(initPercentDead);
+		else if(damageType == "Dead Rectangle") setDeadRectangle(noDeadToPlace);
 		else System.out.println("Error!");	
 		
+	}
+	
+	private void setDeadRectangle(int noDead) {
+		int aspectRatio = 5;// width over height
+		int w = (int)Math.sqrt(aspectRatio*noDead);
+		if(w > L) System.out.println("Aspect Ratio error!");
+		int h = noDead/w;
+		int initialBlock = h*w;
+		for (int x = 0; x < w; x++){
+			for (int y = 0; y < h; y++){
+				int s = y*L+x;
+				killSite(s);
+			}
+		}
+		int extra = noDead - initialBlock;
+		if(extra > h){
+			for(int i = 0; i < h; i++) killSite(i*L + w);
+			for (int i = 0; i <= extra-h; i++) killSite(h*L + i);
+		}else{
+			for (int i = 0; i < extra; i++) killSite(i*L + w);
+		}
+		System.out.println(" dead = " + noDead + " no in block so far = "  + initialBlock);
+		
+	}
+
+	private void setCascadeRandom(double p) {
+		System.out.println("Setting Cascade Random Damage");
+		int maxPow = pow-2;
+		for (int i = 0; i < N; i++) setLattice[i] = false;
+
+		for (int ip = maxPow; ip >= 0; ip--){
+			int dx = (int)Math.pow(2 ,ip);
+			int Lp = L/dx;
+			int Np = Lp*Lp;
+			System.out.println("dx = " + dx + " Lp = " + Lp);	
+			for (int i = 0; i < Np; i++){
+				// set blocks with probability if they are not already set
+				if(setBlockTest(i, ip)==false){
+					if (random.nextDouble()<p) 
+						setBlock(dx, i);
+				}
+			}
+				
+		}
+		
+	}
+	
+	boolean setBlockTest(int blockNo, int ip){
+		boolean ret = false;
+		int dx = (int)Math.pow(2, ip);
+		int Lp = L/dx;
+		int xp = blockNo%Lp;
+		int yp = blockNo/Lp;
+		int x = dx*xp;
+		int y = dx*yp;
+		int site = y*L+x;
+		if(setLattice[site]) ret = true;
+		return ret;
+	}
+	
+	void setBlock(int dx, int block){
+		//all sites in block
+		int Lp = L/dx;
+		int xp = block%Lp;
+		int yp = block/Lp;
+		double p =random.nextDouble();
+		for (int y = yp*dx; y < yp*dx+dx; y++){
+			for (int x = xp*dx; x < xp*dx + dx; x++){
+				int site = y*L+x;
+				if(random.nextDouble()<p) killSite(site);
+				setLattice[site] = true;
+			}
+		}
 	}
 	
 	void setCascadeDamage(double p){
@@ -145,7 +232,6 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 				
 		}
 	}
-	
 	
 	boolean liveBlockTest(int blockNo, int ip){
 		boolean ret = false;
@@ -171,13 +257,8 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 				killSite(site);
 			}
 		}
-//		for (int i = 0; i < N; i++){
-//			if(findCG_site(i, blockSize)== block) killSite(i);
-//		}
 	}
 
-
-	
 	void setDeadStrip(int noDeadToPlace){
 		for(int i  = 0; i < N; i++){
 			if(i < noDeadToPlace) killSite(i);
@@ -250,6 +331,16 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	void makeNborLists(){
 		if(deadDissipation==true){
 			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
+			for (int i = 0; i < N; i++){
+				int ct = 0;
+				for (int j = 0; j < maxNbors; j++){
+					if (aliveLattice[nborList[i][j]]){
+						ct += 1;
+					}
+					int noDead = maxNbors - ct;
+					fracDeadNbors[i] = (double)noDead/maxNbors;
+				}
+			}
 		}else if (deadDissipation==false){
 			for (int i = 0; i < N; i++){
 				int ct = 0;
@@ -262,7 +353,6 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 			}
 
 		}
-//		System.out.println("No of nbors for site 0 = " + noNborsForSite[0]);
 	}
 	
 	int findNoCircleNbors(){
@@ -307,10 +397,10 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	public void equilibrate(){
 
 		bringToFailure();
-		fail(epicenterSite);  //Just distributes stress to each neighbor
+		eqFail(epicenterSite);  //Just distributes stress to each neighbor
 		int nextSiteToFail = checkFail();  //each checkFail loops through lattice once.
 		while (nextSiteToFail >= 0){
-			fail(nextSiteToFail);
+			eqFail(nextSiteToFail);
 			nextSiteToFail = checkFail();
 			avSize += 1;
 		}
@@ -362,9 +452,10 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		return s;
 	}
 
-	void fail(int s){
+	void eqFail(int s){
 		double resStressWithNoise = calcResNoise(s);
-		double stressPerNbor = ((1-alpha)*(stress[s] - resStressWithNoise))/(double)noNborsForSite[s];
+		double stressDrop = stress[s] - resStressWithNoise;
+		double stressPerNbor = ((1-alpha)*(stressDrop))/(double)noNborsForSite[s];
 		stress[s] = resStressWithNoise;
 		//distribute stress to the alive nbors
 		int checkAliveCount = 0;
@@ -376,6 +467,40 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 			}
 		}
 	}
+	
+	void fail(int s){
+		double resStressWithNoise = calcResNoise(s);
+		double stressDrop = stress[s] - resStressWithNoise;
+		double stressPerNbor = ((1-alpha)*(stressDrop))/(double)noNborsForSite[s];
+//		if(damage == "Cascade")
+			if(deadDissipation) calcDissipation(stressDrop, s);
+		stress[s] = resStressWithNoise;
+		//distribute stress to the alive nbors
+		int checkAliveCount = 0;
+		for (int i = 0; i < maxNbors; i++){
+			int nborSite = nborList[s][i];
+			if(aliveLattice[nborSite]){
+				stress[nborSite] += stressPerNbor;
+				checkAliveCount += 1;
+			}
+		}
+	}
+	
+
+	void calcDissipation(double stressDrop, int site){
+		rateCt += 1.0;
+		//calc alpha dissipation = alpha x % alive
+		double fracAlive = 1.0 - fracDeadNbors[site];
+		double alphaDiss = alpha*fracAlive;
+		alphaDissAccum += alphaDiss;
+		alphaDissRate = alphaDissAccum/rateCt;
+//		System.out.println("aDiss = " + alphaDiss + " cgTime = " + cg_time + " rate = " + alphaDissRate);
+		//calc deadDiss = fraction dead
+		double deadDiss = fracDeadNbors[site];
+		deadDissAccum += deadDiss;
+		deadDissRate = deadDissAccum/rateCt;
+	}
+	
 	void p(String s){
 		System.out.println(s);
 	}
