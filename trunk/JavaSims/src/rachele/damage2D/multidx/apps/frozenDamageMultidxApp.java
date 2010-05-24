@@ -1,14 +1,10 @@
 package rachele.damage2D.multidx.apps;
 
 import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
 import rachele.damage2D.multidx.FrozenDamageLattice;
 import rachele.damage2D.multidx.MetricCalculator;
 import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
-import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -34,6 +30,7 @@ public class frozenDamageMultidxApp extends Simulation{
 	String [][] cgFiles;
 	
 	double stressMetric;
+	double alphaDissRate;
 	boolean includeDead;
 	
 	FrozenDamageLattice ofc;
@@ -43,6 +40,8 @@ public class frozenDamageMultidxApp extends Simulation{
 	Accumulator maxSizeTempAcc = new Accumulator();	
 	Accumulator [][] cgMetsAcc;
 	Accumulator [] sMetsAcc = new Accumulator[2];
+	Accumulator scaledTimeAcc = new Accumulator();
+	Accumulator scaledLiveTimeAcc = new Accumulator();
 	
 	int noGrids = 6;
 	Grid [] deadGrid = new Grid [noGrids];
@@ -59,23 +58,25 @@ public class frozenDamageMultidxApp extends Simulation{
 
 		c.frameTogether("Grids", deadGrid);
 
-		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/P14-DamageCompare/L256/alpha0-04/R16/"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testRuns/"));
 		String rd = "Random";
 		String br = "Random Blocks";
 		String ds = "Dead Strip";
 		String pr = "Place Random Dead";
 		String db = "Dead Block";
 		String cs = "Cascade";
-		params.add("Type of Damage", new ChoiceValue(cs, br, ds, pr, br, rd, db));
+		String dr = "Dead Rectangle";
+		String cr = "Cascade Random";
+		params.add("Type of Damage", new ChoiceValue(rd, cr, cs, br, ds, pr, br, rd, db, dr));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
-		params.addm("Random Seed", 6);
-		params.addm("Size Power",9);
-		params.addm("R", 16);
+		params.addm("Random Seed", 5);
+		params.addm("Size Power",7);
+		params.addm("R", 8);
 		params.addm("Init Percent Dead", 0.1);
 		params.addm("Dead Parameter", 8);
-		params.addm("Coarse Grained dt (PU)", 10000);
-		params.addm("Equilibration Updates", 100000);
-		params.addm("Max PU", 1000000);
+		params.addm("Coarse Grained dt (PU)", 16384);
+		params.addm("Equilibration Updates", 50);
+		params.addm("Max PU", 1638400);
 		params.addm("Data points per write", 1);
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
@@ -114,19 +115,22 @@ public class frozenDamageMultidxApp extends Simulation{
 		int dataPointsCount = 0;
 		
 		System.out.println("Equlibrating");
-		FileUtil.printlnToFile(infoFile, "Equilibrating");
+		FileUtil.printlnToFile(infoFile, "# Equilibrating");
 		ofc.initEquilibrate(params.iget("Equilibration Updates"));
 		while (ofc.plateUpdates < 0){
 			ofc.equilibrate();
 			Job.animate();
 		}
 		System.out.println("Finished Equilibration");
-		FileUtil.printlnToFile(infoFile, "Finished Equilibration");
+		FileUtil.printlnToFile(infoFile, "# Finished Equilibration");
+		FileUtil.printlnToFile(infoFile, "#");
+		FileUtil.printlnToFile(infoFile, "# Time, Effective Alpha, Alpha Dissipation Rate, Dead Dissipation Rate, Scaled Time, Live Scaled Time");
 		
 		ofc.plateUpdates = 0;
 		ofc.ofcStep();
 		mc.initAveArrays(ofc.cg_time, ofc.stress, ofc.epicenterCount, ofc.epicenterSize);
-		
+
+				
 		while(true){
 			ofc.ofcStep();
 			Job.animate();
@@ -152,6 +156,10 @@ public class frozenDamageMultidxApp extends Simulation{
 	}
 	
 	void accumData(){
+		double scaledTime = ofc.cg_time/(double)ofc.N;
+		scaledTimeAcc.accum(ofc.cg_time, scaledTime);
+		double scaledLiveTime = ofc.cg_time/(double)ofc.noLiveSites;
+		scaledLiveTimeAcc.accum(ofc.cg_time, scaledLiveTime);
 		maxSizeTempAcc.accum(ofc.cg_time, maxSize);
 		maxSize = 0;
 		double [] mets = mc.calcStressMets();
@@ -195,21 +203,21 @@ public class frozenDamageMultidxApp extends Simulation{
 			double percentAlive = DoubleArray.sum(deadSites)/(double)Np;
 			deadGrid[j].setScale(0.0, 1.0);
 			deadGrid[j].registerData(Lp, Lp, deadSites);
-			FileUtil.printlnToFile(infoFile, "Percent alive for dx=" + dx + " is " + percentAlive);
+			FileUtil.printlnToFile(infoFile, "# Percent alive for dx=" + dx + " is " + percentAlive);
 		}
 	}
 	
 	void writeAccumulatedData(){
 		FileUtil.initFile(sizeHistFile, params, " Avalanch Size Histogram Data File");
 		FileUtil.printHistToFile(sizeHistFile, sizeHist);
-		FileUtil.printAccumToFileNoErrorBars(sizeFile, maxSizeTempAcc);
+		FileUtil.printAccumsToFile(sizeFile, maxSizeTempAcc, scaledTimeAcc, scaledLiveTimeAcc);
 		maxSize = 0;
 
-		FileUtil.printAccumToFileNoErrorBars(imFileNd, sMetsAcc[0]);
-		FileUtil.printAccumToFileNoErrorBars(imFileWd, sMetsAcc[1]);
+		FileUtil.printAccumsToFile(imFileNd, sMetsAcc[0], scaledTimeAcc, scaledLiveTimeAcc);
+		FileUtil.printAccumsToFile(imFileWd, sMetsAcc[1], scaledTimeAcc, scaledLiveTimeAcc);
 		for (int i = 0; i < pow; i++){
 			for (int j = 0; j < 6; j++){
-				FileUtil.printAccumToFileNoErrorBars(cgFiles[i][j], cgMetsAcc[i][j]);
+				FileUtil.printAccumsToFile(cgFiles[i][j], cgMetsAcc[i][j], scaledTimeAcc, scaledLiveTimeAcc);
 			}
 		}
 		
@@ -221,29 +229,20 @@ public class frozenDamageMultidxApp extends Simulation{
 				cgMetsAcc[i][j].clear();
 			}
 		}
+		scaledTimeAcc.clear();
+		scaledLiveTimeAcc.clear();
 		maxSizeTempAcc.clear();
+
+		double effAlpha = ofc.alphaDissRate + ofc.deadDissRate;
+		double scaledTime = ofc.cg_time/(double)ofc.N;
+		double scaledLiveTime = ofc.cg_time/(double)ofc.noLiveSites;
+		FileUtil.printlnToFile(infoFile, ofc.cg_time, effAlpha, ofc.alphaDissRate, ofc.deadDissRate, scaledTime, scaledLiveTime);
+		System.out.println("Dead Diss Rate = " + ofc.deadDissRate + " Effective Alpha = " + effAlpha +" = " + ofc.alphaDissRate + " " + ofc.deadDissRate);
 	}
 	
-	static void printAccumsToFile2(String fileName, Accumulator acc1, Accumulator acc2, Accumulator acc3){
-		DatasetBuffer data1 = acc1.copyData();
-		DatasetBuffer data2 = acc2.copyData();
-		DatasetBuffer data3 = acc3.copyData();
-		int size = data1.size();
-		try{
-			File file = new File(fileName);
-			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			for (int i = 0; i < size; i++){
-				pw.println(data1.x(i) + " " + data1.y(i) + " " + data2.y(i) + " " + data3.y(i) ) ;
-			}
-		} catch (IOException ex){
-			ex.printStackTrace();
-		}
-	}
-	
+
 	void initFiles(){
 		String parentDir = params.sget("Data Dir") + File.separator;
-//		infoFile = parentDir + "info.txt";  // to record iverse metric data
-//		FileUtil.initFile(infoFile, params, "Info file for multi dt runs");
 		imFileWd = parentDir + "imWd.txt";
 		FileUtil.initFile(imFileWd, params, "Stress Met not coarse grained in time, dead sites included");
 		imFileNd = parentDir + "imNd.txt";

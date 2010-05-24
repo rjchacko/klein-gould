@@ -58,7 +58,6 @@ public class AbstractOFC_Multidx {
 	
 	double calcResNoise(int s){
 		double resNoise = maxResNoise*(random.nextFloat()*2.0-1.0) + rStress;
-//		System.out.println("Res noise = " + resNoise);
 		return resNoise;
 	}
 	
@@ -67,6 +66,17 @@ public class AbstractOFC_Multidx {
 		return stressPerNbor;
 	}
 
+	
+	public int findCgArrayIndex(int cgSite, int ip){
+		int ret = 0;
+		for(int i = 0; i < ip; i++){
+			int dx = (int)Math.pow(2, i);
+			int Np = N/((int) Math.pow(dx, 2));
+			ret += Np;
+		}
+		ret += cgSite;
+		return ret;
+	}
 	
 	double  calcMetric0(){
 		double spaceSum = 0;
