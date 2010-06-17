@@ -46,12 +46,24 @@ public class MetricCalculator {
 	}
 	
 	/**
-	* Incorporate new stress into average every dt plate updates.
+	* Incorporate new stress and activities into average every dt plate updates.
 	*/
 	public void calcNewDxAveArrays(double cg_time, double [] stress, int [] act, int [] sizeAct){
 		double del_t = cg_time -lastRecordTime;
 		for(int i=0; i < N; i++){
 			dx1StressTimeAve[i] = (dx1StressTimeAve[i]*(lastRecordTime)+ stress[i]*del_t)/(cg_time);
+			dx1ActTimeAve[i] = (dx1ActTimeAve[i]*(lastRecordTime) + (double)act[i]*del_t)/cg_time;
+			dx1SizeActTimeAve[i] = (dx1SizeActTimeAve[i]*(lastRecordTime) + (double)sizeAct[i]*del_t)/cg_time;
+		}
+		lastRecordTime = cg_time;
+	}
+	
+	/**
+	* Incorporate new activities into average every dt plate updates.
+	*/
+	public void calcNewDxAveArrays(double cg_time, int [] act, int [] sizeAct){
+		double del_t = cg_time -lastRecordTime;
+		for(int i=0; i < N; i++){
 			dx1ActTimeAve[i] = (dx1ActTimeAve[i]*(lastRecordTime) + (double)act[i]*del_t)/cg_time;
 			dx1SizeActTimeAve[i] = (dx1SizeActTimeAve[i]*(lastRecordTime) + (double)sizeAct[i]*del_t)/cg_time;
 		}
@@ -66,6 +78,14 @@ public class MetricCalculator {
 		double [][] ret = new double [pow][6];
 		for (int i = 0; i < pow; i++){
 			ret[i] = dxCalcMets(i);	
+		}
+		return ret;
+	}
+	
+	public double [][] calcCG_activityMetrics(){
+		double [][] ret = new double [pow][4];
+		for (int i = 0; i < pow; i++){
+			ret[i] = dxCalcActMets(i);	
 		}
 		return ret;
 	}
@@ -86,6 +106,17 @@ public class MetricCalculator {
 		ret[3] = actRet[1];
 		ret[4] = saRet[0];
 		ret[5] = saRet[1];
+		return ret;
+	}
+	
+	double [] dxCalcActMets(int dxIndex){
+		double [] actRet = cgCalcMets(dxIndex, dx1ActTimeAve, false);
+		double [] saRet = cgCalcMets(dxIndex, dx1SizeActTimeAve, false);
+		double [] ret = new double [4];
+		ret[0] = actRet[0];
+		ret[1] = actRet[1];
+		ret[2] = saRet[0];
+		ret[3] = saRet[1];
 		return ret;
 	}
 	

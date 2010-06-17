@@ -5,6 +5,7 @@ import rachele.damage2D.multidx.FrozenDamageLattice;
 import rachele.damage2D.multidx.MetricCalculator;
 import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
+import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -13,6 +14,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.util.DoubleArray;
+import scikit.util.Utilities;
 
 public class frozenDamageMultidxApp extends Simulation{
 
@@ -42,6 +44,7 @@ public class frozenDamageMultidxApp extends Simulation{
 	Accumulator [] sMetsAcc = new Accumulator[2];
 	Accumulator scaledTimeAcc = new Accumulator();
 	Accumulator scaledLiveTimeAcc = new Accumulator();
+	Accumulator alphaAcc = new Accumulator();
 	
 	int noGrids = 6;
 	Grid [] deadGrid = new Grid [noGrids];
@@ -58,7 +61,7 @@ public class frozenDamageMultidxApp extends Simulation{
 
 		c.frameTogether("Grids", deadGrid);
 
-		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testRuns/"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/P16-EffectiveAlpha/L256/pd10/R16/nd/"));
 		String rd = "Random";
 		String br = "Random Blocks";
 		String ds = "Dead Strip";
@@ -69,26 +72,32 @@ public class frozenDamageMultidxApp extends Simulation{
 		String cr = "Cascade Random";
 		params.add("Type of Damage", new ChoiceValue(rd, cr, cs, br, ds, pr, br, rd, db, dr));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
-		params.addm("Random Seed", 5);
-		params.addm("Size Power",7);
-		params.addm("R", 8);
-		params.addm("Init Percent Dead", 0.1);
+		params.addm("Random Seed", 1);
+		params.addm("Size Power",8);
+		params.addm("R", 16);
+		params.addm("Init Percent Dead", 0.00);
 		params.addm("Dead Parameter", 8);
 		params.addm("Coarse Grained dt (PU)", 16384);
-		params.addm("Equilibration Updates", 50);
-		params.addm("Max PU", 1638400);
+		params.addm("Equilibration Updates", 10000);
+		params.addm("Max PU",1000000);
 		params.addm("Data points per write", 1);
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
-		params.addm("Dissipation Param", 0.04);
+		params.addm("Dissipation Param", 0.3);
 		params.addm("Damage Tolerance", 1.0);
 		params.add("Av Size");
 		params.add("Plate Updates");
+		params.add("Percent Damage");
+		params.add("Effective Alpha");
+		params.add("Error");
+		
+
 	}
 
 	public void animate() {
 		params.set("Plate Updates", ofc.plateUpdates);
 		params.set("Av Size", ofc.avSize);
+
 	}
 
 	public void clear() {
@@ -100,10 +109,10 @@ public class frozenDamageMultidxApp extends Simulation{
 		ofc = new FrozenDamageLattice(params, infoFile);
 		double tolerance = params.fget("Damage Tolerance");
 		mc = new MetricCalculator(ofc.pow, ofc.aliveLattice, tolerance);
+		alphaAcc.enableErrorBars(true);
 		
 		pow = params.iget("Size Power");
-		int noGrids = 6;
-		allocate(noGrids);
+		allocate();
 		initFiles();
 		drawLattices();
 		
@@ -124,16 +133,25 @@ public class frozenDamageMultidxApp extends Simulation{
 		System.out.println("Finished Equilibration");
 		FileUtil.printlnToFile(infoFile, "# Finished Equilibration");
 		FileUtil.printlnToFile(infoFile, "#");
-		FileUtil.printlnToFile(infoFile, "# Time, Effective Alpha, Alpha Dissipation Rate, Dead Dissipation Rate, Scaled Time, Live Scaled Time");
+		FileUtil.printlnToFile(infoFile, "# Time, Effective Alpha, Error, Dead Dissipation, Error, Alpha Dissipation, Error");
 		
 		ofc.plateUpdates = 0;
 		ofc.ofcStep();
 		mc.initAveArrays(ofc.cg_time, ofc.stress, ofc.epicenterCount, ofc.epicenterSize);
-
+		int shCount = 1;
 				
 		while(true){
 			ofc.ofcStep();
 			Job.animate();
+			
+			double effAlpha = ofc.deadDiss + ofc.alphaDiss;
+			alphaAcc.accum(0, effAlpha);
+			alphaAcc.accum(1, ofc.deadDiss);
+			alphaAcc.accum(2,ofc.alphaDiss);
+			DatasetBuffer data = alphaAcc.copyData();
+			params.set("Effective Alpha", Utilities.format(data.y(0)));
+			params.set("Error", Utilities.format(data.errorY(0)));
+			
 			int size = ofc.avSize;
 			sizeHist.accum(size);
 			if (size > maxSize) {
@@ -150,9 +168,20 @@ public class frozenDamageMultidxApp extends Simulation{
 				writeAccumulatedData();
 				dataPointsCount = 0;
 			}
+			if(ofc.plateUpdates%100000==0){
+				writeShFile(shCount);
+				shCount += 1;
+			}
 			maxTime = params.iget("Max PU");
 			if(ofc.plateUpdates > maxTime) Job.signalStop();
 		}
+	}
+	
+	void writeShFile(int i){
+		String parentDir = params.sget("Data Dir") + File.separator;
+		String newShFile = parentDir + "sh" + i + ".txt";
+		FileUtil.initFile(newShFile, params, " Avalanch Size Histogram Data File");
+		FileUtil.printHistToFile(newShFile, sizeHist);
 	}
 	
 	void accumData(){
@@ -176,7 +205,7 @@ public class frozenDamageMultidxApp extends Simulation{
 		ofc.clearCounts();
 	}
 	
-	void allocate(int noGrids){
+	void allocate(){
 		sMetsAcc[0] = new Accumulator();
 		sMetsAcc[1] = new Accumulator();
 		cgMetsAcc = new Accumulator[pow][6];
@@ -233,11 +262,14 @@ public class frozenDamageMultidxApp extends Simulation{
 		scaledLiveTimeAcc.clear();
 		maxSizeTempAcc.clear();
 
-		double effAlpha = ofc.alphaDissRate + ofc.deadDissRate;
-		double scaledTime = ofc.cg_time/(double)ofc.N;
-		double scaledLiveTime = ofc.cg_time/(double)ofc.noLiveSites;
-		FileUtil.printlnToFile(infoFile, ofc.cg_time, effAlpha, ofc.alphaDissRate, ofc.deadDissRate, scaledTime, scaledLiveTime);
-		System.out.println("Dead Diss Rate = " + ofc.deadDissRate + " Effective Alpha = " + effAlpha +" = " + ofc.alphaDissRate + " " + ofc.deadDissRate);
+		DatasetBuffer data = alphaAcc.copyData();
+		FileUtil.printlnToFile(infoFile, ofc.cg_time, data.y(0), data.errorY(0), data.y(1), data.errorY(1), data.y(2), data.errorY(2));
+//		double effAlpha = ofc.alphaDissRate + ofc.deadDissRate;
+//		double scaledTime = ofc.cg_time/(double)ofc.N;
+//		double scaledLiveTime = ofc.cg_time/(double)ofc.noLiveSites;
+//		FileUtil.printlnToFile(infoFile, ofc.cg_time, effAlpha, ofc.alphaDissRate, ofc.deadDissRate, scaledTime, scaledLiveTime);
+//		System.out.println("Dead Diss Rate = " + ofc.deadDissRate + " Effective Alpha = " + effAlpha +" = " + ofc.alphaDissRate + " " + ofc.deadDissRate);
+
 	}
 	
 
