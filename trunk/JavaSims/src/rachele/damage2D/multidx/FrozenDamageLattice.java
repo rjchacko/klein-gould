@@ -8,6 +8,9 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	public int [] epicenterSize;
 	public double alphaDissRate;
 	public double deadDissRate;
+	public double alphaDiss;
+	public double deadDiss;
+	
 	public int noLiveSites; 
 	
 	int noDeadSites;
@@ -99,6 +102,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		params.set("Dead Parameter", noDeadSites);
 		FileUtil.printlnToFile(infoFileName, "# Percent of sites damaged = ", percentSitesDamaged);
 		System.out.println("Percent of sites damaged = "+ percentSitesDamaged);
+		params.set("Percent Damage", percentSitesDamaged);
 
 		for (int i = 0; i < N; i++){
 			epicenterCount[i] = 0;
@@ -140,7 +144,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	}
 	
 	private void setDeadRectangle(int noDead) {
-		int aspectRatio = 5;// width over height
+		int aspectRatio = 3;// width over height
 		int w = (int)Math.sqrt(aspectRatio*noDead);
 		if(w > L) System.out.println("Aspect Ratio error!");
 		int h = noDead/w;
@@ -491,12 +495,12 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		rateCt += 1.0;
 		//calc alpha dissipation = alpha x % alive
 		double fracAlive = 1.0 - fracDeadNbors[site];
-		double alphaDiss = alpha*fracAlive;
+		alphaDiss = alpha*fracAlive;
 		alphaDissAccum += alphaDiss;
 		alphaDissRate = alphaDissAccum/rateCt;
 //		System.out.println("aDiss = " + alphaDiss + " cgTime = " + cg_time + " rate = " + alphaDissRate);
 		//calc deadDiss = fraction dead
-		double deadDiss = fracDeadNbors[site];
+		deadDiss = fracDeadNbors[site];
 		deadDissAccum += deadDiss;
 		deadDissRate = deadDissAccum/rateCt;
 	}
