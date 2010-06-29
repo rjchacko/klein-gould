@@ -282,26 +282,53 @@ public class ReadInUtil {
 		int pd;
 		
 		try{
-			rin = bir.readLine(); // seed, throw it away
-			rin = bir.readLine();
-			pd  = rin.indexOf('=');
-			p.set("L",Double.parseDouble(rin.substring(pd + 2)));
-			rin = bir.readLine(); 
-			pd  = rin.indexOf('=');
-			p.set("Boundary Conditions",rin.substring(pd + 2));
-			rin = bir.readLine(); // IC, throw it away
-			rin = bir.readLine();
-			pd  = rin.indexOf('=');
-			p.set("ODE Solver",rin.substring(pd + 2));
-			rin = bir.readLine();
-			pd  = rin.indexOf('=');
-			p.set("N",Integer.parseInt(rin.substring(pd + 2)));
-			rin = bir.readLine(); // M, throw it away
-			rin = bir.readLine(); // R, throw it away
-			rin = bir.readLine();
-			pd  = rin.indexOf('=');
-			p.set("dt",Double.parseDouble(rin.substring(pd + 2)));
-			// throw away everything else
+			if(p.containsKey("L")){
+				rin = bir.readLine(); // seed, throw it away
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("L",Double.parseDouble(rin.substring(pd + 2)));
+				rin = bir.readLine(); 
+				pd  = rin.indexOf('=');
+				p.set("Boundary Conditions",rin.substring(pd + 2));
+				rin = bir.readLine(); // IC, throw it away
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("ODE Solver",rin.substring(pd + 2));
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("N",Integer.parseInt(rin.substring(pd + 2)));
+				rin = bir.readLine(); // M, throw it away
+				rin = bir.readLine(); // R, throw it away
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("dt",Double.parseDouble(rin.substring(pd + 2)));
+				// throw away everything else
+			}
+			else{
+				rin = bir.readLine(); // seed, throw it away
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("Lx",Double.parseDouble(rin.substring(pd + 2)));
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("Ly",Double.parseDouble(rin.substring(pd + 2)));
+				rin = bir.readLine(); 
+				pd  = rin.indexOf('=');
+				p.set("Boundary Conditions",rin.substring(pd + 2));
+				rin = bir.readLine(); // IC, throw it away
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("ODE Solver",rin.substring(pd + 2));
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("N",Integer.parseInt(rin.substring(pd + 2)));
+				rin = bir.readLine(); // M, throw it away
+				rin = bir.readLine(); // R, throw it away
+				rin = bir.readLine();
+				pd  = rin.indexOf('=');
+				p.set("dt",Double.parseDouble(rin.substring(pd + 2)));
+				// throw away everything else
+			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();

@@ -45,7 +45,7 @@ public class fastDamageApp extends Simulation{
 		params.add("Failure Stress (\u03C3_f)", 2.);
 		params.add("\u03C3_f width", 0.);
 		params.add("Residual Stress (\u03C3_r)", 1.);
-		params.add("\u03C3_r width", 0.05);
+		params.add("\u03C3_r width", 0.025);
 		params.add("Dissipation (\u03B1)", 0.05);
 		params.add("\u03B1 width", 0.);
 		params.add("Animate", new ChoiceValue("Off","Draw","Record"));
