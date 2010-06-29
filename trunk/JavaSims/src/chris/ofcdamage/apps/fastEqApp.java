@@ -8,6 +8,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import chris.ofcdamage.ofc2Dfast;
+import chris.util.PrintUtil;
 
 public class fastEqApp extends Simulation{
 
@@ -70,6 +71,9 @@ public class fastEqApp extends Simulation{
 		}
 
 		if((simt-1)%ofc2Dfast.dlength != 0) model.writeData(simt);
+		
+		PrintUtil.printHistToFile(model.getOutdir()+File.separator+"hfail_"+model.getBname()+".txt", model.hfail);
+		PrintUtil.printHistToFile(model.getOutdir()+File.separator+"hstress_"+model.getBname()+".txt", model.hstrs);
 		
 		params.set("Status", "Done");
 		Job.animate();

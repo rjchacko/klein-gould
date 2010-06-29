@@ -8,6 +8,8 @@ import java.text.DateFormat;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+
+import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
@@ -29,6 +31,9 @@ public class ofc2Dfast{
 	public static int dlength = 150000;
 	public static int dcat = 6;
 	private static DecimalFormat fmtI = new DecimalFormat("0000");
+	
+	public Histogram hfail;
+	public Histogram hstrs;
 	
 	public ofc2Dfast(Parameters params){
 		
@@ -82,8 +87,9 @@ public class ofc2Dfast{
 		data    = new double[dcat][dlength];
 		failed  = new boolean[N];
 		ftt     = new boolean[N];
+		hfail   = new Histogram(1e-4);
+		hstrs   = new Histogram((sf0-sr0)/100.);
 
-		
 		for(int jj = 0 ; jj < N ; jj++){
 			sr[jj]     = srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
 			sf[jj]     = sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
@@ -136,7 +142,8 @@ public class ofc2Dfast{
 	public void freezeIn(Parameters params, int[] liveNbs, int[] Lives){
 		
 		double p = params.fget("\u03D5");
-		if(p < 1){
+		double q = 1. - p;
+		if(q < 1){
 			double rseq[] = new double[N];
 			for (int jj = 0 ; jj < N ; jj++){
 				rseq[jj]    = getRand().nextDouble();
@@ -145,7 +152,7 @@ public class ofc2Dfast{
 			}
 
 			int[] rs = SortUtil.S2LindexSort(rseq);
-			Ndead = (int)(p*N);
+			Ndead = (int)(q*N);
 			for (int jj = 0 ; jj < Ndead ; jj++){
 				sr[rs[jj]]     = getSr0();
 				sf[rs[jj]]     = getSf0();
@@ -155,25 +162,25 @@ public class ofc2Dfast{
 				for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
 			}
 		}
-		else{
-			double rseq[] = new double[N];
-			for (int jj = 0 ; jj < N ; jj++){
-				rseq[jj]    = getRand().nextDouble();
-				liveNbs[jj] = qN;
-				Lives[jj]   = 1;
-			}
-
-			int[] rs = SortUtil.S2LindexSort(rseq);
-			Ndead = (int)(p);
-			for (int jj = 0 ; jj < Ndead ; jj++){
-				sr[rs[jj]]     = getSr0();
-				sf[rs[jj]]     = getSf0();
-				stress[rs[jj]] = 0;
-				Lives[rs[jj]]  = 0;
-				failed[rs[jj]] = true;
-				for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
-			}
-		}
+//		else{
+//			double rseq[] = new double[N];
+//			for (int jj = 0 ; jj < N ; jj++){
+//				rseq[jj]    = getRand().nextDouble();
+//				liveNbs[jj] = qN;
+//				Lives[jj]   = 1;
+//			}
+//
+//			int[] rs = SortUtil.S2LindexSort(rseq);
+//			Ndead = (int)(p);
+//			for (int jj = 0 ; jj < Ndead ; jj++){
+//				sr[rs[jj]]     = getSr0();
+//				sf[rs[jj]]     = getSf0();
+//				stress[rs[jj]] = 0;
+//				Lives[rs[jj]]  = 0;
+//				failed[rs[jj]] = true;
+//				for (int kk = 0 ; kk < qN ; kk++) liveNbs[getNbr(rs[jj],kk)]--;
+//			}
+//		}
 		return;
 	}
 	
@@ -238,18 +245,14 @@ public class ofc2Dfast{
 		GR = 1; // the seed site
 		
 		// discharge site and repeat until lattice is stable
-		
-		// QUICK ALTERATION THAT SHOULD BE RETUNRED TO NORMAL 
-		// ALGORITHM. LET ALPHA VARY ONLY BETWEEN PLATE UPDATES
-		// NOT DURING A PLATE UPDATE	
-		double alphanow = 1-nextAlpha();
+
 		while(newindex > index){
 			a     = index;
 			b     = newindex;
 			index = newindex;
 			for (int jj = a ; jj < b ; jj++){
 				tmpfail = fs[jj];
-				release = (alphanow)*(stress[tmpfail]-sr[tmpfail])/qN;
+				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
 				for(int kk = 0 ; kk < qN ; kk++){
 					tmpnb = getNbr(fs[jj],kk);
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
@@ -321,6 +324,7 @@ public class ofc2Dfast{
 			tmpbar = 0;
 			Omega  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
+				hstrs.accum(stress[jj]);
 				// find next site to fail
 				if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
 				// calculate metric (PART 1)
@@ -427,6 +431,7 @@ public class ofc2Dfast{
 		GR++;
 		ftt[index]     = true;
 		failed[index]  = true;
+		hfail.accum(stress[index]);
 		return;
 	}
 	

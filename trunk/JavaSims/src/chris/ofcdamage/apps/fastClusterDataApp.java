@@ -10,17 +10,17 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.Parameters;
-import chris.ofcdamage.ofc2Dfast;
+import chris.ofcdamage.damage2Dfast;
 import chris.util.PrintUtil;
 import chris.util.dummyParamUtil;
 
 public class fastClusterDataApp extends Simulation{
 
 	private int simt, eqt;
-	private ofc2Dfast model;
-	private DecimalFormat pfmt = new DecimalFormat("000");
+	private damage2Dfast model;
+	private DecimalFormat pfmt = new DecimalFormat("0000");
 	
-	private Histogram hes = new Histogram(1.);
+	private Histogram hes;
 	
 	public static void main(String[] args) {
 		new Control(new fastClusterDataApp(), "OFC Parameters");
@@ -37,6 +37,7 @@ public class fastClusterDataApp extends Simulation{
 //		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
 		params.add("Equil Time", 100000);
 		params.add("N_events / Phi", 100000);
+		params.add("d(phi)", 0.05);
 		params.add("Failure Stress (\u03C3_f)", 2.);
 //		params.add("\u03C3_f width", 0.);
 		params.add("Residual Stress (\u03C3_r)", 1.);
@@ -50,8 +51,8 @@ public class fastClusterDataApp extends Simulation{
 	
 	public void run() {
 		
-		double phin = 1;
-		double dphi = 0.01; 
+		double phin = 1.;
+		double dphi = params.fget("d(phi)"); 
 		
 		// Setup model
 		eqt   = params.iget("Equil Time");
@@ -66,8 +67,13 @@ public class fastClusterDataApp extends Simulation{
 			Parameters dparams = dummyParamUtil.ofcParams(params);
 			params.set("Status", "Intializing");
 			Job.animate();
-			model = new ofc2Dfast(dparams);
-			if(phin == 1) model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params);	
+			hes   = new Histogram(1.);
+			model = null;
+			model = new damage2Dfast(dparams);
+			if(phin == 1){
+				model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params);
+				PrintUtil.printlnToFile(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log","d(phi) = ",dphi);
+			}
 			params.set("Status", "Ready");
 			Job.animate();
 			
