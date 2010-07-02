@@ -26,4 +26,26 @@ public class MathTools {
 			ret[i] = normalize(M[i]);
 		return ret;
 	}
+	
+	/**
+	 * This calculates the sample variance:
+	 * s^2=(1/n)*(sum(x_i-x_ave)**2)
+	 * (Note that this is without Bessel's correction, which would replace n with n-1)
+	 */
+	static public double variance(double [] a){
+		double ave = mean(a);
+		double sum = 0;
+		for (int i = 0; i < a.length; i++) 
+			sum += Math.pow(a[i]-ave,2);
+		double var = sum/(double)a.length;
+		return var;
+	}
+	
+	static public double mean(double [] a){
+		double sum=0.0;
+		int l = a.length;
+		for (int i = 0; i < l; i++) sum += a[i];
+		double average = sum/(double)l;
+		return average;
+	}
 }
