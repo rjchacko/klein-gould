@@ -1,5 +1,6 @@
 package rachele.damage2D.multidx;
 import rachele.util.FileUtil;
+import rachele.util.MathTools;
 import scikit.jobs.params.Parameters;
 
 public class FrozenDamageLattice extends AbstractOFC_Multidx{
@@ -10,6 +11,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	public double deadDissRate;
 	public double alphaDiss;
 	public double deadDiss;
+	public String boundaryConditions;
 	
 	public int noLiveSites; 
 	
@@ -62,6 +64,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		deadDissRate = 0.0;
 		alphaDissRate = 0.0;
 		rateCt = 0;
+		boundaryConditions = params.sget("Boundary Conditions");
 	}
 	
 	void initLattice(Parameters params){
@@ -95,6 +98,11 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		
 		p("Making neighbor lists...");
 		makeNborLists();
+		
+		p("Calculating alpha prime and variance");
+		double [] ap = calcAlphaP();
+		System.out.println("Alpha prime = " + ap[0] + ", var = " + ap[1]);
+		FileUtil.printlnToFile(infoFileName, "Alpha' = " , ap[0], " var = " , ap[1]);
 		
 		double percentSitesDamaged = (double)noDeadSites/(double)N;
 		FileUtil.printlnToFile(infoFileName, "# No of sites damaged = " , noDeadSites);
@@ -331,32 +339,75 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		}
 		
 	}
+	/**
+	 * Calculate effective alpha (alpha' or ap) for each lattice site:
+	 * phi_i*(1-alpha) = 1-alpha'_i
+	 */
+	double [] calcAlphaP(){
+		double [] ap = new double [N];
+		for (int i = 0; i < N; i ++){
+			double phi_i = 1.0 - fracDeadNbors[i];
+			ap[i] = 1-phi_i*(1-alpha);
+		}
+		double ave = MathTools.mean(ap);
+		double var = MathTools.variance(ap);
+		double [] ret = new double [2];
+		ret[0] = ave;
+		ret[1] = var;
+		return ret;
+	}
 	
 	void makeNborLists(){
-		if(deadDissipation==true){
-			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
-			for (int i = 0; i < N; i++){
-				int ct = 0;
-				for (int j = 0; j < maxNbors; j++){
-					if (aliveLattice[nborList[i][j]]){
+		for (int i = 0; i < N; i++){
+			int ct = 0;
+			int boundsCt = 0;
+			for (int j = 0; j < maxNbors; j++){
+				int nborSite = nborList[i][j];
+				if(nborSite>=1){
+					if (aliveLattice[nborSite]){
 						ct += 1;
 					}
-					int noDead = maxNbors - ct;
-					fracDeadNbors[i] = (double)noDead/maxNbors;
+				}else{
+					boundsCt += 1;
 				}
-			}
-		}else if (deadDissipation==false){
-			for (int i = 0; i < N; i++){
-				int ct = 0;
-				for (int j = 0; j < maxNbors; j++){
-					if (aliveLattice[nborList[i][j]]){
-						ct += 1;
-					}
-					noNborsForSite[i]=ct;
+				int noDead = maxNbors - ct;
+				fracDeadNbors[i] = (double)noDead/maxNbors;
+				if(deadDissipation==true) noNborsForSite[i] = noNbors; 
+				else if (deadDissipation==false){
+					if(boundaryConditions=="Open")
+						noNborsForSite[i]=ct+boundsCt;
+					else if(boundaryConditions == "Periodic")
+						noNborsForSite[i]=ct;
 				}
+				
 			}
-
 		}
+//		if(deadDissipation==true){
+//			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
+//			for (int i = 0; i < N; i++){
+//				int ct = 0;
+//				for (int j = 0; j < maxNbors; j++){
+//					if (aliveLattice[nborList[i][j]]){
+//						ct += 1;
+//					}
+//					int noDead = maxNbors - ct;
+//					fracDeadNbors[i] = (double)noDead/maxNbors;
+//				}
+//			}
+//		}else if (deadDissipation==false){
+//			for (int i = 0; i < N; i++){
+//				int ct = 0;
+//				for (int j = 0; j < maxNbors; j++){
+//					if (aliveLattice[nborList[i][j]]){
+//						ct += 1;
+//					}
+//					int noDead = maxNbors - ct;
+//					fracDeadNbors[i] = (double)noDead/maxNbors;
+//					noNborsForSite[i]=ct;
+//				}
+//			}
+//
+//		}
 	}
 	
 	int findNoCircleNbors(){
@@ -373,25 +424,50 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	}
 	
 	void findCircleNbors(){
-		int nborIndex = 0;
-		for (int s = 0; s < N; s++){
-			nborIndex = 0;
-			int x = s%L;
-			int y = s/L;
-			for(int dy = -R; dy <= R; dy++){
-				for(int dx = -R; dx <= R; dx++){
-					double distance = Math.sqrt(dx*dx + dy*dy);
-					if (distance <= R){
-						int xx = (x+dx+L)%L;
-						int yy = (y+dy+L)%L;
-						int nborSite = yy*L+xx;
-						nborList[s][nborIndex] = nborSite;
-						nborIndex += 1;
+		if(boundaryConditions == "Periodic"){
+			int nborIndex = 0;
+			for (int s = 0; s < N; s++){
+				nborIndex = 0;
+				int x = s%L;
+				int y = s/L;
+				for(int dy = -R; dy <= R; dy++){
+					for(int dx = -R; dx <= R; dx++){
+						double distance = Math.sqrt(dx*dx + dy*dy);
+						if (distance <= R){
+							int xx = (x+dx+L)%L;
+							int yy = (y+dy+L)%L;
+							int nborSite = yy*L+xx;
+							nborList[s][nborIndex] = nborSite;
+							nborIndex += 1;
+						}
+					}
+				}
+			}
+			if (nborIndex != (maxNbors)) System.out.println("Problem in findCircleNbors");
+		}else if(boundaryConditions == "Open"){
+			int nborIndex = 0;
+			for (int s = 0; s < N; s++){
+				nborIndex = 0;
+				int x = s%L;
+				int y = s/L;
+				for(int dy = -R; dy <= R; dy++){
+					for(int dx = -R; dx <= R; dx++){
+						double distance = Math.sqrt(dx*dx + dy*dy);
+						if (distance <= R){
+							int xx = (x+dx);
+							int yy = (y+dy);
+							if(xx>=0 & xx<L & yy>=0 & yy<L){
+								int nborSite = yy*L+xx;
+								nborList[s][nborIndex] = nborSite;
+							}else{
+								nborList[s][nborIndex] = -1;
+							}
+							nborIndex += 1;
+						}
 					}
 				}
 			}
 		}
-		if (nborIndex != (maxNbors)) System.out.println("Problem in findCircleNbors");
 	}
 	
 	public void initEquilibrate(int maxPlateUpdates){
@@ -431,6 +507,11 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 			fail(nextSiteToFail);
 			nextSiteToFail = checkFail();
 			avSize += 1;
+			if (avSize%N==0){
+				System.out.println("Error:  Av Size = " + avSize);
+				nextSiteToFail = -1;
+				FileUtil.printlnToFile(infoFileName, "Av Size = " , avSize);
+			}
 		}
 
 		epicenterSizeAccum();
@@ -465,9 +546,11 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		int checkAliveCount = 0;
 		for (int i = 0; i < maxNbors; i++){
 			int nborSite = nborList[s][i];
-			if(aliveLattice[nborSite]){
-				stress[nborSite] += stressPerNbor;
-				checkAliveCount += 1;
+			if (nborSite >= 0){
+				if(aliveLattice[nborSite]){
+					stress[nborSite] += stressPerNbor;
+					checkAliveCount += 1;
+				}
 			}
 		}
 	}
@@ -483,9 +566,11 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		int checkAliveCount = 0;
 		for (int i = 0; i < maxNbors; i++){
 			int nborSite = nborList[s][i];
-			if(aliveLattice[nborSite]){
-				stress[nborSite] += stressPerNbor;
-				checkAliveCount += 1;
+			if(nborSite >= 0){
+				if(aliveLattice[nborSite] ){
+					stress[nborSite] += stressPerNbor;
+					checkAliveCount += 1;
+				}
 			}
 		}
 	}
