@@ -39,6 +39,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 	FrozenDamageLattice ofc;
 		
 	Histogram sizeHist = new Histogram(1);
+	
 	Accumulator maxSizeTempAcc = new Accumulator();	
 	Accumulator scaledTimeAcc = new Accumulator();
 	Accumulator scaledLiveTimeAcc = new Accumulator();
@@ -64,18 +65,21 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		String cs = "Cascade";
 		String dr = "Dead Rectangle";
 		String cr = "Cascade Random";
-		params.add("Type of Damage", new ChoiceValue(br, cr, cs, br, ds, pr, br, rd, db, dr));
+		String bl = "Dead Blocks";
+		String pd = "Place Dead Blocks";
+		params.add("Type of Damage", new ChoiceValue(pd, bl, cr, cs, br, ds, pr, rd, db, dr));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
 		params.add("Boundary Conditions", new ChoiceValue("Periodic", "Open"));
 		params.addm("Random Seed", 1);
 		params.addm("Size Power",8);
-		params.addm("R", 2);
+		params.addm("R", 16);
 		params.addm("Init Percent Dead", 0.0);
-		params.addm("Dead Parameter", 4);
+		params.addm("Dead Parameter", 16);
+		params.addm("Number Dead", 64);
 		params.addm("Coarse Grained dt (PU)", 1);
-		params.addm("Equilibration Updates", 1000);
-		params.addm("Max PU",100000);
-		params.addm("Data points per write", 100);
+		params.addm("Equilibration Updates", 100000);
+		params.addm("Max PU",1000000);
+		params.addm("Data points per write", 100000);
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Dissipation Param", 0.05);
@@ -99,7 +103,11 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 	
 	public void run() {
 		infoFile = params.sget("Data Dir") + File.separator + "info.txt";
+		String alphaHistFile = params.sget("Data Dir") + File.separator + "ah.txt";
 		ofc = new FrozenDamageLattice(params, infoFile);
+		FileUtil.initFile(alphaHistFile, params);
+		FileUtil.printHistToFile(alphaHistFile, ofc.alpha_iHist);
+		ofc.alpha_iHist.clear();
 		alphaAcc.enableErrorBars(true);
 		
 		pow = params.iget("Size Power");
@@ -223,7 +231,6 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		String parentDir = params.sget("Data Dir") + File.separator;
 		sizeFile = parentDir +"ms.txt";
 		FileUtil.initFile(sizeFile, params, " Max Avalanche Size Data File", " time (plate updates),  max avalanche size");
-		sizeHistFile = parentDir + "sh.txt";	
-		
+		sizeHistFile = parentDir + "sh.txt";		
 	}
 }

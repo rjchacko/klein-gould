@@ -1,4 +1,6 @@
 package rachele.damage2D.multidx;
+import scikit.dataset.Histogram;
+
 import rachele.util.FileUtil;
 import rachele.util.MathTools;
 import scikit.jobs.params.Parameters;
@@ -12,6 +14,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	public double alphaDiss;
 	public double deadDiss;
 	public String boundaryConditions;
+	public Histogram alpha_iHist = new Histogram(0.001);
 	
 	public int noLiveSites; 
 	
@@ -94,7 +97,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		}
 		
 		p("Setting damage...");
-		setDamage(damage, params.iget("Dead Parameter"), params.fget("Init Percent Dead"));
+		setDamage(damage, params.iget("Dead Parameter"), params.fget("Init Percent Dead"), params.iget("Number Dead"));
 		
 		p("Making neighbor lists...");
 		makeNborLists();
@@ -107,7 +110,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		double percentSitesDamaged = (double)noDeadSites/(double)N;
 		FileUtil.printlnToFile(infoFileName, "# No of sites damaged = " , noDeadSites);
 		
-		params.set("Dead Parameter", noDeadSites);
+//		params.set("Dead Parameter", noDeadSites);
 		FileUtil.printlnToFile(infoFileName, "# Percent of sites damaged = ", percentSitesDamaged);
 		System.out.println("Percent of sites damaged = "+ percentSitesDamaged);
 		params.set("Percent Damage", percentSitesDamaged);
@@ -133,20 +136,23 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		aliveLattice[site] = true;
 	}
 	
-	void setDamage(String damageType, int deadParam, double initPercentDead){
-		int noDeadToPlace = deadParam;
+	void setDamage(String damageType, int deadParam, double initPercentDead, int noDead){
+//		int noDeadToPlace = noDead;
+//		int deadScale = deadParam;
 		//set alive lattice
 		for(int i = 0; i < N; i ++){
 			aliveLattice[i] = true;
 		}
 		if(damageType=="Random") setRandom(initPercentDead);
-		else if(damageType == "Place Random Dead")	setPlaceDeadRandom(noDeadToPlace);
-		else if(damageType=="Dead Strip") setDeadStrip(noDeadToPlace);
+		else if(damageType == "Place Random Dead")	setPlaceDeadRandom(noDead);
+		else if(damageType=="Dead Strip") setDeadStrip(noDead);
 		else if(damageType=="Random Blocks") setRandomBlockDamage(deadParam);
-		else if(damageType == "Dead Block") setDeadBlock(noDeadToPlace);
+		else if(damageType == "Dead Block") setDeadBlock(noDead);
 		else if(damageType == "Cascade") setCascadeDamage(initPercentDead);
 		else if(damageType == "Cascade Random") setCascadeRandom(initPercentDead);
-		else if(damageType == "Dead Rectangle") setDeadRectangle(noDeadToPlace);
+		else if(damageType == "Dead Rectangle") setDeadRectangle(noDead);
+		else if(damageType == "Dead Blocks") setDeadBlocks(deadParam, initPercentDead);
+		else if(damageType == "Place Dead Blocks") placeDeadBlocks(deadParam, noDead);		
 		else System.out.println("Error!");	
 		
 	}
@@ -316,6 +322,45 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 
 	}
 	
+	void placeDeadBlocks(int blockSize, int noDeadBlocksToPlace){
+		FileUtil.printlnToFile(infoFileName, "Damage block size", blockSize);
+		int noDamageBlocks = N/(blockSize*blockSize);
+		boolean [] blockAlive = new boolean [noDamageBlocks];
+		for (int i = 0; i < noDamageBlocks; i++) blockAlive[i] = true;
+		int noDeadBlocks = 0;
+		while(noDeadBlocks < noDeadBlocksToPlace){
+			int randBlock = (int)(random.nextDouble()*(double)noDamageBlocks);
+			if (blockAlive[randBlock]){
+				blockAlive[randBlock]=false;
+				noDeadBlocks += 1;
+			}
+		}
+
+		for (int i = 0; i < N; i++){
+			int block = findCG_site(i, blockSize);
+			if(blockAlive[block]) setSite(i);
+			else killSite(i);
+		}
+	}
+	
+	void setDeadBlocks(int blockSize, double percentDeadBlocks){
+		FileUtil.printlnToFile(infoFileName, "Damage block size", blockSize);
+		int noDamageBlocks = N/(blockSize*blockSize);
+		boolean [] blockAlive = new boolean [noDamageBlocks];
+		for (int j = 0; j < noDamageBlocks; j++){
+			if(random.nextDouble()<percentDeadBlocks){
+				blockAlive[j] = false;
+			}else{
+				blockAlive[j] = true;
+			}
+		}
+		for (int i = 0; i < N; i++){
+			int block = findCG_site(i, blockSize);
+			if(blockAlive[block]) setSite(i);
+			else killSite(i);
+		}
+	}
+	
 	void setRandomBlockDamage(int damageBlockSize){
 		FileUtil.printlnToFile(infoFileName, "Damage block size", damageBlockSize);
 		int noDamageBlocks = N/(damageBlockSize*damageBlockSize);
@@ -344,10 +389,15 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	 * phi_i*(1-alpha) = 1-alpha'_i
 	 */
 	double [] calcAlphaP(){
-		double [] ap = new double [N];
+		double [] ap = new double [noLiveSites];
+		int liveSite = 0;
 		for (int i = 0; i < N; i ++){
-			double phi_i = 1.0 - fracDeadNbors[i];
-			ap[i] = 1-phi_i*(1-alpha);
+			if(aliveLattice[i]){
+				double phi_i = 1.0 - fracDeadNbors[i];
+				ap[liveSite] = 1-phi_i*(1-alpha);
+				alpha_iHist.accum(ap[liveSite]);
+				liveSite += 1;
+			}
 		}
 		double ave = MathTools.mean(ap);
 		double var = MathTools.variance(ap);
