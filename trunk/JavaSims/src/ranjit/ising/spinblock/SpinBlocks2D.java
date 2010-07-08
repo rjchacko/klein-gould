@@ -1,5 +1,5 @@
-package ranjit.ising.spinblock;
-
+package kang.umbrella.spinblock;
+import java.util.Random;
 
 public class SpinBlocks2D {
 	SpinBlockIndexer indexer;
@@ -7,12 +7,18 @@ public class SpinBlocks2D {
 	int[/*yscale*/][/*xscale*/][] blocks;
 	public int netSum;	
 	public int N, L, R;
+	public int deadsites;  //the number of the diluted sites
+
 	
-	public SpinBlocks2D(int L, int R) {
+	public SpinBlocks2D(int L, int R, double q, int dilutionseed) // here q is used to represent dilution
+	{
 		this.L = L;
 		this.R = R;
 		N = L*L;
 		netSum = N;
+		deadsites=0;
+		
+		Random qrand=new Random(dilutionseed);   //here I use the seed1 to generate the random number for dilution
 		
 		indexer = new SpinBlockIndexer(L, R);
 		int maxScale = indexer.maxScale();
@@ -29,6 +35,15 @@ public class SpinBlocks2D {
 				}
 			}
 		}
+		for(int t=0; t<L*L; t++)
+		{
+			if (qrand.nextDouble()<q)
+			{
+				blocks[0][0][t]=0;
+				deadsites++;
+			}
+		}
+		
 	}
 	
 	

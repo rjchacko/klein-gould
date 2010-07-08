@@ -1,4 +1,4 @@
-package ranjit.ising.spinblock;
+package kang.umbrella.spinblock;
 
 
 public class SpinBlocks1D implements Cloneable {

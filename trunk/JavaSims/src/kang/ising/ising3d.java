@@ -290,7 +290,7 @@ public class ising3d extends Simulation{
 		params.add("lattice's width", 50);
 		params.add("lattice's length", 50);
 		params.add("lattice's height", 50);
-		params.add("Diluted Percentage", new DoubleValue(0.4,0,1).withSlider());
+		params.add("Diluted Percentage", new DoubleValue(0.40,0,1).withSlider());
 
 		params.add("Quench starts at", 200);
 
@@ -309,9 +309,9 @@ public class ising3d extends Simulation{
 		params.add("Dilution seed", 1);
 		params.add("Initialization type", 0);
 		
-		params.addm("Quench temperature", new DoubleValue(1.076, 0, 10).withSlider());
+		params.addm("Quench temperature", new DoubleValue(0.8073, 0, 10).withSlider());
 		params.addm("Temperature", new DoubleValue(9, 0, 10).withSlider());
-		params.addm("Field", new DoubleValue(0.29, -5, 5).withSlider());
+		params.addm("Field", new DoubleValue(0.65, -5, 5).withSlider());
 		params.add("MC time");
 		params.add("Metastable state time");
 		params.add("mean life time");
@@ -363,9 +363,9 @@ public class ising3d extends Simulation{
 		percent = params.fget("Diluted Percentage");
 		type = (int)params.fget("Initialization type");
 		field = params.fget("Field");
-		//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/3disingdata/q=0.4.txt","quench temperature=   ", QuenchT);
+		//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/3disingdata/lowtemp/q=0.40.txt","quench temperature=   ", QuenchT);
 
-		for(int v=0; v<10; v++)
+		for(int v=0; v<60; v++)
 		{
 		
 		initialize(isingspin, type, percent, spinseed, dilutionseed);
@@ -375,7 +375,7 @@ public class ising3d extends Simulation{
 		totallifetime=0;
 		params.set("v#fieldruns", v);
 
-		for(int u=0; u<20; u++)
+		for(int u=0; u<30; u++)
 		{
 			for(int r=0; r<M; r++)
 			{
@@ -383,7 +383,7 @@ public class ising3d extends Simulation{
 			}
 			params.set("Temperature",9);	//reset the high temperature everytime
 			params.set("Field",field-0.01*v);
-			params.set("Quench temperature",1.076);
+			params.set("Quench temperature",0.8073);
 			QuenchT=params.fget("Quench temperature");
 			spinflipseed = (int)((field+1+v)*QuenchT*10000+u);
 			spinfliprand= new Random (spinflipseed);
@@ -428,7 +428,7 @@ public class ising3d extends Simulation{
 		params.set("mean life time",meanlifetime);
 		
 	}// end of u circle
-		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/3disingdata/q=0.4.txt",-H, meanlifetime);
+		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/3disingdata/lowtemp/q=0.40.txt",-H, meanlifetime);
 		
 	}// end of v circle(the sweep of field)
 		

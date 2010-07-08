@@ -6,9 +6,10 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
+
 import javax.imageio.ImageIO;
 
-import ranjit.ising.spinblock.SpinBlocks2D;
+import kang.umbrella.spinblock.SpinBlocks2D;
 import scikit.dataset.Accumulator;
 import scikit.dataset.DataSet;
 import scikit.dataset.DatasetBuffer;
@@ -35,6 +36,7 @@ public class Ising2D extends Simulation {
 	int L,R;
 	double T,h,J;
 	double E;
+	double dilution; //dilution
 	Random r=new Random();
 	int windowMin, windowMax, currentWindow;
 	int firstWindow, lastWindow;
@@ -55,14 +57,16 @@ public class Ising2D extends Simulation {
 		params.add("mcs");
 		params.add("current window");
 		params.add("phi0");
-		params.add("prefix","/Users/rjchacko/Desktop/data/");
+		params.add("prefix","/Users/liukang2002507/Desktop/umbrelladata/");
 		c.frame(grid,magPlot,freeEnergyPlot);
+		params.add("dilution",0.1);
 	}
 
 	public void animate() {
 		ColorPalette palette = new ColorPalette();
 		palette.setColor(0,Color.BLACK);
 		palette.setColor(1,Color.WHITE);
+
 
 		ColorGradient smooth = new ColorGradient();
 		int allSpins[]=spins.blocksAtScale(0);
@@ -100,6 +104,8 @@ public class Ising2D extends Simulation {
 		L=params.iget("L");
 		T=params.fget("T");
 		h=params.fget("h");
+		dilution=params.fget("dilution");
+		
 		int numberOfWindows=params.iget("number of windows");
 		int mcsPerWindow=params.iget("MCS per window");
 		String prefix=params.sget("prefix");
@@ -120,7 +126,7 @@ public class Ising2D extends Simulation {
 			mag[l]=new Histogram(1);
 		}
 		int init[]=new int[L*L];
-		spins = new SpinBlocks2D(L, R);
+		spins = new SpinBlocks2D(L, R, dilution,1);
 
 		do{
 			int z=r.nextInt(L*L);
@@ -179,7 +185,7 @@ public class Ising2D extends Simulation {
 		int phi0=L*L-(windowNumber+1)*windowSpacing;
 		windowMax=phi0+windowWidth;
 		windowMin=phi0-windowWidth;
-		spins = new SpinBlocks2D(L, R);
+		spins = new SpinBlocks2D(L, R, dilution,1);
 
 		if(!randomic){
 			for(int i=0;i<init.length;i++){
