@@ -1,4 +1,4 @@
-package ranjit.ising.spinblock;
+package kang.umbrella.spinblock;
 
 import static java.lang.Integer.*;
 
