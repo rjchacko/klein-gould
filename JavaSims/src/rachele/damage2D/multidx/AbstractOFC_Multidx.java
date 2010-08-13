@@ -15,12 +15,12 @@ public class AbstractOFC_Multidx {
 	public int epicenterSite; 	// beginning site of current avalanch
 	public int avSize; 			// avalanch size
 	double tStress;				// threshold stress
-	double rStress;				// base residual stress
-	double alpha;			// dissipation paramater, aka alpha			
+	double rStress;				// base residual stress		
 	double maxResNoise; 		// actual residual stress = rStress + residual noise with maxResNoise = max residual noise
 	public boolean fullyConnected;
 	public int [] epicenterCount;
 	public double [] stress;
+	double [] alpha;			// dissipation paramater, aka alpha	
 	Random random = new Random();
 	
 	public int findCG_site(int s, int blockSize){
@@ -62,7 +62,7 @@ public class AbstractOFC_Multidx {
 	}
 	
 	double calcStressPerNbor(int s, double rStressWithNoise){
-		double stressPerNbor = ((1-alpha)*(stress[s] - rStressWithNoise))/(double)noNbors;
+		double stressPerNbor = ((1-alpha[s])*(stress[s] - rStressWithNoise))/(double)noNbors;
 		return stressPerNbor;
 	}
 
