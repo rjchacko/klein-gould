@@ -14,8 +14,9 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	public double alphaDiss;
 	public double deadDiss;
 	public String boundaryConditions;
-	public Histogram alpha_iHist = new Histogram(0.001);
+	public Histogram alpha_iHist = new Histogram(0.01);
 	public double alphaPrime;
+	public double [] alphaP;
 	
 	public int noLiveSites; 
 	
@@ -25,16 +26,11 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	int [] noNborsForSite;  // No of nbors at each site (for when different for each site.)
 	int [][]nborList;  // List of neighbors for each site: nborList[site = 0..N-1][nbor index = 0..maxNbors]  This is gonna be really big
 	
-	double maxPercentDamage;
-	double [] cgBlockDamage;
 	double [] fracDeadNbors;
+	
 	double alphaDissAccum;
 	double deadDissAccum;
 	double rateCt;
-	
-//	boolean [] setLattice;
-	boolean deadStrip;
-	boolean randomBlockDamage;
 	boolean deadDissipation;
 
 	String damage;
@@ -64,7 +60,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		noNbors = findCircleNbors(R);
 		random.setSeed(params.iget("Random Seed"));	
 		tStress = 1.0;
-		alpha = params.fget("Dissipation Param");   // = alpha
+//		double alphaParam = params.fget("Dissipation Param");   // = alpha
 		rStress = params.fget("Residual Stress");
 		maxResNoise = params.fget("Res. Max Noise");
 		damage = params.sget("Type of Damage");
@@ -82,6 +78,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 //		setLattice = new boolean [N];
 		noNborsForSite = new int [N];
 		fracDeadNbors = new double [N];
+		alpha = new double [N];
 	}
 	
 	void initLattice(Parameters params){
@@ -104,16 +101,25 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 //		p("Setting damage...");
 		dl = new Damage(pow, R, params.iget("Random Seed"), infoFileName);
 		
-		aliveLattice = Damage.setDamage(damage, params.iget("Dead Parameter"), params.fget("Init Percent Dead"), params.iget("Number Dead"));
+		boolean [] dAlive = Damage.setDamage(damage, params.iget("Dead Parameter"), params.fget("Init Percent Dead"), params.iget("Number Dead"));
+		aliveLattice = new boolean [N];
+		int ct = 0;
+		for (int i =0; i < N; i++){
+			aliveLattice[i]=dAlive[i];
+			if(aliveLattice[i]) ct += 1;
+		}
+		noLiveSites = ct;	
+		noDeadSites = N-ct;
 
-		noDeadSites = Damage.noDeadSites;
-		noLiveSites =Damage.noLiveSites;
 		for(int i = 0; i < N; i++) {
 			if(aliveLattice[i]==false) stress[i] = 0;
 		}
 		
 		p("Making neighbor lists...");
 		makeNborLists();
+		
+		p("Setting alpha array");
+		setAlphaArray(params.sget("Alpha Distribution"), params.fget("Dissipation Param"));
 		
 		p("Calculating alpha prime and variance");
 		double [] ap = calcAlphaP();
@@ -136,297 +142,282 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		p("Lattice init complete.");
 	}
 	
-//	void killSite(int site){
-//		noDeadSites+=1;
-//		noLiveSites-=1;
-//		aliveLattice[site] = false;
-//		stress[site] = 0.0;
-//	}
-//	
-//	void setSite(int site){
-//		aliveLattice[site] = true;
-//	}
+	void setAlphaArray(String alphaDistribution, double alphaParam){
+		if(alphaDistribution=="Flat Random"){
+			for (int i = 0; i < N; i++) alpha[i]=random.nextDouble();
+		}else if(alphaDistribution=="Gaussian"){
+			for (int i = 0; i < N; i++){
+				double a =random.nextGaussian()/10 + alphaParam;
+				if(a > 1.0) alpha[i] = 1.0;
+				else if (a < 0) alpha[i] = 0.0;
+				else alpha[i] = a;
+			}
+		}else if(alphaDistribution=="Constant"){
+			for (int i = 0; i < N; i++) alpha[i]=alphaParam;
+		}else if(alphaDistribution=="Gaussian about zero"){
+			for (int i = 0; i < N; i++){
+				double a =Math.abs(random.nextGaussian()/5.0);
+				while(Math.abs(a)>1.0){
+					a =(random.nextGaussian()/5.0);
+				}
+				alpha[i] = Math.abs(a);
+			}
+		}else if(alphaDistribution=="Gaussian split"){
+			for (int i = 0; i < N; i++){
+				double a =(random.nextGaussian()/10.0);
+				while(Math.abs(a)>1.0){
+					a =(random.nextGaussian()/10.0);
+				}
+				if(a < 0.0) a = 1.0 + a;
+				alpha[i] = a;
+			}
+		}else if(alphaDistribution=="Gaussian about half"){
+			for (int i = 0; i < N; i++){
+				double a =(random.nextGaussian()/10.0);
+				while(Math.abs(a)>0.5){
+					a =(random.nextGaussian()/10.0);
+				}
+				a += 0.5;
+				alpha[i] = a;
+			}
+		}else if(alphaDistribution=="Dead Blocks"){
+			boolean [] aa = Damage.setDamage("Place Dead Blocks", 32,0.0, 32);
+			double a;
+			for(int i = 0; i < N; i++){
+				a=(random.nextGaussian()/10.0);
+				while(Math.abs(a)>1.0){
+					a =(random.nextGaussian()/10.0);
+				}
+				if(aa[i]){
+					alpha[i] = 1.0- Math.abs(a);
+				}else{
+					alpha[i] = Math.abs(a);
+				}
+			}	
+		}else if(alphaDistribution=="Many Gaussians"){
+			int dx = 128;
+			int Lp = L/dx;
+			int Np = Lp*Lp;
+			boolean [] blockSet = new boolean [Np];
+			for(int i = 0; i < Np; i ++) blockSet[i] = false;
+			for(int i = 0; i < Np; i ++){
+				//choose a block
+				int block = (int)(random.nextDouble()*(double)(Np));
+				while(blockSet[block]){
+					block = (int)(random.nextDouble()*(double)(Np));
+				}
+				double center = ((double)i+0.5)/(double)(Np);
+				setGaussianBlock(center, block, dx, Np);
+				blockSet[block] = true;
+			}
+			
+		}else if(alphaDistribution=="Fractal"){
+			for (int i = 0; i < N; i++)
+				alpha[i]=-1.0;
+			
+			int maxPow = pow-2;  //largest lattice size is 8 x 8
+			int [] intervalCount = new int [maxPow+1];
+			for (int ip = maxPow; ip >= 0; ip--){
+				int dx = (int)Math.pow(2 ,ip);
+				int Lp = L/dx;
+				int Np = Lp*Lp;
+				double center = 1.0-((double)ip+0.5)/(double)(maxPow+1);
+				for (int i = 0; i < Np; i++){
+					double pr = 0.25;  						//Set one quarter of blocks to alpha distributed about center
+					if(alpha[getFirstBlockSite(i, ip)]<0){
+						if (random.nextDouble()<pr){
+							setGaussianBlock(center, i, dx, maxPow+1);
+							intervalCount[ip]+=dx*dx;
+						}
+					}
+				}	
+			}
+			int [] unsetList = randomizeUnsetSites();
+			for (int i = 0; i < unsetList.length; i++){
+				int minI = findMinInterval(intervalCount);
+				double center = 1.0-((double)minI+0.5)/(double)(maxPow+1);
+				setGaussianBlock(center, unsetList[i], 1, maxPow+1);
+				intervalCount[minI]+=1;
+			}
+		}else if (alphaDistribution=="Quarters"){
+			for (int i = 0; i < N; i++)
+				alpha[i]=-1.0;
+			
+			//set one block 1/4 the lattice size
+			int ip = pow - 1;
+			int dx = (int)Math.pow(2 ,ip);
+			double center = 0.5/4.0;
+			setGaussianBlock(center, 1, dx, 4);
+			//set 4 blocks 1/8 the size of lattice
+			ip = pow - 2;
+			dx = (int)Math.pow(2 ,ip);
+			int Lp = L/dx;
+			int Np = Lp*Lp;
+			center = 1.5/4.0;
+			int noSet = 0;
+			while(noSet < 4){
+				//pick a block of size dx
+				int randBlock = (int)(random.nextDouble()*Np);
+				if(alpha[getFirstBlockSite(randBlock, ip)]<0){
+					setGaussianBlock(center, randBlock, dx, 4);
+					noSet+=1;
+					System.out.println("Set block of size " + dx);
+				}
+			}
+			//set 16
+			ip = pow - 3;
+			dx = (int)Math.pow(2 ,ip);
+			Lp = L/dx;
+			Np = Lp*Lp;
+			center = 2.5/4.0;
+			noSet = 0;
+			while(noSet < 16){
+				//pick a block of size dx
+				int randBlock = (int)(random.nextDouble()*Np);
+				if(alpha[getFirstBlockSite(randBlock, ip)]<0){
+					setGaussianBlock(center, randBlock, dx, 4);
+					noSet+=1;
+					System.out.println("Set block of size " + dx);
+				}
+			}
+			//set 16 more blocks
+			center = 3.5/4.0;
+			noSet = 0;
+			while(noSet < 16){
+				//pick a block of size dx
+				int randBlock = (int)(random.nextDouble()*Np);
+				if(alpha[getFirstBlockSite(randBlock, ip)]<0){
+					setGaussianBlock(center, randBlock, dx, 4);
+					noSet+=1;
+					System.out.println("Set block of size " + dx);
+				}
+			}
+			int [] unsetList = randomizeUnsetSites();
+			System.out.println("no unset = " + unsetList.length);
+		}else if (alphaDistribution=="Eights"){
+			for (int i = 0; i < N; i++)
+				alpha[i]=-1.0;
+			
+			int maxPow = pow-2;  //largest lattice size is 4 X 4
+			for (int ip = maxPow; ip > 0; ip--){
+				int dx = (int)Math.pow(2 ,ip);
+				int Lp = L/dx;
+				int Np = Lp*Lp;
+				double center = (7.5-(double)ip)/8.0;
+					int noSet = 0;
+					int maxToSet = Np/8;
+					while(noSet < maxToSet){
+						//pick a block of size dx
+						int randBlock = (int)(random.nextDouble()*Np);
+						if(alpha[getFirstBlockSite(randBlock, ip)]<0){
+							setFlatBlock(center, randBlock, dx, 8);
+							noSet+=1;
+							System.out.println("Set block of size " + dx);
+						}
+					}
+
+			}
+			double center = 7.5/8.0;
+			for (int i = 0; i < N; i++){
+				if(alpha[i]< 0){
+					setFlatBlock(center, i, 1, 8);
+				}
+			}
+		}
+	}
 	
-//	void setDamage(String damageType, int deadParam, double initPercentDead, int noDead){
-////		int noDeadToPlace = noDead;
-////		int deadScale = deadParam;
-//		//set alive lattice
-//		for(int i = 0; i < N; i ++){
-//			aliveLattice[i] = true;
-//		}
-//		if(damageType=="Random") setRandom(initPercentDead);
-//		else if(damageType == "Place Random Dead")	setPlaceDeadRandom(noDead);
-//		else if(damageType=="Dead Strip") setDeadStrip(noDead);
-//		else if(damageType=="Random Blocks") setRandomBlockDamage(deadParam);
-//		else if(damageType == "Dead Block") setDeadBlock(noDead);
-//		else if(damageType == "Cascade") setCascadeDamage(initPercentDead);
-//		else if(damageType == "Cascade Random") setCascadeRandom(initPercentDead, deadParam);
-//		else if(damageType == "Dead Rectangle") setDeadRectangle(noDead);
-//		else if(damageType == "Dead Blocks") setDeadBlocks(deadParam, initPercentDead);
-//		else if(damageType == "Place Dead Blocks") placeDeadBlocks(deadParam, noDead);		
-//		else System.out.println("Error!");	
-//		
-//	}
+	int [] randomizeUnsetSites(){
+		int ct = 0;
+		for (int i = 0; i < N; i++){
+			if(alpha[i]<0){
+				ct += 1;
+			}
+		}
+		int [] list = new int [ct];
+		for (int i = 0; i < ct; i++){
+			list[i] = -1;
+		}
+		for (int i = 0; i < N; i++){
+			if(alpha[i]<0){
+				int index = (int)(random.nextDouble()*ct);
+				while(list[index]>0){
+					index = (int)(random.nextDouble()*ct);
+				}
+				list[index]=i;
+			}
+		}
+		return list;
+	}
 	
-//	private void setDeadRectangle(int noDead) {
-//		int aspectRatio = 3;// width over height
-//		int w = (int)Math.sqrt(aspectRatio*noDead);
-//		if(w > L) System.out.println("Aspect Ratio error!");
-//		int h = noDead/w;
-//		int initialBlock = h*w;
-//		for (int x = 0; x < w; x++){
-//			for (int y = 0; y < h; y++){
-//				int s = y*L+x;
-//				killSite(s);
-//			}
-//		}
-//		int extra = noDead - initialBlock;
-//		if(extra > h){
-//			for(int i = 0; i < h; i++) killSite(i*L + w);
-//			for (int i = 0; i <= extra-h; i++) killSite(h*L + i);
-//		}else{
-//			for (int i = 0; i < extra; i++) killSite(i*L + w);
-//		}
-//		System.out.println(" dead = " + noDead + " no in block so far = "  + initialBlock);
-//		
-//	}
-//
-//	private void setCascadeRandom(double p, int d) {
-//		System.out.println("Setting Cascade Random Damage");
-//		int maxPow = pow-2;
-//		for (int i = 0; i < N; i++) setLattice[i] = false;
-//
-//		double blockP=.25;
-//		for (int ip = maxPow; ip >= 0; ip--){
-//			int dx = (int)Math.pow(2 ,ip);
-//			int Lp = L/dx;
-//			int Np = Lp*Lp;
-////			System.out.println("dx = " + dx + " Lp = " + Lp);	
-//			for (int i = 0; i < Np; i++){
-//				// set blocks with probability if they are not already set
-//				if(setBlockTest(i, ip)==false){
-//					if (random.nextDouble()<blockP) 
-////						setBlock(dx, i);
-//						setBlockWithp(dx, i, p, d);
-//				}
-//			}
-//				
-//		}
-//		
-//	}
-//	
-//	boolean setBlockTest(int blockNo, int ip){
-//		boolean ret = false;
-//		int dx = (int)Math.pow(2, ip);
-//		int Lp = L/dx;
-//		int xp = blockNo%Lp;
-//		int yp = blockNo/Lp;
-//		int x = dx*xp;
-//		int y = dx*yp;
-//		int site = y*L+x;
-//		if(setLattice[site]) ret = true;
-//		return ret;
-//	}
-//
-//	void setBlockWithp(int dx, int block, double p, int d){
-//		//all sites in block
-//		int Lp = L/dx;
-//		int xp = block%Lp;
-//		int yp = block/Lp;
-//		double pr =(100*random.nextGaussian()/(double)d+p);
-//		
-//		for (int y = yp*dx; y < yp*dx+dx; y++){
-//			for (int x = xp*dx; x < xp*dx + dx; x++){
-//				int site = y*L+x;
-//				if(random.nextDouble()<pr) killSite(site);
-//				setLattice[site] = true;
-//			}
-//		}
-//	}
-//	
-//	void setBlock(int dx, int block){
-//		//all sites in block
-//		int Lp = L/dx;
-//		int xp = block%Lp;
-//		int yp = block/Lp;
-//		double p =random.nextDouble();
-//		
-//		for (int y = yp*dx; y < yp*dx+dx; y++){
-//			for (int x = xp*dx; x < xp*dx + dx; x++){
-//				int site = y*L+x;
-//				if(random.nextDouble()<p) killSite(site);
-//				setLattice[site] = true;
-//			}
-//		}
-//	}
-//	
-//	void setCascadeDamage(double p){
-////		System.out.println("Setting Cascading Damage");
-//		int maxPow = pow-2;
-//		//largest lattice size is 8 x 8
-//
-//		for (int ip = maxPow; ip >= 0; ip--){
-//			int dx = (int)Math.pow(2 ,ip);
-//			int Lp = L/dx;
-//			int Np = Lp*Lp;
-//			System.out.println("dx = " + dx + " Lp = " + Lp);	
-//			for (int i = 0; i < Np; i++){
-//				double pr = p*Math.pow(Math.E,(-Math.pow(dx-R,2)/100));
-//				// kill alive blocks with probability p
-//				if(liveBlockTest(i, ip)){
-//					if (random.nextDouble()<pr) 
-//						killBlock(dx, i);
-//				}
-//			}
-//				
-//		}
-//	}
-//	
-//	boolean liveBlockTest(int blockNo, int ip){
-//		boolean ret = false;
-//		int dx = (int)Math.pow(2, ip);
-//		int Lp = L/dx;
-//		int xp = blockNo%Lp;
-//		int yp = blockNo/Lp;
-//		int x = dx*xp;
-//		int y = dx*yp;
-//		int site = y*L+x;
-//		if(aliveLattice[site]) ret = true;
-//		return ret;
-//	}
-//	
-//	void killBlock(int dx, int block){
-//		//kill sites in block
-//		int Lp = L/dx;
-//		int xp = block%Lp;
-//		int yp = block/Lp;
-//		for (int y = yp*dx; y < yp*dx+dx; y++){
-//			for (int x = xp*dx; x < xp*dx + dx; x++){
-//				int site = y*L+x; 
-//				killSite(site);
-//			}
-//		}
-//	}
-//
-//	void setDeadStrip(int noDeadToPlace){
-//		for(int i  = 0; i < N; i++){
-//			if(i < noDeadToPlace) killSite(i);
-//			else setSite(i);
-//		}
-//	}
-//	
-//	void setPlaceDeadRandom(int noDeadToPlace){
-//		while(noDeadSites < noDeadToPlace){
-//			int randSite = (int)(random.nextDouble()*(double)N);
-//			if (aliveLattice[randSite]){
-//				killSite(randSite);
-//			}
-//		}
-//	}
-//	
-//	void setRandom(double initPercentDead){
-//		for(int i = 0; i < N; i++){
-//			if(random.nextDouble() > initPercentDead){
-//				setSite(i);
-//			}else{
-//				killSite(i);
-//			}
-//		}
-//	}
-//	
-//	void setDeadBlock(int noDeadToPlace){
-//		int sq = (int) Math.sqrt(noDeadToPlace);
-//		int initialBlock = sq*sq;
-//		for (int x = 0; x < sq; x++){
-//			for (int y = 0; y < sq; y++){
-//				int s = y*L+x;
-//				killSite(s);
-//			}
-//		}
-//		int extra = noDeadToPlace - initialBlock;
-//		if(extra > sq){
-//			for(int i = 0; i < sq; i++) killSite(i*L + sq);
-//			for (int i = 0; i <= extra-sq; i++) killSite(sq*L + i);
-//		}else{
-//			for (int i = 0; i < extra; i++) killSite(i*L + sq);
-//		}
-//
-//	}
-//	
-//	void placeDeadBlocks(int blockSize, int noDeadBlocksToPlace){
-//		FileUtil.printlnToFile(infoFileName, "Damage block size", blockSize);
-//		int noDamageBlocks = N/(blockSize*blockSize);
-//		boolean [] blockAlive = new boolean [noDamageBlocks];
-//		for (int i = 0; i < noDamageBlocks; i++) blockAlive[i] = true;
-//		int noDeadBlocks = 0;
-//		while(noDeadBlocks < noDeadBlocksToPlace){
-//			int randBlock = (int)(random.nextDouble()*(double)noDamageBlocks);
-//			if (blockAlive[randBlock]){
-//				blockAlive[randBlock]=false;
-//				noDeadBlocks += 1;
-//			}
-//		}
-//
-//		for (int i = 0; i < N; i++){
-//			int block = findCG_site(i, blockSize);
-//			if(blockAlive[block]) setSite(i);
-//			else killSite(i);
-//		}
-//	}
-//	
-//	void setDeadBlocks(int blockSize, double percentDeadBlocks){
-//		FileUtil.printlnToFile(infoFileName, "Damage block size", blockSize);
-//		int noDamageBlocks = N/(blockSize*blockSize);
-//		boolean [] blockAlive = new boolean [noDamageBlocks];
-//		for (int j = 0; j < noDamageBlocks; j++){
-//			if(random.nextDouble()<percentDeadBlocks){
-//				blockAlive[j] = false;
-//			}else{
-//				blockAlive[j] = true;
-//			}
-//		}
-//		for (int i = 0; i < N; i++){
-//			int block = findCG_site(i, blockSize);
-//			if(blockAlive[block]) setSite(i);
-//			else killSite(i);
-//		}
-//	}
-//	
-//	void setRandomBlockDamage(int damageBlockSize){
-//		FileUtil.printlnToFile(infoFileName, "Damage block size", damageBlockSize);
-//		int noDamageBlocks = N/(damageBlockSize*damageBlockSize);
-//		double [] damageBlockDamage = new double [noDamageBlocks];
-//		for (int j = 0; j < noDamageBlocks; j++){
-//			//assign a random amount of damage
-//			//half of blocks have no damage
-////			damageBlockDamage[j] = random.nextGaussian()*0.07;   // this gives about 3 % damage
-////			damageBlockDamage[j] = random.nextGaussian()*0.115;  // this gives about 5 % damage
-//			damageBlockDamage[j] = random.nextGaussian()*0.25;  // this gives about 10 % damage
-////			damageBlockDamage[j] = random.nextGaussian()*0.59;  // this gives about 25 % damage
-////			damageBlockDamage[j] = Math.abs(random.nextGaussian());  // this gives about ? % damage
-//		}
-//		for (int i = 0; i < N; i++){
-//			int block = findCG_site(i, damageBlockSize);
-//			if (random.nextDouble() < damageBlockDamage[block]){
-//				killSite(i);
-//			}else{
-//				setSite(i);
-//			}
-//		}
-//		
-//	}
+	int findMinInterval(int [] a){
+		int minCt = N;
+		int minI = -1;
+		for (int i = 0; i < a.length; i++){
+			if (a[i] < minCt){
+				minCt = a[i];
+				minI = i;
+			}
+		}
+		return minI;
+	}
+	
+	void setGaussianBlock(double center, int block, int dx, int noInts){
+		int Lp = L/dx;
+		int xp = block%Lp;
+		int yp = block/Lp;
+		for (int y = yp*dx; y < yp*dx+dx; y++){
+			for (int x = xp*dx; x < xp*dx + dx; x++){
+				int site = y*L+x; 
+				double rand = random.nextGaussian();
+				while(Math.abs(rand)>=1.0){
+					rand = random.nextGaussian();
+				}
+				alpha[site] = rand/(double)(noInts*2)+center;
+			}
+		}
+	}
+	
+	void setFlatBlock(double center, int block, int dx, int noInts){
+		int Lp = L/dx;
+		int xp = block%Lp;
+		int yp = block/Lp;
+		double intervalWidth = 1.0/noInts;
+		for (int y = yp*dx; y < yp*dx+dx; y++){
+			for (int x = xp*dx; x < xp*dx + dx; x++){
+				int site = y*L+x; 
+				double rand = random.nextDouble()*intervalWidth;
+
+				alpha[site] = rand+center-intervalWidth/2.0;
+			}
+		}
+	}
+	
+	int getFirstBlockSite(int blockNo, int ip){
+		int dx = (int)Math.pow(2, ip);
+		int Lp = L/dx;
+		int xp = blockNo%Lp;
+		int yp = blockNo/Lp;
+		int x = dx*xp;
+		int y = dx*yp;
+		int site = y*L+x;
+		return site;
+	}
+	
 	/**
 	 * Calculate effective alpha (alpha' or ap) for each lattice site:
 	 * phi_i*(1-alpha) = 1-alpha'_i
 	 */
 	double [] calcAlphaP(){
+		alphaP = new double [N];
 		double [] ap = new double [noLiveSites];
 		int liveSite = 0;
 		for (int i = 0; i < N; i ++){
+			alphaP[i] = 1.0;
 			if(aliveLattice[i]){
 				double phi_i = 1.0 - fracDeadNbors[i];
-				ap[liveSite] = 1-phi_i*(1-alpha);
+				ap[liveSite] = 1-phi_i*(1-alpha[i]);
 				alpha_iHist.accum(ap[liveSite]);
+				alphaP[i] = ap[liveSite];
 				liveSite += 1;
 			}
 		}
@@ -621,7 +612,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	void eqFail(int s){
 		double resStressWithNoise = calcResNoise(s);
 		double stressDrop = stress[s] - resStressWithNoise;
-		double stressPerNbor = ((1-alpha)*(stressDrop))/(double)noNborsForSite[s];
+		double stressPerNbor = ((1-alpha[s])*(stressDrop))/(double)noNborsForSite[s];
 		stress[s] = resStressWithNoise;
 		//distribute stress to the alive nbors
 		int checkAliveCount = 0;
@@ -639,7 +630,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	void fail(int s){
 		double resStressWithNoise = calcResNoise(s);
 		double stressDrop = stress[s] - resStressWithNoise;
-		double stressPerNbor = ((1-alpha)*(stressDrop))/(double)noNborsForSite[s];
+		double stressPerNbor = ((1-alpha[s])*(stressDrop))/(double)noNborsForSite[s];
 //		if(damage == "Cascade")
 			if(deadDissipation) calcDissipation(stressDrop, s);
 		stress[s] = resStressWithNoise;
@@ -661,7 +652,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		rateCt += 1.0;
 		//calc alpha dissipation = alpha x % alive
 		double fracAlive = 1.0 - fracDeadNbors[site];
-		alphaDiss = alpha*fracAlive;
+		alphaDiss = alpha[site]*fracAlive;
 		alphaDissAccum += alphaDiss;
 		alphaDissRate = alphaDissAccum/rateCt;
 //		System.out.println("aDiss = " + alphaDiss + " cgTime = " + cg_time + " rate = " + alphaDissRate);
