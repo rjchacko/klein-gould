@@ -2,6 +2,7 @@ package rachele.damage2D.multidx;
 
 import kip.util.Random;
 import rachele.util.FileUtil;
+import rachele.util.MathTools;
 
 public class Damage {
 
@@ -9,12 +10,15 @@ public class Damage {
 	static int L;
 	static int N;
 	static int R;
-	static int noDeadSites;
-	static int noLiveSites;
+//	static int noDeadSites;
+//	static int noLiveSites;
 	static boolean [] aliveLattice;
 	static boolean [] setLattice;
 	static Random random = new Random();
 	static String infoFileName;
+	int [] noNborsForSite;
+	int [][]nborList;
+	double [] fracDeadNbors;
 	
 	public Damage(int power, int range, int randomSeed, String fileName) {
 		pow=power;
@@ -26,8 +30,8 @@ public class Damage {
 		setLattice = new boolean [N];
 		setRandomSeed(randomSeed);
 		infoFileName=fileName;
-		noLiveSites = N;
-		noDeadSites = 0;
+//		noLiveSites = N;
+//		noDeadSites = 0;
 	}
 	
 	static public boolean [] setDamage(String damageType, int deadParam, double initPercentDead, int noDead){
@@ -41,7 +45,8 @@ public class Damage {
 		else if(damageType == "Cascade Random") setCascadeRandom(initPercentDead, deadParam);
 		else if(damageType == "Dead Rectangle") setDeadRectangle(noDead);
 		else if(damageType == "Dead Blocks") setDeadBlocks(deadParam, initPercentDead);
-		else if(damageType == "Place Dead Blocks") placeDeadBlocks(deadParam, noDead);		
+		else if(damageType == "Place Dead Blocks") placeDeadBlocks(deadParam, noDead);
+		else if(damageType == "Alive Cascade") setCascadeLiveBlocks(initPercentDead);
 		else System.out.println("Error!");
 		System.out.println("site 0 = " + aliveLattice[0]);
 		return aliveLattice;
@@ -51,17 +56,10 @@ public class Damage {
 		random.setSeed(rs);	
 	}
 	
-	public static int noDeadSites(){
-		return noDeadSites;
-	}
-
-	public static int noLiveSites(){
-		return noLiveSites;
-	}
 	
 	static void killSite(int site){
-		noDeadSites+=1;
-		noLiveSites-=1;
+//		noDeadSites+=1;
+//		noLiveSites-=1;
 		aliveLattice[site] = false;
 	}
 	
@@ -159,6 +157,28 @@ public class Damage {
 			}
 		}
 	}
+
+	static void setCascadeLiveBlocks(double p){
+//		System.out.println("Setting Cascading Damage");
+		int maxPow = pow-2;
+		//largest lattice size is 8 x 8
+		for (int i = 0; i < N; i++) aliveLattice[i] = false;
+		for (int ip = maxPow; ip >= 0; ip--){
+			int dx = (int)Math.pow(2 ,ip);
+			int Lp = L/dx;
+			int Np = Lp*Lp;
+			System.out.println("dx = " + dx + " Lp = " + Lp);	
+			for (int i = 0; i < Np; i++){
+				double pr = p*Math.pow(Math.E,(-Math.pow(dx-R,2)/100));
+				// kill alive blocks with probability p
+				if(liveBlockTest(i, ip)==false){
+					if (random.nextDouble()<pr) 
+						setLiveBlock(dx, i);
+				}
+			}
+				
+		}
+	}
 	
 	static void setCascadeDamage(double p){
 //		System.out.println("Setting Cascading Damage");
@@ -195,6 +215,19 @@ public class Damage {
 		return ret;
 	}
 	
+	static void setLiveBlock(int dx, int block){
+		//kill sites in block
+		int Lp = L/dx;
+		int xp = block%Lp;
+		int yp = block/Lp;
+		for (int y = yp*dx; y < yp*dx+dx; y++){
+			for (int x = xp*dx; x < xp*dx + dx; x++){
+				int site = y*L+x; 
+				setSite(site);
+			}
+		}
+	}
+	
 	static void killBlock(int dx, int block){
 		//kill sites in block
 		int Lp = L/dx;
@@ -216,10 +249,12 @@ public class Damage {
 	}
 	
 	static void setPlaceDeadRandom(int noDeadToPlace){
-		while(noDeadSites < noDeadToPlace){
+		int noDead = 0;
+		while(noDead < noDeadToPlace){
 			int randSite = (int)(random.nextDouble()*(double)N);
 			if (aliveLattice[randSite]){
 				killSite(randSite);
+				noDead+=1;
 			}
 		}
 	}
@@ -323,5 +358,164 @@ public class Damage {
 		int yp = y / blockSize;
 		int cgSite = yp *(L/blockSize) + xp;
 		return cgSite;
+	}
+	
+	/**
+	 * Calculate effective alpha (alpha' or ap) for each lattice site:
+	 * phi_i*(1-alpha) = 1-alpha'_i
+	 */
+	double [] calcAlphaP(double alpha, int R){
+		noNborsForSite = new int [N];
+		fracDeadNbors = new double [N];
+		int maxNbors = findNoCircleNbors();	
+		nborList = new int [N][maxNbors];
+		findCircleNbors("Periodic", maxNbors);
+		makeNborLists(maxNbors, "Periodic", true);
+		int ct=0;
+		for (int i = 0; i < N; i ++){
+			if(aliveLattice[i]) ct+=1;
+		}
+		double [] ap = new double [ct];
+		int liveSite = 0;
+		for (int i = 0; i < N; i ++){
+			if(aliveLattice[i]){
+				double phi_i = 1.0 - fracDeadNbors[i];
+				ap[liveSite] = 1-phi_i*(1-alpha);
+//				alpha_iHist.accum(ap[liveSite]);
+				liveSite += 1;
+			}
+		}
+		double ave = MathTools.mean(ap);
+		double var = MathTools.variance(ap);
+		double [] ret = new double [2];
+		ret[0] = ave;
+		ret[1] = var;
+		return ret;
+	}
+	
+	void makeNborLists(int maxNbors, String boundaryConditions, boolean deadDissipation){
+		int noNbors = findCircleNbors(R);
+		for (int i = 0; i < N; i++){
+			int ct = 0;
+			int boundsCt = 0;
+			for (int j = 0; j < maxNbors; j++){
+				int nborSite = nborList[i][j];
+				if(nborSite>=1){
+					if (aliveLattice[nborSite]){
+						ct += 1;
+					}
+				}else{
+					boundsCt += 1;
+				}
+				int noDead = maxNbors - ct;
+				fracDeadNbors[i] = (double)noDead/maxNbors;
+				if(deadDissipation==true) noNborsForSite[i] = noNbors; 
+				else if (deadDissipation==false){
+					if(boundaryConditions=="Open")
+						noNborsForSite[i]=ct+boundsCt;
+					else if(boundaryConditions == "Periodic")
+						noNborsForSite[i]=ct;
+				}
+				
+			}
+		}
+		if(deadDissipation==true){
+			for (int i = 0; i < N; i++)	noNborsForSite[i] = noNbors; 
+			for (int i = 0; i < N; i++){
+				int ct = 0;
+				for (int j = 0; j < maxNbors; j++){
+					if (aliveLattice[nborList[i][j]]){
+						ct += 1;
+					}
+					int noDead = maxNbors - ct;
+					fracDeadNbors[i] = (double)noDead/maxNbors;
+				}
+			}
+		}else if (deadDissipation==false){
+			for (int i = 0; i < N; i++){
+				int ct = 0;
+				for (int j = 0; j < maxNbors; j++){
+					if (aliveLattice[nborList[i][j]]){
+						ct += 1;
+					}
+					int noDead = maxNbors - ct;
+					fracDeadNbors[i] = (double)noDead/maxNbors;
+					noNborsForSite[i]=ct;
+				}
+			}
+
+		}
+	}
+	
+	int findNoCircleNbors(){
+		int count = 0;
+		 for(int dy = -R; dy <= R; dy++){
+			 for(int dx = -R; dx <= R; dx++){
+				 double distance = Math.sqrt(dx*dx + dy*dy);
+				 if (distance <= R){
+					 count += 1;
+				 }
+			 }
+		 }
+		 return count;
+	}
+	
+	void findCircleNbors(String boundaryConditions, int maxNbors){
+		if(boundaryConditions == "Periodic"){
+			int nborIndex = 0;
+			for (int s = 0; s < N; s++){
+				nborIndex = 0;
+				int x = s%L;
+				int y = s/L;
+				for(int dy = -R; dy <= R; dy++){
+					for(int dx = -R; dx <= R; dx++){
+						double distance = Math.sqrt(dx*dx + dy*dy);
+						if (distance <= R){
+							int xx = (x+dx+L)%L;
+							int yy = (y+dy+L)%L;
+							int nborSite = yy*L+xx;
+							nborList[s][nborIndex] = nborSite;
+							nborIndex += 1;
+						}
+					}
+				}
+			}
+			if (nborIndex != (maxNbors)) System.out.println("Problem in findCircleNbors");
+		}else if(boundaryConditions == "Open"){
+			int nborIndex = 0;
+			for (int s = 0; s < N; s++){
+				nborIndex = 0;
+				int x = s%L;
+				int y = s/L;
+				for(int dy = -R; dy <= R; dy++){
+					for(int dx = -R; dx <= R; dx++){
+						double distance = Math.sqrt(dx*dx + dy*dy);
+						if (distance <= R){
+							int xx = (x+dx);
+							int yy = (y+dy);
+							if(xx>=0 & xx<L & yy>=0 & yy<L){
+								int nborSite = yy*L+xx;
+								nborList[s][nborIndex] = nborSite;
+							}else{
+								nborList[s][nborIndex] = -1;
+							}
+							nborIndex += 1;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	int findCircleNbors(int r){
+		int no = 0;
+		for(int y = -r; y <= r; y++){
+			for(int x = -r; x <= r; x++){
+				double distance = Math.sqrt(x*x + y*y);
+				if (distance <= r) no += 1;
+			}
+		}
+		no -= 1;  //do not count the site itself 
+		return no;
 	}
 }
