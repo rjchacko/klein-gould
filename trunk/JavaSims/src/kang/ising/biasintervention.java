@@ -26,6 +26,7 @@ public class biasintervention extends Simulation{
 	Grid grid2 = new Grid("Bias Diluted Ising initial copy");
 	Grid grid3 = new Grid("Bias Diluted Ising bias critical droplet");
 	Grid grid4 = new Grid("Bias Diluted Ising bias intervention");
+	Grid grid5 = new Grid("Percolation cluster");
 
 	
 
@@ -88,6 +89,23 @@ public class biasintervention extends Simulation{
 	public int dilutionseed;
 	public int biasseed;
 	public int type;  // initialization type(0-random spin    1-all spins up    2-all spins down)
+	
+	
+	public double probability;//
+	public double percolationM; //the magnetization for the percolation mapping
+	public int stablespin[];  //the array to store the location of all stable spins(-1), the range is from 0 to M
+	public int SN;  //the number of the stable spins in the configuration
+	public int PBH[];  //possible bonds head
+	public int PBT[];  //possible bonds tail
+	public int PBS[];  //possible bonds status
+	public int PN;  //the number of the possible bonds in range R
+	public int RBH[];
+	public int RBT[];
+	public int RN;
+	public int totalbonds;  // the number of the real bonds after throwing the random number
+	public int temp[]; //the array to save a cluster for finding the largest one
+	public int largest[];
+	public int percolationcluster[];
 
 	
  	public int Nneighber(int a,int i )
@@ -243,6 +261,7 @@ public class biasintervention extends Simulation{
 		ising.setColor(-1, Color.WHITE);
 		ising.setColor(0, Color.RED);
 		ising.setColor(2, Color.BLUE);
+		ising.setColor(-2, Color.GREEN);
 		
 		grid1.setColors(ising);
 		grid1.registerData(L1, L2, isingspin);
@@ -252,6 +271,8 @@ public class biasintervention extends Simulation{
 		grid3.registerData(L1, L2, interventioncopy);
 		grid4.setColors(ising);
 		grid4.registerData(L1, L2, isingcopy);
+		grid5.setColors(ising);
+		grid5.registerData(L1, L2, percolationcluster);
 
 		
 	}
@@ -262,6 +283,7 @@ public class biasintervention extends Simulation{
 		grid2.clear();
 		grid3.clear();
 		grid4.clear();
+		grid5.clear();
 
 	}
 
@@ -331,7 +353,7 @@ public class biasintervention extends Simulation{
 	public void movie(Grid grid, int number, int copynumber)   //function to capture the grid
 	{
 		
-			String SaveAs = "/Users/liukang2002507/Desktop/biasdata/nucleation/p0bias50/pic_"+fmt.format(copynumber)+"_"+fmt.format(number)+".png";
+			String SaveAs = "/Users/liukang2002507/Desktop/simulation/biasdata/percolation/p0bias50 200x200/pic_"+fmt.format(copynumber)+"_"+fmt.format(number)+".png";
 		try {
 			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {
@@ -374,6 +396,154 @@ public class biasintervention extends Simulation{
 		
 	}
 	
+	public void percolation(int spin[], double percolationP){
+		stablespin=new int[M];
+		SN=0;
+		// first, find all the stable spins
+		for(int q=0; q<M; q++)
+		{
+			if(spin[q]==-1)
+			{
+				stablespin[SN]=q;
+				SN++;
+			}
+				
+		}
+		
+		// second, determine all the possible bonds
+		int kx, ky, jx, jy;  // location for i,j
+		int rx, ry;   // the difference between k and j
+		PN=0;
+		int PBsize=0;
+		PBsize=(int)(SN*(2*R+1)*(2*R+1))/2;
+		RBH= new int [PBsize];
+		RBT= new int [PBsize];
+		
+		Random bondsrand;
+		int pin;
+		bondsrand = new Random(1);
+		
+		
+		for (int k=0; k<SN; k++)
+			for(int j=0; j<k; j++)
+			{
+				kx= stablespin[k]/L2;
+				ky= stablespin[k]%L2;
+				jx= stablespin[j]/L2;
+				jy= stablespin[j]%L2;
+				rx= kx-jx;
+				ry= ky-jy;
+				if( (rx*rx<=R*R) & (ry*ry<=R*R) )
+					if(bondsrand.nextDouble()<=percolationP)		// third, throw random numbers on all the possible bonds to determine the percolation bonds
+				{
+					RBH[PN]=stablespin[k];
+					RBT[PN]=stablespin[j];
+					PN++;
+				}
+				
+			}
+		
+		totalbonds=PN;
+		
+		temp= new int [SN];
+		largest = new int [SN];
+		int clustersizetemp;
+		int writeintotemp;
+		
+		for(int tp=0; tp<SN; tp++)
+		{
+			temp[tp]=-2;
+			largest[tp]=-2;
+		}
+		
+		// finally, find the largest cluster and save it into the array largest[]
+		
+		if(totalbonds>0)
+		{
+           int largestsize=0;
+           for (int i2=0; i2<totalbonds; i2++)     //the loop of finding different clusters
+           {
+        	   if((RBH[i2]!=-1)&(RBT[i2]!=-1))
+        	   {
+        		   for(int tpi=0; tpi<SN; tpi++)           // everytime reset temp[]
+        			   temp[tpi]=-2;
+        		   pin=0;
+        		   temp[pin]=RBH[i2];
+        		   RBH[i2]=-1;
+        		   //PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/check.txt", temp[pin]);
+        		   pin++;
+        		   temp[pin]=RBT[i2];
+        		   RBT[i2]=-1;
+        		   //PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/check.txt", temp[pin]);
+        		   pin++;
+        		   for(int i3=0; i3< pin; i3++)       //the loop of scanning all the spins in temp[]
+        		   {
+        			   
+        			   for(int i1=0; i1<totalbonds; i1++)   //the loop of scanning all the spins in RB[]
+        			   {
+        				   if(temp[i3]==RBH[i1])
+        				   {
+        					   writeintotemp=1;
+        					   for(int scan1=0; scan1<pin; scan1++)
+        						   {if(RBT[i1]==temp[scan1])
+        							   writeintotemp=0;}
+        					   if(writeintotemp==1)
+        					   {temp[pin]=RBT[i1];
+        					   //PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/check.txt", temp[pin]);
+        					   RBT[i1]=-1;
+        					   RBH[i1]=-1;
+        					   pin++;}
+        					   
+        				   }
+        				   if(temp[i3]==RBT[i1])
+        				   {
+        					   writeintotemp=1;
+        					   for(int scan2=0; scan2<pin; scan2++)
+        						   {if(RBH[i1]==temp[scan2])
+        							   writeintotemp=0;}
+        					   if(writeintotemp==1)
+        					   {temp[pin]=RBH[i1];
+        					   //PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/check.txt", temp[pin]);
+        					   RBT[i1]=-1;
+        					   RBH[i1]=-1;
+        					   pin++;}
+        					 
+        				   }
+        				   
+        			   }
+        			   
+        			  
+        		   }
+        		   clustersizetemp= pin;
+        		   //PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/check.txt", "1111111111111111111");
+        		   if(clustersizetemp>largestsize)
+        			   {
+        			   largestsize=clustersizetemp;
+        			   for(int tp=0; tp< SN; tp++)
+        				   largest[tp]=temp[tp];
+        			   }
+        		   
+        	   }
+        	   
+        	   
+           }
+		}
+
+	}
+	
+	public void cluster(int largestcluster[])
+	{
+		for(int in=0; in<M; in++)
+			{
+		       percolationcluster[in]=initialcopy[in];
+			if(initialcopy[in]!=2)
+				percolationcluster[in]=interventioncopy[in];
+			}
+		for(int cl=0; cl<SN; cl++)
+			if(largestcluster[cl]!=-2)
+				percolationcluster[largestcluster[cl]]=-2;
+	}
+	
 	public static void main (String[] biasintervention){
 		new Control(new biasintervention(), "Kang Liu's bias diulted ising model" );
 	}
@@ -383,6 +553,7 @@ public class biasintervention extends Simulation{
 		biasintervention.frame (grid2);
 		biasintervention.frame (grid3);
 		biasintervention.frame (grid4);
+		biasintervention.frame (grid5);
 		
 		
 		params.add("lattice's width", 200);
@@ -428,6 +599,7 @@ public class biasintervention extends Simulation{
         params.add("u#copies");
         params.add("grow");
         params.add("decay");
+        params.add("percolationP");
  
 
 		
@@ -455,6 +627,7 @@ public class biasintervention extends Simulation{
 		initialcopy = new int[M];
 		isingcopy = new int[M];
 		interventioncopy = new int[M];
+		percolationcluster = new int [M];
 
 
 		spinseed = (int)params.fget("Spin seed");
@@ -506,13 +679,29 @@ public class biasintervention extends Simulation{
 			
 			if(step-quenchstart==interventionstart)
 			{
+				percolationM=magnetization;
+				probability=1- Math.exp(-(-J*(1+percolationM)/T));
+				params.set("percolationP", probability);
 				for (int h=0; h<M; h++)
 				{
 				interventioncopy[h]=isingspin[h];
 				}
+				
+				
 				intervention(interventioncopies, interventionsteplimit, interventionP);
 				steplimit=-1;
-				movie(grid3, 8888, 8888);
+				
+				
+				
+				//now do the percolation mapping
+				
+				percolation(interventioncopy, probability);
+				cluster(largest);
+				
+				Job.animate();
+				movie(grid3, 8888, 8888);  // the critical droplet configuration
+				movie(grid5, 1234, 1234);  // the percolation cluster
+				params.set("percolationP", probability);
 			}
 			MCS(isingspin, spinfliprand);
 			params.set("MC time", step);
