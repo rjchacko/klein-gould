@@ -58,6 +58,7 @@ public class biasintervention extends Simulation{
 	
 	public int prestep;  // step for preparation of intial configuration
 	public int step; //Monte Carlo step
+	public int rationalMCS; // use this we can run half of the MCS
 	public int steplimit; //upperlimit of MC step
 	public int meanlifetime;
 	public int totallifetime;
@@ -67,9 +68,10 @@ public class biasintervention extends Simulation{
 	public int grownumber;
 	public int interventionsteplimit;
 	public int interventioncopies;
-	public int interventionstart;
+	public double interventionstart;    // this double format is used for pinpoint the critical droplet
 	public double interventionP;
-
+	
+	
 
 	public int isingspin[];     //the array of the data
 	public int initialcopy[];   //the array of the initial copy of the system
@@ -93,6 +95,8 @@ public class biasintervention extends Simulation{
 	
 	public double probability;//
 	public double percolationM; //the magnetization for the percolation mapping
+	public int largestsize;
+	
 	public int stablespin[];  //the array to store the location of all stable spins(-1), the range is from 0 to M
 	public int SN;  //the number of the stable spins in the configuration
 	public int PBH[];  //possible bonds head
@@ -107,6 +111,8 @@ public class biasintervention extends Simulation{
 	public int largest[];
 	public int percolationcluster[];
 
+	public int min, max;
+	public double avgmag[];
 	
  	public int Nneighber(int a,int i )
  	{// function for the index of nearest neighbor
@@ -225,13 +231,14 @@ public class biasintervention extends Simulation{
 		return m;
 	}
 	
-	public void MCS(int spin[], Random flip)
+	public void MCS(int spin[], Random flip, double ratio)
 	{
 	    int j=0;
 		H = params.fget("Field");
 	    T = params.fget("Temperature");
-	    NJ = params.fget("Interaction Constant before normalization");
-	    for (int f=0; f< M; f++)
+	    NJ = params.fget("Interaction Constant");
+	    rationalMCS= (int) (ratio*M);
+	    for (int f=0; f< rationalMCS; f++)
 	    {
 		   j=(int) (flip.nextDouble()*M);
 		   spinflip(R, NJ, spin, j, flip, T, H);
@@ -353,7 +360,7 @@ public class biasintervention extends Simulation{
 	public void movie(Grid grid, int number, int copynumber)   //function to capture the grid
 	{
 		
-			String SaveAs = "/Users/liukang2002507/Desktop/simulation/biasdata/percolation/p0bias50 200x200/pic_"+fmt.format(copynumber)+"_"+fmt.format(number)+".png";
+			String SaveAs = "/Users/liukang2002507/Desktop/simulation/criticaldroplet/bias/q=0/biasp=0.1/1884.5/pic_"+fmt.format(copynumber)+"_"+fmt.format(number)+".png";
 		try {
 			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {
@@ -361,6 +368,22 @@ public class biasintervention extends Simulation{
 		}
 		
 	}
+	
+	public void movie2(Grid grid, int size, double etime)   //function to capture the grid
+	{
+		
+		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/criticaldroplet/bias/q=0/biasp=0.1/evolution1345-1360/evolution.txt", etime, size);
+			
+		    String SaveAs = "/Users/liukang2002507/Desktop/simulation/criticaldroplet/bias/q=0/biasp=0.1/evolution1345-1360/pic_"+fmt.format(etime)+"_"+fmt.format(size)+".png";
+		try {
+			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
+		} catch (IOException e) {
+			System.err.println("Error in Writing File" + SaveAs);
+		}
+		
+	}
+	
+
 	
 	public void intervention(int copies, int steplimit, double percentage)
 	{
@@ -376,7 +399,7 @@ public class biasintervention extends Simulation{
 				isingcopy[l]=interventioncopy[l];
 			for(int s=0; s<steplimit; s++)
 			{
-				MCS(isingcopy, newspinfliprand);
+				MCS(isingcopy, newspinfliprand, 1);
 				Job.animate();
 				
 			}
@@ -460,7 +483,7 @@ public class biasintervention extends Simulation{
 		
 		if(totalbonds>0)
 		{
-           int largestsize=0;
+		   largestsize=0;
            for (int i2=0; i2<totalbonds; i2++)     //the loop of finding different clusters
            {
         	   if((RBH[i2]!=-1)&(RBT[i2]!=-1))
@@ -531,18 +554,170 @@ public class biasintervention extends Simulation{
 
 	}
 	
-	public void cluster(int largestcluster[])
+	public void cluster(int largestcluster[], int spin[])
 	{
 		for(int in=0; in<M; in++)
 			{
 		       percolationcluster[in]=initialcopy[in];
 			if(initialcopy[in]!=2)
-				percolationcluster[in]=interventioncopy[in];
+				percolationcluster[in]=spin[in];
 			}
 		for(int cl=0; cl<SN; cl++)
 			if(largestcluster[cl]!=-2)
 				percolationcluster[largestcluster[cl]]=-2;
 	}
+	
+	public void clusterevolution(int spin[], double steplength, int estart)
+	{
+		
+		for(int estep=0; estep<(int)(15/steplength); estep++)
+		{
+		percolationM=magnetization;
+		probability=1- Math.exp(-(-J*(1+percolationM)/T));
+		params.set("percolationP", probability);
+		
+		percolation(spin, probability);
+		cluster(largest, spin);
+		
+		Job.animate();
+		
+		movie2(grid5, largestsize, estep);  // the percolation cluster
+		params.set("percolationP", probability);
+		params.set("clustersize", largestsize);
+		
+		MCS(spin, spinfliprand, steplength);
+		}
+		
+		
+		
+	}
+	
+	public double dilutionratio(int spin[], int r, int i, int total)
+	{
+		double ratio;
+		int dilutedsite;
+		dilutedsite=0;
+		int totalinrange;
+		totalinrange=0;
+		int j,jx,jy;
+		int ix,iy;
+		int rx,ry;
+		ix=i/L2;
+		iy=i%L2;
+		for(j=0; j<total;j++)
+		{
+			jx=j/L2;
+			jy=j%L2;
+			rx=ix-jx;
+			ry=iy-jy;
+			if((rx*rx+ry*ry)<=r*r)
+			{
+				totalinrange++;
+				if(spin[j]==0)
+					dilutedsite++;
+			}
+		}
+	
+		ratio=dilutedsite/totalinrange;
+		return ratio;
+	}
+	
+	public void dropletcenter(int spin[], int r, int total)
+	{
+		int i,ix,iy;
+		int sum;
+		int mx,my,j;
+		int jx,jy;
+		
+		for(i=0;i<total;i++)
+			{
+			ix=i/L2;
+			iy=i%L2;
+			sum=0;
+			for(mx=-r;mx<=r;mx++)
+				for(my=-r;my<=r;my++)
+				{
+					jx=ix+mx;
+					jy=iy+my;
+					if(ix+mx<0)
+						jx=ix+mx+L1;
+					if(ix+mx>L1-1)
+						jx=ix+mx-L1;
+					if(iy+my<0)
+					    jy=iy+my+L2;
+					if(iy+my>L2-1)
+						jy=iy+my-L2;
+					j=jx*L2+jy;
+					sum+=spin[j];
+				}
+			avgmag[i]=sum/((2*r+1)*(2*r+1));
+			}
+		max=0;
+		min=0;
+		for(i=1;i<total;i++)
+		{
+			if(avgmag[i]>avgmag[max])
+				max=i;
+			if(avgmag[i]<avgmag[min])
+				min=i;
+		}
+		
+	}
+	
+	public int clustercenter(int largestcluster[])
+	{
+		int fp,fx,fy;
+		fp=largestcluster[0];
+		fx=fp/L2;
+		fy=fp%L2;
+		int sumx,sumy;
+		sumx=0;
+		sumy=0;
+		int center,cx,cy;
+		int clx[];
+		int cly[];
+		int tempx,tempy;
+		clx= new int[SN];
+		cly= new int[SN];
+		clx[0]=fx;
+		cly[0]=fy;
+		
+		for(int cl=1; cl<SN; cl++)
+		{
+			tempx=largestcluster[cl]/L2;
+			tempy=largestcluster[cl]%L2;
+			clx[cl]=tempx;
+			cly[cl]=tempy;
+			if((tempx-fx)*(tempx-fx)>(tempx-L1-fx)*(tempx-L1-fx))
+				clx[cl]=tempx-L1;
+			if((tempx-fx)*(tempx-fx)>(tempx+L1-fx)*(tempx+L1-fx))
+				clx[cl]=tempx+L1;
+			if((tempy-fy)*(tempy-fy)>(tempy-L2-fy)*(tempy-L2-fy))
+				cly[cl]=tempy-L2;
+			if((tempy-fy)*(tempy-fy)>(tempy+L2-fy)*(tempy+L2-fy))
+				cly[cl]=tempy+L2;
+			sumx+=clx[cl];
+			sumy+=cly[cl];
+		}
+		cx=(int)(sumx/(SN+1));
+		cy=(int)(sumy/(SN+1));
+		
+		if(cx<0)
+			cx=cx+L1;
+		if(cx>L1-1)
+			cx=cx-L1;
+		if(cy<0)
+			cy=cy+L2;
+		if(cy>L2-1)
+			cy=cy-L2;
+		
+		
+		center=cx*L2+cy;
+		return center;
+	}
+	
+	
+	
 	
 	public static void main (String[] biasintervention){
 		new Control(new biasintervention(), "Kang Liu's bias diulted ising model" );
@@ -559,28 +734,27 @@ public class biasintervention extends Simulation{
 		params.add("lattice's width", 200);
 		params.add("lattice's length", 200);
 		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
-		params.add("Bias percent", new DoubleValue(0.5, 0, 1).withSlider());
+		params.add("Bias percent", new DoubleValue(0.1, 0, 1).withSlider());
 		
 		params.add("Quench starts at", 100);
 		
-		params.addm("Interaction Constant before normalization", -4);
+		params.addm("Interaction Constant", -4);
 		params.add("Interaction range", 10);
 		params.add("Bias range", 10);
 		params.add("Monte Carlo step's limit", 1000000);
 
-		params.add("Spin seed", 1);
-		params.add("Dilution seed", 1);
-		params.add("Bias seed", 1);
-		params.add("Initialization type", 0);
-		
+		//params.add("Spin seed", 1);
+		//params.add("Dilution seed", 1);
+		//params.add("Bias seed", 1);
+		//params.add("Initialization type", 0);
 		params.addm("Quench temperature", new DoubleValue(1.778, 0, 10).withSlider());
 		params.addm("Temperature", new DoubleValue(9, 0, 10).withSlider());
-		params.addm("Field", new DoubleValue(0.95, -5, 5).withSlider());
+		params.addm("Field", new DoubleValue(1.163, -5, 5).withSlider());
 		
 		
-		params.add("intervention start", 1912);
+		params.add("intervention start", new DoubleValue(1884.5, 0, 99999999).withSlider());
 		params.add("intervention steplimit", 50);
-		params.add("intervention copies", 20);
+		params.add("intervention copies", 50);
 		params.add("intervention percentage", new DoubleValue(0.85,0,1).withSlider());
 		
 		///below is the parameters that would be displayed on the panel
@@ -593,13 +767,14 @@ public class biasintervention extends Simulation{
 
 		
 		
-        params.add("spinfliprand");
-        params.add("spinrand");
-        params.add("dilutionrand");
+        //params.add("spinfliprand");
+        //params.add("spinrand");
+        //params.add("dilutionrand");
         params.add("u#copies");
         params.add("grow");
         params.add("decay");
         params.add("percolationP");
+        params.add("clustersize");
  
 
 		
@@ -608,6 +783,8 @@ public class biasintervention extends Simulation{
 
     public void run(){
 		
+    	int estart;   //start of the cluster evolution
+    	
 		
 		R = (int)params.fget("Interaction range");
 		biasrange= (int)params.fget("Bias range");
@@ -630,15 +807,20 @@ public class biasintervention extends Simulation{
 		percolationcluster = new int [M];
 
 
-		spinseed = (int)params.fget("Spin seed");
-		dilutionseed = (int)params.fget("Dilution seed");
-		biasseed =(int)params.fget("Bias seed");
+		//spinseed = (int)params.fget("Spin seed");
+		//dilutionseed = (int)params.fget("Dilution seed");
+		//biasseed =(int)params.fget("Bias seed");
+		spinseed=1;
+		dilutionseed=1;
+		biasseed=1;
+	
 		percent = params.fget("Diluted Percentage");
 		biaspercent = params.fget("Bias percent");
-		type = (int)params.fget("Initialization type");
+		//type = (int)params.fget("Initialization type");
+		type=0;
 		field = params.fget("Field");
 		
-		interventionstart=(int)params.fget("intervention start");
+		interventionstart=params.fget("intervention start");
 		interventioncopies=(int)params.fget("intervention copies");
 		interventionsteplimit=(int)params.fget("intervention steplimit");
 		interventionP=params.fget("intervention percentage");
@@ -654,13 +836,13 @@ public class biasintervention extends Simulation{
 		
 		for (prestep=0; prestep < 50; prestep++)
 		{
-		MCS(isingspin, spinfliprand);
+		MCS(isingspin, spinfliprand ,1);
 		params.set("MC time", prestep-50);
 		Job.animate();
 		}
 		
-		params.set("spinfliprand", spinflipseed);
-		params.set("dilutionrand",dilutionrand.nextDouble());
+		//params.set("spinfliprand", spinflipseed);
+		//params.set("dilutionrand",dilutionrand.nextDouble());
 		temperaturequench(QuenchT);
 		Ms=magnetization;
 		
@@ -675,10 +857,16 @@ public class biasintervention extends Simulation{
 				Ms=magnetization;
 				params.set("Saturated magnetization", Ms);
 			}
+			
 
 			
-			if(step-quenchstart==interventionstart)
+			if(step-quenchstart==(int)interventionstart)
 			{
+				double residue=0;
+				residue=interventionstart-step+quenchstart;
+				if(residue!=0)
+					MCS(isingspin, spinfliprand, residue);
+				
 				percolationM=magnetization;
 				probability=1- Math.exp(-(-J*(1+percolationM)/T));
 				params.set("percolationP", probability);
@@ -696,24 +884,35 @@ public class biasintervention extends Simulation{
 				//now do the percolation mapping
 				
 				percolation(interventioncopy, probability);
-				cluster(largest);
+				cluster(largest, interventioncopy);
 				
 				Job.animate();
 				movie(grid3, 8888, 8888);  // the critical droplet configuration
-				movie(grid5, 1234, 1234);  // the percolation cluster
+				movie(grid5, 1234, step-quenchstart);  // the percolation cluster
 				params.set("percolationP", probability);
+				params.set("clustersize", largestsize);
 			}
-			MCS(isingspin, spinfliprand);
+			
+			
+			estart=134500;
+			if(step-quenchstart==estart)
+			{
+				clusterevolution(isingspin, 0.1, estart);
+				steplimit=-2;
+			}
+			
+			
+			else{
+			MCS(isingspin, spinfliprand, 1);
 			params.set("MC time", step);
 			Job.animate();
 			params.set("Metastable state time", step-quenchstart);
-			//movie(grid1, step, 0000);
+			if(interventionstart>9999)
+				movie(grid1, step, 0000);
+			}
 			//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/biasdata/nucleation/data50.txt",step-quenchstart, (magnetization/Ms));
 		}
 		
-		
-	
-	
 	
 	
     }// the end of run()
