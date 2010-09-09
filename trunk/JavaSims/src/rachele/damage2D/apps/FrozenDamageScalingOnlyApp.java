@@ -1,5 +1,6 @@
 package rachele.damage2D.apps;
 
+import java.awt.Color;
 import java.io.File;
 
 import rachele.damage2D.multidx.FrozenDamageLattice;
@@ -8,6 +9,7 @@ import scikit.dataset.Accumulator;
 import scikit.dataset.DatasetBuffer;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Grid;
+import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
@@ -22,7 +24,6 @@ import scikit.util.Utilities;
  */
 public class FrozenDamageScalingOnlyApp extends Simulation{
 
-	
 	int dt;
 	int pow;
 	int maxSize;	
@@ -31,9 +32,6 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 	String sizeHistFile;
 	String sizeFile;
 	String infoFile;
-	String [][] cgFiles;
-	
-	double stressMetric;
 	double alphaDissRate;
 		
 	FrozenDamageLattice ofc;
@@ -46,6 +44,14 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 	Accumulator alphaAcc = new Accumulator();
 
 	Grid deadGrid = new Grid("Lattice");
+	Grid alphaGrid = new Grid("Alpha Prime");
+//	Grid colorScaleGrid = new Grid("Color Grid");
+	Plot alphaPlot = new Plot("Alpha Histogram");
+//	Grid hitGrid = new Grid("No of Events per Time Step");
+//	Grid sizeGrid = new Grid("Ave Size of Event");
+	
+	int [] sizeCount;
+	int [] eventCount;
 
 	public static void main(String[] args) {
 		new Control(new FrozenDamageScalingOnlyApp(), "OFC Damage Model Scaling Only");
@@ -53,9 +59,18 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 
 	public void load(Control c) {
 
-		deadGrid = new Grid("Dead Blocks dx = " + 1);
+		deadGrid = new Grid("Dead Sites");
 		c.frame( deadGrid);
-
+		alphaGrid = new Grid("Alpha Prime");
+		c.frame( alphaGrid);
+		alphaPlot = new Plot("Alpha Histogram");
+		c.frame(alphaPlot);
+//		c.frame(colorScaleGrid);
+//		hitGrid = new Grid("No of Events per Time Step");
+//		c.frame( hitGrid);
+//		sizeGrid = new Grid("Ave Size of Event");
+//		c.frame( sizeGrid);
+		
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testruns/"));
 		String rd = "Random";
 		String br = "Random Blocks";
@@ -67,9 +82,11 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		String cr = "Cascade Random";
 		String bl = "Dead Blocks";
 		String pd = "Place Dead Blocks";
-		params.add("Type of Damage", new ChoiceValue( cr, pd, bl, cs, br, ds, pr, rd, db, dr));
+		String ac = "Alive Cascade";
+		params.add("Type of Damage", new ChoiceValue(rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
 		params.add("Boundary Conditions", new ChoiceValue("Periodic", "Open"));
+		params.add("Alpha Distribution", new ChoiceValue("Constant","Eights","Quarters","Fractal","Many Gaussians","Dead Blocks","Gaussian about half","Gaussian split","Gaussian", "Flat Random",  "Gaussian about zero"));
 		params.addm("Random Seed", 1);
 		params.addm("Size Power",8);
 		params.addm("R", 16);
@@ -78,11 +95,11 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		params.addm("Number Dead", 1024);
 		params.addm("Coarse Grained dt (PU)", 1);
 		params.addm("Equilibration Updates", 100000);
-		params.addm("Max PU",1000000);
-		params.addm("Data points per write", 100000);
+		params.addm("Max PU",10000000);
+		params.addm("Data points per write", 10000);
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
-		params.addm("Dissipation Param", 0.0);
+		params.addm("Dissipation Param", 0.5);
 		params.addm("Damage Tolerance", 1.0);
 		params.add("Av Size");
 		params.add("Plate Updates");
@@ -94,6 +111,8 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 	public void animate() {
 		params.set("Plate Updates", ofc.plateUpdates);
 		params.set("Av Size", ofc.avSize);
+//		hitGrid.registerData(ofc.L, ofc.L, eventCount);
+//		sizeGrid.registerData(ofc.L, ofc.L, sizeCount);
 
 	}
 
@@ -140,6 +159,8 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 				
 		while(true){
 			ofc.ofcStep();
+//			sizeCount[ofc.epicenterSite]+=ofc.avSize;
+//			eventCount[ofc.epicenterSite] += 1;
 			Job.animate();
 			
 			double effAlpha = ofc.deadDiss + ofc.alphaDiss;
@@ -155,6 +176,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 			if (size > maxSize) {
 				maxSize = size;
 			}
+			
 
 			if(ofc.plateUpdates > nextAccumTime){ //Accumulate data to be written
 				accumData();
@@ -165,7 +187,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 				writeAccumulatedData();
 				dataPointsCount = 0;
 			}
-			if(ofc.plateUpdates%1000==0){
+			if(ofc.plateUpdates%100000==0){
 				writeShFile(shCount);
 				shCount += 1;
 			}
@@ -192,6 +214,8 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 	}
 	
 	void allocate(){
+		eventCount = new int [ofc.N];
+		sizeCount = new int [ofc.N];	
 	}
 	
 	void drawLattices(){
@@ -201,13 +225,30 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 			int Np = Lp*Lp;
 			double [] deadSites = new double [Np];
 			for (int i = 0; i < Np; i++){
-				if(ofc.aliveLattice[i]) deadSites[i]=1;
+				if(ofc.aliveLattice[i]) deadSites[i]=1.0;
 				else deadSites[i]=0;
 			}
 			double percentAlive = DoubleArray.sum(deadSites)/(double)Np;
 			deadGrid.setScale(0.0, 1.0);
 			deadGrid.registerData(Lp, Lp, deadSites);
+			for (int i = 0; i < Np; i++){
+				if(ofc.aliveLattice[i]) deadSites[i]=1.0 - ofc.alphaP[i];
+				else deadSites[i]=0;
+			}
+			alphaGrid.setScale(0.0, 1.0);
+			alphaGrid.registerData(Lp, Lp, deadSites);
+			
+			alphaPlot.registerLines("Alpha Hist", ofc.alpha_iHist, Color.RED);
+			
 			FileUtil.printlnToFile(infoFile, "# Percent alive for dx=" + dx + " is " + percentAlive);
+			
+//			//Draw a color scale
+//			double [] scale = new double [ofc.N];
+//			for (int i = 0; i < ofc.N; i++){
+//				scale[i] = i/ofc.L;
+//			}
+//			colorScaleGrid.registerData(ofc.L, ofc.L, scale);
+			
 	}
 	
 	void writeAccumulatedData(){
