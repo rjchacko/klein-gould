@@ -360,7 +360,7 @@ public class biasintervention extends Simulation{
 	public void movie(Grid grid, int number, int copynumber)   //function to capture the grid
 	{
 		
-			String SaveAs = "/Users/liukang2002507/Desktop/simulation/criticaldroplet/bias/q=0/biasp=0.1/1884.5/pic_"+fmt.format(copynumber)+"_"+fmt.format(number)+".png";
+			String SaveAs = "/Users/liukang2002507/Desktop/simulation/criticaldroplet/homogeneous/q=0.111/evolution1880-1890/pic_"+fmt.format(copynumber)+"_"+fmt.format(number)+".png";
 		try {
 			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {
@@ -372,9 +372,9 @@ public class biasintervention extends Simulation{
 	public void movie2(Grid grid, int size, double etime)   //function to capture the grid
 	{
 		
-		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/criticaldroplet/bias/q=0/biasp=0.1/evolution1345-1360/evolution.txt", etime, size);
+		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/criticaldroplet/homogeneous/q=0.111/evolution1880-1890/evolution.txt", etime, size);
 			
-		    String SaveAs = "/Users/liukang2002507/Desktop/simulation/criticaldroplet/bias/q=0/biasp=0.1/evolution1345-1360/pic_"+fmt.format(etime)+"_"+fmt.format(size)+".png";
+		    String SaveAs = "/Users/liukang2002507/Desktop/simulation/criticaldroplet/homogeneous/q=0.111/evolution1880-1890/pic_"+fmt.format(etime)+"_"+fmt.format(size)+".png";
 		try {
 			ImageIO.write(grid.getImage(), "png", new File(SaveAs));
 		} catch (IOException e) {
@@ -383,7 +383,50 @@ public class biasintervention extends Simulation{
 		
 	}
 	
+	public int distance (int a, int b)     // the code to calculate the distance between two points on the lattice
+	{
+		int dis=0;
+		int ax, ay, bx, by;
+		int dx2, dy2;
+		ax= a/L2;
+		ay= a%L2;
+		bx= b/L2;
+		by= b%L2;
+		
+		dx2=(ax-bx)*(ax-bx);
+		dy2=(ay-by)*(ay-by);
+		if((ax-bx+L1)*(ax-bx+L1)<(ax-bx)*(ax-bx))
+			dx2=(ax-bx+L1)*(ax-bx+L1);
+		if((ax-bx-L1)*(ax-bx-L1)<(ax-bx)*(ax-bx))
+			dx2=(ax-bx-L1)*(ax-bx-L1);
+		if((ay-by+L2)*(ay-by+L2)<(ay-by)*(ay-by))
+			dy2=(ay-by+L2)*(ay-by+L2);
+		if((ay-by-L2)*(ay-by-L2)<(ay-by)*(ay-by))
+			dy2=(ay-by-L2)*(ay-by-L2);
 
+		dis=dx2+dy2;
+		return dis;
+	}
+	
+	public void printdilutionratio(int spin[], int estep, int dropletcenter, int clustercenter)
+	{
+	    int distance;
+	    distance=distance(dropletcenter, clustercenter);
+	    int drx,dry;
+	    int clx,cly;
+	    drx=dropletcenter/L2;
+	    dry=dropletcenter%L2;
+	    clx=clustercenter/L2;
+	    cly=clustercenter%L2;
+	    double dropletratio;
+	    double clusterratio;
+	    dropletratio= dilutionratio(spin, R, dropletcenter, M);
+	    clusterratio= dilutionratio(spin, R, clustercenter, M);
+	    
+		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/criticaldroplet/homogeneous/q=0.111/evolution1880-1890/dilutionratio.txt", estep, drx, dry, clx, cly, distance, dropletratio, clusterratio );
+	}
+	
+    
 	
 	public void intervention(int copies, int steplimit, double percentage)
 	{
@@ -569,8 +612,8 @@ public class biasintervention extends Simulation{
 	
 	public void clusterevolution(int spin[], double steplength, int estart)
 	{
-		
-		for(int estep=0; estep<(int)(15/steplength); estep++)
+		int dropletC, clusterC;   // centers of the droplet and cluster
+		for(int estep=0; estep<(int)(10/steplength); estep++)
 		{
 		percolationM=magnetization;
 		probability=1- Math.exp(-(-J*(1+percolationM)/T));
@@ -581,7 +624,12 @@ public class biasintervention extends Simulation{
 		
 		Job.animate();
 		
+		dropletcenter(spin, R, M);
+		dropletC= min;
+		clusterC= clustercenter(largest);
+		
 		movie2(grid5, largestsize, estep);  // the percolation cluster
+		printdilutionratio(spin, estep, dropletC, clusterC);
 		params.set("percolationP", probability);
 		params.set("clustersize", largestsize);
 		
@@ -595,22 +643,18 @@ public class biasintervention extends Simulation{
 	public double dilutionratio(int spin[], int r, int i, int total)
 	{
 		double ratio;
-		int dilutedsite;
+		double dilutedsite;
 		dilutedsite=0;
-		int totalinrange;
+		double totalinrange;
 		totalinrange=0;
-		int j,jx,jy;
-		int ix,iy;
-		int rx,ry;
-		ix=i/L2;
-		iy=i%L2;
+		int j;
+		int disij;
+
 		for(j=0; j<total;j++)
 		{
-			jx=j/L2;
-			jy=j%L2;
-			rx=ix-jx;
-			ry=iy-jy;
-			if((rx*rx+ry*ry)<=r*r)
+            disij= distance(i,j);
+
+			if(disij<=r*r)
 			{
 				totalinrange++;
 				if(spin[j]==0)
@@ -625,7 +669,7 @@ public class biasintervention extends Simulation{
 	public void dropletcenter(int spin[], int r, int total)
 	{
 		int i,ix,iy;
-		int sum;
+		double sum;
 		int mx,my,j;
 		int jx,jy;
 		
@@ -670,7 +714,7 @@ public class biasintervention extends Simulation{
 		fp=largestcluster[0];
 		fx=fp/L2;
 		fy=fp%L2;
-		int sumx,sumy;
+		double sumx,sumy;
 		sumx=0;
 		sumy=0;
 		int center,cx,cy;
@@ -681,6 +725,8 @@ public class biasintervention extends Simulation{
 		cly= new int[SN];
 		clx[0]=fx;
 		cly[0]=fy;
+		sumx=fx;
+		sumy=fy;
 		
 		for(int cl=1; cl<SN; cl++)
 		{
@@ -699,8 +745,8 @@ public class biasintervention extends Simulation{
 			sumx+=clx[cl];
 			sumy+=cly[cl];
 		}
-		cx=(int)(sumx/(SN+1));
-		cy=(int)(sumy/(SN+1));
+		cx=(int)(sumx/SN);
+		cy=(int)(sumy/SN);
 		
 		if(cx<0)
 			cx=cx+L1;
@@ -733,8 +779,8 @@ public class biasintervention extends Simulation{
 		
 		params.add("lattice's width", 200);
 		params.add("lattice's length", 200);
-		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
-		params.add("Bias percent", new DoubleValue(0.1, 0, 1).withSlider());
+		params.add("Diluted Percentage", new DoubleValue(0.111,0,1).withSlider());
+		params.add("Bias percent", new DoubleValue(0, 0, 1).withSlider());
 		
 		params.add("Quench starts at", 100);
 		
@@ -747,12 +793,12 @@ public class biasintervention extends Simulation{
 		//params.add("Dilution seed", 1);
 		//params.add("Bias seed", 1);
 		//params.add("Initialization type", 0);
-		params.addm("Quench temperature", new DoubleValue(1.778, 0, 10).withSlider());
+		params.addm("Quench temperature", new DoubleValue(1.591, 0, 10).withSlider());
 		params.addm("Temperature", new DoubleValue(9, 0, 10).withSlider());
-		params.addm("Field", new DoubleValue(1.163, -5, 5).withSlider());
+		params.addm("Field", new DoubleValue(1.022, -5, 5).withSlider());
 		
 		
-		params.add("intervention start", new DoubleValue(1884.5, 0, 99999999).withSlider());
+		params.add("intervention start", new DoubleValue(2880, 0, 99999999).withSlider());
 		params.add("intervention steplimit", 50);
 		params.add("intervention copies", 50);
 		params.add("intervention percentage", new DoubleValue(0.85,0,1).withSlider());
@@ -805,7 +851,8 @@ public class biasintervention extends Simulation{
 		isingcopy = new int[M];
 		interventioncopy = new int[M];
 		percolationcluster = new int [M];
-
+		avgmag = new double[M];
+		
 
 		//spinseed = (int)params.fget("Spin seed");
 		//dilutionseed = (int)params.fget("Dilution seed");
@@ -894,7 +941,7 @@ public class biasintervention extends Simulation{
 			}
 			
 			
-			estart=134500;
+			estart=1880;
 			if(step-quenchstart==estart)
 			{
 				clusterevolution(isingspin, 0.1, estart);
