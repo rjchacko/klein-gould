@@ -5,7 +5,9 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import scikit.dataset.Histogram;
 import scikit.jobs.params.Parameters;
+import chris.util.PrintUtil;
 import chris.util.Random;
 
 
@@ -13,6 +15,7 @@ public class ShrinkingPearson {
 
 	private int pdfR[], pdfX[], bins;
 	private double dr, gsum;
+	private Histogram hmn, hmx;
 	private Random rand;
 	
 	public ShrinkingPearson(Parameters params){
@@ -35,6 +38,9 @@ public class ShrinkingPearson {
 		bins = (int)(Math.ceil(gsum/dr));
 		pdfR = new int[bins];
 		pdfX = new int[2*bins];
+		hmn  = new Histogram(dr);
+		hmx  = new Histogram(dr);
+
 	}
 	
 	
@@ -42,23 +48,34 @@ public class ShrinkingPearson {
 		
 		double[] r = new double[d];
 		double[] rs;
-		double tmp = 0;
+		double r2min, r2max, r2;
+		r2   = 0;
+		r2min = r2max = 1;
 		
-		for (int jj = 0 ; jj < steps ; jj++){
+		rs = rand.nextSpherePt(d,1);
+		for (int kk = 0 ; kk < d ; kk++){
+			r[kk] += rs[kk];
+		}
+		
+		for (int jj = 1 ; jj < steps ; jj++){
 			rs = rand.nextSpherePt(d,Math.pow(lambda,jj));
 			for (int kk = 0 ; kk < d ; kk++){
 				r[kk] += rs[kk];
-				tmp += rs[kk]*rs[kk];
+				r2    += r[kk]*r[kk];
 			}
-			tmp = 0;
+			if(r2 > r2max)
+				r2max = r2;
+			if(r2 < r2min)
+				r2min = r2;
+			r2 = 0;
 		}
 		
-		add2pdf(r, d);
+		add2pdf(r, d,r2min,r2max);
 		return;
 	}
 	
 	
-	private void add2pdf(double[] r, int d){
+	private void add2pdf(double[] r, int d, double r2mn, double r2mx){
 		double rr = 0;
 		
 		for (int jj = 0 ; jj < d ; jj++){
@@ -68,6 +85,8 @@ public class ShrinkingPearson {
 		
 		pdfR[(int)(rr/dr)]++;
 		pdfX[(int)((r[0]+gsum)/dr)]++;
+		hmn.accum(Math.sqrt(r2mn));
+		hmx.accum(Math.sqrt(r2mx));
 		return;
 	}
 
@@ -127,6 +146,13 @@ public class ShrinkingPearson {
 		catch (IOException ex){
 			ex.printStackTrace();
 		}
+		return;
+	}
+	
+	public void printFPP(String fout){
+		
+		PrintUtil.printHistToFile(fout+"_min.txt", hmn);
+		PrintUtil.printHistToFile(fout+"_max.txt", hmx);
 		return;
 	}
 	

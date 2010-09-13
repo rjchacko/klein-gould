@@ -49,7 +49,8 @@ public class PearsonApp extends Simulation{
 		}
 		
 		model.printPDF(params.sget("Data Directory")+File.separator+params.sget("File Name")+".txt", ns, nw, lambda);
-		
+		model.printFPP(params.sget("Data Directory")+File.separator+params.sget("File Name"));
+
 		params.set("Status","Done");
 		Job.animate();
 	}
