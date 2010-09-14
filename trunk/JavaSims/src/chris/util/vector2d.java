@@ -75,7 +75,7 @@ public class vector2d {
      */
     
     /**
-     * Returns the vector difference sum vector1 and vector2. 
+     * Returns the vector sum of vector1 and vector2. 
      * 
      * @param v1 the first vector
      * @param v2 the second vector
