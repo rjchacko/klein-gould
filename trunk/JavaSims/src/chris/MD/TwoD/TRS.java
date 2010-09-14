@@ -6,20 +6,57 @@ import chris.util.vector2d;
 public class TRS extends InteractingSystem {
 	
 	/*
-	 * 	NOTE: V0 and F0 take the </i> square </i> of the inter-particle
-	 *        distance as the input whereas V1, V2, V3, F1, F2, and F3
-	 *        take the inter-particle distance as the input.
+	 * 	From:
+	 * 		  M. F. Laguna and E. A. Jagla </i>J. Stat. Mech.</i> P09002, (2009)
 	 * 
 	 */
+	
+	/*
+	 * 	NOTE: V0 takes the </i> square </i> of the inter-particle
+	 *        distance as the input whereas V1, V2, V3, F0, F1, F2, 
+	 *        and F3 take the inter-particle distance as the input.
+	 * 
+	 */
+	
+	/*
+	 * The set of parameters P = {A0, A2, A3, c, d2, s2, d3, s3}.
+	 * P1 and P2 which drive a triangular–rhombohedral transition (T–R) and a 
+	 * triangular–square transition (T–S) respectively:
+	 * 
+	 * P1	=	{A0, 0.003, 0.01, 1.722, 0.98, 0.04, 1.74, 0.2}	
+	 * 			with variable A0 and Ac0 = 0.067.
+	 * 
+	 * P2	=	{0.024, A2, 0.01, 1.730, 0.98, 0.1, 1.74, 0.2} 
+	 * 			with variable A2 and Ac2 = 0.022.
+	 * 
+	 * Note:  Ac1/2 is a "transition value"
+	 * 
+	 */
+	
+	double A0, A2;
+	
+//	// Studying the T-S transition
+//	static final double A3   = 0.01;
+//	static final double c    = 1.722;
+//	static final double d2   = 0.98;
+//	static final double s2   = 0.04;
+//	static final double d3   = 1.74;
+//	static final double s3   = 0.2;
+//	static final double dlt2 = d2-s2;
+//	static final double dlt3 = d3-s3;
+//	static final double sgm2 = d2+s2;
+//	static final double sgm3 = d3+s3;
+//	static final double cm14 = 1./((c-1.)*(c-1.)*(c-1.)*(c-1.));
+//	static final double s24  = 1./(s2*s2*s2*s2);
+//	static final double s34  = 1./(s3*s3*s3*s3);
 
-	static final double A0   = 1;
-	static final double A2   = 1;
-	static final double A3   = 1;
-	static final double c    = 1;
-	static final double d2   = 1;
-	static final double s2   = 1;
-	static final double d3   = 1;
-	static final double s3   = 1;
+	// Studying the T-S transition
+	static final double A3   = 0.01;
+	static final double c    = 1.730;
+	static final double d2   = 0.98;
+	static final double s2   = 0.1;
+	static final double d3   = 1.74;
+	static final double s3   = 0.2;
 	static final double dlt2 = d2-s2;
 	static final double dlt3 = d3-s3;
 	static final double sgm2 = d2+s2;
@@ -31,6 +68,11 @@ public class TRS extends InteractingSystem {
 	public TRS(Parameters params) {
 		
 		super(params);
+		
+		// for now, pick T-S transition 
+		A0 = 0.024;
+		A2 = 0.02; //(A2 < Ac2)
+		return;
 	}
 
 	public vector2d force(vector2d deltaR) {
@@ -39,10 +81,8 @@ public class TRS extends InteractingSystem {
 		if(dr2 >= sgm3*sgm3)  // if true, all potentials are zero.
 			return new vector2d(); // the zero vector
 		
-		double r = Math.sqrt(deltaR.length2());
-		deltaR.scale(-1./r); // make a unit vector pointing in opposite direction
-		
-		return vector2d.scale(deltaR,F0(r*r)+F1(r)+F2(r)+F3(r));
+		double r = Math.sqrt(deltaR.length2());		
+		return vector2d.scale(vector2d.scale(deltaR,-1./r),F0(r)+F1(r)+F2(r)+F3(r));
 	}
 
 	public double potential(vector2d deltaR) {
@@ -57,7 +97,7 @@ public class TRS extends InteractingSystem {
 	
 	private double V0(double dr2){
 		
-		if(dr2 < 1)
+		if(dr2 >= 1)
 			return 0;
 		
 		double r6  = dr2*dr2*dr2;
@@ -75,7 +115,7 @@ public class TRS extends InteractingSystem {
 	
 	private double V2(double r){
 		
-		if((dlt2 >= r) || (r <= sgm2))
+		if((dlt2 <= r) || (r >= sgm2))
 			return 0;
 		
 		return -A2*(r-sgm2)*(r-sgm2)*(r-dlt2)*(r-dlt2)*s24;
@@ -83,7 +123,7 @@ public class TRS extends InteractingSystem {
 	
 	private double V3(double r){
 		
-		if((dlt3 >= r) || (r <= sgm3))
+		if((dlt3 <= r) || (r >= sgm3))
 			return 0;
 		
 		return A3*(r-sgm3)*(r-sgm3)*(r-dlt3)*(r-dlt3)*s34;
@@ -94,24 +134,30 @@ public class TRS extends InteractingSystem {
 	 * 
 	 */
 	
-	public double F0(double r2) {
+	public double F0(double r) {
 		
-		return 0;
+		if(r*r >= 1)
+			return 0;
+		
+		return (-12*V0(r*r)-A0)/r;
 	}
 	
 	public double F1(double r) {
 		
-		return 0;
+		if( r >= c)
+			return 0;
+		
+		return 2*(V1(r)+1)*(1./(r-1) + 1./(r-2*c+1));
 	}
 	
 	public double F2(double r) {
 		
-		return 0;
+		return 2*V2(r)*(1./(r-sgm2) + 1./(r-dlt2));
 	}
 	
 	public double F3(double r) {
 		
-		return 0;
+		return 2*V3(r)*(1./(r-sgm3) + 1./(r-dlt3));
 	}
 	
 //	 /**

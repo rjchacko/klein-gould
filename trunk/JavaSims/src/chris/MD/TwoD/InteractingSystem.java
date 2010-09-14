@@ -243,6 +243,7 @@ public abstract class InteractingSystem {
 								phase[jj].v.y = -phase[jj].v.y;
 							}
 					}
+												
 					break;
 						
 					default:
@@ -434,37 +435,50 @@ public abstract class InteractingSystem {
 		break;
 		
 		case DEBUG:
+			double pcmX2, pcmY2;//, KE02; 
+			int Nx2, Ny2;
 
-			double s = Math.sqrt(3)/2.;
-			int nx   = 25;
-			int ny   = 25;
-			N        = nx*ny;
-			
-			params.set("N",N);
-			params.set("M",1);
-			params.set("T",0);
-			
+			double RR2 = params.fget("R"); 
+
+			if(Lx == Ly){
+				Nx2 = (int)(Math.sqrt(N));
+				if(Nx2*Nx2 != N)
+					Nx2++;		
+				Ny2 = Nx2;
+			}
+			else{
+				Nx2 = (int)(Math.sqrt((double)(Lx)*N/Ly));
+				Ny2 = (int)(Math.floor(N/Nx2));
+				Ny2 += N - Nx2*Ny2;
+			}
+
+			pcmX2  = 0;
+			pcmY2  = 0;
+//			KE02   = 0;
 			phase = new particle[N];
 			accel = new vector2d[N]; 
-
-			for(int kk = 0 ; kk < ny ; kk++){
-				for(int jj = 0 ; jj < nx ; jj++){
-					phase[jj+kk*ny] = new particle();
-					phase[jj+kk*ny].q     = 0;
-					phase[jj+kk*ny].s     = 0.01;
-					phase[jj+kk*ny].color = Color.red;
-					phase[jj+kk*ny].v.x   = 0;
-					phase[jj+kk*ny].v.y   = 0;
-					phase[jj+kk*ny].r.x   = 10*(jj+(kk%2)/2.);
-					phase[jj+kk*ny].r.y   = 10*(kk*s);
-				}
-			}
 			
-			Lx = 10*(nx+0.5);
-			Ly = 10*(ny*s);
-			params.set("Lx",Lx);
-			params.set("Ly",Ly);
-
+			for(int jj = 0 ; jj < N ; jj++){
+				phase[jj] = new particle();
+				phase[jj].q     = 0;
+				phase[jj].s     = RR2;
+				phase[jj].color = Color.red;
+				phase[jj].r.x   = Lx/3.+1.7*jj;
+				phase[jj].r.y   = Ly/2.;
+				phase[jj].v.x   = 0.;
+				pcmX2           += phase[jj].v.x;
+				phase[jj].v.y   = 0.;
+				pcmY2		    += phase[jj].v.y;
+			}
+//			vector2d pcm2 = new vector2d(pcmX2/N, pcmY2/N);
+//			for(int jj = 0 ; jj < N ; jj++){
+//				phase[jj].v.sub(pcm2);;
+//				KE02 += 0.5*phase[jj].v.length2();
+//			}
+//			double rescale2 = Math.sqrt((N*Tw)/(KE02));
+//			for(int jj = 0 ; jj < N ; jj++){
+//				phase[jj].v.scale(rescale2);
+//			}
 			printPhase("/Users/cserino/Desktop/debug_IC.txt",params);
 		break;
 			
@@ -632,5 +646,12 @@ public abstract class InteractingSystem {
 			default:
 				throw new IllegalStateException("Boundary condition does not exist.");
 		}
+	}
+	
+	public particle getParticle(int pID){
+		if (pID >= N)
+			return null;
+		
+		return phase[pID];
 	}
 }
