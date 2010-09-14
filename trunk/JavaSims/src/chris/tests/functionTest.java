@@ -8,7 +8,7 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import chris.MD.TwoD.LennardJones;
+import chris.MD.TwoD.TRS;
 import chris.util.vector2d;
 
 public class functionTest extends Simulation{
@@ -18,8 +18,11 @@ public class functionTest extends Simulation{
 	private Plot Fplot2 = new Plot("Force Hard Coded");
 	private PointSet V, F1, F2;
 	
+//	// for L-J potential
+//	private LennardJones lj;
+	
 	// for L-J potential
-	private LennardJones lj;
+	private TRS trs;
 
 	
 	public static void main(String[] args) {
@@ -29,8 +32,8 @@ public class functionTest extends Simulation{
 	public void animate() {
 		
 		int N = 10000;
-		double rmin = 1.999;
-		double rmax = 2.001;
+		double rmin = 0.81;
+		double rmax = 1.8;
 		double[] r   = new double[N+1];
 		double[] phi = new double[N+1];
 		double[] Frc = new double[N+1];
@@ -39,8 +42,8 @@ public class functionTest extends Simulation{
 		
 		for(int jj = 0 ; jj < N+1 ; jj++){
 			r[jj]   =jj*(rmax-rmin)*params.fget("\u03C3")/N + rmin;
-			phi[jj] = lj.potential(new vector2d(r[jj],0));
-			Frc[jj] = lj.force(new vector2d(r[jj],0)).x;
+			phi[jj] = trs.potential(new vector2d(r[jj],0));
+			Frc[jj] = trs.force(new vector2d(r[jj],0)).x;
 		}
 		for(int jj = 1 ; jj < N ; jj++){
 			dph[jj] = -(phi[jj+1]-phi[jj-1])/(r[jj+1]-r[jj-1]);
@@ -81,14 +84,14 @@ public class functionTest extends Simulation{
 		params.addm("d\u03C4",1.);
 		params.add("t");
 		params.add("E");
-		params.add("T");
+		params.add("T",1.);
 
 		c.frameTogether("MD Potential and Force", Vplot, Fplot1,Fplot2);
 	}
 
 	public void run() {
 
-		lj = new LennardJones(params);
+		trs = new TRS(params);
 		
 		while(true)
 			Job.animate();
