@@ -40,11 +40,12 @@ public abstract class InteractingSystem {
 	
 	public void IS_constructor(Parameters params){
 	
-		E  = new double[2];
-		dt = params.fget("dt");
-		Tw = params.fget("T");
-		t  = 0;
-		N  = params.iget("N");
+		E   = new double[2];
+		dt  = params.fget("dt");
+		Tw  = params.fget("T");
+		t   = 0;
+		N   = params.iget("N");
+		rij = new vector2d[N][N];
 		if(params.containsKey("L")){
 			Lx = params.fget("L");
 			Ly = Lx;
@@ -285,9 +286,12 @@ public abstract class InteractingSystem {
 				accel[jj].add(tmp);
 				// use Newton III
 				accel[kk].sub(tmp);
-				E[1] += potential(rij[jj][kk]);
+				E[1] += potential(rij[jj][kk]); // restricted to i < j
 			}
 		}
+		E[0] += 0.5*phase[N-1].v.length2(); // note that loop does not get 
+											// here so add it explicitly
+
 		return;
 	}
              	
