@@ -721,14 +721,14 @@ public class biasintervention extends Simulation{
 		int clx[];
 		int cly[];
 		int tempx,tempy;
-		clx= new int[SN];
-		cly= new int[SN];
+		clx= new int[largestsize];
+		cly= new int[largestsize];
 		clx[0]=fx;
 		cly[0]=fy;
 		sumx=fx;
 		sumy=fy;
 		
-		for(int cl=1; cl<SN; cl++)
+		for(int cl=1; cl<largestsize; cl++)
 		{
 			tempx=largestcluster[cl]/L2;
 			tempy=largestcluster[cl]%L2;
@@ -745,8 +745,8 @@ public class biasintervention extends Simulation{
 			sumx+=clx[cl];
 			sumy+=cly[cl];
 		}
-		cx=(int)(sumx/SN);
-		cy=(int)(sumy/SN);
+		cx=(int)(sumx/largestsize);
+		cy=(int)(sumy/largestsize);
 		
 		if(cx<0)
 			cx=cx+L1;
