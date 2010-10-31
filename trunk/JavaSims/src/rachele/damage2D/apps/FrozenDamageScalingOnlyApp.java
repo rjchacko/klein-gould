@@ -44,7 +44,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 	Accumulator alphaAcc = new Accumulator();
 
 	Grid deadGrid = new Grid("Lattice");
-	Grid alphaGrid = new Grid("Alpha Prime");
+	Grid gammaGrid = new Grid("Alpha Prime");
 //	Grid colorScaleGrid = new Grid("Color Grid");
 	Plot alphaPlot = new Plot("Alpha Histogram");
 //	Grid hitGrid = new Grid("No of Events per Time Step");
@@ -61,17 +61,17 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 
 		deadGrid = new Grid("Dead Sites");
 		c.frame( deadGrid);
-		alphaGrid = new Grid("Alpha Prime");
-		c.frame( alphaGrid);
-		alphaPlot = new Plot("Alpha Histogram");
-		c.frame(alphaPlot);
+		gammaGrid = new Grid("Gamma");
+		c.frame( gammaGrid);
+//		alphaPlot = new Plot("Alpha Histogram");
+//		c.frame(alphaPlot);
 //		c.frame(colorScaleGrid);
 //		hitGrid = new Grid("No of Events per Time Step");
 //		c.frame( hitGrid);
 //		sizeGrid = new Grid("Ave Size of Event");
 //		c.frame( sizeGrid);
 		
-		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testruns/"));
+		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/Part1/P28-Cascades/a-0/rs0/d50"));
 		String rd = "Random";
 		String br = "Random Blocks";
 		String ds = "Dead Strip";
@@ -83,23 +83,34 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		String bl = "Dead Blocks";
 		String pd = "Place Dead Blocks";
 		String ac = "Alive Cascade";
-		params.add("Type of Damage", new ChoiceValue(rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
+		params.add("Type of Damage", new ChoiceValue(cr, rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
 		params.add("Boundary Conditions", new ChoiceValue("Periodic", "Open"));
-		params.add("Alpha Distribution", new ChoiceValue("Constant","Eights","Quarters","Fractal","Many Gaussians","Dead Blocks","Gaussian about half","Gaussian split","Gaussian", "Flat Random",  "Gaussian about zero"));
-		params.addm("Random Seed", 1);
-		params.addm("Size Power",8);
+		String ca = "Constant";
+		String ei = "Eights";
+		String qu = "Quarters";
+		String fr = "Fractal";
+		String mg = "Many Gaussians";
+		String da = "Dead Blocks";
+		String ah = "Gaussian about half";
+		String gs = "Gaussian split";
+		String ga = "Gaussian";
+		String fa = "Flat Random";
+		String az =  "Gaussian about zero";
+		params.add("Alpha Distribution", new ChoiceValue(ca, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
+		params.addm("Random Seed", 0);
+		params.addm("Size Power",9);
 		params.addm("R", 16);
-		params.addm("Init Percent Dead", 0.25);
-		params.addm("Dead Parameter", 4);
+		params.addm("Init Percent Dead", .5);
+		params.addm("Dead Parameter", 1050);
 		params.addm("Number Dead", 1024);
 		params.addm("Coarse Grained dt (PU)", 1);
 		params.addm("Equilibration Updates", 100000);
-		params.addm("Max PU",10000000);
+		params.addm("Max PU",1000000);
 		params.addm("Data points per write", 10000);
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
-		params.addm("Dissipation Param", 0.5);
+		params.addm("Dissipation Param", 0.0);
 		params.addm("Damage Tolerance", 1.0);
 		params.add("Av Size");
 		params.add("Plate Updates");
@@ -235,8 +246,8 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 				if(ofc.aliveLattice[i]) deadSites[i]=1.0 - ofc.alphaP[i];
 				else deadSites[i]=0;
 			}
-			alphaGrid.setScale(0.0, 1.0);
-			alphaGrid.registerData(Lp, Lp, deadSites);
+			gammaGrid.setScale(0.0, 1.0);
+			gammaGrid.registerData(Lp, Lp, deadSites);
 			
 			alphaPlot.registerLines("Alpha Hist", ofc.alpha_iHist, Color.RED);
 			
