@@ -131,6 +131,8 @@ public class Damage {
 		int Lp = L/dx;
 		int xp = block%Lp;
 		int yp = block/Lp;
+		
+//		double pr =random.nextDouble()+p;
 		double pr =(100*random.nextGaussian()/(double)d+p);
 		
 		for (int y = yp*dx; y < yp*dx+dx; y++){
