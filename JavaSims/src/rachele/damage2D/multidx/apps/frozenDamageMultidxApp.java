@@ -23,6 +23,8 @@ public class frozenDamageMultidxApp extends Simulation{
 	int pow;
 	int maxSize;	
 	int cg_dt;
+	int [] latticeEventCount;
+	int [] latticeEventSize;
 	
 	String imFileNd;
 	String imFileWd;
@@ -48,6 +50,10 @@ public class frozenDamageMultidxApp extends Simulation{
 	
 	int noGrids = 6;
 	Grid [] deadGrid = new Grid [noGrids];
+	Grid eventNoGrid = new Grid("No of Events");
+	Grid aveSizeGrid = new Grid("Ave Size of Events");
+	Grid alphaGrid = new Grid("Alpha Prime");
+	Grid sizeActGrid = new Grid("Size Act");
 	
 	public static void main(String[] args) {
 		new Control(new frozenDamageMultidxApp(), "OFC Damage Model multi-dx");
@@ -60,6 +66,7 @@ public class frozenDamageMultidxApp extends Simulation{
 		}
 
 		c.frameTogether("Grids", deadGrid);
+		c.frameTogether("Lattice Info", alphaGrid, eventNoGrid, aveSizeGrid, sizeActGrid);
 
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testruns/"));
 		String rd = "Random";
@@ -70,20 +77,34 @@ public class frozenDamageMultidxApp extends Simulation{
 		String cs = "Cascade";
 		String dr = "Dead Rectangle";
 		String cr = "Cascade Random";
+		String bl = "Dead Blocks";
 		String pd = "Place Dead Blocks";
-		params.add("Type of Damage", new ChoiceValue(rd, cr, cs, br, ds, pr, br, rd, db, dr, pd));
+		String ac = "Alive Cascade";
+		params.add("Type of Damage", new ChoiceValue(rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
+		String ca = "Constant";
+		String ei = "Eights";
+		String qu = "Quarters";
+		String fr = "Fractal";
+		String mg = "Many Gaussians";
+		String da = "Dead Blocks";
+		String ah = "Gaussian about half";
+		String gs = "Gaussian split";
+		String ga = "Gaussian";
+		String fa = "Flat Random";
+		String az =  "Gaussian about zero";
+		params.add("Alpha Distribution", new ChoiceValue(ei, ca, qu , fr, mg, da, ah, gs, ga, fa, az));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
 		params.add("Boundary Conditions", new ChoiceValue( "Periodic", "Open"));
 		params.addm("Random Seed", 1);
-		params.addm("Size Power",9);
-		params.addm("R", 4);
+		params.addm("Size Power",6);
+		params.addm("R", 8);
 		params.addm("Init Percent Dead", 0.0);
 		params.addm("Dead Parameter", 8);
 		params.addm("Number Dead", 1);
 		params.addm("Coarse Grained dt (PU)", 1);
 		params.addm("Equilibration Updates", 1000);
-		params.addm("Max PU",10000);
-		params.addm("Data points per write", 100);
+		params.addm("Max PU",100000);
+		params.addm("Data points per write", 10000);
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
 		params.addm("Dissipation Param", 0.05);
@@ -100,6 +121,14 @@ public class frozenDamageMultidxApp extends Simulation{
 	public void animate() {
 		params.set("Plate Updates", ofc.plateUpdates);
 		params.set("Av Size", ofc.avSize);
+		
+		eventNoGrid.registerData(ofc.L, ofc.L, latticeEventCount);
+		sizeActGrid.registerData(ofc.L, ofc.L, latticeEventSize);
+		double [] aveSize = new double [ofc.N];
+		for (int i = 0; i < ofc.N; i++){
+			aveSize[i] = (double)(latticeEventSize[i])/(double)(latticeEventCount[i]);
+		}
+		aveSizeGrid.registerData(ofc.L, ofc.L, aveSize);
 
 	}
 
@@ -160,6 +189,9 @@ public class frozenDamageMultidxApp extends Simulation{
 			if (size > maxSize) {
 				maxSize = size;
 			}
+			latticeEventSize[ofc.epicenterSite] += size;
+			latticeEventCount[ofc.epicenterSite] += 1;
+			
 			mc.calcNewStressAveArray(ofc.cg_time, ofc.stress);
 
 			if(ofc.plateUpdates > nextAccumTime){ //Accumulate data to be written
@@ -218,7 +250,11 @@ public class frozenDamageMultidxApp extends Simulation{
 			}
 		}
 		cgFiles = new String [pow][6];
+		
+		latticeEventSize = new int [ofc.N];
+		latticeEventCount = new int [ofc.N];
 
+		
 	}
 	
 	void drawLattices(){
@@ -237,6 +273,22 @@ public class frozenDamageMultidxApp extends Simulation{
 			deadGrid[j].registerData(Lp, Lp, deadSites);
 			FileUtil.printlnToFile(infoFile, "# Percent alive for dx=" + dx + " is " + percentAlive);
 		}
+		
+		//print gamma plot
+		int Np = ofc.L*ofc.L;
+		double [] deadSites = new double [Np];
+		for (int i = 0; i < Np; i++){
+			if(ofc.aliveLattice[i]) deadSites[i]=1.0;
+			else deadSites[i]=0;
+		}
+		for (int i = 0; i < Np; i++){
+			if(ofc.aliveLattice[i]) deadSites[i]=1.0 - ofc.alphaP[i];
+			else deadSites[i]=0;
+		}
+		alphaGrid.setScale(0.0, 1.0);
+		alphaGrid.registerData(ofc.L, ofc.L, deadSites);
+
+
 	}
 	
 	void writeAccumulatedData(){
