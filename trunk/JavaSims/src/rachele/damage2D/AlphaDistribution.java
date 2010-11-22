@@ -22,6 +22,7 @@ public class AlphaDistribution {
 		setRandomSeed(randomSeed);
 		infoFileName=fileName;
 
+
 	}
 
 	static void setRandomSeed(int rs){
@@ -30,7 +31,8 @@ public class AlphaDistribution {
 	
 	static public double [] setAlphaArray(String alphaDistribution, double alphaParam){
 
-		if(alphaDistribution=="Flat Random"){
+		System.out.println("Alpha dist = " + alphaDistribution);
+		if(alphaDistribution=="FlatRandom"){
 			for (int i = 0; i < N; i++) alpha[i]=random.nextDouble();
 		}else if(alphaDistribution=="Gaussian"){
 			for (int i = 0; i < N; i++){
@@ -49,7 +51,7 @@ public class AlphaDistribution {
 				}
 				alpha[i] = Math.abs(a);
 			}
-		}else if(alphaDistribution=="Gaussian split"){
+		}else if(alphaDistribution=="GaussianSplit"){
 			for (int i = 0; i < N; i++){
 				double a =(random.nextGaussian()/10.0);
 				while(Math.abs(a)>1.0){
@@ -58,7 +60,7 @@ public class AlphaDistribution {
 				if(a < 0.0) a = 1.0 + a;
 				alpha[i] = a;
 			}
-		}else if(alphaDistribution=="Gaussian about half"){
+		}else if(alphaDistribution=="GaussianAboutHalf"){
 			for (int i = 0; i < N; i++){
 				double a =(random.nextGaussian()/10.0);
 				while(Math.abs(a)>0.5){
@@ -67,7 +69,7 @@ public class AlphaDistribution {
 				a += 0.5;
 				alpha[i] = a;
 			}
-		}else if(alphaDistribution=="Dead Blocks"){
+		}else if(alphaDistribution=="DeadBlocks"){
 			boolean [] aa = Damage.setDamage("Place Dead Blocks", 32,0.0, 32);
 			double a;
 			for(int i = 0; i < N; i++){
@@ -81,8 +83,9 @@ public class AlphaDistribution {
 					alpha[i] = Math.abs(a);
 				}
 			}	
-		}else if(alphaDistribution=="Many Gaussians"){
-			int dx = 64;
+		}else if(alphaDistribution=="ManyGaussians"){
+			System.out.println("many Gaussians");
+			int dx = 16;
 			int Lp = L/dx;
 			int Np = Lp*Lp;
 			boolean [] blockSet = new boolean [Np];
@@ -210,6 +213,8 @@ public class AlphaDistribution {
 					setFlatBlock(center, i, 1, 8);
 				}
 			}
+		}else{
+			System.out.println("No Gaussian Dist");
 		}
 		
 		return alpha;

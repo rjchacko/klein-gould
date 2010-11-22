@@ -282,7 +282,7 @@ public class frozenDamageMultidxApp extends Simulation{
 			else deadSites[i]=0;
 		}
 		for (int i = 0; i < Np; i++){
-			if(ofc.aliveLattice[i]) deadSites[i]=1.0 - ofc.alphaP[i];
+			if(ofc.aliveLattice[i]) deadSites[i]=1.0 - ofc.gamma[i];
 			else deadSites[i]=0;
 		}
 		alphaGrid.setScale(0.0, 1.0);

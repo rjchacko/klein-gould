@@ -169,6 +169,15 @@ public class FileUtil {
 			ex.printStackTrace();
 		}
 	}
+	static public void printlnToFile(String fileName, String s1, double d1, String s2, double d2,String s3, double d3,String s4, double d4,String s5, double d5,String s6, double d6){
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.println(s1 + " " + d1 + " " + s2 + " " + d2 + " " + s3 + " " + d3 + " " + s4 + " " + d4 + " " + s5 + " " + d5 + " " + s6 + " " + d6);
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
 	
 	static public void printAccumToFile(String fileName, Accumulator acc){
 		DatasetBuffer data = acc.copyData();

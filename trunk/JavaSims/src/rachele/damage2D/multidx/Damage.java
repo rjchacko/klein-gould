@@ -37,16 +37,16 @@ public class Damage {
 	static public boolean [] setDamage(String damageType, int deadParam, double initPercentDead, int noDead){
 		for(int i = 0; i < N; i ++) aliveLattice[i] = true;
 		if(damageType=="Random") setRandom(initPercentDead);
-		else if(damageType == "Place Random Dead")	setPlaceDeadRandom(noDead);
-		else if(damageType=="Dead Strip") setDeadStrip(noDead);
-		else if(damageType=="Random Blocks") setRandomBlockDamage(deadParam);
-		else if(damageType == "Dead Block") setDeadBlock(noDead);
+		else if(damageType == "PlaceRandomDead")	setPlaceDeadRandom(noDead);
+		else if(damageType=="DeadStrip") setDeadStrip(noDead);
+		else if(damageType=="RandomBlocks") setRandomBlockDamage(deadParam);
+		else if(damageType == "DeadBlock") setDeadBlock(noDead);
 		else if(damageType == "Cascade") setCascadeDamage(initPercentDead);
-		else if(damageType == "Cascade Random") setCascadeRandom(initPercentDead, deadParam);
-		else if(damageType == "Dead Rectangle") setDeadRectangle(noDead);
-		else if(damageType == "Dead Blocks") setDeadBlocks(deadParam, initPercentDead);
-		else if(damageType == "Place Dead Blocks") placeDeadBlocks(deadParam, noDead);
-		else if(damageType == "Alive Cascade") setCascadeLiveBlocks(initPercentDead);
+		else if(damageType == "CascadeRandom") setCascadeRandom(initPercentDead, deadParam);
+		else if(damageType == "DeadRectangle") setDeadRectangle(noDead);
+		else if(damageType == "DeadBlocks") setDeadBlocks(deadParam, initPercentDead);
+		else if(damageType == "PlaceDeadBlocks") placeDeadBlocks(deadParam, noDead);
+		else if(damageType == "AliveCascade") setCascadeLiveBlocks(initPercentDead);
 		else System.out.println("Error!");
 		System.out.println("site 0 = " + aliveLattice[0]);
 		return aliveLattice;
