@@ -1,6 +1,7 @@
 package rachele.damage2D;
 
 import rachele.damage2D.multidx.Damage;
+import scikit.dataset.Histogram;
 import kip.util.Random;
 
 public class AlphaDistribution {
@@ -11,6 +12,7 @@ public class AlphaDistribution {
 	static Random random = new Random();
 	static String infoFileName;
 	static double [] alpha;
+	public static Histogram alphaHist= new Histogram(0.01);
 
 	public AlphaDistribution(int power, int range, int randomSeed, String fileName) {
 		pow=power;
@@ -70,7 +72,9 @@ public class AlphaDistribution {
 				alpha[i] = a;
 			}
 		}else if(alphaDistribution=="DeadBlocks"){
-			boolean [] aa = Damage.setDamage("Place Dead Blocks", 32,0.0, 32);
+			System.out.println("Dead Blocks");
+			boolean [] aa = Damage.setDamage("PlaceDeadBlocks", 32,0.0, 32);
+			System.out.println("Dead Blocks Set");
 			double a;
 			for(int i = 0; i < N; i++){
 				a=(random.nextGaussian()/10.0);
@@ -215,6 +219,10 @@ public class AlphaDistribution {
 			}
 		}else{
 			System.out.println("No Gaussian Dist");
+		}
+		
+		for(int i =0;i<N;i++){
+			alphaHist.accum(alpha[i]);
 		}
 		
 		return alpha;

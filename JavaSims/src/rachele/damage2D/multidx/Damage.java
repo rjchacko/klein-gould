@@ -47,7 +47,7 @@ public class Damage {
 		else if(damageType == "DeadBlocks") setDeadBlocks(deadParam, initPercentDead);
 		else if(damageType == "PlaceDeadBlocks") placeDeadBlocks(deadParam, noDead);
 		else if(damageType == "AliveCascade") setCascadeLiveBlocks(initPercentDead);
-		else System.out.println("Error!");
+		else System.out.println("Error!  Damage Type not recognized");
 		System.out.println("site 0 = " + aliveLattice[0]);
 		return aliveLattice;
 	}
@@ -293,6 +293,7 @@ public class Damage {
 	static void placeDeadBlocks(int blockSize, int noDeadBlocksToPlace){
 		FileUtil.printlnToFile(infoFileName, "Damage block size", blockSize);
 		int noDamageBlocks = N/(blockSize*blockSize);
+		System.out.println("in placeDeadBlocks, noDamage = " + noDamageBlocks);
 		boolean [] blockAlive = new boolean [noDamageBlocks];
 		for (int i = 0; i < noDamageBlocks; i++) blockAlive[i] = true;
 		int noDeadBlocks = 0;
