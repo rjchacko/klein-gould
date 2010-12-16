@@ -11,13 +11,12 @@ import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Grid;
 import scikit.graphics.dim2.Plot;
 import scikit.jobs.Control;
-//import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.util.DoubleArray;
 
-public class FrozenDamageConnectionParamApp  extends Simulation{
+public class FrozenDamageIterConnectParam extends Simulation{
 	
 	int dt;
 	int pow;
@@ -47,32 +46,54 @@ public class FrozenDamageConnectionParamApp  extends Simulation{
 	Grid gammaGrid = new Grid("Alpha Prime");
 	Plot alphaPlot = new Plot("Alpha Histogram");
 	Plot alphaPlote = new Plot("Alpha Histogram");
-    Grid cp2 = new Grid("cp2");
-	Grid cp4 = new Grid("cp4");
-	Grid cp6 = new Grid("cp6");
-	Grid cp8 = new Grid("cp8");
-	Grid cp10 = new Grid("cp10");
-	Grid cp12 = new Grid("cp12");
-	Grid cp16 = new Grid("cp32");
-
+    Grid iter1 = new Grid("Iteration 1");
+	Grid iter2 = new Grid("Iteration 2");
+	Grid iter3 = new Grid("Iteration 3");
+	Grid iter4 = new Grid("Iteration 4");
+	Grid iter5 = new Grid("Iteration 5");
+	Grid iter6 = new Grid("Iteration 6");
+	Grid iter7 = new Grid("Iteration 7");
+	
+	
 	public static void main(String[] args) {
-		new Control(new FrozenDamageConnectionParamApp(), "OFC Damage Model Scaling Only");
+		new Control(new FrozenDamageIterConnectParam(), "OFC Damage Model Scaling Only");
 	}
 
 	public void load(Control c) {
 
 		deadGrid = new Grid("Dead Sites");
 		gammaGrid = new Grid("Gamma");
-		c.frameTogether("All Data",deadGrid, gammaGrid, cp2, cp4, cp6, cp8, cp10, cp12,cp16);
-		params.add("maxRange", 16);
+		c.frameTogether("All Data",deadGrid, gammaGrid, iter1, iter2, iter3, iter4, iter5, iter6, iter7);
+		params.add("Iterations", 36);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testRuns"));
-//		String cr = "Cascade Random";
-//		params.add("Type of Damage", new ChoiceValue("Random"));//, rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
-		params.add("Type of Damage", "CascadeRandom");//, rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
+		String rd = "Random";
+		String br = "RandomBlocks";
+		String ds = "DeadStrip";
+		String pr = "PlaceRandomDead";
+		String db = "DeadBlock";
+		String cs = "Cascade";
+		String dr = "DeadRectangle";
+		String cr = "CascadeRandom";
+		String bl = "DeadBlocks";
+		String pd = "PlaceDeadBlocks";
+		String ac = "AliveCascade";
+		params.add("Type of Damage", new ChoiceValue( rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
+//		params.add("Type of Damage", "CascadeRandom");//, rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
 		params.add("Boundary Conditions", new ChoiceValue("Periodic", "Open"));
-//		String ca = "Constant";
-		params.add("Alpha Distribution", "Constant");//, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
+		String ca = "Constant";
+		String ei = "Eights";
+		String qu = "Quarters";
+		String fr = "Fractal";
+		String mg = "ManyGaussians";
+		String da = "DeadBlocks";
+		String ah = "GaussianAboutHalf";
+		String gs = "GaussianSplit";
+		String ga = "Gaussian";
+		String fa = "Flat Random";
+		String az =  "Gaussian about zero";
+		params.add("Alpha Distribution", new ChoiceValue(da, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
+//		params.add("Alpha Distribution", "Constant");//, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
 		params.addm("Random Seed", 0);
 		params.addm("Size Power",0);
 		params.addm("R", 0);
@@ -104,8 +125,8 @@ public class FrozenDamageConnectionParamApp  extends Simulation{
 
 	
 	public void run() {
-		cpFile = params.sget("Data Dir") + File.separator + "cpn.txt";
-		cpinfoFile = params.sget("Data Dir") + File.separator + "cpninfo.txt";
+		cpFile = params.sget("Data Dir") + File.separator + "cpi.txt";
+		cpinfoFile = params.sget("Data Dir") + File.separator + "cpi_info.txt";
 		inputFile = params.sget("Data Dir") + File.separator + "info.txt";
 		setParams(inputFile);
 		FileUtil.initFile(cpFile, params);
@@ -125,7 +146,6 @@ public class FrozenDamageConnectionParamApp  extends Simulation{
 			if(ofc.aliveLattice[i]) deadSites[i]=1.0;
 			else deadSites[i]=0;
 		}
-//		double percentAlive = DoubleArray.sum(deadSites)/(double)Np;
 		deadGrid.setScale(0.0, 1.0);
 		deadGrid.registerData(Lp, Lp, deadSites);
 		for (int i = 0; i < Np; i++){
@@ -134,32 +154,24 @@ public class FrozenDamageConnectionParamApp  extends Simulation{
 		}
 		gammaGrid.setScale(0.0, 1.0);
 		gammaGrid.registerData(Lp, Lp, deadSites);
-		int maxDist = params.iget("maxRange");
-//		int maxNoNbors = findNoCircleNbors(maxDist);
-		//		nborList = new int [ofc.N][maxNoNbors];
-//		int i=1;
-//		while(true){
-			for(int i = 1; i <= maxDist; i++){
-				drawLattices(i);
 
-//			if(i>=maxDist) Job.signalStop();
-//			i++;
+		//init c param
+		for (int i = 0; i < ofc.N; i ++){
+			cParam[i]=1.0-ofc.gamma[i];
 		}
+		for (int i=0;i<params.iget("Iterations");i++){
+			drawLattices(i);
+		}
+
 
 	}
 	
 	void setParams(String file){
 		File input = new File(file);
-		String dam = ReadWriteTextFile.getLastWordOfLine(input, 1);
-		String test = ReadWriteTextFile.getLastWordOfLine(input, 4);
-		System.out.println(test + "test");
-		params.set("Type of Damage", dam);
+		params.set("Type of Damage", ReadWriteTextFile.getLastWordOfLine(input, 1));
 		params.set("Dead dissipation?", ReadWriteTextFile.getLastWordOfLine(input, 2));
 		params.set("Boundary Conditions", ReadWriteTextFile.getLastWordOfLine(input, 3));
-
 		params.set("Alpha Distribution", ReadWriteTextFile.getLastWordOfLine(input, 4));//, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
-		params.set("Alpha Distribution", ReadWriteTextFile.getLastWordsOfLine(input, 4,3));//, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
-
 		params.set("Random Seed", Integer.parseInt(ReadWriteTextFile.getLastWordOfLine(input, 5).trim()));
 		params.set("Size Power",Integer.parseInt(ReadWriteTextFile.getLastWordOfLine(input, 6).trim()));
 		params.set("R", Integer.parseInt(ReadWriteTextFile.getLastWordOfLine(input, 7).trim()));
@@ -183,19 +195,20 @@ public class FrozenDamageConnectionParamApp  extends Simulation{
 
 		int dx = 1;
 		int Lp = ofc.L/dx;
-		int Np = Lp*Lp;
-		FileUtil.printlnToFile(cpFile, "# FileUtil.printlnToFile(cpFile, area, cave, liveAve, csum, i, cvar);");
+//		int Np = Lp*Lp;
+//		FileUtil.printlnToFile(cpFile, "# FileUtil.printlnToFile(cpFile, area, cave, liveAve, csum, i, cvar);");
 
-		System.out.println("maxRange = " + i);
-		calcCP(i);
-		if(i==1) cp2.registerData(Lp, Lp, cParam);
-		if(i==4) cp4.registerData(Lp, Lp, cParam);
-		if(i==6) cp6.registerData(Lp, Lp, cParam);
-		if(i==8) cp8.registerData(Lp, Lp, cParam);
-		if(i==10) cp10.registerData(Lp, Lp, cParam);
-		if(i==12) cp12.registerData(Lp, Lp, cParam);
-		if(i==32) cp16.registerData(Lp, Lp, cParam);
-
+		System.out.println("iteration = " + i);
+		calcCP();
+		if(i==0) iter1.registerData(Lp, Lp, cParam);
+		if(i==1) iter2.registerData(Lp, Lp, cParam);
+		if(i==2) iter3.registerData(Lp, Lp, cParam);
+		if(i==3) iter4.registerData(Lp, Lp, cParam);
+		if(i==4) iter5.registerData(Lp, Lp, cParam);
+		if(i==5) iter6.registerData(Lp, Lp, cParam);
+		if(i==6) iter7.registerData(Lp, Lp, cParam);
+//		if(i==7) iter8.registerData(Lp, Lp, cParam);
+		
 		double cave = MathTools.mean(cParam);
 		double cvar = MathTools.variance(cParam);
 		double csum = DoubleArray.sum(cParam);
@@ -207,117 +220,31 @@ public class FrozenDamageConnectionParamApp  extends Simulation{
 		}
 		double liveAve = sum/(double)count;
 		double area = Math.PI*Math.pow(i, 2);
-		FileUtil.printlnToFile(cpFile, area, cave, liveAve, csum, i, cvar);
-		System.out.println("maxRange = " + i + " Ave = " + cave + " Var = " + cvar + " Sum = " + csum);
+		FileUtil.printlnToFile(cpFile, i, cave, liveAve, csum, cvar);
+		System.out.println("iter = " + i+1 + " Ave = " + cave + " Var = " + cvar + " Sum = " + csum);
 
 
 
 	}
 	
-	void calcCP(int maxRange){
-//		int noRangeNbors = findNoCircleNbors(maxRange);
-//		findCircleNbors(maxRange,noRangeNbors);
+	void calcCP(){
+		double [] temp = new double [ofc.N];
 		for (int i = 0; i < ofc.N; i ++){
-			double sum = 1.0;
-//			if(i==1) cp2.registerData(ofc.L, ofc.L, cParam);
-//			Job.animate();
-//			System.out.println("site = " + i);
-//			for(int n=0; n<noRangeNbors; n++){
-//				sum*=(1.0-ofc.gamma[nborList[i][n]]);//*Math.pow(1.0/(double)R+1.0-nborDistance[n], 2);///(1.0-ave);
-//			}
-
-//			for(int i=0; n<ofc.N; n++){
-				int x = i%ofc.L;
-				int y = i/ofc.L;
-				for(int dy = -maxRange; dy <= maxRange; dy++){
-					for(int dx = -maxRange; dx <= maxRange; dx++){
-						double distance = Math.sqrt(dx*dx + dy*dy);
-						if (distance <= maxRange){
-							if(distance !=0){
-
-								int xx = (x+dx+ofc.L)%ofc.L;
-								int yy = (y+dy+ofc.L)%ofc.L;
-								int nborSite = yy*ofc.L+xx;
-
-								sum*=(1.0-ofc.gamma[nborSite]);
-//								System.out.println("sum  = " + sum + " gamma " + ofc.gamma[nborSite]);
-//								nborct+=1;
-//								System.out.println(" no nobors " + nborct);
-							}
-					}
-				}
+			double sum = 0.0;
+			double thresholdCt=ofc.noNbors;
+			for(int j=0; j<ofc.noNbors; j++){
+				double s = cParam[ofc.nborList[i][j]];
+				sum+=s;
+				if(s==0) thresholdCt-=1.0;
+				
 			}
-			cParam[i]=(1.0-ofc.gamma[i])*Math.pow(sum,(double)(1.0/(Math.PI*maxRange*maxRange)));
-//			if(i%1000==0)System.out.println("c param " + i + " = " + cParam[i]);
+//			temp[i]=sum*cParam[i]/thresholdCt;
+			temp[i]=sum*cParam[i]/ofc.noNbors;
+		}
+		for (int i = 0; i < ofc.N; i ++){
+			cParam[i] =  temp[i];
 		}
 	}
-//
-//	
-//	int findNoCircleNbors(int range){
-//		int count = 0;
-//		 for(int dy = -range; dy <= range; dy++){
-//			 for(int dxx = -range; dxx <= range; dxx++){
-//				 double distance = Math.sqrt(dxx*dxx + dy*dy);
-//				 if (distance <= range){
-//						 count += 1;
-//				 }
-//			 }
-//		 }
-//		 count = count -1;
-//		 return count;
-//	}
-//	
-//	void findCircleNbors(int range, int maxNo){
-//		
-//		if(boundaryConditions == "Periodic"){
-//			int nborIndex = 0;
-//			for (int s = 0; s < ofc.N; s++){
-//				nborIndex = 0;
-//				int x = s%ofc.L;
-//				int y = s/ofc.L;
-//				for(int dy = -range; dy <= range; dy++){
-//					for(int dx = -range; dx <= range; dx++){
-//						double distance = Math.sqrt(dx*dx + dy*dy);
-//						if (distance <= range){
-////							if(distance == 1.0) System.out.println("nearest neighbor = " + nborIndex + " distance = " + distance);
-//							if(distance !=0){
-//								int xx = (x+dx+ofc.L)%ofc.L;
-//								int yy = (y+dy+ofc.L)%ofc.L;
-//								int nborSite = yy*ofc.L+xx;
-//								nborList[s][nborIndex] = nborSite;
-//								nborIndex += 1;
-//							}
-//						}
-//					}
-//				}
-//			}
-////			if (nborIndex != (maxNbors)) System.out.println("Problem in findCircleNbors");
-//		}else if(boundaryConditions == "Open"){
-//			int nborIndex = 0;
-//			for (int s = 0; s < ofc.N; s++){
-//				nborIndex = 0;
-//				int x = s%ofc.L;
-//				int y = s/ofc.L;
-//				for(int dy = -range; dy <= range; dy++){
-//					for(int dx = -range; dx <= range; dx++){
-//						double distance = Math.sqrt(dx*dx + dy*dy);
-//						if (distance <= range){
-//							int xx = (x+dx);
-//							int yy = (y+dy);
-//							if(xx>=0 & xx<ofc.L & yy>=0 & yy<ofc.L){
-//								int nborSite = yy*ofc.L+xx;
-//								nborList[s][nborIndex] = nborSite;
-//							}else{
-//								nborList[s][nborIndex] = -1;
-//							}
-//							nborIndex += 1;
-//						}
-//					}
-//				}
-//			}
-//		}
-//	}
-//	
 
 
 }

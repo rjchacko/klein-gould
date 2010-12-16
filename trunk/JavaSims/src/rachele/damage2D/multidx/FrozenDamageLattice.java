@@ -10,6 +10,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 
 	public boolean [] aliveLattice;  // No of failures at each site: once a site is dead -> = -1;
 	public int [] epicenterSize;
+	public int [] failedSites;
 	public double alphaDissRate;
 	public double deadDissRate;
 	public double alphaDiss;
@@ -27,7 +28,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	int nextSiteToFail;
 	int maxNbors;
 	int [] noNborsForSite;  // No of nbors at each site (for when different for each site.)
-	int [][]nborList;  // List of neighbors for each site: nborList[site = 0..N-1][nbor index = 0..maxNbors]  This is gonna be really big
+	public int [][]nborList;  // List of neighbors for each site: nborList[site = 0..N-1][nbor index = 0..maxNbors]  This is gonna be really big
 	
 	double nborDistanceSum;
 	
@@ -82,6 +83,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		stress = new double [N];
 		epicenterCount = new int [N];
 		epicenterSize = new int [N];
+
 		noNborsForSite = new int [N];
 		fracDeadNbors = new double [N];
 //		aveSizeAct = 
@@ -98,10 +100,12 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		
 		maxNbors = findCircleNbors(R);
 		nborList = new int [N][maxNbors];
+		p("Finding circle nbors");
 		findCircleNbors(R, maxNbors);	
-	
+		p("Setting damage");
 		dl = new Damage(pow, R, params.iget("Random Seed"), infoFileName);	
 		boolean [] dAlive = Damage.setDamage(damage, params.iget("Dead Parameter"), params.fget("Init Percent Dead"), params.iget("Number Dead"));
+		p("Damage Set");
 		aliveLattice = new boolean [N];
 		int ct = 0;
 		for (int i =0; i < N; i++){
@@ -110,8 +114,8 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		}
 		noLiveSites = ct;	
 		noDeadSites = N-ct;
-
-		for(int i = 0; i < N; i++) {
+		System.out.println("no dead = " + noDeadSites);
+	for(int i = 0; i < N; i++) {
 			if(aliveLattice[i]==false) stress[i] = 0;
 		}
 		
@@ -125,8 +129,8 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		p("Calculating gamma and variance");
 		double [] ap = calcGamma();
 		alphaPrime = ap[0];
-		System.out.println("Alpha prime = " + ap[0] + ", var = " + ap[1]);// +  " Connection Param (dead Excluded) = " + ap[2] + " var = " + ap[3]+ " Conection Param = " + ap[4] + " var = " + ap[5]);
-		
+		System.out.println("Gamma = " + ap[0] + ", var = " + ap[1]);// +  " Connection Param (dead Excluded) = " + ap[2] + " var = " + ap[3]+ " Conection Param = " + ap[4] + " var = " + ap[5]);
+		FileUtil.printlnToFile(infoFileName, "gamma = " , ap[0], " var = ", ap[1]);
 		double percentSitesDamaged = (double)noDeadSites/(double)N;
 		FileUtil.printlnToFile(infoFileName, "# No of sites damaged = " , noDeadSites);
 		FileUtil.printlnToFile(infoFileName, "# Percent of sites damaged = ", percentSitesDamaged);
@@ -362,12 +366,14 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	}
 	
 	public void ofcStep(){
+		failedSites = new int [N];
 		bringToFailure();
 		dt=1;
-	
+		failedSites[epicenterSite]+=1;
 		fail(epicenterSite);
 		int nextSiteToFail = checkFail();
 		while(nextSiteToFail >= 0){
+			failedSites[nextSiteToFail]+=1;
 			fail(nextSiteToFail);
 			nextSiteToFail = checkFail();
 			avSize += 1;
