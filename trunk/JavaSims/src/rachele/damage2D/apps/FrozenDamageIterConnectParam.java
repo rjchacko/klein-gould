@@ -219,7 +219,7 @@ public class FrozenDamageIterConnectParam extends Simulation{
 			if(cParam[j]!=0) count+=1;
 		}
 		double liveAve = sum/(double)count;
-		double area = Math.PI*Math.pow(i, 2);
+//		double area = Math.PI*Math.pow(i, 2);
 		FileUtil.printlnToFile(cpFile, i, cave, liveAve, csum, cvar);
 		System.out.println("iter = " + i+1 + " Ave = " + cave + " Var = " + cvar + " Sum = " + csum);
 

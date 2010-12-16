@@ -136,7 +136,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		allocate();
 		initFiles();
 		drawLattices();
-		FileUtil.printHistToFile(alphaHistFile, ofc.ad.alphaHist);
+//		FileUtil.printHistToFile(alphaHistFile, ofc.ad.alphaHist);
 		
 		dt = params.iget("Coarse Grained dt (PU)");
 		double nextAccumTime = dt;

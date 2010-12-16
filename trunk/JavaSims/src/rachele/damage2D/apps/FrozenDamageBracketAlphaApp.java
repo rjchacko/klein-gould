@@ -4,9 +4,9 @@ import java.io.File;
 
 import rachele.damage2D.multidx.FrozenDamageLattice;
 import rachele.util.FileUtil;
-import scikit.dataset.Accumulator;
-import scikit.dataset.DatasetBuffer;
-import scikit.dataset.Histogram;
+//import scikit.dataset.Accumulator;
+//import scikit.dataset.DatasetBuffer;
+//import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
@@ -14,7 +14,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.util.DoubleArray;
-import scikit.util.Utilities;
+//import scikit.util.Utilities;
 
 public class FrozenDamageBracketAlphaApp extends Simulation{
 	int dt;
@@ -111,8 +111,8 @@ public class FrozenDamageBracketAlphaApp extends Simulation{
 		double ipd = params.fget("Init Percent Dead");
 		if(ap > lowBound && ap < upBound) outOfBounds = false;
 		//if out of bounds, find initial high and low ipd.
-		double hBracket = 0.99999;
-		double lBracket = 0.00001;
+//		double hBracket = 0.99999;
+//		double lBracket = 0.00001;
 		double step = 0.01;
 		if (ap > target) over = true;
 		else over =false;
