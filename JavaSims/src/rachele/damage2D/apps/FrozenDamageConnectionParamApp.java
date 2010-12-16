@@ -183,7 +183,7 @@ public class FrozenDamageConnectionParamApp  extends Simulation{
 
 		int dx = 1;
 		int Lp = ofc.L/dx;
-		int Np = Lp*Lp;
+//		int Np = Lp*Lp;
 		FileUtil.printlnToFile(cpFile, "# FileUtil.printlnToFile(cpFile, area, cave, liveAve, csum, i, cvar);");
 
 		System.out.println("maxRange = " + i);
