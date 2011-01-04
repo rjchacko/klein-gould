@@ -11,6 +11,7 @@ import chris.util.PrintUtil;
 import chris.util.Random;
 
 
+import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -31,6 +32,7 @@ public class test extends Simulation{
     
 	public int isingspin[];     //the array of the data
 	public int initialcopy[];   //the array of the initial copy of the system
+	public double dilutionmap[];
     
 	public void animate()
 	{
@@ -41,10 +43,12 @@ public class test extends Simulation{
 		ising.setColor(2, Color.BLUE);
 		ising.setColor(-2, Color.GREEN);
 		
+		ColorGradient heatmap = new ColorGradient();
+		
 		grid1.setColors(ising);
 		grid1.registerData(L1, L2, isingspin);
-		grid2.setColors(ising);
-		grid2.registerData(L1, L2, initialcopy);
+		grid2.setColors(heatmap);
+		grid2.registerData(L1, L2, dilutionmap);
 
 	}
 	
@@ -95,6 +99,15 @@ public class test extends Simulation{
 
 		isingspin = new int[M];
 		initialcopy = new int[M];
+		dilutionmap = new double[M];
+		double tt=0;
+		
+		for (int t=0; t<M; t++)
+			{
+			tt=t;
+			dilutionmap[t]=tt;
+			isingspin[t]=t%5-2;
+			}
 		
 		Dres1=double1-int1;
 		
@@ -103,7 +116,7 @@ public class test extends Simulation{
 		params.set("Dres1", Dres1);
 		params.set("Dres2", Dres2);
 		
-		
+		Job.animate();
 		
     }
 	
