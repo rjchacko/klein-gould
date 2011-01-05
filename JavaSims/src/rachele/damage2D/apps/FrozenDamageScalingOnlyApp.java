@@ -48,7 +48,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 
 
 	Grid deadGrid = new Grid("Lattice");
-	Grid gammaGrid = new Grid("Alpha Prime");
+	Grid gammaGrid = new Grid("Gamma");
 
 	
 	int [][] sizeCount;
@@ -91,9 +91,9 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		String az =  "Gaussian about zero";
 		params.add("Alpha Distribution", new ChoiceValue(ca, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
 		params.addm("Random Seed", 0);
-		params.addm("Size Power",6);
+		params.addm("Size Power",8);
 		params.addm("R", 16);
-		params.addm("Init Percent Dead", .2);
+		params.addm("Init Percent Dead", .15);
 		params.addm("Dead Parameter", 150);
 		params.addm("Number Dead", 1024);
 		params.addm("Coarse Grained dt (PU)", 1);
