@@ -1,6 +1,6 @@
 package rachele.damage2D.apps;
 
-import static scikit.util.Utilities.asList;
+//import static scikit.util.Utilities.asList;
 
 import java.awt.Color;
 import java.io.File;
@@ -21,7 +21,7 @@ import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.DoubleValue;
 import scikit.util.DoubleArray;
-import scikit.util.Utilities;
+//import scikit.util.Utilities;
 
 public class FrozenDamageSeedActiveAccum extends Simulation{
 	
@@ -53,6 +53,8 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 
 	Grid deadGrid = new Grid("Lattice");
 	Grid gammaGrid = new Grid("Gamma");
+//	Grid allActiveGrid = new Grid("All Active Sites");
+//	Grid seedSitesGrid = new Grid("Seed Sites");
 //	Grid sizeGrid1 = new Grid("1<=size<10");
 //	Grid sizeGrid10 = new Grid("10<=size<100");
 //	Grid sizeGrid100 = new Grid("100<=size<1000");
@@ -66,7 +68,7 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 	Grid activeGrid1000 = new Grid("100<=size<1000");
 	Grid activeGrid10000 = new Grid("1000<=size<10000");
 	Grid activeGrid100000 = new Grid("10000<=size<100000");
-	Grid accumOneSite = new Grid("Seed site (red), CM (green)");
+//	Grid accumOneSite = new Grid("Seed site (red), CM (green)");
 	
 	Plot activeSlice1 = new Plot("size=1");
 	Plot activeSlice10 = new Plot("1<=size<10");
@@ -74,15 +76,17 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 	Plot activeSlice1000 = new Plot("100<=size<1000");
 	Plot activeSlice10000 = new Plot("1000<=size<10000");
 	Plot activeSlice100000 = new Plot("10000<=size<100000");
-	Plot radGyrationPlot = new Plot("Rad of Gyration vs Size");
+//	Plot allActiveSlice = new Plot("All Active Sites Slice");
+//	Plot radGyrationPlot = new Plot("Rad of Gyration vs Size");
 	
-	Plot distPlot = new Plot("CM-Seed Distance");
+//	Plot distPlot = new Plot("CM-Seed Distance");
 	Plot gammaSlicePlot = new Plot("Gamma Slice");
 //	Plot activeSlicesPlot = new Plot("Active Slices");
 	
-	int [][] sizeCount;
-	int [] oneSite;
+//	int [][] sizeCount;
+//	int [] oneSite;
 	int [][] largeFailSites;
+//	int [] seedSites;
 	double [] cm = new double [4];
 //	int [] eventCount;
 
@@ -91,11 +95,11 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 	}
 
 	public void load(Control c) {
-		c.frameTogether("Data",deadGrid, gammaGrid,distPlot);
+		c.frameTogether("Data",deadGrid, gammaGrid);//, allActiveGrid, allActiveSlice, seedSitesGrid);
 //		c.frameTogether("Seed Sites for Event Size = Pi*r^2", sizeGrid1, sizeGrid10, sizeGrid100,sizeGrid1000, sizeGrid10000, sizeGrid100000);
 		c.frameTogether("Active Sites for Event Size = Pi*r^2", activeGrid1, activeGrid10, activeGrid100,activeGrid1000, activeGrid10000, activeGrid100000);
-		c.frame(accumOneSite);
-		c.frame(radGyrationPlot);
+//		c.frame(accumOneSite);
+//		c.frame(radGyrationPlot);
 		c.frameTogether("Slices", activeSlice1 ,activeSlice10 ,activeSlice100, activeSlice1000,activeSlice10000, activeSlice100000);
 		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testRuns"));
 		String rd = "Random";
@@ -125,14 +129,14 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 		String az =  "Gaussian about zero";
 		params.add("Alpha Distribution", new ChoiceValue(ca, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
 		params.addm("Random Seed", 0);
-		params.addm("Size Power",7);
+		params.addm("Size Power",8);
 		params.addm("R", 16);
-		params.addm("Init Percent Dead", .05);
-		params.addm("Dead Parameter", 150);
+		params.addm("Init Percent Dead", .14);
+		params.addm("Dead Parameter", 16);
 		params.addm("Number Dead", 1024);
 		params.addm("Coarse Grained dt (PU)", 1);
-		params.addm("Equilibration Updates", 100);
-		params.addm("Max PU",1000000);
+		params.addm("Equilibration Updates", 40000);
+		params.addm("Max PU",6000000);
 		params.addm("Data points per write", 10000);
 		params.addm("Residual Stress", 0.625);
 		params.addm("Res. Max Noise", 0.125);
@@ -157,8 +161,8 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 //		sizeGrid1000.registerData(ofc.L, ofc.L, sizeCount[3]);
 //		sizeGrid10000.registerData(ofc.L, ofc.L, sizeCount[4]);
 //		sizeGrid100000.registerData(ofc.L, ofc.L, sizeCount[5]);
-		accumOneSite.setAutoScale(true);
-		accumOneSite.registerData(ofc.L, ofc.L, oneSite);
+//		accumOneSite.setAutoScale(true);
+//		accumOneSite.registerData(ofc.L, ofc.L, oneSite);
 
 //		distPlot.registerLines("Distance CM-Seed", cmSeedDist, Color.RED);
 
@@ -170,18 +174,23 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 		gammaGrid.addDrawable(
 				Geom2D.line(0, slice, 1, slice, Color.GREEN));
 
+		
 		activeGrid1.clearDrawables();
 		activeGrid10.clearDrawables();
 		activeGrid100.clearDrawables();
 		activeGrid1000.clearDrawables();
 		activeGrid10000.clearDrawables();
 		activeGrid100000.clearDrawables();
+//		allActiveGrid.clearDrawables();
+//		seedSitesGrid.clearDrawables);
 		activeGrid1.registerData(ofc.L, ofc.L, largeFailSites[0]);
 		activeGrid10.registerData(ofc.L, ofc.L, largeFailSites[1]);
 		activeGrid100.registerData(ofc.L, ofc.L, largeFailSites[2]);
 		activeGrid1000.registerData(ofc.L, ofc.L, largeFailSites[3]);
 		activeGrid10000.registerData(ofc.L, ofc.L, largeFailSites[4]);
 		activeGrid100000.registerData(ofc.L, ofc.L, largeFailSites[5]);
+//		allActiveGrid.registerData(ofc.L, ofc.L, largeFailSites[6]);
+//		seedSitesGrid.registerData(ofc.L, ofc.L, seedSites);
 		activeGrid1.addDrawable(
 				Geom2D.line(0, slice, 1, slice, Color.RED));
 		activeGrid10.addDrawable(
@@ -194,6 +203,10 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 				Geom2D.line(0, slice, 1, slice, Color.RED));
 		activeGrid100000.addDrawable(
 				Geom2D.line(0, slice, 1, slice, Color.RED));
+//		allActiveGrid.addDrawable(
+//				Geom2D.line(0, slice, 1, slice, Color.BLUE));
+//		seedSitesGrid.addDrawable(
+//				Geom2D.line(0, slice, 1, slice, Color.BLACK));
 		
 		activeSlice1.setAutoScale(true);
 		activeSlice10.setAutoScale(true);
@@ -201,14 +214,15 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 		activeSlice1000.setAutoScale(true);
 		activeSlice10000.setAutoScale(true);
 		activeSlice100000.setAutoScale(true);
+//		allActiveSlice.setAutoScale(true);
 		activeSlice1.registerPoints("Gamma Slice", getGammaSlice(slice, ofc.gamma), Color.GREEN);
 		activeSlice10.registerPoints("Gamma Slice", getGammaSlice(slice, ofc.gamma), Color.GREEN);
 		activeSlice100.registerPoints("Gamma Slice", getGammaSlice(slice, ofc.gamma), Color.GREEN);
 		activeSlice1000.registerPoints("Gamma Slice", getGammaSlice(slice, ofc.gamma), Color.GREEN);
 		activeSlice10000.registerPoints("Gamma Slice", getGammaSlice(slice, ofc.gamma), Color.GREEN);
-		activeSlice100000.registerPoints("Gamma Slice", getGammaSlice(slice, ofc.gamma), Color.GREEN);
+		activeSlice100000.registerPoints("Gamma Slice", getGammaSlice(slice, ofc.gamma), Color.GREEN);		
+//		allActiveSlice.registerPoints("Gamma Slice", getGammaSlice(slice, ofc.gamma), Color.GREEN);
 
-		
 		
 		activeSlice1.registerPoints("size=1", getSlice(slice, largeFailSites[0]), Color.RED);
 		activeSlice10.registerPoints("1<=size<10", getSlice(slice, largeFailSites[1]), Color.RED);
@@ -216,15 +230,17 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 		activeSlice1000.registerPoints("100<=size<1000", getSlice(slice, largeFailSites[3]), Color.RED);
 		activeSlice10000.registerPoints("1000<=size<10000", getSlice(slice, largeFailSites[4]), Color.RED);
 		activeSlice100000.registerPoints("10000<=size<100000", getSlice(slice, largeFailSites[5]), Color.RED);
-	
-		radGyrationPlot.registerPoints("Rad of Gyration", radGyrationAcc, Color.BLUE);
+//		allActiveSlice.registerPoints("All Active Sites Slice", getSlice(slice, largeFailSites[6]), Color.BLUE);
+//		allActiveSlice.registerPoints("Seed Sites", getSlice(slice, seedSites), Color.BLACK);
 		
-		double x = (double)(trackSite%ofc.L)/(double)ofc.L;
-		double y = (double)(trackSite/ofc.L)/(double)ofc.L;
-		accumOneSite.setDrawables(asList(
-				Geom2D.circle(x, y, 1.0/64.0,Color.RED),
-//				Geom2D.circle(cm[0], cm[1], 1.0/64.0,Color.GREEN),
-				Geom2D.circle(cm[0], cm[1], cm[3]/ofc.L,Color.GREEN)));
+//		radGyrationPlot.registerPoints("Rad of Gyration", radGyrationAcc, Color.BLUE);
+		
+//		double x = (double)(trackSite%ofc.L)/(double)ofc.L;
+//		double y = (double)(trackSite/ofc.L)/(double)ofc.L;
+//		accumOneSite.setDrawables(asList(
+//				Geom2D.circle(x, y, 1.0/64.0,Color.RED),
+////				Geom2D.circle(cm[0], cm[1], 1.0/64.0,Color.GREEN),
+//				Geom2D.circle(cm[0], cm[1], cm[3]/ofc.L,Color.GREEN)));
 		
 	}
 
@@ -302,16 +318,15 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 
 		while(true){
 			ofc.ofcStep();
-			Job.animate();
-			
-			double effAlpha = ofc.deadDiss + ofc.alphaDiss;
-			alphaAcc.accum(0, effAlpha);
-			alphaAcc.accum(1, ofc.deadDiss);
-			alphaAcc.accum(2,ofc.alphaDiss);
-			DatasetBuffer data = alphaAcc.copyData();
-			params.set("Effective Alpha", Utilities.format(data.y(0)));
-			params.set("Error", Utilities.format(data.errorY(0)));
-			
+//			double effAlpha = ofc.deadDiss + ofc.alphaDiss;
+//			alphaAcc.accum(0, effAlpha);
+//			alphaAcc.accum(1, ofc.deadDiss);
+//			alphaAcc.accum(2,ofc.alphaDiss);
+//			if(ofc.plateUpdates%100000==0){
+//				DatasetBuffer data = alphaAcc.copyData();
+//				params.set("Effective Alpha", Utilities.format(data.y(0)));
+//				params.set("Error", Utilities.format(data.errorY(0)));
+//			}
 			int size = ofc.avSize;
 			sizeHist.accum(size);
 			if (size > maxSize) {
@@ -319,45 +334,29 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 			}
 			siteSize=size;
 			trackSite = ofc.epicenterSite;
-//			if(ofc.avSize > 1){
-				accumOneSite.clear();
-				cm = findAvCM();
-				radGyrationAcc.accum((double)size, cm[3]);
-				cmSeedDist.accum(size, cm[2]);
-//				System.out.println(size + " " + cm[2]);
-//				FileUtil.printlnToFile(avDataFile, ofc.epicenterSite, size);
-				//clear failed sites
-
+//			accumOneSite.clear();
+//			cm = findAvCM();
+//			radGyrationAcc.accum((double)size, cm[3]);
+//			cmSeedDist.accum(size, cm[2]);
+//			seedSites[trackSite]+=1;
 				for(int st = 0; st <ofc.N; st++){
-					oneSite[st]=ofc.failedSites[st];
+//					oneSite[st]=ofc.failedSites[st];
 					if(ofc.failedSites[st]>0){
 						for (int r = 0; r<=5; r++){
 							double sz = Math.pow(10, r-1);
 							double sz1 = Math.pow(10,r);
 							if((double)size > sz & size <= sz1) largeFailSites[r][st]+=ofc.failedSites[st];
 						}
+//						largeFailSites[6][st]+=ofc.failedSites[st];
 					}
 
 				}
 
-				for (int r = 0; r<=5; r++){
-					double sz = Math.pow(10, r);
-					double sz1 = Math.pow(10,r+1);
-					if((double)size >= sz & size < sz1) sizeCount[r][ofc.epicenterSite]+=1;				
-				}
-//			}
-
-
-
-//			if(ofc.epicenterSite == trackSite){
-//				siteSize = ofc.avSize;
-//				if(siteSize > 1){
-//					for(int st = 0; st <ofc.N; st++){
-//						oneSite[st]+=ofc.failedSites[st];
-//					}
+//				for (int r = 0; r<=5; r++){
+//					double sz = Math.pow(10, r);
+//					double sz1 = Math.pow(10,r+1);
+//					if((double)size >= sz & size < sz1) sizeCount[r][ofc.epicenterSite]+=1;				
 //				}
-//			}
-
 
 
 			if(ofc.plateUpdates > nextAccumTime){ //Accumulate data to be written
@@ -375,8 +374,8 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 			}
 			maxTime = params.iget("Max PU");
 			if(ofc.plateUpdates > maxTime) Job.signalStop();
-//			if(size>1000){
-//				Job.animate();
+//			if(size>500){
+				Job.animate();
 //				Job.signalStop();
 //			}
 		}
@@ -445,9 +444,10 @@ public class FrozenDamageSeedActiveAccum extends Simulation{
 	
 	void allocate(){
 //		eventCount = new int [ofc.N];
-		sizeCount = new int [10][ofc.N];	
-		oneSite = new int [ofc.N];
-		largeFailSites = new int [10][ofc.N];
+//		sizeCount = new int [10][ofc.N];	
+//		oneSite = new int [ofc.N];
+		largeFailSites = new int [6][ofc.N];
+//		seedSites = new int [ofc.N];
 	}
 	
 	void drawLattices(){
