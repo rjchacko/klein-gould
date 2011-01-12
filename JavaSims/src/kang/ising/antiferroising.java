@@ -20,7 +20,7 @@ import scikit.jobs.params.DoubleValue;
 
 import static java.lang.Math.PI;
 
-import rachele.ising.dim2.StructureFactorOpt;
+import kang.ising.StructureFactorOpt;
 
 public class antiferroising extends Simulation{
 	
@@ -40,6 +40,7 @@ public class antiferroising extends Simulation{
     public int i, x, y;  //parameters for the index
 	public double T;     //temperature
 	public double QuenchT;  //the temperature after the quench
+	public double QuenchH;  
 	public double H;     //field
 	public double field;
 	public double J;     //interaction constant after normalization
@@ -107,6 +108,9 @@ public class antiferroising extends Simulation{
 	public int Lp;    //elements per side for Structure factor
 	public double L;
 	public double dq;
+	
+	
+	// functions for the structure factor
 	
 	
 	public double circularaverage(double SF[], int Lp, double q, double dq)   //returns the circular average of SFactor between q and q+2*dq*q
@@ -191,6 +195,56 @@ public class antiferroising extends Simulation{
 				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/squareSF.txt", qq*(2*PI*R)/L, SSF[qq]);
 				
 		}
+	}
+	
+	public void printXSF(double SF[], int Lp)
+	{
+		for(int qx=0; qx<Lp/2; qx++)
+			{
+			int ix=(qx+Lp/2);
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/XSF.txt", qx, qx*(2*PI*R)/L, SF[ix]);
+			}
+		
+	}
+	
+	public void printYSF(double SF[], int Lp)
+	{
+		for(int qy=0; qy<Lp/2; qy++)
+			{
+			int iy=(qy+Lp/2)*Lp;
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/YSF.txt", qy, qy*(2*PI*R)/L, SF[iy]);
+			}
+		
+	}
+	
+	public void findpeak(double SF[], int Lp)
+	{
+		double max=0;
+		int maxposition=0;
+		for(int i=0; i<Lp*Lp; i++)
+		{
+			if(SF[i]>max)
+			{
+				max=SF[i];
+				maxposition=i;
+			}
+		}
+		int x=maxposition%Lp-Lp/2;
+		int y=maxposition/Lp-Lp/2;
+		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/MAX.txt", x, y, SF[maxposition]);
+		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/MAX.txt", x*(2*PI*R)/L, y*(2*PI*R)/L, SF[maxposition]);
+		
+	}
+	
+	public void printallSF(double SF[], int Lp)
+	{
+	    for(int i=0; i<Lp*Lp; i++)
+	    {
+	    	int x=i%Lp-Lp/2;
+	    	int y=i/Lp-Lp/2;
+	    	PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/all.txt", x, y, SF[i]);
+	    	PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/all.txt", x*(2*PI*R)/L, y*(2*PI*R)/L, SF[i]);
+	    }
 	}
 	
 	
@@ -335,6 +389,11 @@ public class antiferroising extends Simulation{
 	{
 		params.set("Temperature", finaltemp);
 	}
+	public void fieldset(double finalfield)
+	{
+		params.set("Field", finalfield);
+	}
+	
 	
 	public void fieldquench()
 	{
@@ -399,7 +458,7 @@ public class antiferroising extends Simulation{
 		cy=(int)L2/2;
 		if(biasp!=p)
 			//square(biasrangelabel, biasR, cx, cy);
-		    rectangle(biasrangelabel, 100, biasR, cx,cy);
+		    rectangle(biasrangelabel, 64, biasR, cx,cy);
 		
 		for(int t=0; t<M; t++)
 			spin[t]=1;
@@ -409,10 +468,16 @@ public class antiferroising extends Simulation{
 		{
 			if (biasrangelabel[j]==1)
 				if(biasrand.nextDouble()<biasp)
+					{
 					spin[j]=0;
+					deadsites++;
+					}
 			if (biasrangelabel[j]==0)
 				if(dilutionrand.nextDouble()<p)
+					{
 					spin[j]=0;
+					deadsites++;
+					}
 		}
 		
 		if(type==0)
@@ -502,6 +567,7 @@ public class antiferroising extends Simulation{
 			}
 		
 	}
+	
 	
 	public int distance (int a, int b)     // the code to calculate the distance between two points on the lattice
 	{
@@ -625,23 +691,26 @@ public class antiferroising extends Simulation{
 		antiferroising.frame (grid6);
 		
 		
-		params.add("lattice's width", 278);
-		params.add("lattice's length", 278);
-		params.add("Lp", 100);
-		params.add("dq", new DoubleValue(0.01,0,50).withSlider());
-		params.add("Diluted Percentage", new DoubleValue(0,0,1).withSlider());
-		params.add("Bias percent", new DoubleValue(0, 0, 1).withSlider());
+		params.add("lattice's width", 128);
+		params.add("lattice's length", 128);
+		params.add("Lp", 128);
+		params.add("dq", new DoubleValue(0.1,0,50).withSlider());
+		params.add("Diluted Percentage", new DoubleValue(0.1,0,1).withSlider());
+		params.add("Bias percent", new DoubleValue(0.1, 0, 1).withSlider());
 		
 		params.add("Quench starts at", 100);
 		
 		params.addm("Interaction Constant", 1);
-		params.add("Interaction range", 100);
+		params.add("Interaction range", 46);
 		params.add("Bias range", 10);
 		params.add("Monte Carlo step's limit", 1000000);
-
-		params.addm("Quench temperature", new DoubleValue(0.0965, 0, 10).withSlider());
+		
 		params.addm("Temperature", new DoubleValue(9, 0, 10).withSlider());
-		params.addm("Field", new DoubleValue(0, -2, 2).withSlider());
+		params.addm("Quench temperature", new DoubleValue(0.06, 0, 10).withSlider());
+		
+		params.addm("Field", new DoubleValue(0.75, -2, 2).withSlider());
+		params.addm("Quench field", new DoubleValue(0.75, -2, 2).withSlider());
+
 		
 		
 		params.add("intervention start", new DoubleValue(2880, 0, 99999999).withSlider());
@@ -674,6 +743,7 @@ public class antiferroising extends Simulation{
 	    steplimit = (int)params.fget("Monte Carlo step's limit");
 		quenchstart=(int)params.fget("Quench starts at");
 		QuenchT=params.fget("Quench temperature");
+		QuenchH=params.fget("Quench field");
 
 		L1 =(int)params.fget("lattice's width");
 		L2 =(int)params.fget("lattice's length");
@@ -714,24 +784,26 @@ public class antiferroising extends Simulation{
 		spinflipseed = (int)((field+1)*QuenchT*10000);
 		spinfliprand= new Random (spinflipseed);
 		
-		for (prestep=0; prestep < 5; prestep++)
+		for (prestep=0; prestep < 4900000; prestep++)
 		{
+		//temperaturequench(9);	
 		MCS(isingspin, spinfliprand ,1);
-		params.set("MC time", prestep-5);
+		params.set("MC time", prestep-50);
 		Job.animate();
 		}
 		
 
 		temperaturequench(QuenchT);
 		Ms=magnetization;
+		fieldset(QuenchH);
 		
 		
-		for(step=0; step<100; step++)
+		for(step=0; step<30; step++)
 		{
-			for(int rs=0; rs<1000; rs++)
+			for(int rs=0; rs<100; rs++)
 			{
-			MCS(isingspin, spinfliprand, 0.001);
-			for(int ft=0; ft<M; ft++)
+			MCS(isingspin, spinfliprand, 0.01);
+			/*for(int ft=0; ft<M; ft++)
 			{
 				fftspin[ft]=isingspin[ft];
 			}
@@ -740,24 +812,29 @@ public class antiferroising extends Simulation{
 			{
 				sf[e]=SFO.sFactor[e];
 			}
+			*/
 			params.set("MC time", step);
 			Job.animate();
-			if((step==1)&(rs==250))
+			if((step==-1)&(rs==111250))
 			{
 				circularSF(SFO.sFactor,Lp,dq);
 				printcircularSF(circularSF,Lp,dq);
 				squareSF(SFO.sFactor, Lp);
 				printsquareSF(squareSF, Lp);
+				//printXSF(SFO.sFactor, Lp);
+				//printYSF(SFO.sFactor, Lp);
+				//findpeak(SFO.sFactor, Lp);
+				//printallSF(SFO.sFactor, Lp);
 			}
 			
-			//movie(grid1, rs,step);	
+			movie(grid1, rs+1 ,step+1);	
 			}
 		}
 		
 		for(int astep=0; astep<steplimit; astep++)
 		{
 			MCS(isingspin, spinfliprand, 1);
-			params.set("MC time", astep+10);
+			params.set("MC time", astep+20);
 			Job.animate();
 			//movie(grid1, 9999,astep);	
 			

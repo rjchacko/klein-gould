@@ -246,6 +246,11 @@ public class heatmap extends Simulation{
 	    
 	}
 	
+	public void fieldset(double finalfield)
+	{
+		params.set("Field", finalfield);
+	}
+	
 	public void animate()
 	{
 		ColorPalette ising = new ColorPalette ();
