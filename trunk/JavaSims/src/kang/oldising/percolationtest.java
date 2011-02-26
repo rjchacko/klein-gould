@@ -1,4 +1,4 @@
-package kang.ising;
+package kang.oldising;
 
 import java.awt.Color;
 import java.io.File;

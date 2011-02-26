@@ -1,4 +1,4 @@
-package kang.ising;// what is this used for?
+package kang.oldising;// what is this used for?
 
 import java.awt.Color;
 
