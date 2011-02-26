@@ -1,4 +1,4 @@
-package kang.ising;// what is this used for?
+package kang.oldising;// what is this used for?
 /**
  * Kang, this is used to organize things. So, for example, if you open 
  * one of my files, for example ergodicDiagramApp then you will see that the package
