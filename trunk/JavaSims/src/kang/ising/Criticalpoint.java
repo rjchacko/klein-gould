@@ -69,9 +69,6 @@ public class Criticalpoint extends Simulation
 		
 	}
 	
-	
-	
-	
 	public double SpecificHeat(IsingStructure ising, double T, double H, int presteplimit, int number, int copies)  //calculate the specific heat of a given system at T,
 	{
 	    double tempE[];
@@ -190,7 +187,6 @@ public class Criticalpoint extends Simulation
 	}
 	
 	
- 	
  	public void findTc(IsingStructure ising,double Tmin, double Tmax, double dT)
  	{
  		double Cv=0;
@@ -280,12 +276,12 @@ public class Criticalpoint extends Simulation
 		Criticalpoint.frame (grid1);
 		Criticalpoint.frame (grid2);
 
-		params.add("L1", 200);
-		params.add("L2", 200);
-		params.add("R", 10);
+		params.add("L1", 300);
+		params.add("L2", 300);
+		params.add("R", 15);
 		params.add("NJ",-4.0);	
-		params.add("percent", new DoubleValue(0.20,0,1).withSlider());
-		params.add("biaspercent", new DoubleValue(0.20,0,1).withSlider());
+		params.add("percent", new DoubleValue(0.10,0,1).withSlider());
+		params.add("biaspercent", new DoubleValue(0.10,0,1).withSlider());
 		params.add("deadsites");	
 		params.add("Dseed",1);
 		params.add("Bseed",1);
@@ -326,12 +322,12 @@ public class Criticalpoint extends Simulation
 	    
 	    Job.animate();
 	    //findTc(IS,3.52,3.59,0.001);
-	    //findTcviaX(IS,3.12,3.16,0.005);
+	    findTcviaX(IS,3.2,3.8,0.05);
         
-	    T=params.fget("T");
+	    //T=params.fget("T");
 	    //scanHs(IS,0,1.08,0.01);
-	    startH=0.87;
-	    findHs(IS,startH-0.4,startH,0.01);
+	    //startH=0.87;
+	    //findHs(IS,startH-0.4,startH,0.01);
       
         
 	    
