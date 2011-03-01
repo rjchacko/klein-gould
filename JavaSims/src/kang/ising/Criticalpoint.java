@@ -287,7 +287,7 @@ public class Criticalpoint extends Simulation
 		params.add("Bseed",1);
 		params.add("Sseed",1);
 		
-		params.addm("T", new DoubleValue(1.396, 0, 10).withSlider());
+		params.addm("T", new DoubleValue(1.6, 0, 10).withSlider());
 		params.addm("H", new DoubleValue(0, -2, 2).withSlider());
 		
 		params.add("MCS");
@@ -322,12 +322,12 @@ public class Criticalpoint extends Simulation
 	    
 	    Job.animate();
 	    //findTc(IS,3.52,3.59,0.001);
-	    findTcviaX(IS,3.2,3.8,0.05);
+	    //findTcviaX(IS,3.55,3.65,0.01);
         
-	    //T=params.fget("T");
-	    //scanHs(IS,0,1.08,0.01);
+	    T=params.fget("T");
+	    scanHs(IS,0,1.08,0.01);
 	    //startH=0.87;
-	    //findHs(IS,startH-0.4,startH,0.01);
+	    findHs(IS,startH-0.4,startH,0.01);
       
         
 	    
