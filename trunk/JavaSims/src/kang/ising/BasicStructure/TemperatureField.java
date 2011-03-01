@@ -73,6 +73,8 @@ public class TemperatureField{
 		   PIS.MetropolisSpinflip(j, flip, Tfield[f], H);
 	    }
 	}
+	
+	
 
 	
 	

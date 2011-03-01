@@ -22,11 +22,12 @@ import chris.util.Random;
 
 public class dilutionmap extends Simulation{
 	
-	Grid grid1=new Grid("grid1");
-	Grid grid2=new Grid("grid2");
-	Grid grid3=new Grid("grid3");
-	Grid grid4=new Grid("grid4");
-	Grid grid5=new Grid("grid5");
+	Grid grid1=new Grid("evolution");
+	Grid grid2=new Grid("dilutionmap");
+	Grid grid3=new Grid("spintotal");
+	Grid grid4=new Grid("spinmap");
+	Grid grid5=new Grid("temperaturefieldmodel");
+	Grid grid6=new Grid("fluctuation");
 	
 	private DecimalFormat fmt = new DecimalFormat("000");
 	public int isingspin[];
@@ -42,6 +43,8 @@ public class dilutionmap extends Simulation{
     
 	public IsingStructure Initialising;
 	public IsingStructure IS;
+	public IsingStructure FL;  //isingstructure for the fluctuation
+	public double fluctuation[];
 	public TemperatureField TF;
 	//public IsingStructure IScq;
 	
@@ -63,7 +66,94 @@ public class dilutionmap extends Simulation{
 		
 	}
 	
-	
+	public void FluctuationMap(IsingStructure Ising, double T, int steplimit, int copies)
+	{
+		params.set("H",0);
+		double fltotal[]= new double[M];
+		for(int k=0;k<M; k++)
+		{
+			fluctuation[k]=0;
+			fltotal[k]=0;
+		}
+
+		for(int c=0; c<copies; c++)
+		{
+			double spintotal[]= new double[M];
+			double spinsqrtotal[]= new double[M];
+			
+			for(int i=0;i<M;i++)
+			{
+				spintotal[i]=0;
+				spinsqrtotal[i]=0;
+			}
+			
+			
+			params.set("copies", c+1);
+			IS=Ising.clone();
+			Random cflip= new Random(c);
+			for(int heat=0; heat<10; heat++)
+			{
+				params.set("T",9);     
+				IS.MCS(9, 0, cflip, 1);
+			    params.set("MCS", heat-10);
+	     	    params.set("magnetization", IS.Magnetization());
+		        Job.animate();
+			}
+			for(int prestep=0; prestep<2000; prestep++)
+			{
+				IS.MCS(T, 0, cflip, 1);
+				params.set("MCS",prestep-2000);
+				params.set("magnetization",IS.Magnetization());
+				Job.animate();
+			}
+			
+			for(int step=0; step<steplimit; step++)
+			{
+				params.set("T",T);
+				IS.MCS(T, 0, cflip, 1);
+				Job.animate();
+				params.set("MCS",step);
+				params.set("magnetization",IS.Magnetization());
+				for(int j=0;j<M; j++)
+				{
+					if(IS.spin[j]!=0)
+					{
+						spintotal[j]+=IS.spin[j];
+						spinsqrtotal[j]+=((IS.spin[j])*(IS.spin[j]));
+						fluctuation[j]=(spinsqrtotal[j]/(step+1))-(spintotal[j]/(step+1))*(spintotal[j]/(step+1));
+	                    Job.animate();				
+					}
+					
+				}
+			}
+			
+			
+			for(int r=0; r<M; r++)
+			{
+				fltotal[r]+=fluctuation[r];
+			}
+			
+			
+		}
+		for(int w=0; w<M; w++)
+		{
+			fluctuation[w]=fltotal[w]/copies;
+		}
+		double[] newmap= new double[M];
+		newmap=takeoutzeroes(Initialising, fluctuation);
+		for(int i=0; i<M; i++)
+			fluctuation[i]=newmap[i];
+		Job.animate();
+		Random flip= new Random(1);
+		for(int af=0; af<1000; af++)
+		{
+			IS.MCS(T, 0, flip, 1);
+			Job.animate();
+		}
+		
+		
+		
+	}
 	
 	public void CriticalTquench(IsingStructure Ising, double Ti, double Tf, double steplimit, int copies)
 	{
@@ -289,9 +379,7 @@ public class dilutionmap extends Simulation{
 			}	
 		}
 	}
-	
-	
-	
+
 	
 	public void OffCriticalTquench(IsingStructure Ising, double Ti, double Tf, double h,double steplimit, int copies)
 	{
@@ -376,9 +464,7 @@ public class dilutionmap extends Simulation{
 		return newmap;
 		
 	}
-	
-	
-	
+
 	
 	public void animate()
 	{
@@ -403,6 +489,9 @@ public class dilutionmap extends Simulation{
 		grid4.registerData(L1, L2, spinmap);
 		grid5.setColors(heatmap);
 		grid5.registerData(L1, L2, TF.PIS.spin);
+		grid6.setColors(heatmap);
+		grid6.registerData(L1, L2, fluctuation);
+	
 	}
 
 	public void clear()
@@ -419,12 +508,12 @@ public class dilutionmap extends Simulation{
 	}
 
 	public void load(Control dilutionmap){
-		dilutionmap.frame (grid1);
+		/*dilutionmap.frame (grid1);
 		dilutionmap.frame (grid2);
 		dilutionmap.frame (grid3);
 		dilutionmap.frame (grid4);
-		dilutionmap.frame (grid5);
-
+		dilutionmap.frame (grid5);*/
+		dilutionmap.frameTogether("Display", grid1,grid2,grid3,grid4,grid5,grid6);
 		params.add("L1", 100);
 		params.add("L2", 100);
 		params.add("R", 5);
@@ -460,6 +549,7 @@ public class dilutionmap extends Simulation{
 		spintemp=new int[M];
 		spinmap= new double[M];
 		newspinmap=new double[M];
+		fluctuation=new double[M];
 		
 		
 		Dseed = 1;
@@ -474,17 +564,20 @@ public class dilutionmap extends Simulation{
 	    IS= Initialising.clone();
 	    TF= new TemperatureField(IS);
 	    Job.animate();
+	    FluctuationMap(Initialising, 4, 10000, 5);
+
 	    
 	    
 	    double estep=0;
 	    estep=1;
-	    TCriticalTquench(Initialising, 9, 0.5, estep, 30010);
+	    //TCriticalTquench(Initialising, 9, 0.5, estep, 30010);
 	    
 	    //OffCriticalTquench(Initialising, 9, 0.5, 0.1, estep, 100010);
 	    
-	    movie(grid2, 0000,0000);
-	    movie(grid3, 3333,(int)(estep*1000));
-	    movie(grid4, 4444,(int)(estep*1000));
+	    //movie(grid2, 0000,0000);
+	    //movie(grid3, 3333,(int)(estep*1000));
+	    //movie(grid4, 4444,(int)(estep*1000));
+	    movie(grid6, 6666,6666);
 
 	    
 
