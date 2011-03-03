@@ -10,6 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import scikit.dataset.Histogram;
+import scikit.jobs.Job;
 import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
@@ -83,7 +84,7 @@ public class ofc2Dfast{
 		sf      = new double[N];
 		stress  = new double[N];
 		sbar    = new double[N];
-		fs      = new int[2*N];
+		fs      = new int[N];
 		data    = new double[dcat][dlength];
 		failed  = new boolean[N];
 		ftt     = new boolean[N];
@@ -99,7 +100,8 @@ public class ofc2Dfast{
 		}
 
 		// set up the lattice neighbors array
-		if(shape.equals("Open")) shape = "Bordered";
+		if(bcs.equals("Open")) bcs = "Bordered";		
+		
 		nbArray = setupNBS(shape);
 		if(nbArray == null){
 			qN = N;
@@ -251,20 +253,20 @@ public class ofc2Dfast{
 			b     = newindex;
 			index = newindex;
 			for (int jj = a ; jj < b ; jj++){
-				tmpfail = fs[jj];
+				tmpfail = fs[jj%N];
 				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
 				for(int kk = 0 ; kk < qN ; kk++){
-					tmpnb = getNbr(fs[jj],kk);
+					tmpnb = getNbr(fs[jj%N],kk);
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
 					stress[tmpnb] += release;
 					if(stress[tmpnb] > sf[tmpnb]){
-						fs[newindex++] = tmpnb;	
+						fs[newindex++%N] = tmpnb;	
 						failSite(tmpnb);
 					}
 				}
 				resetSite(tmpfail);
 			}
-//			Job.animate();
+			Job.animate();
 //			// FOR DEBUGGING ONLY
 		}
 		return;

@@ -49,74 +49,82 @@ public class fastPrecursorApp extends Simulation{
 	public void run() {
 				
 		// Setup model
-		for (int cycle = 0 ; cycle < 10 ; cycle++){
+		double anow = 0.05;
+		double da   = 0.05;
+		
+		while(anow < 1){
+		
+			for (int cycle = 0 ; cycle < 10 ; cycle++){
 
-			params.set("Mode", "Intializing");
-			params.set("Dead Sites", "-");
-			Job.animate();
-			L      = params.iget("Lattice Size");
-			N      = L*L;
-			model  = new damage2Dfast(dummyParamUtil.ofcParams(params));
-			if(cycle == 0 )
-				model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params);	
-			eqt    = params.iget("Equil Time");
-			simt   = params.iget("Sim Time");
-			Ndead  = 0;
-			gr     = new int[simt+N*params.iget("Number of Lives")];
-			params.set("Mode", "Ready");
-			Job.animate();
+				params.set("Mode", "Intializing");
+				params.set("Dead Sites", "-");
+				params.set("Dissipation (\u03B1)", anow);
+				Job.animate();
+				L      = params.iget("Lattice Size");
+				N      = L*L;
+				model  = new damage2Dfast(dummyParamUtil.ofcParams(params));
+				if(cycle == 0 && anow == 0.05)
+					model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params);	
+				eqt    = params.iget("Equil Time");
+				simt   = params.iget("Sim Time");
+				Ndead  = 0;
+				gr     = new int[simt+N*params.iget("Number of Lives")];
+				params.set("Mode", "Ready");
+				Job.animate();
 
-			// Equilibrate the system
-			for (int jj = 0 ; jj < eqt ; jj++){
-				model.evolve(jj,false);
-				if(jj%500 == 0){
-					params.set("Mode", (jj-eqt));
+				// Equilibrate the system
+				for (int jj = 0 ; jj < eqt ; jj++){
+					model.evolve(jj,false);
+					if(jj%500 == 0){
+						params.set("Mode", (jj-eqt));
+						Job.animate();
+					}
+				}
+
+				// Simulate the model without damage
+				for (int jj = 0 ; jj < simt ; jj++){
+					model.evolve(jj,false);
+					gr[jj] = model.getGR();
+					if(jj%500 == 0){
+						params.set("Mode", jj);
+					}
 					Job.animate();
 				}
-			}
 
-			// Simulate the model without damage
-			for (int jj = 0 ; jj < simt ; jj++){
-				model.evolve(jj,false);
-				gr[jj] = model.getGR();
-				if(jj%500 == 0){
-					params.set("Mode", jj);
+				// Simulate the model with damage
+				int t = simt;
+				while(Ndead < N){
+					Ndead = model.evolveD(t,true);
+					gr[t] = model.getGR();
+					if((t++)%500 == 0){
+						params.set("Mode", t);
+					}
+					params.set("Dead Sites", Ndead);
+					Job.animate();
 				}
+
+				params.set("Mode", "Writing Data File");
 				Job.animate();
+				printData(cycle, anow, gr);
+				model = null;
+				params.set("Random Seed", params.iget("Random Seed")+1);
 			}
 
-			// Simulate the model with damage
-			int t = simt;
-			while(Ndead < N){
-				Ndead = model.evolveD(t,true);
-				gr[t] = model.getGR();
-				if((t++)%500 == 0){
-					params.set("Mode", t);
-				}
-				params.set("Dead Sites", Ndead);
-				Job.animate();
-			}
-
-			params.set("Mode", "Writing Data File");
+			params.set("Mode", "Next Alpha");
 			Job.animate();
-			printData(cycle, t,gr);
-			model = null;
-			params.set("Random Seed", params.iget("Random Seed")+1);
-
+			anow += da;
 		}
-		
 		params.set("Mode", "Done");
 		Job.animate();
-		
 		return;
 	}
 
-	public void printData(int c, int t, int[] h){
+	public void printData(int c, double anow, int[] h){
 		try{
-			File file = new File(model.getOutdir()+File.separator+model.getBname()+fmt.format(c)+".txt");
+			File file = new File(model.getOutdir()+File.separator+model.getBname()+"_"+fmt.format(100*anow)+"_"+fmt.format(c)+".txt");
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
-			for (int jj = 0 ; jj < t; jj++){
-				pw.println(t+"\t"+h[jj]);
+			for (int jj = 0 ; jj < h.length; jj++){
+				pw.println(h[jj]);
 			}
 		} catch (IOException ex){
 			ex.printStackTrace();

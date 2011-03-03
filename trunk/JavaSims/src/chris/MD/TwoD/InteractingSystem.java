@@ -12,7 +12,6 @@ import scikit.graphics.dim2.Gfx2D;
 import scikit.jobs.params.Parameters;
 import scikit.util.Bounds;
 import chris.util.DirUtil;
-import chris.util.PrintUtil;
 import chris.util.Random;
 import chris.util.ReadInUtil;
 import chris.util.vector2d;
@@ -601,12 +600,12 @@ public abstract class InteractingSystem {
 	return;
 	}
 	
-	public double structureFactor(int nx, int ny){
+	public double[] structureFactor(int nx, int ny){
 	
 		double dot;		
 		vector2d k = new vector2d(2*Math.PI*nx/Lx, 2*Math.PI*ny/Ly);
-		double rp, ip, sf;  
-		sf = 0;
+		double rp, ip, rpsf, ipsf;  
+		rpsf = ipsf = 0;
 		
 		for(int jj = 0 ; jj < N ; jj++){
 			rp = ip = 0;
@@ -617,16 +616,13 @@ public abstract class InteractingSystem {
 				rp += Math.cos(dot);
 				ip += Math.sin(dot);
 			}				
-			sf += Math.sqrt((rp*rp+ip*ip))/(N-1);
-			if(nx == 0 && ny == 0){
-				PrintUtil.printlnToFile("/Users/cserino/Desktop/debug.txt",rp,ip,sf);
-			}
+			rpsf += rp / (N-1);
+			ipsf += ip / (N-1);
 		}
-		if(nx == 0 && ny == 0){
-			PrintUtil.printlnToFile("/Users/cserino/Desktop/debug.txt","-------------------------");
-			PrintUtil.printlnToFile("/Users/cserino/Desktop/debug.txt",sf,sf/N);
-		}
-		return sf/N;
+		// average over origins
+		rpsf /= N;
+		ipsf /= N;
+		return new double[]{rpsf, ipsf};
 	}
 	
 	public vector2d dr(vector2d r1, vector2d r2){

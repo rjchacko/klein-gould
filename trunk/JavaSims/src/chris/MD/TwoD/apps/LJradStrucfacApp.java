@@ -112,7 +112,7 @@ public class LJradStrucfacApp extends Simulation{
 				then = now;
 				for(int nx = 0; (nx*nx) <= nk2m ; nx++){
 					for(int ny = 0; (idx = ny*ny+nx*nx) <= nk2m ; ny++){
-						sf[hm.get(idx).intValue()][countT] = model.structureFactor(nx, ny);
+//						sf[hm.get(idx).intValue()][countT] = model.structureFactor(nx, ny);
 						countDG[hm.get(idx).intValue()]++;
 					}
 					params.set("SF",Ef.format(100.*nx*nx/(double)(nk2m)));

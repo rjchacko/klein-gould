@@ -109,7 +109,7 @@ public class SFtestApp extends Simulation{
 				then = now;
 				for(int nx = 0; nx < nmx ; nx++){	// using k^2 < 200
 					for(int ny = 0; ny < nmx ; ny++){	// using k^2 < 200
-						sf[count][nx][ny] = model.structureFactor(nx, ny);
+//						sf[count][nx][ny] = model.structureFactor(nx, ny);
 						params.set("t",ny);
 						Job.animate();
 					}
