@@ -57,7 +57,7 @@ public class LJstrucfacApp extends Simulation{
 		params.add("M",1);
 		params.add("R",0.25); 
 		params.add("dt",5e-3);
-		params.addm("d\u03C4",5);
+		params.addm("d\u03C4",5.);
 		params.addm("T",1e-6);
 		params.add("t");
 		params.add("E");
@@ -76,11 +76,13 @@ public class LJstrucfacApp extends Simulation{
 		Job.animate();
 		
 		int count       = 0;
-		int mxdp        = 10;
-		int nkx2m       = 1000*1000;
+		int mxdp        = 20;
+		int nkx2m       = 100*100;
 		int nky2m       = nkx2m;
-		double sf[][]   = new double[(int)(Math.sqrt(nkx2m))+1][(int)(Math.sqrt(nky2m))+1];
-
+		double sfRP[][] = new double[(int)(Math.sqrt(nkx2m))+1][(int)(Math.sqrt(nky2m))+1];
+		double sfIP[][] = new double[(int)(Math.sqrt(nkx2m))+1][(int)(Math.sqrt(nky2m))+1];
+		double foo[]    = new double[2];
+		
 		while(count < mxdp){
 			now = model.stepWT();
 			Job.animate();
@@ -88,12 +90,14 @@ public class LJstrucfacApp extends Simulation{
 				then = now;
 				for(int nx = 0; nx*nx <= nkx2m ; nx++){
 					for(int ny = 0; ny*ny+nx*nx <= nky2m ; ny++){
-						sf[nx][ny] = model.structureFactor(nx, ny);
+						foo = model.structureFactor(nx, ny);
+						sfRP[nx][ny] = foo[0];
+						sfIP[nx][ny] = foo[1];
 					}
 					params.set("SF",Ef.format(100.*nx*nx/(double)(nkx2m)));
 					Job.animate();
 				}
-				printSF(sf, count, (int)(Math.sqrt(nkx2m))+1, (int)(Math.sqrt(nky2m))+1);
+				printSF(sfRP, sfIP, count, (int)(Math.sqrt(nkx2m))+1, (int)(Math.sqrt(nky2m))+1);
 				count++;
 			}
 		}
@@ -101,20 +105,21 @@ public class LJstrucfacApp extends Simulation{
 		return;
 	}
 	
-	private void printSF(double[][] sf, int t, int xm, int ym){
+	private void printSF(double[][] sfRP, double[][] sfIP, int t, int xm, int ym){
 		try{
 			File file = new File(fout);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			if(t == 0)
-				pw.println("t \t nx \t ny \t S(k)");
+				pw.println("t \t nx \t ny \t Re{S(k)} \t Im{S(k)}");
 			for(int nx = 0; nx*nx <= xm ; nx++){
 				for(int ny = 0; ny*ny <= ym ; ny++){
-					if(sf[nx][ny] == 0)
+					if(sfRP[nx][ny] == 0)
 						continue;
 					pw.print(t +"\t");
 					pw.print(nx+"\t");
 					pw.print(ny+"\t");
-					pw.println(sf[nx][ny]);
+					pw.println(sfRP[nx][ny]+"\t");
+					pw.println(sfIP[nx][ny]);
 				}
 			}
 			pw.close();
