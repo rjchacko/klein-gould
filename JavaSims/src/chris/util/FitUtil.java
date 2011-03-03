@@ -195,7 +195,7 @@ public class FitUtil{
 	
 	private void getFitVals(){
 		
-		b  = (xs*y-x*xy)/(Ndata*xs-x*x);  	// Melissinos pg 450 (NB the equatiosn for a* and b* are mixed 
+		b  = (xs*y-x*xy)/(Ndata*xs-x*x);  	// Melissinos pg 450 (NB the equations for a* and b* are mixed 
 		m  = (Ndata*xy-x*y)/(Ndata*xs-x*x); // up but the equations for the errors in a* and b* are correct)		
 		db = xs/(Ndata*xs-x*x);		
 		db = sigma*Math.sqrt(db);

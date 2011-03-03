@@ -337,4 +337,31 @@ public class ReadInUtil {
 		return;
 	}
 	
+	public Parameters getOFCparams(Parameters p){
+		// parse the file fin for the parameters requested by p
+		Parameters q = new Parameters();
+		
+		try {
+
+			FileInputStream fis = new FileInputStream(fin);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			BufferedReader bir = new BufferedReader(new InputStreamReader(bis));
+
+			String rin;
+			int pd;
+
+			while ( (rin = bir.readLine()) != null ){
+				pd = rin.indexOf('=');
+				if(pd <= 0)
+					break;
+				q.add(rin.substring(0,pd-1),rin.substring(pd+1));
+			}
+		}
+		catch (IOException e) {
+			e.printStackTrace();
+		}
+		PrintUtil.printlnToFile("/Users/cserino/Desktop/testINmethod.txt", q.toString());
+		return q;
+	}
+	
 }
