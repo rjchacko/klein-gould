@@ -19,7 +19,39 @@ public class ReadInUtil {
 
 		return;
 	}
+	public double[] getData(int skip){
 
+		int counter = 0;
+		double[] values = new double[1000000];
+		String rin;
+		
+		try {
+
+			FileInputStream fis = new FileInputStream(fin);
+			BufferedInputStream bis = new BufferedInputStream(fis);
+			BufferedReader bir = new BufferedReader(new InputStreamReader(bis));
+
+			for (int jj = 0 ; jj < skip ; jj++){
+				rin = bir.readLine();
+			}
+			while ( (rin = bir.readLine()) != null ){
+				values[counter++] = Double.parseDouble(rin);
+			}
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+
+
+		double[] ret = new double[counter];
+
+		for (int jj = 0 ; jj < counter ; jj++){
+				ret[jj] = values[jj];
+		}
+		return ret;
+	}
+	
 	public double[][] getData(int[] cns, int skip){
 
 		int counter = 0;
@@ -337,9 +369,23 @@ public class ReadInUtil {
 		return;
 	}
 	
-	public Parameters getOFCparams(Parameters p){
-		// parse the file fin for the parameters requested by p
-		Parameters q = new Parameters();
+	public Parameters getOFCparams(){
+
+		Parameters p   = new Parameters();
+		Parameters isD = new Parameters();
+		Parameters isI = new Parameters();
+		
+		isD.add("Failure Stress (?_f)");
+		isD.add("?_f width");
+		isD.add("Residual Stress (?_r)");
+		isD.add("?_r width");
+		isD.add("Dissipation (?)");
+		isD.add("? width");
+		isI.add("Random Seed");
+		isI.add("Interaction Radius (R)");
+		isI.add("Lattice Size");
+		isI.add("Equil Time");
+		isI.add("Sim Time");
 		
 		try {
 
@@ -352,16 +398,43 @@ public class ReadInUtil {
 
 			while ( (rin = bir.readLine()) != null ){
 				pd = rin.indexOf('=');
-				if(pd <= 0)
+				if(pd < 0)
 					break;
-				q.add(rin.substring(0,pd-1),rin.substring(pd+1));
+				if(isD.containsKey(rin.substring(0,pd-1))){
+					if(rin.substring(0,pd-1).indexOf("Failure") >= 0){
+						p.add("Failure Stress (\u03C3_f)", Double.parseDouble(rin.substring(pd+1)));
+					}
+					else if(rin.substring(0,pd-1).indexOf("?_f") >= 0){
+						p.add("\u03C3_f width", Double.parseDouble(rin.substring(pd+1)));
+					}			
+					else if(rin.substring(0,pd-1).indexOf("Residual") >= 0){
+						p.add("Residual Stress (\u03C3_r)", Double.parseDouble(rin.substring(pd+1)));
+					}
+					else if(rin.substring(0,pd-1).indexOf("?_r") >= 0){
+						p.add("\u03C3_r width", Double.parseDouble(rin.substring(pd+1)));
+					}					
+					else if(rin.substring(0,pd-1).indexOf("Dissipation") >= 0){
+						p.add("Dissipation (\u03B1)",Double.parseDouble(rin.substring(pd+1)));
+					}
+					else if(rin.substring(0,pd-1).indexOf("?") >= 0){
+						p.add("\u03B1 width", Double.parseDouble(rin.substring(pd+1)));
+					}
+					else{
+						
+					}
+				}
+				else if(isI.containsKey(rin.substring(0,pd-1))){
+					p.add(rin.substring(0,pd-1),Integer.parseInt(rin.substring(pd+2)));
+				}
+				else{
+					p.add(rin.substring(0,pd-1),rin.substring(pd+2));
+				}			
 			}
 		}
 		catch (IOException e) {
 			e.printStackTrace();
 		}
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/testINmethod.txt", q.toString());
-		return q;
+		return p;
 	}
 	
 }
