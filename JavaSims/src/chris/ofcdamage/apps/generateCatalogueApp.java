@@ -59,6 +59,7 @@ public class generateCatalogueApp extends Simulation{
 			for(double alpha : av){
 				params.set("Status", "Intializing");
 				params.set("Dissipation (\u03B1)",alpha);
+				p2.set("Dissipation (\u03B1)",alpha);
 				Job.animate();
 				model = new ofc2Dfast(p2);
 				model.setClength(tsim);
