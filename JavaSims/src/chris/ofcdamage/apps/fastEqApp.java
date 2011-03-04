@@ -12,6 +12,7 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import chris.ofcdamage.ofc2Dfast;
+import chris.util.PrintUtil;
 
 public class fastEqApp extends Simulation{
 
@@ -19,6 +20,7 @@ public class fastEqApp extends Simulation{
 	private ofc2Dfast model;
 	private int eventID;
 	private boolean failed[];
+	private int grts[];
 	private static DecimalFormat fmtEid = new DecimalFormat("00");
 
 	public static void main(String[] args) {
@@ -49,42 +51,57 @@ public class fastEqApp extends Simulation{
 	public void run() {
 		
 		// Setup model
-		eventID = 0;
-		params.set("Status", "Intializing");
-		Job.animate();
-		model = new ofc2Dfast(params);
-		model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params);	
-		failed = new boolean[model.getN()];
-		eqt    = params.iget("Equil Time");
-		simt   = params.iget("Sim Time");
-		params.set("Status", "Ready");
-		Job.animate();
+		double alpha[] = new double[]{0.010000000 ,0.012915497 ,0.016681005 ,0.021544347 ,0.027825594 ,0.035938137 ,0.046415888 ,0.059948425 ,0.077426368 ,0.100000000};
 		
-		// Equilibrate the system
-		for (int jj = 0 ; jj < eqt ; jj++){
-			model.evolve(jj,false);
-			if(jj%500 == 0){
-				params.set("Status", (jj-eqt));
-				Job.animate();
-			}
-		}
-		
-		// Simulate the model without damage
-		for (int jj = 0 ; jj < simt ; jj++){
-			model.evolve(jj,true);
-			if(jj%500 == 0){
-				params.set("Status", jj);
-				Job.animate();
-			}
-		}
+		for (int a = 0; a < 10 ; a++){
+			
+			params.set("Dissipation (\u03B1)", alpha[a]);
+			params.set("Random Seed", params.iget("Random Seed") + 1);
+			eventID = 0;
+			params.set("Status", "Intializing");
+			Job.animate();
+			model = new ofc2Dfast(params);
+			if(a == 0) 
+				model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params,this);	
+			failed = new boolean[model.getN()];
+			eqt    = params.iget("Equil Time");
+			simt   = params.iget("Sim Time");
+			grts   = new int[simt];
+			params.set("Status", "Ready");
+			Job.animate();
 
-		if((simt-1)%ofc2Dfast.dlength != 0) model.writeData(simt);
-		
-//		PrintUtil.printHistToFile(model.getOutdir()+File.separator+"hfail_"+model.getBname()+".txt", model.hfail);
-//		PrintUtil.printHistToFile(model.getOutdir()+File.separator+"hstress_"+model.getBname()+".txt", model.hstrs);
-//		
-		params.set("Status", "Done");
-		Job.animate();
+			// Equilibrate the system
+			for (int jj = 0 ; jj < eqt ; jj++){
+				model.evolve(jj,false);
+				if(jj%500 == 0){
+					params.set("Status", (jj-eqt));
+					Job.animate();
+				}
+			}
+
+			// Simulate the model without damage
+			for (int jj = 0 ; jj < simt ; jj++){
+				//model.evolve(jj,true);
+				model.evolve(jj,false);
+				grts[jj] = model.getGR();
+				if(jj%500 == 0){
+					params.set("Status", jj);
+					Job.animate();
+				}
+			}
+
+			PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_"+fmtEid.format(a)+".txt", "alpha = " + fmtEid.format(alpha[a])+" .");
+			PrintUtil.printVectorToFile(model.getOutdir()+File.separator+model.getBname()+"_"+fmtEid.format(a)+".txt", grts);
+			//if((simt-1)%ofc2Dfast.dlength != 0) model.writeData(simt);
+
+			//		PrintUtil.printHistToFile(model.getOutdir()+File.separator+"hfail_"+model.getBname()+".txt", model.hfail);
+			//		PrintUtil.printHistToFile(model.getOutdir()+File.separator+"hstress_"+model.getBname()+".txt", model.hstrs);
+			//		
+			params.set("Status", "Done");
+			Job.animate();
+			model = null;
+
+		}
 		
 		return;
 	}

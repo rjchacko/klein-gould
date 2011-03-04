@@ -10,7 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 
 import scikit.dataset.Histogram;
-import scikit.jobs.Job;
 import scikit.jobs.params.Parameters;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
@@ -22,7 +21,7 @@ public class ofc2Dfast{
 
 	private double sr0, sf0, a0, dsr, dsf, da;
 	protected double Omega, sr[], sf[], stress[], sbar[], data[][];
-	private int L, R, nbArray[], nbSeed;
+	private int L, R, nbArray[], nbSeed, catalogue[][];
 	protected int N, qN, fs[], GR, index, newindex, Ndead, Nss;
 	private boolean srn, sfn, an;
 	protected boolean failed[], ftt[];
@@ -90,7 +89,7 @@ public class ofc2Dfast{
 		ftt     = new boolean[N];
 		hfail   = new Histogram(1e-4);
 		hstrs   = new Histogram((sf0-sr0)/100.);
-
+			
 		for(int jj = 0 ; jj < N ; jj++){
 			sr[jj]     = srn ? sr0+2*dsr*(getRand().nextDouble()-0.5) : sr0;
 			sf[jj]     = sfn ? sf0+2*dsf*(getRand().nextDouble()-0.5) : sf0;
@@ -114,6 +113,10 @@ public class ofc2Dfast{
 		configOF();
 		
 		return;
+	}
+	
+	public void setClength(int cl){
+		catalogue = new int[3][cl]; 
 	}
 	
 	private void copy_sys(double[] srIN, double[] sfIN, double sIN[], double sbIN[], double dIN[][], int grIN, boolean lsIN[]){
@@ -266,7 +269,8 @@ public class ofc2Dfast{
 				}
 				resetSite(tmpfail);
 			}
-			Job.animate();
+			catalogue[2][mct] = GR;
+//			Job.animate();
 //			// FOR DEBUGGING ONLY
 		}
 		return;
@@ -306,6 +310,49 @@ public class ofc2Dfast{
 				}
 				resetSite(tmpfail);
 			}
+			catalogue[2][mct] = GR;
+//			Job.animate();
+//			// FOR DEBUGGING ONLY
+		}
+		return;
+	}
+	
+	public void evolve(int mct, boolean takedata, double strainrate){
+		// evolve the ofc model starting with a stable configuration
+		// until the next stable configuration is reached.
+		//
+		// mct is the monte carlo time step or the number of forced failures
+		//
+		// takedata specifies whether or not to record data
+		
+		int a,b, tmpfail, tmpnb;
+		double release;
+		
+		// force failure in the zero velocity limit
+		GR = 0;
+		forceVel(mct, takedata, true, strainrate);
+
+		// discharge site and repeat until lattice is stable
+
+		while(newindex > index){
+			a     = index;
+			b     = newindex;
+			index = newindex;
+			for (int jj = a ; jj < b ; jj++){
+				tmpfail = fs[jj];
+				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
+				for(int kk = 0 ; kk < qN ; kk++){
+					tmpnb = getNbr(fs[jj],kk);
+					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
+					stress[tmpnb] += release;
+					if(stress[tmpnb] > sf[tmpnb]){
+						fs[newindex++] = tmpnb;	
+						failSite(tmpnb);
+					}
+				}
+				resetSite(tmpfail);
+			}
+			catalogue[2][mct] = GR;
 //			Job.animate();
 //			// FOR DEBUGGING ONLY
 		}
@@ -371,7 +418,9 @@ public class ofc2Dfast{
 		}
 		
 		fs[newindex++] = jjmax;
-		failSite(jjmax,mct);		
+		failSite(jjmax,mct);	
+		catalogue[0][mct] = jjmax%L;
+		catalogue[1][mct] = (int)(jjmax/L);
 		return;
 	}
 	
@@ -419,9 +468,77 @@ public class ofc2Dfast{
 
 		fs[newindex++] = jjmax;
 		failSite(jjmax,mct);		
+		catalogue[0][mct] = jjmax%L;
+		catalogue[1][mct] = (int)(jjmax/L);
 		return;
 	}
+	
+	protected void forceVel(int mct, boolean takedata, boolean eqmode, double epdot){
+		
+		
+		
+		// force failure with non-zero strain rate given by epdot
+		
+		double tmpbar;
+		int ndt;
+		index = 0;
+		ndt   = 0;
+		newindex = index;
+		
+		if(takedata){
+			tmpbar = 0;
+			Omega  = 0;
+			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
+				hstrs.accum(stress[jj]);
+				// calculate metric (PART 1)
+				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
+				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
+				// sum the sites from last time
+				ndt += MathUtil.bool2bin(ftt[jj]);
+			}
+			tmpbar = tmpbar / (N-Ndead);
+			//tmpbar = tmpbar / N;
+			Omega  = 0;
+			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
+				// add stress to fail site(s)
+				stress[jj] += MathUtil.bool2bin(!failed[jj])*epdot;
+				// did this cause a failure?
+				if(stress[jj] >= sf[jj]){
+					fs[newindex++] = jj;
+					failSite(jj,mct);	
+				}
+				//calculate metric (PART 2)
+				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				// reset ftt
+				ftt[jj] = false;
+			}
+			//calculate metric (PART 3)
+			//Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
+			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N));
 
+			
+			// save and/or write data
+			if(mct%dlength == 0 && mct > 0){
+				writeData(mct);
+			}
+			saveData(mct, eqmode, epdot, ndt);
+		}
+		else{
+			for (int jj = 0 ; jj < N ; jj++){
+				stress[jj] += MathUtil.bool2bin(!failed[jj])*epdot;
+				if(stress[jj] >= sf[jj]){
+					fs[newindex++] = jj;
+					failSite(jj,mct);	
+				}
+			}
+		}
+		return;
+	}
+	
+	
+	
+	
+	
 	protected void failSite(int index, int mct){
 		
 		failSite(index);
@@ -492,6 +609,26 @@ public class ofc2Dfast{
 		catch (IOException ex){
 			ex.printStackTrace();
 		}
+		return;
+	}
+	
+	public void appendCdata(String fn, int tmax){
+		try{
+			File file = new File(fn);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int jj = 0 ; jj < tmax ; jj++){
+				for (int kk = 0 ; kk < 3 ; kk++){
+					pw.print(catalogue[kk][jj]);
+					pw.print("\t");
+				}
+				pw.println();
+			}			
+			pw.close();
+		}
+		catch (IOException ex){
+			ex.printStackTrace();
+		}
+		
 		return;
 	}
 	
@@ -627,6 +764,17 @@ public class ofc2Dfast{
 	public double[] getStress(){
 		
 		return stress;
+	}
+	
+	public void setStress(double[] sIN){
+		
+		if (sIN.length != N)
+			 throw new ArithmeticException("Array index mismatch N !=" + sIN.length);
+		
+		for(int jj = 0 ; jj < N ; jj++){
+			stress[jj] = sIN[jj];
+		}
+		return;
 	}
 	
 	public double getStress(int site){
