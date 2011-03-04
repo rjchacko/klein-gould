@@ -4,14 +4,12 @@ package chris.tests;
 import scikit.jobs.Control;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.Parameters;
-import chris.util.FileDropBox;
 import chris.util.PrintUtil;
 import chris.util.ReadInUtil;
 
 public class TestApp extends Simulation {
 	
 	double t;
-	FileDropBox db;
 
 	public static void main(String[] args) {
 		new Control(new TestApp(), "TestApp").getJob().throttleAnimation(true);
@@ -31,7 +29,7 @@ public class TestApp extends Simulation {
 	public void run() {
 		Parameters p   = new Parameters();
 		ReadInUtil riu = new ReadInUtil("/Users/cserino/Documents/Catalogue/Params_run1.log"); 
-		riu.getOFCparams(p);
+		p = riu.getOFCparams();
 		PrintUtil.printlnToFile("/Users/cserino/Desktop/test.txt", p.toString());
 //		Data Directory =  /Users/cserino/Documents/Catalogue
 //		Data File =  run1
