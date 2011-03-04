@@ -5,7 +5,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.Random;
 
-import ranjit.ising.spinblock.SpinBlocks2D;
+import kang.umbrella.spinblock.SpinBlocks2D;
 import scikit.dataset.Accumulator;
 import scikit.dataset.DataSet;
 import scikit.dataset.DatasetBuffer;

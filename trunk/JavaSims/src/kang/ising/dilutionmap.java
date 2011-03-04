@@ -18,6 +18,7 @@ import scikit.jobs.Simulation;
 import kang.ising.BasicStructure.IsingStructure;
 import kang.ising.BasicStructure.TemperatureField;
 import chris.util.Random;
+import chris.util.PrintUtil;
 
 
 public class dilutionmap extends Simulation{
@@ -36,6 +37,10 @@ public class dilutionmap extends Simulation{
     public int Dseed, Bseed, Sseed;
     public double percent,biaspercent;
     public double NJ;
+    public double correlation;
+    public double errorC;
+    public double Cor[];    // the array for the correlation value
+    
     public int spintemp[];
     public double spintotal[];
     public double spinmap[];
@@ -66,9 +71,9 @@ public class dilutionmap extends Simulation{
 		
 	}
 	
-	public void FluctuationMap(IsingStructure Ising, double T, int steplimit, int copies)
+	public void FluctuationMap(IsingStructure Ising, double T, double H, int steplimit, int copies)
 	{
-		params.set("H",0);
+		params.set("H",H);
 		double fltotal[]= new double[M];
 		for(int k=0;k<M; k++)
 		{
@@ -91,17 +96,17 @@ public class dilutionmap extends Simulation{
 			params.set("copies", c+1);
 			IS=Ising.clone();
 			Random cflip= new Random(c);
-			for(int heat=0; heat<10; heat++)
+			for(int heat=0; heat<11; heat++)
 			{
 				params.set("T",9);     
-				IS.MCS(9, 0, cflip, 1);
+				IS.MCS(9, H, cflip, 1);
 			    params.set("MCS", heat-10);
 	     	    params.set("magnetization", IS.Magnetization());
 		        Job.animate();
 			}
 			for(int prestep=0; prestep<2000; prestep++)
 			{
-				IS.MCS(T, 0, cflip, 1);
+				IS.MCS(T, H, cflip, 1);
 				params.set("MCS",prestep-2000);
 				params.set("magnetization",IS.Magnetization());
 				Job.animate();
@@ -110,7 +115,7 @@ public class dilutionmap extends Simulation{
 			for(int step=0; step<steplimit; step++)
 			{
 				params.set("T",T);
-				IS.MCS(T, 0, cflip, 1);
+				IS.MCS(T, H, cflip, 1);
 				Job.animate();
 				params.set("MCS",step);
 				params.set("magnetization",IS.Magnetization());
@@ -147,7 +152,7 @@ public class dilutionmap extends Simulation{
 		Random flip= new Random(1);
 		for(int af=0; af<1000; af++)
 		{
-			IS.MCS(T, 0, flip, 1);
+			IS.MCS(T, H, flip, 1);
 			Job.animate();
 		}
 		
@@ -196,7 +201,7 @@ public class dilutionmap extends Simulation{
 				spintemp[j]=IS.spin[j];
 			}
 			
-			for(int astep=0; (astep<100)&(Math.abs(mag)<threshold); astep++)
+			for(int astep=0; (astep<50)&(Math.abs(mag)<threshold); astep++)
 			{
 				params.set("T",Tf);
 				IS.MCS(Tf, 0, cflip, 1);
@@ -223,6 +228,9 @@ public class dilutionmap extends Simulation{
 				for(int s=0; s<M; s++)
 					spinmap[s]=newspinmap[s];
 				Job.animate();
+				//correlation=Correlation(Initialising,Initialising.dilutionmap,spinmap);
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/dilutionmap/correlation.txt", Tf , 0 , correlation, steplimit, copies);
+				
 			}
 				
 		}
@@ -432,6 +440,8 @@ public class dilutionmap extends Simulation{
 				for(int s=0; s<M; s++)
 					spinmap[s]=newspinmap[s];
 				Job.animate();
+				//correlation=Correlation(Initialising,Initialising.dilutionmap,spinmap);
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/dilutionmap/correlation.txt", Tf , h , correlation, steplimit, copies);
 			}
 			
 			
@@ -442,6 +452,84 @@ public class dilutionmap extends Simulation{
 
 		
 	}
+	
+	public void SmallfieldTquench(IsingStructure Ising, double Ti, double Tf, double h,double steplimit, int copies)
+	{
+		int limit=(int)steplimit;
+		
+		for(int a=0; a<M; a++)
+		{
+			spintemp[a]=0;
+			spintotal[a]=0;
+		}
+		params.set("H",h);
+		
+		for(int c=0; c<copies; c++)
+		{
+			params.set("copies", c+1);
+			IS=Ising.clone();
+			double mag=0;
+			Random cflip= new Random(c);
+			for(int heat=0; heat<10; heat++)
+			{
+				params.set("T",Ti);     
+				IS.MCS(Ti, h, cflip, 1);
+			    params.set("MCS", heat-10);
+	     	    params.set("magnetization", IS.Magnetization());
+		        Job.animate();
+			}
+			
+			for(int step=0; step<limit; step++)
+			{
+				params.set("T",Tf);
+				IS.MCS(Tf, h, cflip, 1);
+				Job.animate();
+				mag=IS.Magnetization();
+				params.set("MCS",step);
+				params.set("magnetization",mag);
+			}
+			IS.MCS(Tf, h, cflip, steplimit-limit);
+			for(int j=0; j<M; j++)
+			{
+				spintemp[j]=IS.spin[j];
+			}
+			
+			for(int astep=0; (astep<50)&(Math.abs(mag)<threshold); astep++)
+			{
+				params.set("T",Tf);
+				IS.MCS(Tf, h, cflip, 1);
+				Job.animate();
+				mag=IS.Magnetization();
+				params.set("MCS",astep+limit);
+				params.set("magnetization",mag);
+			}
+			
+			if(mag>0)// +1 is the stable direction
+			{
+				for(int l=0; l<M; l++)
+					spintotal[l]+=spintemp[l];
+			}
+			if(mag<0)  //-1 is the stable direction
+			{
+				for(int n=0; n<M; n++)
+					spintotal[n]+=(-spintemp[n]);
+			}
+			
+			if(c==copies-10)
+			{
+				newspinmap=takeoutzeroes(Initialising, spintotal);
+				for(int s=0; s<M; s++)
+					spinmap[s]=newspinmap[s];
+				Job.animate();
+				//correlation=Correlation(Initialising,Initialising.dilutionmap,spinmap);
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/dilutionmap/correlation.txt", Tf , h , correlation, steplimit, copies);
+				
+			}
+				
+		}
+		
+	}
+	
 	
 	public double[] takeoutzeroes(IsingStructure Ising, double map[])
 	{
@@ -465,6 +553,104 @@ public class dilutionmap extends Simulation{
 		
 	}
 
+	public double Correlation(IsingStructure Ising, double map1[], double map2[])
+	{
+		double c=0;
+		double total1=0;
+		double total2=0;
+		double totalc=0;
+		double fl1=0;
+		double fl2=0;
+		for(int j=0; j<Ising.M; j++)
+		{
+			if(Ising.spin[j]!=0)
+			{
+				total1+=map1[j];
+				total2+=map2[j];
+			}
+		}
+		double avg1=total1/(Ising.M-Ising.deadsites);
+		double avg2=total2/(Ising.M-Ising.deadsites);
+		for(int i=0; i<Ising.M; i++)
+		{
+			if(Ising.spin[i]!=0)
+			{
+				totalc+=(map1[i]-avg1)*(map2[i]-avg2);
+				fl1+=(map1[i]-avg1)*(map1[i]-avg1);
+				fl2+=(map2[i]-avg2)*(map2[i]-avg2);
+			}
+		}
+		c=totalc/((Ising.M-Ising.deadsites)*(Math.sqrt(fl1*fl2)));
+		
+		return c;
+	}
+	
+	public double average(double data[], int size)
+	{
+		double total=0;
+		for(int j=0;j<size;j++)
+			total+=data[j];
+		return total/size;
+	}
+	
+	public double errorbar(double data[], int size)
+	{
+		double error=0;
+		double total=0;
+		double total2=0;
+		for(int j=0; j<size; j++)
+		{
+			total+=data[j];
+			total2+=((data[j])*(data[j]));
+		}
+		error=Math.sqrt((total2/size)-(total/size)*(total/size));
+		return error;
+		
+	}
+	
+	public void CalculateCor(IsingStructure Ising, double MinH, double MaxH, double dH, double smallH, int runs, double Ti, double Tf, double steplimit, int copies)
+	{
+		Cor=new double [runs];
+
+		for(double h=MinH; h<=MaxH; h+=dH)
+		{
+			for(int z=0; z<runs; z++)
+				Cor[z]=0;
+			
+			if(h==0)
+			{
+				for(int rr=0; rr<runs; rr++)
+				{
+					params.set("runs", rr+1);
+					CriticalTquench(Ising, Ti, Tf, steplimit, copies);
+					Cor[rr]=Correlation(Initialising,Initialising.dilutionmap,spinmap);	
+				}
+			}
+			else if(h<=smallH)
+			{
+				for(int rr=0; rr<runs; rr++)
+				{
+					params.set("runs", rr+1);
+					SmallfieldTquench(Ising, Ti, Tf,h, steplimit, copies);
+					Cor[rr]=Correlation(Initialising,Initialising.dilutionmap,spinmap);	
+				}
+			}
+			if(h>smallH)
+			{
+				for(int rr=0; rr<runs; rr++)
+				{
+					params.set("runs", rr+1);
+					OffCriticalTquench(Ising, Ti, Tf, h, steplimit, copies);
+					Cor[rr]=Correlation(Initialising,Initialising.dilutionmap,spinmap);	
+				}
+			}
+		correlation=average(Cor,runs);	
+		errorC=errorbar(Cor,runs);
+		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/dilutionmap/correlation.txt", Tf , h , correlation, errorC, steplimit, copies, runs);
+		}
+		
+		
+	}
 	
 	public void animate()
 	{
@@ -501,6 +687,8 @@ public class dilutionmap extends Simulation{
 		grid3.clear();
 		grid4.clear();
 		grid5.clear();
+		grid6.clear();
+		
 	}
 	
 	public static void main (String[] dilutionmap){
@@ -528,6 +716,7 @@ public class dilutionmap extends Simulation{
 		params.add("threshold", 0.5);
 		
 		params.add("MCS");
+		params.add("runs");
 		params.add("copies");
 		params.add("magnetization");
 	}
@@ -564,20 +753,21 @@ public class dilutionmap extends Simulation{
 	    IS= Initialising.clone();
 	    TF= new TemperatureField(IS);
 	    Job.animate();
-	    FluctuationMap(Initialising, 4, 10000, 5);
+	    
+	    
+	    //FluctuationMap(Initialising, 2, 0, 10000, 1);
 
 	    
 	    
 	    double estep=0;
 	    estep=1;
-	    //TCriticalTquench(Initialising, 9, 0.5, estep, 30010);
-	    
-	    //OffCriticalTquench(Initialising, 9, 0.5, 0.1, estep, 100010);
+
+	    CalculateCor(Initialising, 0, 0.3, 0.002, 0.15, 20, 9, 0.5, estep, 1010);
 	    
 	    //movie(grid2, 0000,0000);
 	    //movie(grid3, 3333,(int)(estep*1000));
 	    //movie(grid4, 4444,(int)(estep*1000));
-	    movie(grid6, 6666,6666);
+	    //movie(grid6, 6666,6666);
 
 	    
 
