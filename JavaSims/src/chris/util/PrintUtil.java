@@ -563,5 +563,18 @@ public class PrintUtil {
 		
 	}
 	
+	static public void overwriteFile(String fileName, double[] vec){
+		int Length = vec.length;
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, false), true);
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.println(vec[ii]);
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
 	
 }
