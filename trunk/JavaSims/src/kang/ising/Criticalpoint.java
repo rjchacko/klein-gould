@@ -325,9 +325,9 @@ public class Criticalpoint extends Simulation
 	    //findTcviaX(IS,3.55,3.65,0.01);
         
 	    T=params.fget("T");
-	    scanHs(IS,0,1.08,0.01);
-	    //startH=0.87;
-	    findHs(IS,startH-0.4,startH,0.01);
+	    scanHs(IS,0,1.10,0.001);
+	    //startH=1.08;
+	    findHs(IS,startH-0.4,startH,0.001);
       
         
 	    
