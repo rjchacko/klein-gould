@@ -46,6 +46,10 @@ public class dilutionmap extends Simulation{
     public double spinmap[];
     public double newspinmap[];
     
+    public double RSDmap[];
+    public double RSSmap[];
+    
+    
 	public IsingStructure Initialising;
 	public IsingStructure IS;
 	public IsingStructure FL;  //isingstructure for the fluctuation
@@ -160,7 +164,7 @@ public class dilutionmap extends Simulation{
 		
 	}
 	
-	public void CriticalTquench(IsingStructure Ising, double Ti, double Tf, double steplimit, int copies)
+	public void CriticalTquench(IsingStructure Ising, double Ti, double Tf, double steplimit, int copies, int seed)
 	{
 		int limit=(int)steplimit;
 		
@@ -176,7 +180,7 @@ public class dilutionmap extends Simulation{
 			params.set("copies", c+1);
 			IS=Ising.clone();
 			double mag=0;
-			Random cflip= new Random(c);
+			Random cflip= new Random(c+100*seed);
 			for(int heat=0; heat<10; heat++)
 			{
 				params.set("T",Ti);     
@@ -389,7 +393,7 @@ public class dilutionmap extends Simulation{
 	}
 
 	
-	public void OffCriticalTquench(IsingStructure Ising, double Ti, double Tf, double h,double steplimit, int copies)
+	public void OffCriticalTquench(IsingStructure Ising, double Ti, double Tf, double h,double steplimit, int copies, int seed)
 	{
 		int limit=(int)steplimit;
 		
@@ -405,7 +409,7 @@ public class dilutionmap extends Simulation{
 			params.set("copies", c+1);
 			IS=Ising.clone();
 			double mag=0;
-			Random cflip= new Random(c);
+			Random cflip= new Random(c+100*seed);
 			for(int heat=0; heat<10; heat++)
 			{
 				params.set("T",Ti);     
@@ -453,7 +457,7 @@ public class dilutionmap extends Simulation{
 		
 	}
 	
-	public void SmallfieldTquench(IsingStructure Ising, double Ti, double Tf, double h,double steplimit, int copies)
+	public void SmallfieldTquench(IsingStructure Ising, double Ti, double Tf, double h,double steplimit, int copies, int seed)
 	{
 		int limit=(int)steplimit;
 		
@@ -469,7 +473,7 @@ public class dilutionmap extends Simulation{
 			params.set("copies", c+1);
 			IS=Ising.clone();
 			double mag=0;
-			Random cflip= new Random(c);
+			Random cflip= new Random(c+100*seed);
 			for(int heat=0; heat<10; heat++)
 			{
 				params.set("T",Ti);     
@@ -580,7 +584,7 @@ public class dilutionmap extends Simulation{
 				fl2+=(map2[i]-avg2)*(map2[i]-avg2);
 			}
 		}
-		c=totalc/((Ising.M-Ising.deadsites)*(Math.sqrt(fl1*fl2)));
+		c=totalc/(Math.sqrt(fl1*fl2));
 		
 		return c;
 	}
@@ -608,6 +612,42 @@ public class dilutionmap extends Simulation{
 		
 	}
 	
+	public double MIN(double data[], int size)
+	{
+		double min=data[0];
+		for(int j=0; j<size; j++)
+		{
+			if(data[j]<=min)
+				min=data[j];
+		}
+		
+		return min;
+	}
+	
+	public double MAX(double data[], int size)
+	{
+		double max=data[0];
+		for(int j=0; j<size; j++)
+		{
+			if(data[j]>=max)
+				max=data[j];
+		}
+		
+		return max;
+	}
+	
+	public double[] Rescale(double data[], int size)  // the function to rescale a double map data[] to be within range 0~1
+	{
+		double newdata[]= new double [size];
+		double min=MIN(data, size);
+		double max=MAX(data, size);
+		for(int j=0; j<size; j++)
+		{
+			newdata[j]=(data[j]-min)/(max-min);
+		}
+		return newdata;
+	}
+	
 	public void CalculateCor(IsingStructure Ising, double MinH, double MaxH, double dH, double smallH, int runs, double Ti, double Tf, double steplimit, int copies)
 	{
 		Cor=new double [runs];
@@ -622,8 +662,10 @@ public class dilutionmap extends Simulation{
 				for(int rr=0; rr<runs; rr++)
 				{
 					params.set("runs", rr+1);
-					CriticalTquench(Ising, Ti, Tf, steplimit, copies);
-					Cor[rr]=Correlation(Initialising,Initialising.dilutionmap,spinmap);	
+					CriticalTquench(Ising, Ti, Tf, steplimit, copies, rr+1);
+					RSSmap=Rescale(spinmap,Ising.M);
+					Cor[rr]=Correlation(Initialising,RSDmap,RSSmap);	
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/dilutionmap/check.txt", Tf , h , Cor[rr], copies, rr);
 				}
 			}
 			else if(h<=smallH)
@@ -631,8 +673,10 @@ public class dilutionmap extends Simulation{
 				for(int rr=0; rr<runs; rr++)
 				{
 					params.set("runs", rr+1);
-					SmallfieldTquench(Ising, Ti, Tf,h, steplimit, copies);
-					Cor[rr]=Correlation(Initialising,Initialising.dilutionmap,spinmap);	
+					SmallfieldTquench(Ising, Ti, Tf,h, steplimit, copies, rr+1);
+					RSSmap=Rescale(spinmap,Ising.M);
+					Cor[rr]=Correlation(Initialising,RSDmap,RSSmap);
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/dilutionmap/check.txt", Tf , h , Cor[rr], copies, rr);
 				}
 			}
 			if(h>smallH)
@@ -640,8 +684,10 @@ public class dilutionmap extends Simulation{
 				for(int rr=0; rr<runs; rr++)
 				{
 					params.set("runs", rr+1);
-					OffCriticalTquench(Ising, Ti, Tf, h, steplimit, copies);
-					Cor[rr]=Correlation(Initialising,Initialising.dilutionmap,spinmap);	
+					OffCriticalTquench(Ising, Ti, Tf, h, steplimit, copies, rr+1);
+					RSSmap=Rescale(spinmap,Ising.M);
+					Cor[rr]=Correlation(Initialising,RSDmap,RSSmap);
+					PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/dilutionmap/check.txt", Tf , h , Cor[rr], copies, rr);
 				}
 			}
 		correlation=average(Cor,runs);	
@@ -739,6 +785,8 @@ public class dilutionmap extends Simulation{
 		spinmap= new double[M];
 		newspinmap=new double[M];
 		fluctuation=new double[M];
+		RSDmap= new double [M];   //rescaled dilution map
+		RSSmap= new double [M];   //rescaled spin map
 		
 		
 		Dseed = 1;
@@ -750,6 +798,7 @@ public class dilutionmap extends Simulation{
 	    params.set("deadsites",Initialising.deadsites);
 	    Initialising.Sinitialization(0, Sseed);
 	    Initialising.dilutionmap(R);
+	    RSDmap=Rescale(Initialising.dilutionmap, M);
 	    IS= Initialising.clone();
 	    TF= new TemperatureField(IS);
 	    Job.animate();
@@ -762,7 +811,7 @@ public class dilutionmap extends Simulation{
 	    double estep=0;
 	    estep=1;
 
-	    CalculateCor(Initialising, 0, 0.3, 0.002, 0.15, 20, 9, 0.5, estep, 1010);
+	    CalculateCor(Initialising, 0, 0.3, 0.002, 0.15, 10, 9, 0.5, estep, 10010);
 	    
 	    //movie(grid2, 0000,0000);
 	    //movie(grid3, 3333,(int)(estep*1000));
