@@ -811,12 +811,12 @@ public class dilutionmap extends Simulation{
 	    double estep=0;
 	    estep=1;
 
-	    CalculateCor(Initialising, 0, 0.3, 0.002, 0.15, 10, 9, 0.5, estep, 10010);
+	    CalculateCor(Initialising, 0.15, 0.15, 0.002, 0.1, 1, 9, 0.5, estep, 10010);
 	    
-	    //movie(grid2, 0000,0000);
-	    //movie(grid3, 3333,(int)(estep*1000));
-	    //movie(grid4, 4444,(int)(estep*1000));
-	    //movie(grid6, 6666,6666);
+	    movie(grid2, 0000,0000);
+	    movie(grid3, 3333,(int)(estep*1000));
+	    movie(grid4, 4444,(int)(estep*1000));
+	    movie(grid6, 6666,6666);
 
 	    
 
