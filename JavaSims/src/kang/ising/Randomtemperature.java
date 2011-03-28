@@ -109,9 +109,9 @@ public class Randomtemperature extends Simulation
 			params.set("copies",r+1);
 			double m=Istemp.Magnetization();
 			
-			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/run#"+fmt.format(r+1)+".txt","T=    ",(double)T );
-			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/run#"+fmt.format(r+1)+".txt","dt=    ",(double)dt );
-		    PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/run#"+fmt.format(r+1)+".txt","initialm=    ",(double)m );
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/noise1/run#"+fmt.format(r+1)+".txt","T=    ",(double)T );
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/noise1/run#"+fmt.format(r+1)+".txt","dt=    ",(double)dt );
+		    PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/noise1/run#"+fmt.format(r+1)+".txt","initialm=    ",(double)m );
 			
 		    for(int step=0; step<steplimit; step++)
 			{
@@ -127,7 +127,49 @@ public class Randomtemperature extends Simulation
 				params.set("magnetization", m);
 				params.set("T",t);
 				
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/run#"+fmt.format(r+1)+".txt", step ,(double)m, (double)t);
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/noise1/run#"+fmt.format(r+1)+".txt", step ,(double)m, (double)t);
+			}
+			
+		}
+	}
+	
+	public void EvolutionwithNoise2(MeanFieldIsingStructure ising, double T, double dt, int copies, int steplimit)
+	{
+		//double Mevolution[][]=new double[copies][steplimit+1];
+		//double RandomT[][]=new double[copies][steplimit+1];
+		
+		for(int r=0; r<copies; r++)
+		{
+			Tseed=r+1;
+			Random Trand=new Random (Tseed);
+			Random Srand=new Random (Tseed);
+			Istemp=ising.clone();
+			params.set("copies",r+1);
+			double m=Istemp.Magnetization();
+			
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/noise2/run#"+fmt.format(r+1)+".txt","T=    ",(double)T );
+			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/noise2/run#"+fmt.format(r+1)+".txt","dt=    ",(double)dt );
+		    PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/noise2/run#"+fmt.format(r+1)+".txt","initialm=    ",(double)m );
+			
+		    for(int step=0; step<steplimit; step++)
+			{
+		    	double t=0;
+				if(Trand.nextDouble()>=0.5)
+					t=T+dt/2;
+				else
+					t=T-dt/2;
+				Istemp.MCS(t, 0, Srand, 1);
+				m=Istemp.Magnetization();
+				//Mevolution[r][step]=m;
+				//RandomT[r][step]=t;
+				
+				Job.animate();
+				
+				params.set("MCS", step+1);
+				params.set("magnetization", m);
+				params.set("T",t);
+				
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/RandomT/noise2/run#"+fmt.format(r+1)+".txt", step ,(double)m, (double)t);
 			}
 			
 		}
@@ -166,8 +208,8 @@ public class Randomtemperature extends Simulation
 		Randomtemperature.frame (grid1);
 		Randomtemperature.frame (grid2);
 
-		params.add("L1", 1200);
-		params.add("L2", 1200);
+		params.add("L1", 800);
+		params.add("L2", 800);
 		params.add("NJ",-4.0);	
 
 		params.add("Sseed",1);
@@ -211,8 +253,8 @@ public class Randomtemperature extends Simulation
 	    Heatup(MFIS, 100, flip);
 	    
 
-	    EvolutionwithNoise(MFIS, 3.9, 0, 20, 1000);
-	    
+	    //EvolutionwithNoise(MFIS, 3.9, 0.6, 20, 1000);
+	    EvolutionwithNoise2(MFIS, 3.9, 0.6, 20, 1000);
 	    
 	    Job.animate();
 
