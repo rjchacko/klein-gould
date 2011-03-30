@@ -208,8 +208,8 @@ public class Randomtemperature extends Simulation
 		Randomtemperature.frame (grid1);
 		Randomtemperature.frame (grid2);
 
-		params.add("L1", 800);
-		params.add("L2", 800);
+		params.add("L1", 1600);
+		params.add("L2", 1600);
 		params.add("NJ",-4.0);	
 
 		params.add("Sseed",1);
@@ -253,9 +253,10 @@ public class Randomtemperature extends Simulation
 	    Heatup(MFIS, 100, flip);
 	    
 
-	    //EvolutionwithNoise(MFIS, 3.9, 0.6, 20, 1000);
-	    EvolutionwithNoise2(MFIS, 3.9, 0.6, 20, 1000);
+	    EvolutionwithNoise(MFIS, 3.9, 0.2, 20, 1000);
+	    //EvolutionwithNoise2(MFIS, 3.9, 0.2, 20, 1000);
 	    
+//	    if(mct%1e3 == 0)
 	    Job.animate();
 
     
