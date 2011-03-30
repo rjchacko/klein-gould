@@ -71,7 +71,9 @@ public class TRS extends InteractingSystem {
 		
 		// for now, pick T-S transition 
 		A0 = 0.024;
-		A2 = 0.02; //(A2 < Ac2)
+		//A2 = 0.03; //(A2 > Ac2) stable phase is triangle
+			       // quench to A2 = 0.013 < Ac2 (square is stable)
+		A2 = 0.013;
 		return;
 	}
 
@@ -158,6 +160,18 @@ public class TRS extends InteractingSystem {
 	public double F3(double r) {
 		
 		return 2*V3(r)*(1./(r-sgm3) + 1./(r-dlt3));
+	}
+	
+	public void quenchA0(double A0){
+
+		this.A0 = A0;
+		return;
+	}
+	
+	public void quenchA2(double A2){
+
+		this.A2 = A2;
+		return;
 	}
 	
 //	 /**

@@ -350,7 +350,7 @@ public abstract class InteractingSystem {
 		case READ_IN:
 			
 			ReadInUtil ri = new ReadInUtil("/Users/cserino/Documents/BU/Research/MD/IC.txt");
-			double ic[][] = new double[4][ri.countTo(2,"-------- Parameters --------")]; 
+			double ic[][] = new double[4][ri.countTo(2,"/Users/cserino/Desktop/ising1/")]; 
 			ri.getDataandParams(new int[]{2,3,4,5}, 2, ic, "-------- Parameters --------", params);
 			
 			N     = params.iget("N");
@@ -438,51 +438,50 @@ public abstract class InteractingSystem {
 		break;
 		
 		case DEBUG:
-			double pcmX2, pcmY2;//, KE02; 
-			int Nx2, Ny2;
+			
+			//1.272596758935476
+			
+			double pcmX2, pcmY2, KE02;
+			double RR2   = params.fget("R"); 
+			double sqrt3 = Math.sqrt(3);
+			double s     = 1.272596758935476;
 
-			double RR2 = params.fget("R"); 
-
-			if(Lx == Ly){
-				Nx2 = (int)(Math.sqrt(N));
-				if(Nx2*Nx2 != N)
-					Nx2++;		
-				Ny2 = Nx2;
-			}
-			else{
-				Nx2 = (int)(Math.sqrt((double)(Lx)*N/Ly));
-				Ny2 = (int)(Math.floor(N/Nx2));
-				Ny2 += N - Nx2*Ny2;
-			}
-
-			pcmX2  = 0;
-			pcmY2  = 0;
-//			KE02   = 0;
+			pcmX2 = 0;
+			pcmY2 = 0;
+			KE02  = 0;
 			phase = new particle[N];
 			accel = new vector2d[N]; 
-			
-			for(int jj = 0 ; jj < N ; jj++){
-				phase[jj] = new particle();
-				phase[jj].q     = 0;
-				phase[jj].s     = RR2;
-				phase[jj].color = Color.red;
-				phase[jj].r.x   = Lx/3.+1.7*jj;
-				phase[jj].r.y   = Ly/2.;
-				phase[jj].v.x   = 0.;
-				pcmX2           += phase[jj].v.x;
-				phase[jj].v.y   = 0.;
-				pcmY2		    += phase[jj].v.y;
+
+			// build a perfect honeycomb of side s
+			int foo = (int)Math.sqrt(N);
+			for (int jj = 0 ; jj < foo ; jj++){
+				for (int kk = 0 ; kk < foo ; kk++){
+					phase[jj*foo+kk]       = new particle();
+					phase[jj*foo+kk].q     = 0;
+					phase[jj*foo+kk].s     = RR2;
+					phase[jj*foo+kk].color = Color.red;
+					phase[jj*foo+kk].r.x   = (jj+(kk%2)/2.)*s;
+					phase[jj*foo+kk].r.y   = kk*(sqrt3*s)/2.;
+					phase[jj*foo+kk].v.x   = 0.5-rand.nextDouble();
+					pcmX2                  += phase[jj*foo+kk].v.x;
+					phase[jj*foo+kk].v.y   = 0.5-rand.nextDouble();
+					pcmY2                  += phase[jj*foo+kk].v.y;
+				}
 			}
-//			vector2d pcm2 = new vector2d(pcmX2/N, pcmY2/N);
-//			for(int jj = 0 ; jj < N ; jj++){
-//				phase[jj].v.sub(pcm2);;
-//				KE02 += 0.5*phase[jj].v.length2();
-//			}
-//			double rescale2 = Math.sqrt((N*Tw)/(KE02));
-//			for(int jj = 0 ; jj < N ; jj++){
-//				phase[jj].v.scale(rescale2);
-//			}
+
+			vector2d pcm2 = new vector2d(pcmX2/N, pcmY2/N);
+			for(int jj = 0 ; jj < N ; jj++){
+				phase[jj].v.sub(pcm2);
+				KE02 += 0.5*phase[jj].v.length2();
+			}
+
+			double rescale2 = Math.sqrt((N*Tw)/(KE02));
+			for(int jj = 0 ; jj < N ; jj++){
+				phase[jj].v.scale(rescale2);
+			}
+
 			printPhase("/Users/cserino/Desktop/debug_IC.txt",params);
+			
 		break;
 			
 		case VISCOUS:
