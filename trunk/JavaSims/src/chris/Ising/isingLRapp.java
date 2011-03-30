@@ -12,6 +12,7 @@ import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import chris.util.DirUtil;
 import chris.util.PrintUtil;
 
 import kip.ising.dim2.IsingLR;
@@ -99,6 +100,7 @@ public class isingLRapp extends Simulation{
 
 
 			if(pparams){
+				DirUtil.MkDir("/Users/cserino/Desktop/ising1/");
 				PrintUtil.printlnToFile("/Users/cserino/Desktop/ising1/Params.log",params.toString());
 				PrintUtil.printlnToFile("/Users/cserino/Desktop/ising1/Params.log", sim.getClass().getName());
 				DateFormat dateFormat = new SimpleDateFormat("yyyy/MM/dd HH:mm:ss");
