@@ -51,15 +51,16 @@ public class startCatalogueApp extends Simulation{
 				model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".log",params,model);	
 			params.set("Status", "Ready");
 			Job.animate();
+			model.setClength(1);
 			for (int tt = 0; tt < teq; tt++){
-				model.evolve(tt,false);
+				model.evolve(0,false);
 				if(tt%1000 == 0){
 					params.set("Status", (tt-teq));
 					Job.animate();
 				}
 			}
 			
-			PrintUtil.printVectorToFile(model.getOutdir()+File.separator+model.getBname()+"_Stress_"+100*alpha+".txt",model.getStress());
+			PrintUtil.printVectorToFile(model.getOutdir()+File.separator+model.getBname()+"_Stress_"+(int)(100*alpha)+".txt",model.getStress());
 			params.set("Random Seed", params.iget("Random Seed")+1);
 		}
 

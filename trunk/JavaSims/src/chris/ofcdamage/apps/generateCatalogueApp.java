@@ -33,7 +33,7 @@ public class generateCatalogueApp extends Simulation{
 //		params.add("Lattice Size");
 //		params.add("Boundary Condtions");
 //		params.add("Equil Time");
-		params.add("Sim Time", (int)(1e6));
+		params.add("Sim Time", (int)(5e5));
 //		params.add("Failure Stress (\u03C3_f)");
 //		params.add("\u03C3_f width");
 //		params.add("Residual Stress (\u03C3_r)");
@@ -54,7 +54,7 @@ public class generateCatalogueApp extends Simulation{
 		p2             = riu.getOFCparams();
 		double[] av    = new double[]{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
 		riu            = null;
-		
+		int cycle      = 18; // offset for existing catalog
 		while(true){
 			for(double alpha : av){
 				params.set("Status", "Intializing");
@@ -83,19 +83,21 @@ public class generateCatalogueApp extends Simulation{
 				PrintUtil.overwriteFile(model.getOutdir()+File.separator+model.getBname()+"_Stress_"+(int)(100*alpha)+".txt",model.getStress());
 				
 				// print summary of events in log file
-				editLogFile(tsim, alpha);
+				editLogFile(tsim, alpha, cycle);
 				
 				// update seed
 				p2.set("Random Seed", p2.iget("Random Seed")+1);
 			}
+			cycle++;
 		}
 	}
 	
-	private void editLogFile(int tsim, double alpha){
+	private void editLogFile(int tsim, double alpha, int cycle){
 
 		DateFormat dateFormat = new SimpleDateFormat("dd MM yyyy HH:mm:ss");
         Date date = new Date();	
-		PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_Catalogue.log","Added "+tsim+" events to the alpha = "+alpha+" catalogue on"+dateFormat.format(date));
+		PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_Catalogue.log","Added "+tsim+" events to the alpha = "+alpha+" catalogue on "+dateFormat.format(date));
+		PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_Catalogue.log","Catalogue for alpha = "+alpha+" now contains "+cycle*tsim+" events.");
 		return;
 	}
 	
