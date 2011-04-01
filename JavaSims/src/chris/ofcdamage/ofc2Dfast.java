@@ -276,6 +276,7 @@ public class ofc2Dfast{
 		return;
 	}
 	
+	
 	public void evolve(int mct, boolean[] ss){
 		// evolve the ofc model starting with a stable configuration
 		// until the next stable configuration is reached.
