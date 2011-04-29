@@ -89,7 +89,7 @@ public class AlphaDistribution {
 			}	
 		}else if(alphaDistribution=="ManyGaussians"){
 			System.out.println("many Gaussians");
-			int dx = 16;
+			int dx = 32;
 			int Lp = L/dx;
 			int Np = Lp*Lp;
 			boolean [] blockSet = new boolean [Np];
@@ -295,6 +295,22 @@ public class AlphaDistribution {
 		}
 	}
 
+	static void setPowerBlock(double center, int block, int dx, int noInts, double xvalue){
+	    //need to write this!
+		int Lp = L/dx;
+		int xp = block%Lp;
+		int yp = block/Lp;
+		double intervalWidth = 1.0/noInts;
+		for (int y = yp*dx; y < yp*dx+dx; y++){
+			for (int x = xp*dx; x < xp*dx + dx; x++){
+				int site = y*L+x; 
+				double rand = random.nextDouble()*intervalWidth;
+
+				alpha[site] = rand+center-intervalWidth/2.0;
+			}
+		}
+	}
+	
 	static int getFirstBlockSite(int blockNo, int ip){
 		int dx = (int)Math.pow(2, ip);
 		int Lp = L/dx;
