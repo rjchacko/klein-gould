@@ -3,6 +3,7 @@ package rachele.damage2D.multidx;
 import kip.util.Random;
 import rachele.util.FileUtil;
 import rachele.util.MathTools;
+import scikit.dataset.Histogram;
 
 public class Damage {
 
@@ -19,6 +20,7 @@ public class Damage {
 	int [] noNborsForSite;
 	int [][]nborList;
 	double [] fracDeadNbors;
+	public static Histogram damageHist= new Histogram(1);
 	
 	public Damage(int power, int range, int randomSeed, String fileName) {
 		pow=power;
@@ -92,7 +94,7 @@ public class Damage {
 
 	private static void setCascadeRandom(double p, int d) {
 		System.out.println("Setting Cascade Random Damage");
-		int maxPow = pow-2;
+		int maxPow = pow-3;
 		for (int i = 0; i < N; i++) setLattice[i] = false;
 
 		double blockP=.25;
@@ -184,7 +186,7 @@ public class Damage {
 	
 	static void setCascadeDamage(double p){
 //		System.out.println("Setting Cascading Damage");
-		int maxPow = pow-2;
+		int maxPow = pow-3;
 		//largest lattice size is 8 x 8
 
 		for (int ip = maxPow; ip >= 0; ip--){
@@ -193,11 +195,14 @@ public class Damage {
 			int Np = Lp*Lp;
 			System.out.println("dx = " + dx + " Lp = " + Lp);	
 			for (int i = 0; i < Np; i++){
-				double pr = p*Math.pow(Math.E,(-Math.pow(dx-R,2)/100));
+				double pr = p;
+//				double pr = p*Math.pow(Math.E,(-Math.pow(dx-R,2)/100));
 				// kill alive blocks with probability p
 				if(liveBlockTest(i, ip)){
-					if (random.nextDouble()<pr) 
+					if (random.nextDouble()<pr) {
 						killBlock(dx, i);
+						damageHist.accum(dx, dx*dx);
+					}
 				}
 			}
 				

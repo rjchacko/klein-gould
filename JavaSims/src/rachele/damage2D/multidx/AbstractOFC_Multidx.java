@@ -21,7 +21,7 @@ public class AbstractOFC_Multidx {
 	public int [] epicenterCount;
 	public double [] stress;
 	double [] alpha;			// dissipation paramater, aka alpha	
-	Random random = new Random();
+	protected Random random = new Random();
 	
 	public int findCG_site(int s, int blockSize){
 		int x = s % L;
