@@ -31,6 +31,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 	
 	String sizeHistFile;
 	String alphaHistFile;
+	String damageHistFile;
 	String sizeFile;
 	String infoFile;
 	String avDataFile;
@@ -97,7 +98,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		params.addm("Dead Parameter", 150);
 		params.addm("Number Dead", 1024);
 		params.addm("Coarse Grained dt (PU)", 1);
-		params.addm("Equilibration Updates", 100);
+		params.addm("Equilibration Updates", 10000);
 		params.addm("Max PU",1000000);
 		params.addm("Data points per write", 10000);
 		params.addm("Residual Stress", 0.625);
@@ -124,11 +125,19 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 
 	
 	public void run() {
+
 		infoFile = params.sget("Data Dir") + File.separator + "info.txt";
 		String alphaHistFile = params.sget("Data Dir") + File.separator + "ah.txt";
+		String damageHistFile = params.sget("Data Dir") + File.separator + "dh.txt";
 		ofc = new FrozenDamageLattice(params, infoFile);
+		ofc.ad.alphaHist.clear();
+		ofc.dl.damageHist.clear();
 		ofc.initLattice(params);
+
 		FileUtil.initFile(alphaHistFile, params);
+		FileUtil.printHistToFile(alphaHistFile, ofc.ad.alphaHist);
+		FileUtil.initFile(damageHistFile, params);
+		FileUtil.printHistToFile(damageHistFile, ofc.dl.damageHist);
 		alphaAcc.enableErrorBars(true);
 		cmSeedDist.enableErrorBars(true);
 //		trackSite = 6165;
