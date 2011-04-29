@@ -56,7 +56,7 @@ public class FrozenDamageIterConnectParam extends Simulation{
 	
 	
 	public static void main(String[] args) {
-		new Control(new FrozenDamageIterConnectParam(), "OFC Damage Model Scaling Only");
+		new Control(new FrozenDamageIterConnectParam(), "OFC Connection Param Calculator");
 	}
 
 	public void load(Control c) {
