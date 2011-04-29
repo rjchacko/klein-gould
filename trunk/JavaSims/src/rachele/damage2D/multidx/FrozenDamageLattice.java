@@ -10,7 +10,9 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 
 	public boolean [] aliveLattice;  // No of failures at each site: once a site is dead -> = -1;
 	public int [] epicenterSize;
-	public int [] failedSites;
+//	public int [] failedSites;
+	public int [] failedSitesList;
+	public int failIndex;
 	public double alphaDissRate;
 	public double deadDissRate;
 	public double alphaDiss;
@@ -89,6 +91,9 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 //		aveSizeAct = 
 		alpha = new double [N];
 		cParam = new double [N];
+		failedSitesList = new int [N];
+		for(int i = 0; i<N; i++)
+			failedSitesList[i] = -1;
 	}
 	
 	public void initLattice(Parameters params){
@@ -366,14 +371,19 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 	}
 	
 	public void ofcStep(){
-		failedSites = new int [N];
+//		failedSites = new int [N];
+		failIndex = 0;
 		bringToFailure();
 		dt=1;
-		failedSites[epicenterSite]+=1;
+		failedSitesList[failIndex]=epicenterSite;
+		failIndex+=1;
+//		failedSites[epicenterSite]+=1;
 		fail(epicenterSite);
 		int nextSiteToFail = checkFail();
 		while(nextSiteToFail >= 0){
-			failedSites[nextSiteToFail]+=1;
+//			failedSites[nextSiteToFail]+=1;
+			failedSitesList[failIndex]=nextSiteToFail;
+			failIndex+=1;
 			fail(nextSiteToFail);
 			nextSiteToFail = checkFail();
 			avSize += 1;
@@ -383,6 +393,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 				FileUtil.printlnToFile(infoFileName, "Av Size = " , avSize);
 			}
 		}
+		
 
 		epicenterSizeAccum();
 		cg_time += dt;
