@@ -19,9 +19,9 @@ import chris.util.SortUtil;
 
 public class ofc2Dfast{
 
-	private double sr0, sf0, a0, dsr, dsf, da;
+	private double sr0, sf0, a0, dsr, dsf, da, catalogue[][];
 	protected double Omega, sr[], sf[], stress[], sbar[], data[][];
-	private int L, R, nbArray[], nbSeed, catalogue[][];
+	private int L, R, nbArray[], nbSeed;
 	protected int N, qN, fs[], GR, index, newindex, Ndead, Nss;
 	private boolean srn, sfn, an;
 	protected boolean failed[], ftt[];
@@ -116,7 +116,7 @@ public class ofc2Dfast{
 	}
 	
 	public void setClength(int cl){
-		catalogue = new int[3][cl]; 
+		catalogue = new double[4][cl]; 
 	}
 	
 	private void copy_sys(double[] srIN, double[] sfIN, double sIN[], double sbIN[], double dIN[][], int grIN, boolean lsIN[]){
@@ -269,7 +269,8 @@ public class ofc2Dfast{
 				}
 				resetSite(tmpfail);
 			}
-			catalogue[2][mct] = GR;
+			catalogue[3][mct] = GR;
+			
 //			Job.animate();
 //			// FOR DEBUGGING ONLY
 		}
@@ -311,7 +312,7 @@ public class ofc2Dfast{
 				}
 				resetSite(tmpfail);
 			}
-			catalogue[2][mct] = GR;
+			catalogue[3][mct] = GR;
 //			Job.animate();
 //			// FOR DEBUGGING ONLY
 		}
@@ -353,7 +354,7 @@ public class ofc2Dfast{
 				}
 				resetSite(tmpfail);
 			}
-			catalogue[2][mct] = GR;
+			catalogue[3][mct] = GR;
 //			Job.animate();
 //			// FOR DEBUGGING ONLY
 		}
@@ -420,8 +421,10 @@ public class ofc2Dfast{
 		
 		fs[newindex++] = jjmax;
 		failSite(jjmax,mct);	
-		catalogue[0][mct] = jjmax%L;
-		catalogue[1][mct] = (int)(jjmax/L);
+		
+		catalogue[0][mct] = dsigma;
+		catalogue[1][mct] = jjmax%L;
+		catalogue[2][mct] = (int)(jjmax/L);
 		return;
 	}
 	
@@ -468,9 +471,10 @@ public class ofc2Dfast{
 		saveData(mct, eqmode, dsigma, ndt);
 
 		fs[newindex++] = jjmax;
-		failSite(jjmax,mct);		
-		catalogue[0][mct] = jjmax%L;
-		catalogue[1][mct] = (int)(jjmax/L);
+		failSite(jjmax,mct);	
+		catalogue[0][mct] = dsigma;
+		catalogue[1][mct] = jjmax%L;
+		catalogue[2][mct] = (int)(jjmax/L);
 		return;
 	}
 	
@@ -618,7 +622,7 @@ public class ofc2Dfast{
 			File file = new File(fn);
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			for (int jj = 0 ; jj < tmax ; jj++){
-				for (int kk = 0 ; kk < 3 ; kk++){
+				for (int kk = 0 ; kk < 4 ; kk++){
 					pw.print(catalogue[kk][jj]);
 					pw.print("\t");
 				}
