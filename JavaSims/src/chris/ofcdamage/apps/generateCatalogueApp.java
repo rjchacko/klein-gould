@@ -54,7 +54,7 @@ public class generateCatalogueApp extends Simulation{
 		p2             = riu.getOFCparams();
 		double[] av    = new double[]{0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9};
 		riu            = null;
-		int cycle      = 18; // offset for existing catalog
+		int cycle      = 0; // offset for existing catalog
 		while(true){
 			for(double alpha : av){
 				params.set("Status", "Intializing");
@@ -96,8 +96,7 @@ public class generateCatalogueApp extends Simulation{
 
 		DateFormat dateFormat = new SimpleDateFormat("dd MM yyyy HH:mm:ss");
         Date date = new Date();	
-		PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_Catalogue.log","Added "+tsim+" events to the alpha = "+alpha+" catalogue on "+dateFormat.format(date));
-		PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_Catalogue.log","Catalogue for alpha = "+alpha+" now contains "+cycle*tsim+" events.");
+		PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_Catalogue.log","Added "+tsim+" events to the alpha = "+alpha+" catalogue, which now contains "+cycle*tsim+" events, on "+dateFormat.format(date));
 		return;
 	}
 	
