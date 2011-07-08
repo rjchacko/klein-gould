@@ -96,7 +96,7 @@ public class generateCatalogueApp extends Simulation{
 
 		DateFormat dateFormat = new SimpleDateFormat("dd MM yyyy HH:mm:ss");
         Date date = new Date();	
-		PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_Catalogue.log","Added "+tsim+" events to the alpha = "+alpha+" catalogue, which now contains "+cycle*tsim+" events, on "+dateFormat.format(date));
+		PrintUtil.printlnToFile(model.getOutdir()+File.separator+model.getBname()+"_Catalogue.log","Added "+tsim+" events to the alpha = "+alpha+" catalogue, which now contains "+(cycle+1)*tsim+" events, on "+dateFormat.format(date));
 		return;
 	}
 	
