@@ -88,15 +88,16 @@ public class nucleationF extends Simulation{
     	if((IBf.H<0)&(IBf.IS.totalspin<0))
     		{
     		event=true;
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "L=", IBf.IS.L1);
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "q=", IBf.IS.percent);
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "biasp=", IBf.IS.biaspercent);
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "R=", IBf.IS.R);
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "T=", T);
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "H=", H);
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "Nucleation happens at around  ",step);
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "           ");
-    		PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt", "           ");
+    		String eventpath="/Users/liukang2002507/Desktop/simulation/Fnucleation/event.txt";
+    		PrintUtil.printlnToFile(eventpath, "L=", IBf.IS.L1);
+    		PrintUtil.printlnToFile(eventpath, "q=", IBf.IS.percent);
+    		PrintUtil.printlnToFile(eventpath, "biasp=", IBf.IS.biaspercent);
+    		PrintUtil.printlnToFile(eventpath, "R=", IBf.IS.R);
+    		PrintUtil.printlnToFile(eventpath, "T=", T);
+    		PrintUtil.printlnToFile(eventpath, "H=", H);
+    		PrintUtil.printlnToFile(eventpath, "Nucleation happens at around  ",step);
+    		PrintUtil.printlnToFile(eventpath, "           ");
+    		PrintUtil.printlnToFile(eventpath, "           ");
     		}
     	return event;
     }
