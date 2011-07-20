@@ -563,6 +563,20 @@ public class PrintUtil {
 		
 	}
 	
+	public static void printVectorsToFile(String fileName, int[] vec1, double[] vec2){
+		int Length = Math.max(vec1.length, vec2.length);
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.println(vec1[ii]+"\t"+vec2[ii]);
+			}
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+		
+	}
+	
 	static public void overwriteFile(String fileName, double[] vec){
 		int Length = vec.length;
 		try{
