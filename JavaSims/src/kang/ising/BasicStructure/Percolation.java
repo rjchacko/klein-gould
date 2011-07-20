@@ -6,7 +6,7 @@ import chris.util.Random;
 /*the way to use this class is 
  * 
  * 1  construct Percolation object percolation
- * 2  input ising strucuture of the critical droplet configuartion
+ * 2  input ising strucuture of the critical droplet configuration
  * 3  use  percolation.probability();
  * 4  use  percolation.Mapping();
  * 5  the set of clusters are stored in percolation.CS;
