@@ -20,7 +20,7 @@ import chris.util.SortUtil;
 public class ofc2Dfast{
 
 	private double sr0, sf0, a0, dsr, dsf, da, catalogue[][];
-	protected double Omega, sr[], sf[], stress[], sbar[], data[][];
+	protected double Omega, sr[], sf[], stress[], sbar[], data[][], diss;
 	private int L, R, nbArray[], nbSeed;
 	protected int N, qN, fs[], GR, index, newindex, Ndead, Nss;
 	private boolean srn, sfn, an;
@@ -87,7 +87,7 @@ public class ofc2Dfast{
 		data    = new double[dcat][dlength];
 		failed  = new boolean[N];
 		ftt     = new boolean[N];
-		hfail   = new Histogram(1e-4);
+		hfail   = new Histogram(1e-2);
 		hstrs   = new Histogram((sf0-sr0)/100.);
 			
 		for(int jj = 0 ; jj < N ; jj++){
@@ -243,11 +243,12 @@ public class ofc2Dfast{
 		// takedata specifies whether or not to record data
 		
 		int a,b, tmpfail, tmpnb;
-		double release;
+		double release, alpha;
 		
 		// force failure in the zero velocity limit
 		forceZeroVel(mct, takedata, true);
-		GR = 1; // the seed site
+		GR   = 1; // the seed site
+		diss = 0; // reset the dissipation "count"
 		
 		// discharge site and repeat until lattice is stable
 
@@ -256,8 +257,10 @@ public class ofc2Dfast{
 			b     = newindex;
 			index = newindex;
 			for (int jj = a ; jj < b ; jj++){
-				tmpfail = fs[jj%N];
-				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
+				tmpfail = fs[jj%N];				
+				alpha   = nextAlpha();
+				release = (1-alpha)*(stress[tmpfail]-sr[tmpfail])/qN;
+				diss    += alpha*(stress[tmpfail]-sr[tmpfail]);
 				for(int kk = 0 ; kk < qN ; kk++){
 					tmpnb = getNbr(fs[jj%N],kk);
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
@@ -269,11 +272,13 @@ public class ofc2Dfast{
 				}
 				resetSite(tmpfail);
 			}
-			catalogue[3][mct] = GR;
 			
 //			Job.animate();
 //			// FOR DEBUGGING ONLY
 		}
+		if(catalogue == null)
+			return;
+		catalogue[3][mct] = GR;
 		return;
 	}
 	
@@ -287,12 +292,12 @@ public class ofc2Dfast{
 		// takedata specifies whether or not to record data
 		
 		int a,b, tmpfail, tmpnb;
-		double release;
+		double release, alpha;
 		
 		// force failure in the zero velocity limit
 		forceZeroVel(mct, ss, true);
 		GR = 1; // the seed site
-		
+		diss = 0; // reset the dissipation "count"
 		// discharge site and repeat until lattice is stable
 		while(newindex > index){
 			a     = index;
@@ -300,7 +305,9 @@ public class ofc2Dfast{
 			index = newindex;
 			for (int jj = a ; jj < b ; jj++){
 				tmpfail = fs[jj];
-				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
+				alpha   = nextAlpha();
+				release = (1-alpha)*(stress[tmpfail]-sr[tmpfail])/qN;
+				diss    += alpha*(stress[tmpfail]-sr[tmpfail]);
 				for(int kk = 0 ; kk < qN ; kk++){
 					tmpnb = getNbr(fs[jj],kk);
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
@@ -312,10 +319,12 @@ public class ofc2Dfast{
 				}
 				resetSite(tmpfail);
 			}
-			catalogue[3][mct] = GR;
-//			Job.animate();
-//			// FOR DEBUGGING ONLY
 		}
+		if(catalogue == null)
+			return;
+		catalogue[3][mct] = GR;
+//		Job.animate();
+//		// FOR DEBUGGING ONLY
 		return;
 	}
 	
@@ -328,12 +337,12 @@ public class ofc2Dfast{
 		// takedata specifies whether or not to record data
 		
 		int a,b, tmpfail, tmpnb;
-		double release;
+		double release, alpha;
 		
 		// force failure in the zero velocity limit
 		GR = 0;
 		forceVel(mct, takedata, true, strainrate);
-
+		diss = 0; // reset the dissipation "count"
 		// discharge site and repeat until lattice is stable
 
 		while(newindex > index){
@@ -342,7 +351,9 @@ public class ofc2Dfast{
 			index = newindex;
 			for (int jj = a ; jj < b ; jj++){
 				tmpfail = fs[jj];
-				release = (1-nextAlpha())*(stress[tmpfail]-sr[tmpfail])/qN;
+				alpha   = nextAlpha();
+				release = (1-alpha)*(stress[tmpfail]-sr[tmpfail])/qN;
+				diss    += alpha*(stress[tmpfail]-sr[tmpfail]);
 				for(int kk = 0 ; kk < qN ; kk++){
 					tmpnb = getNbr(fs[jj],kk);
 					if(tmpnb == -1 || failed[tmpnb]) continue; // -1 is returned if neighbor is self or is off lattice for open BC
@@ -354,10 +365,12 @@ public class ofc2Dfast{
 				}
 				resetSite(tmpfail);
 			}
-			catalogue[3][mct] = GR;
 //			Job.animate();
 //			// FOR DEBUGGING ONLY
 		}
+		catalogue[3][mct] = GR;
+//		Job.animate();
+//		// FOR DEBUGGING ONLY
 		return;
 	}
 	
@@ -422,6 +435,8 @@ public class ofc2Dfast{
 		fs[newindex++] = jjmax;
 		failSite(jjmax,mct);	
 		
+		if(catalogue == null)
+			return;
 		catalogue[0][mct] = dsigma;
 		catalogue[1][mct] = jjmax%L;
 		catalogue[2][mct] = (int)(jjmax/L);
@@ -472,6 +487,8 @@ public class ofc2Dfast{
 
 		fs[newindex++] = jjmax;
 		failSite(jjmax,mct);	
+		if(catalogue == null)
+			return;
 		catalogue[0][mct] = dsigma;
 		catalogue[1][mct] = jjmax%L;
 		catalogue[2][mct] = (int)(jjmax/L);
@@ -818,7 +835,17 @@ public class ofc2Dfast{
 		
 		return GR;
 	}
+	    
+	public double getStressDissipated(){
 		
+		return diss;
+	}
+		
+	public Histogram getHfail(){
+		
+		return hfail;
+	}
+	
 	public double getSr(int st){
 		
 		return sr[st];
