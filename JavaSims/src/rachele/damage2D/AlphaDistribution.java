@@ -89,7 +89,7 @@ public class AlphaDistribution {
 			}	
 		}else if(alphaDistribution=="ManyGaussians"){
 			System.out.println("many Gaussians");
-			int dx = 32;
+			int dx = 64;
 			int Lp = L/dx;
 			int Np = Lp*Lp;
 			boolean [] blockSet = new boolean [Np];
