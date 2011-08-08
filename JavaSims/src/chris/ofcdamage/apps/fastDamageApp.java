@@ -97,9 +97,9 @@ public class fastDamageApp extends Simulation{
 		// Simulate the model without damage
 		for (int jj = 0 ; jj < simt ; jj++){
 			model.evolve(jj,true);
-			//if(jj%500 == 0){
+			if(jj%500 == 0){
 				params.set("Mode", jj);
-			//}
+			}
 			Job.animate();
 			if(record) takePicture(jj);
 		}
@@ -107,9 +107,9 @@ public class fastDamageApp extends Simulation{
 		// Simulate the model with damage
 		while(Ndead < N){
 			Ndead = model.evolveD(dmt,true);
-			//if(dmt%500 == 0){
+			if(dmt%500 == 0){
 				params.set("Mode", (dmt));
-			//}
+			}
 			params.set("Dead Sites", Ndead);
 			Job.animate();
 			if(record) takePicture(dmt);

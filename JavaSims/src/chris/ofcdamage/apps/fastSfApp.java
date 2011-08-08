@@ -45,7 +45,7 @@ public class fastSfApp extends Simulation{
 		params.add("Equil Time", 500000);
 		params.add("Sim Time", 0);
 		params.add("Number of Lives",(int) 50);
-		params.add("Full width of NL", (int) 0);
+		params.add("NL width", (int) 0);
 		params.add("Failure Stress (\u03C3_f)", 2.);
 		params.add("\u03C3_f width", 0.);
 		params.add("Residual Stress (\u03C3_r)", 1.);
