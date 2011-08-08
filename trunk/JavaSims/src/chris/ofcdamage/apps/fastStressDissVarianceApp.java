@@ -41,6 +41,22 @@ public class fastStressDissVarianceApp extends Simulation{
 		params.add("\u03B1 width", 0.);
 		params.add("Status");
 		
+//		params.add("Data Directory",new DirectoryValue("~"));
+//		params.add("Data File", "default");
+//		params.add("Random Seed", (int) 0);
+//		params.add("Interaction Shape", new ChoiceValue("Circle","Square","Diamond","All Sites"));
+//		params.add("Interaction Radius (R)", (int) 45);
+//		params.add("Lattice Size", (int) 768);
+//		params.add("Boundary Condtions", new ChoiceValue("Periodic","Open"));
+//		params.add("Equil Time", 500000);
+//		params.add("Sim Time", 500000);
+//		params.add("Failure Stress (\u03C3_f)", 1.);
+//		params.add("\u03C3_f width", 0.);
+//		params.add("Residual Stress (\u03C3_r)", 0.25);
+//		params.add("\u03C3_r width", 0.25);
+//		params.add("Dissipation (\u03B1)", 0.);
+//		params.add("\u03B1 width", 0.);
+//		params.add("Status");
 	}
 	
 	public void run() {
@@ -48,11 +64,11 @@ public class fastStressDissVarianceApp extends Simulation{
 		// Setup model
 		//double alpha[] = new double[]{0.010000000 ,0.012915497 ,0.016681005 ,0.021544347 ,0.027825594 ,0.035938137 ,0.046415888 ,0.059948425 ,0.077426368 ,0.100000000};
 		double a;
-		int Na = 25;
+		int Na = 30;
 		double alpha[] = new double[Na];
 		int cycle[]    = new int[Na];
 		for (int jj = 0 ; jj < Na ; jj++){
-			alpha[jj] = Math.pow(10,-3+jj*(Math.log10(2)+2)/(Na-1)); // Na numbers log distr on [10^-3 , 10^{log(2)-1} = 2 x 10^-1]
+			alpha[jj] = Math.pow(10,-3+jj*(Math.log10(5)+2)/(Na-1)); // Na numbers log distr on [10^-3 , 10^{log(2)-1} = 2 x 10^-1]
 			cycle[jj] = jj;
 		}
 		
