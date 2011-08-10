@@ -68,6 +68,8 @@ public class fastDamageApp extends Simulation{
 		L      = params.iget("Lattice Size");
 		N      = L*L;
 		model  = new damage2Dfast(params);
+		//model  = new damage2DfastCompMetrics(params);
+		model.setNss(model.getN());
 		model.PrintParams(model.getOutdir()+File.separator+"Params_"+model.getBname()+".txt",params);	
 		eqt    = params.iget("Equil Time");
 		simt   = params.iget("Sim Time");

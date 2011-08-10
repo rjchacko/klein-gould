@@ -36,8 +36,8 @@ public class newTFBapp extends Simulation{
 		params.add("Data Directory",new DirectoryValue("/Users/cserino/Desktop"));
 		params.add("File Name","tfb");
 		params.add("seed",(int) 0);
-		params.add("Sim Time", (int) 1e4); //1e6
-		params.add("N", (int)(256*256)); // 256*256
+		params.add("Sim Time", (int) 1e6); //1e6
+		params.add("N", (int)(512*512)); // used to be 56*256
 		params.add("stress / fibre", 1e-5); 
 		params.add("K", 1);
 		params.add("D", 1);
@@ -52,7 +52,7 @@ public class newTFBapp extends Simulation{
 		Job.animate();
 		
 		mct   = params.iget("Sim Time");
-		data  = new double[4][mct];
+		data  = new double[5][mct];
 		model = new TFB(params);
 		
 		for (int jj = 1 ; jj < mct ; jj++){
@@ -62,7 +62,8 @@ public class newTFBapp extends Simulation{
 			data[0][jj] = model.getPhi();
 			data[1][jj] = model.getE();
 			data[2][jj] = model.getOmega1inv();
-			data[3][jj] = model.getOmega2inv();
+			data[3][jj] = model.getOmega2inv();			
+			data[4][jj] = model.getOmega3inv();
 			if(jj % 1000 == 0){
 				params.set("phi", data[0][jj]);
 				params.set("mct",jj);
@@ -82,12 +83,16 @@ public class newTFBapp extends Simulation{
 			pw.print("\t");
 			pw.print("1/Omega_e");
 			pw.print("\t");
-			pw.println("1/Omega_phi");	
+			pw.print("1/Omega_phi");	
+			pw.print("\t");
+			pw.println("1/Omega_sigma");
 			pw.print(0);
 			pw.print("\t");
 			pw.print(1);
 			pw.print("\t");
 			pw.print(params.fget("stress / fibre")*params.fget("stress / fibre")/(2*params.fget("K")*params.iget("N"))-params.fget("D"));
+			pw.print("\t");
+			pw.print("NaN");
 			pw.print("\t");
 			pw.print("NaN");
 			pw.print("\t");
@@ -101,7 +106,9 @@ public class newTFBapp extends Simulation{
 				pw.print("\t");
 				pw.print(data[2][jj]);
 				pw.print("\t");
-				pw.println(data[3][jj]);
+				pw.print(data[3][jj]);
+				pw.print("\t");
+				pw.println(data[4][jj]);
 			}			
 			pw.close();
 		}

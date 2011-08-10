@@ -120,6 +120,70 @@ public class forceSf2Dfast extends damage2Dfast{
 		return;
 	}
 	
+	
+	protected void forceZeroVel(int mct, boolean takedata, boolean eqmode){
+		// force failure in the zero velocity limit
+
+		double dsigma, tmpbar;
+		int jjmax, ndt;
+		index = 0;
+		ndt   = 0;
+		newindex = index;
+	
+		jjmax = 0;
+		if(takedata){
+			tmpbar = 0;
+			Omega  = 0;
+			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
+				hstrs.accum(stress[jj]);
+				// find next site to fail
+				if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
+				// calculate metric (PART 1)
+				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
+				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
+				// sum the sites from last time
+				ndt += MathUtil.bool2bin(ftt[jj]);
+			}
+			dsigma = sf[jjmax]-stress[jjmax];
+			tmpbar = tmpbar / (N-Ndead);
+			//tmpbar = tmpbar / N;
+			Omega  = 0;
+			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
+				// add stress to fail site
+				sf[jj] -= MathUtil.bool2bin(!failed[jj])*dsigma;
+				//calculate metric (PART 2)
+				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				// reset ftt
+				ftt[jj] = false;
+			}
+			//calculate metric (PART 3)
+			//Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
+			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N));
+
+			
+			// save and/or write data
+			if(mct%dlength == 0 && mct > 0){
+				writeData(mct);
+			}
+			saveData(mct, eqmode, dsigma, -77); //-77 to test if this is  called
+		}
+		else{
+			for (int jj = 0 ; jj < N ; jj++){
+				// find next site to fail
+				if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
+			}
+			// add stress to fail site
+			dsigma = sf[jjmax]-stress[jjmax];
+			for (int jj = 0 ; jj < N ; jj++){
+				sf[jj] -= MathUtil.bool2bin(!failed[jj])*dsigma;
+			}
+		}
+		
+		fs[newindex++] = jjmax;
+		failSite(jjmax,mct);	
+		return;
+	}
+	
 	protected double nextSf(int site){
 
 		return sf[site];

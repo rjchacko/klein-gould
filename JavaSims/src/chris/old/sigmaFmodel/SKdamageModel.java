@@ -20,7 +20,7 @@ public class SKdamageModel {
 	private double  R, L, N, Sr0, Sr[], SrW, dSr, dSrW, Sf0, Sf[], SfW, alpha0, alphaW,
 					stress[], Scum[][], t1, t2, t3, dt2, dt3, Nrichter, numFailures[],
 					globalFailures[], Omega1, Omega2, Omega3, sbarT, nfbar, dsRMS, sT,
-					nDS;
+					nDS, h;
 
 	private boolean SrN, dSrN, SfN, alphaN, deadSite[], ks[];
 	private Random  rand;
@@ -58,9 +58,10 @@ public class SKdamageModel {
 		SrW    = params.fget("\u03C3_r width");
 		dSr    = params.fget("d(\u03C3_r)");
 		dSrW   = params.fget("d(\u03C3_r) width");
-		alpha0  = params.fget("Dissipation (\u03B1)");
+		alpha0 = params.fget("Dissipation (\u03B1)");
 		alphaW = params.fget("\u03B1 width");
-
+		h      = params.fget("Healing Fraction");
+		
 		rand = new Random(seed);
 
 		t1     = 0;
@@ -185,20 +186,22 @@ public class SKdamageModel {
 	
 	private int[] forceFailure(){
 		
-		int trialsite;
-		int length;
-		double trialMove;
-		
+		int trialsite,length;
+		double trialMove, m;
+
 		dt2   = 0;
 		dt3   = 0;
 		dsRMS = 0;
-
-		if ((length = liveSites.length) == 0) return null;
 		
-	
+		if ((length = liveSites.length) == 0) return null;
+
 		while(true){
 			trialsite = liveSites[rand.nextInt(length)];
-			trialMove = Sf[trialsite] - (Sr[trialsite] + (Sf[trialsite] - Sr[trialsite])*rand.nextDouble());
+			m = Math.min(Sf[trialsite]+h*(Sf[trialsite] - Sr[trialsite]),Sf0); 	// h = 0 max is Sf[trialsite] (orig. model in PRE)
+																				// h = 1, interval symmetric about Sf[trialsite]
+																				// h > 1, healing more probable
+																				// h < 1, damage more probable
+			trialMove = Sf[trialsite] - (Sr[trialsite] + (m - Sr[trialsite])*rand.nextDouble()); 
 			dt3 += trialMove;
 			Sf[trialsite] -= trialMove;
 			dt2++;
