@@ -11,19 +11,19 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
-import chris.ofcdamage.damage2Dfast;
 import chris.ofcdamage.ofc2Dfast;
+import chris.util.PrintUtil;
 
-public class fastEqApp extends Simulation{
+public class fastEQdtApp extends Simulation{
 
 	private int simt, eqt, eventID, grts[];
-	private double t[];
+	private double dt[];
 	private ofc2Dfast model;
 	private boolean failed[];
-	private static DecimalFormat fmtEid = new DecimalFormat("00");
+	private static DecimalFormat fmt = new DecimalFormat("00");
 
 	public static void main(String[] args) {
-		new Control(new fastEqApp(), "OFC Parameters");
+		new Control(new fastEQdtApp(), "OFC Parameters");
 	}
 	
 	public void load(Control c) {
@@ -41,15 +41,18 @@ public class fastEqApp extends Simulation{
 		params.add("\u03C3_f width", 0.);
 		params.add("Residual Stress (\u03C3_r)", 1.);
 		params.add("\u03C3_r width", 0.025);
-		params.add("Dissipation (\u03B1)", 0.025);
+		params.add("Dissipation (\u03B1)");
 		params.add("\u03B1 width", 0.);
 		params.add("Status");
-		
+
 	}
-	
+
 	public void run() {
-			
+
+
+		for(int ii = 0 ; ii < 20 ; ii++){
 			params.set("Random Seed", params.iget("Random Seed") + 1);
+			params.set("Dissipation (\u03B1)",0.01+0.05*ii);
 			eventID = 0;
 			params.set("Status", "Intializing");
 			Job.animate();
@@ -59,7 +62,7 @@ public class fastEqApp extends Simulation{
 			eqt    = params.iget("Equil Time");
 			simt   = params.iget("Sim Time");
 			grts   = new int[simt];
-			t      = new double[simt];
+			dt     = new double[simt];
 			params.set("Status", "Ready");
 			Job.animate();
 
@@ -75,19 +78,19 @@ public class fastEqApp extends Simulation{
 			// Simulate the model without damage
 			model.resetTs();
 			for (int jj = 0 ; jj < simt ; jj++){
-				model.evolve(jj,true);
+				model.evolve(jj,false);
 				grts[jj] = model.getGR();
-				t[jj]    = model.getTs();
+				dt[jj]   = model.getDsigma();
 				if(jj%500 == 0){
 					params.set("Status", jj);
 					Job.animate();
 				}
 			}
-			
-			if((simt-1)%damage2Dfast.dlength != 0) model.writeData(simt);	
-			params.set("Status", "Done");
-			Job.animate();
-			return;
+			PrintUtil.printVectorToFile(model.getOutdir()+File.separator+model.getBname()+"_Time_"+ fmt.format(ii)+".txt", dt);
+		}
+		params.set("Status", "done");
+		Job.animate();
+		return;
 	}
 
 	public void animate() {
@@ -104,7 +107,7 @@ public class fastEqApp extends Simulation{
 		failed = model.getLastShower();
 		
 		try{
-			File file = new File(model.getOutdir()+File.separator+model.getBname()+"_event_"+fmtEid.format(eventID)+".txt");
+			File file = new File(model.getOutdir()+File.separator+model.getBname()+"_event_"+fmt.format(eventID)+".txt");
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.println("Time = " + time + ", Events Size = " + model.getGR());
 			for(int jj = 0 ; jj < model.getN(); jj++){

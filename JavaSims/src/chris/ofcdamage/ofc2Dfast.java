@@ -20,7 +20,7 @@ import chris.util.SortUtil;
 public class ofc2Dfast{
 
 	private double sr0, sf0, a0, dsr, dsf, da, catalogue[][];
-	protected double Omega, OmegaS, sr[], sf[], stress[], sbar[], sbarS[], data[][], diss, t;
+	protected double Omega, OmegaS, sr[], sf[], stress[], sbar[], sbarS[], data[][], diss, t, dsigma;
 	private int L, R, nbArray[], nbSeed;
 	protected int N, qN, fs[], GR, index, newindex, Ndead, Nss;
 	private boolean srn, sfn, an;
@@ -379,7 +379,7 @@ public class ofc2Dfast{
 	protected void forceZeroVel(int mct, boolean takedata, boolean eqmode){
 		// force failure in the zero velocity limit
 
-		double dsigma, tmpbar, tmpbarS;
+		double tmpbar, tmpbarS;
 		int jjmax, ndt;
 		index = 0;
 		ndt   = 0;
@@ -398,25 +398,26 @@ public class ofc2Dfast{
 				// calculate metric (PART 1)
 				sbar[jj]  += MathUtil.bool2bin(!failed[jj])*stress[jj];
 				tmpbar    += MathUtil.bool2bin(!failed[jj])*sbar[jj];
-				sbarS[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
-				tmpbarS   += MathUtil.bool2bin(!failed[jj])*sbarS[jj];
 				// sum the sites from last time
 				ndt += MathUtil.bool2bin(ftt[jj]);
 			}
 			dsigma = sf[jjmax]-stress[jjmax];
 			tmpbar  = tmpbar / (N-Ndead);
-			tmpbarS = tmpbarS / (N-Ndead);
 			//tmpbar = tmpbar / N;
 			Omega  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
 				// add stress to fail site
+				sbarS[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj]*dsigma;
+				tmpbarS   += MathUtil.bool2bin(!failed[jj])*sbarS[jj];
 				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 				//calculate metric (PART 2)
 				Omega  += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
-				OmegaS += MathUtil.bool2bin(!failed[jj])*(sbarS[jj] - tmpbarS)*(sbarS[jj] - tmpbarS)*dsigma;
 				// reset ftt
 				ftt[jj] = false;
 			}
+			tmpbarS = tmpbarS / (N-Ndead);
+			for (int jj = 0 ; jj < N ; jj++)
+				OmegaS += MathUtil.bool2bin(!failed[jj])*(sbarS[jj] - tmpbarS)*(sbarS[jj] - tmpbarS);
 			//calculate metric (PART 3)
 			//Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
 			Omega  = Omega/((double)(mct+1)*(double)(mct+1)*(double)(N));
@@ -455,7 +456,7 @@ public class ofc2Dfast{
 	protected void forceZeroVel(int mct, boolean[] ss, boolean eqmode){
 		// force failure in the zero velocity limit
 
-		double dsigma, tmpbar;
+		double tmpbar;
 		int jjmax, ndt;
 		index = 0;
 		ndt   = 0;
@@ -902,5 +903,15 @@ public class ofc2Dfast{
 	public double getTs(){
 		
 		return t;
+	}
+	
+	public double getDsigma(){
+		
+		return dsigma;
+	}
+	
+	public void resetTs(){
+		
+		t = 0;
 	}
 }
