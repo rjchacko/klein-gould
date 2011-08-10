@@ -131,6 +131,8 @@ public class TestNeighbors extends Simulation {
 		s2[ic]=2;
 		s3[ic]=2;
 		
+		System.out.println(nbs1.length);
+		
 		while(true){
 			Job.animate();
 		}

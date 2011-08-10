@@ -20,7 +20,7 @@ import chris.util.SortUtil;
 public class ofc2Dfast{
 
 	private double sr0, sf0, a0, dsr, dsf, da, catalogue[][];
-	protected double Omega, sr[], sf[], stress[], sbar[], data[][], diss;
+	protected double Omega, OmegaS, sr[], sf[], stress[], sbar[], sbarS[], data[][], diss, t;
 	private int L, R, nbArray[], nbSeed;
 	protected int N, qN, fs[], GR, index, newindex, Ndead, Nss;
 	private boolean srn, sfn, an;
@@ -29,7 +29,7 @@ public class ofc2Dfast{
 	private Random rand;
 	private LatticeNeighbors nbs;
 	public static int dlength = 150000;
-	public static int dcat = 6;
+	public static int dcat = 7;
 	private static DecimalFormat fmtI = new DecimalFormat("0000");
 	
 	public Histogram hfail;
@@ -77,12 +77,14 @@ public class ofc2Dfast{
 		
 		N     = L*L;
 		Ndead = 0;
+		t     = 0;
 		Nss   = -1; // must be reset. If not, metric will be negative and 
 					// I'll know a problem occurred
 		sr      = new double[N];
 		sf      = new double[N];
 		stress  = new double[N];
 		sbar    = new double[N];
+		sbarS   = new double[N];
 		fs      = new int[N];
 		data    = new double[dcat][dlength];
 		failed  = new boolean[N];
@@ -377,7 +379,7 @@ public class ofc2Dfast{
 	protected void forceZeroVel(int mct, boolean takedata, boolean eqmode){
 		// force failure in the zero velocity limit
 
-		double dsigma, tmpbar;
+		double dsigma, tmpbar, tmpbarS;
 		int jjmax, ndt;
 		index = 0;
 		ndt   = 0;
@@ -385,34 +387,40 @@ public class ofc2Dfast{
 	
 		jjmax = 0;
 		if(takedata){
-			tmpbar = 0;
-			Omega  = 0;
+			tmpbar  = 0;
+			tmpbarS = 0;
+			Omega   = 0;
+			OmegaS  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 1
 				hstrs.accum(stress[jj]);
 				// find next site to fail
 				if( ((sf[jj]-stress[jj]) < (sf[jjmax]-stress[jjmax])) && !failed[jj] ) jjmax = jj;
 				// calculate metric (PART 1)
-				sbar[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
-				tmpbar   += MathUtil.bool2bin(!failed[jj])*sbar[jj];
+				sbar[jj]  += MathUtil.bool2bin(!failed[jj])*stress[jj];
+				tmpbar    += MathUtil.bool2bin(!failed[jj])*sbar[jj];
+				sbarS[jj] += MathUtil.bool2bin(!failed[jj])*stress[jj];
+				tmpbarS   += MathUtil.bool2bin(!failed[jj])*sbarS[jj];
 				// sum the sites from last time
 				ndt += MathUtil.bool2bin(ftt[jj]);
 			}
 			dsigma = sf[jjmax]-stress[jjmax];
-			tmpbar = tmpbar / (N-Ndead);
+			tmpbar  = tmpbar / (N-Ndead);
+			tmpbarS = tmpbarS / (N-Ndead);
 			//tmpbar = tmpbar / N;
 			Omega  = 0;
 			for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
 				// add stress to fail site
 				stress[jj] += MathUtil.bool2bin(!failed[jj])*dsigma;
 				//calculate metric (PART 2)
-				Omega += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				Omega  += MathUtil.bool2bin(!failed[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
+				OmegaS += MathUtil.bool2bin(!failed[jj])*(sbarS[jj] - tmpbarS)*(sbarS[jj] - tmpbarS)*dsigma;
 				// reset ftt
 				ftt[jj] = false;
 			}
 			//calculate metric (PART 3)
 			//Omega = Omega/((double)(mct)*(double)(mct)*(double)(N-Ndead));
-			Omega = Omega/((double)(mct)*(double)(mct)*(double)(N));
-
+			Omega  = Omega/((double)(mct+1)*(double)(mct+1)*(double)(N));
+			OmegaS = OmegaS/((t+dsigma)*(t+dsigma)*(double)(N));
 			
 			// save and/or write data
 			if(mct%dlength == 0 && mct > 0){
@@ -432,6 +440,7 @@ public class ofc2Dfast{
 			}
 		}
 		
+		t += dsigma;
 		fs[newindex++] = jjmax;
 		failSite(jjmax,mct);	
 		
@@ -470,7 +479,7 @@ public class ofc2Dfast{
 		Omega  = 0;
 		for (int jj = 0 ; jj < N ; jj++){ //use this loop to calculate the metric PART 2
 			// add stress to fail site
-			stress[jj] += MathUtil.bool2bin(ss[jj])*dsigma;
+			stress[jj] += MathUtil.bool2bin(failed[jj])*dsigma;
 			//calculate metric (PART 2)
 			Omega += MathUtil.bool2bin(ss[jj])*(sbar[jj] - tmpbar)*(sbar[jj] - tmpbar);
 			// reset ftt
@@ -484,7 +493,8 @@ public class ofc2Dfast{
 			writeData(mct);
 		}
 		saveData(mct, eqmode, dsigma, ndt);
-
+		
+		t += dsigma;
 		fs[newindex++] = jjmax;
 		failSite(jjmax,mct);	
 		if(catalogue == null)
@@ -657,11 +667,12 @@ public class ofc2Dfast{
 	protected void saveData(int mct, boolean EQ, double ds, int grp){
 		
 		data[0][mct%dlength] = 1/Omega;
-		data[1][mct%dlength] = GR;
-		data[2][mct%dlength] = ds;
-		data[3][mct%dlength] = MathUtil.bool2bin(EQ);
-		data[4][mct%dlength] = 1.-(double)(Ndead)/(double)(N); 
-		data[5][mct%dlength] = grp;
+		data[1][mct%dlength] = 1/OmegaS;
+		data[2][mct%dlength] = GR;
+		data[3][mct%dlength] = ds;
+		data[4][mct%dlength] = MathUtil.bool2bin(EQ);
+		data[5][mct%dlength] = 1.-(double)(Ndead)/(double)(N); 
+		data[6][mct%dlength] = grp;
 		return;
 	}
 
@@ -672,7 +683,9 @@ public class ofc2Dfast{
 			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
 			pw.print("Time");
 			pw.print("\t");
-			pw.print("Inverse Metric");
+			pw.print("Inverse Metric P.U.");
+			pw.print("\t");
+			pw.print("Inverse Metric dStress");
 			pw.print("\t");
 			pw.print("Shower Size");
 			pw.print("\t");
@@ -821,6 +834,11 @@ public class ofc2Dfast{
 		return sr0;
 	}
 	
+	public double getDsr(){
+		
+		return dsr;
+	}
+	
 	public double getSf0(){
 		
 		return sf0;
@@ -880,5 +898,9 @@ public class ofc2Dfast{
 		
 		return data;
 	}
-	
+
+	public double getTs(){
+		
+		return t;
+	}
 }

@@ -51,6 +51,7 @@ public class SKmodelApp extends Simulation{
 		params.add("d(\u03C3_r) width", (double) 0);
 		params.add("Dissipation (\u03B1)",new DoubleValue(0.01,0,1));
 		params.add("\u03B1 width", (double)(0));
+		params.add("Healing Fraction",0.);
 		params.add("Animation", new ChoiceValue("Off","On"));
 		params.addm("Record", new ChoiceValue("Off","On"));
 		params.add("Last Avalanche Size");

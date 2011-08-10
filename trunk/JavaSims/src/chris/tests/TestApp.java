@@ -3,9 +3,6 @@ package chris.tests;
 
 import scikit.jobs.Control;
 import scikit.jobs.Simulation;
-import scikit.jobs.params.Parameters;
-import chris.util.PrintUtil;
-import chris.util.ReadInUtil;
 
 public class TestApp extends Simulation {
 	
@@ -27,10 +24,24 @@ public class TestApp extends Simulation {
 	}
 
 	public void run() {
-		Parameters p   = new Parameters();
-		ReadInUtil riu = new ReadInUtil("/Users/cserino/Documents/Catalogue/Params_run1.log"); 
-		p = riu.getOFCparams();
-		PrintUtil.printlnToFile("/Users/cserino/Desktop/test.txt", p.toString());
+		
+		int[] a  = new int[]{1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169};
+		int sum2 = 0; 
+		for(int ii : a){
+			sum2 += ii;
+		}
+		System.out.println(sum2);
+		double[] b  = new double[]{1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169};
+		sum2 = 0; 
+		for(double ii : b){
+			sum2 += Math.sqrt(ii);
+		}
+		System.out.println(sum2);
+		
+//		Parameters p   = new Parameters();
+//		ReadInUtil riu = new ReadInUtil("/Users/cserino/Documents/Catalogue/Params_run1.log"); 
+//		p = riu.getOFCparams();
+//		PrintUtil.printlnToFile("/Users/cserino/Desktop/test.txt", p.toString());
 //		Data Directory =  /Users/cserino/Documents/Catalogue
 //		Data File =  run1
 //		Random Seed =  0
