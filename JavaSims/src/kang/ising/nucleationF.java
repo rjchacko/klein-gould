@@ -300,8 +300,8 @@ public class nucleationF extends Simulation{
 			Bseed = 1;//(int)params.fget("Bseed");
 			Sseed = 1;//(int)params.fget("Sseed");
 			
-		    ISf=new IsingStructure(L1,L2,R,NJ,percent,biaspercent);
-		    IVcopy=new IsingStructure(L1,L2,R,NJ,percent,biaspercent);
+		    ISf=new IsingStructure(L1,L2,R,NJ,percent,biaspercent,"square");
+		    IVcopy=new IsingStructure(L1,L2,R,NJ,percent,biaspercent,"square");
 		    ISf.Dinitialization(Dseed, Bseed, 10, 10);
 		    params.set("deadsites",ISf.deadsites);
 		    ISf.Sinitialization(0, Sseed);

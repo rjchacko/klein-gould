@@ -793,7 +793,7 @@ public class dilutionmap extends Simulation{
 		Bseed = 1;
 		Sseed = 1;
 		
-	    Initialising=new IsingStructure(L1,L2,R,NJ,percent,biaspercent);
+	    Initialising=new IsingStructure(L1,L2,R,NJ,percent,biaspercent,"square");
 	    Initialising.Dinitialization(Dseed, Bseed, R, R);
 	    params.set("deadsites",Initialising.deadsites);
 	    Initialising.Sinitialization(0, Sseed);

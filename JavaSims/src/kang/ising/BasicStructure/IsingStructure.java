@@ -14,11 +14,13 @@ public class IsingStructure{
 	public double dilutionmap[];
 	
 	
+	
 	public int L1, L2, M; //parameters for the lattice                                                                                                                                                                                                                                                                                                                                                                                                        
 	public double J;     //interaction constant after normalization
 	public double NJ;    //interaction constant before normalization
 	public double percent;  //dilution percent
 	public int deadsites;  //the number of diluted sites in the system
+	public String shape;
 	
 	public double totalintenergy;
 	public int totalspin;
@@ -32,7 +34,7 @@ public class IsingStructure{
 	
 	//the function for this class IsingStructure
 	
-	public IsingStructure(int L1, int L2, int R, double NJ, double percent, double biaspercent)     //generating function
+	public IsingStructure(int L1, int L2, int R, double NJ, double percent, double biaspercent, String shape)     //generating function
 	{
 		this.L1=L1;
 		this.L2=L2;
@@ -40,12 +42,19 @@ public class IsingStructure{
 		this.R=R;
 		this.percent=percent;
 		this.biaspercent=biaspercent;
+		this.shape=shape;
 
 		this.NJ=NJ;
 		if(R==0)
 			this.J=NJ/4;
 		if(R>0)
-			this.J=NJ/((2*R+1)*(2*R+1)-1);
+			{
+			if(shape=="square")
+				this.J=NJ/((2*R+1)*(2*R+1)-1);
+			if(shape=="diamond")
+				this.J=NJ/((R+1)*(R+1)+R*R);
+			}
+				
 		this.spin=new int [M];
 		this.initialcopy=new int [M];
 		this.biaslabel=new int [M];
@@ -55,7 +64,7 @@ public class IsingStructure{
 	
 	public IsingStructure clone()
 	{
-		IsingStructure copy= new IsingStructure(L1, L2, R, NJ, percent, biaspercent);
+		IsingStructure copy= new IsingStructure(L1, L2, R, NJ, percent, biaspercent, shape);
 		for(int t=0;t<M; t++)
 		{
 			copy.spin[t]=spin[t];
@@ -183,7 +192,7 @@ public class IsingStructure{
 	
 	
 	
-	public double dilutionratio(int r, int i)
+	public double dilutionratio(int r, int i)    //calculate the dilution ratio within the circle with radius r
 	{
 		double ratio;
 		double dilutedsite;
@@ -229,7 +238,7 @@ public class IsingStructure{
 		return realy;
 	}
 	
-	public int distance (int a, int b)     // the code to calculate the distance between two points on the lattice
+	public int distance (int a, int b)     // the code to calculate the square of the distance between two points on the lattice
 	{
 		int dis=0;
 		int ax, ay, bx, by;
@@ -254,7 +263,7 @@ public class IsingStructure{
 		return dis;
 	}
 
-	public int CenterOfMass()              // return the index in the array corresponding to the center of mass
+	public int CenterOfMass(String CGshape)              // return the index in the array corresponding to the center of mass (with specific coarse graining shape)
 	{
 		int center=0;
 		
@@ -286,7 +295,7 @@ public class IsingStructure{
 		int maxi=0;
 		for(int ci=0; ci<M; ci++)
 		{
-			CGmap[ci]=SumInRange(map,ci,CGR);
+			CGmap[ci]=SumInRange(map,ci,CGR, CGshape);
 			if(CGmap[ci]>MAX)
 				{
 				     maxi=ci;
@@ -299,22 +308,38 @@ public class IsingStructure{
 		
 	}
 	
-	public int SumInRange(int spin[], int j, int R)
+	public int SumInRange(int spin[], int j, int R, String shape)  //sum in the range of (2R+1)*(2R+1) square or (R+1)^2-R^2 diamond
 	{
 		int S=0;
 		int nx=j/L2;
 		int ny=j%L2;
 		int kx, ky;
 
-		for (int m=-R; m<=R; m++)
-			for (int n=-R; n<=R; n++)
-			{
-				kx=X(nx+m);
-				ky=Y(ny+n);
-				S+=spin[kx*L2+ky];	
-			}
+		if(shape=="square")
+		{
+			for (int m=-R; m<=R; m++)
+				for (int n=-R; n<=R; n++)
+			    {
+				   kx=X(nx+m);
+				   ky=Y(ny+n);
+				   S+=spin[kx*L2+ky];	
+			    }
+		}
+		if(shape=="diamond")
+		{
+			for (int m=-R; m<=R; m++)
+				for (int n=-(R-Math.abs(m)); n<=(R-Math.abs(m)); n++)
+				{
+					kx=X(nx+m);
+					ky=Y(ny+n);
+					S+=spin[kx*L2+ky];	
+				}
+		}
+		
 		return S;
 	}
+	
+
 	
 	public void rectangle(int label[], int a, int b, int cx, int cy)  //draw a rectangle of 2a*2b at (cx,cy)
 	{
@@ -389,7 +414,7 @@ public class IsingStructure{
 		}
 		if (R!=0)
 		{
-			int S=SumInRange(spin, j, R);
+			int S=SumInRange(spin, j, R, shape);
 			
 			Energy=J*spin[j]*S-J;
 			Energychange=-2*Energy;
@@ -475,7 +500,7 @@ public class IsingStructure{
  			
  			if (R!=0)
  			{
- 				int S=SumInRange(spin, j, R);
+ 				int S=SumInRange(spin, j, R, shape);
 
  				SpinE=J*spin[j]*S-J;
  				
