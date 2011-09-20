@@ -58,7 +58,7 @@ public class Criticalpoint extends Simulation
 			{
 				
 				tempM[step]=Istemp.TotalSpin();
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Tc/progress.txt", T, c, step);
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Tc/progress.txt", T, c, step);
 				Istemp.MCS(T, H, cflip, 1);
 				Job.animate();
 				params.set("MCS", step);
@@ -97,7 +97,7 @@ public class Criticalpoint extends Simulation
 			{
 				
 				tempE[step]=Istemp.TotalIntEnergy();
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Tc/progress.txt", T, c, step);
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Tc/progress.txt", T, c, step);
 				Istemp.MCS(T, H, cflip, 1);
 				Job.animate();
 				params.set("MCS", step);
@@ -280,14 +280,14 @@ public class Criticalpoint extends Simulation
 		params.add("L2", 300);
 		params.add("R", 15);
 		params.add("NJ",-4.0);	
-		params.add("percent", new DoubleValue(0.10,0,1).withSlider());
-		params.add("biaspercent", new DoubleValue(0.10,0,1).withSlider());
+		params.add("percent", new DoubleValue(0.05,0,1).withSlider());
+		params.add("biaspercent", new DoubleValue(0.05,0,1).withSlider());
 		params.add("deadsites");	
 		params.add("Dseed",1);
 		params.add("Bseed",1);
 		params.add("Sseed",1);
 		
-		params.addm("T", new DoubleValue(1.578, 0, 10).withSlider());
+		params.addm("T", new DoubleValue(1.667, 0, 10).withSlider());
 		params.addm("H", new DoubleValue(0, -2, 2).withSlider());
 		
 		params.add("MCS");
@@ -313,8 +313,8 @@ public class Criticalpoint extends Simulation
 		Bseed = (int)params.fget("Bseed");
 		Sseed = (int)params.fget("Sseed");
 		
-	    IS=new IsingStructure(L1,L2,R,NJ,percent,biaspercent);
-	    Istemp=new IsingStructure(L1,L2,R,NJ,percent,biaspercent);
+	    IS=new IsingStructure(L1,L2,R,NJ,percent,biaspercent,"square");
+	    Istemp=new IsingStructure(L1,L2,R,NJ,percent,biaspercent,"square");
 	    
 	    IS.Dinitialization(Dseed, Bseed, 10, 10);
 	    params.set("deadsites",IS.deadsites);
@@ -322,12 +322,12 @@ public class Criticalpoint extends Simulation
 	    
 	    Job.animate();
 	    //findTc(IS,3.52,3.59,0.001);
-	    //findTcviaX(IS,3.5,3.55,0.005);
+	    //findTcviaX(IS,3.75,3.79,0.01);
         
 	    T=params.fget("T");
-	    //scanHs(IS,0,1.120,0.001);
-	    startH=1.05;
-	    findHs(IS,startH-0.4,startH,0.005);
+	    //scanHs(IS,0,1.215,0.001);
+	    startH=1.010;
+	    findHs(IS,startH-0.2,startH,0.005);
       
         
 	    

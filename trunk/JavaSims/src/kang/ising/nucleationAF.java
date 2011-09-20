@@ -126,7 +126,7 @@ public class nucleationAF extends Simulation{
 		Sseed = 1;//(int)params.fget("Sseed");
 		
 	
-	    ISaf=new IsingStructure(L1,L2,R,NJ,percent,biaspercent);
+	    ISaf=new IsingStructure(L1,L2,R,NJ,percent,biaspercent,"square");
 	    ISaf.Dinitialization(Dseed, Bseed, 10, 10);
 	    params.set("deadsites",ISaf.deadsites);
 	    ISaf.Sinitialization(0, Sseed);
