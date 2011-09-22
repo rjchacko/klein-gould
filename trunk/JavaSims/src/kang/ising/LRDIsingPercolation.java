@@ -69,10 +69,10 @@ public class LRDIsingPercolation extends Simulation
 		params.add("Lmax", 512);
 		params.add("qmin",0);
 		params.add("qmax",1.00);
-		params.add("qnumber",20);
+		params.add("qnumber",50);
 		
 		params.add("L");
-		params.add("R",4);
+		params.add("R",2);
 		params.add("NJ",-4.0);	
 		params.add("percent", 0.00);
 		params.add("biaspercent", 0.00);
@@ -231,7 +231,7 @@ public class LRDIsingPercolation extends Simulation
 		    	IS=new IsingStructure(L,L,R,NJ,percent,biaspercent,"diamond");
 	            Istemp=new IsingStructure(L,L,R,NJ,percent,biaspercent,"diamond");
 
-	            Singlerun(IS, R, L, 0.01, 5000, percent);
+	            Singlerun(IS, R, L, 0.001*(1-percent), 20000, percent);
 	            //SaturateM(IS,R,L,0.001,20,1000);
 		    }
 			
