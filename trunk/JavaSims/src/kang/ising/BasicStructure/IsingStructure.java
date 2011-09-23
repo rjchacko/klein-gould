@@ -52,7 +52,7 @@ public class IsingStructure{
 			if(shape=="square")
 				this.J=NJ/((2*R+1)*(2*R+1)-1);
 			if(shape=="diamond")
-				this.J=NJ/((R+1)*(R+1)+R*R);
+				this.J=NJ/((R+1)*(R+1)+R*R-1);
 			}
 				
 		this.spin=new int [M];

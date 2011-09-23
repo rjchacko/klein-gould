@@ -81,7 +81,7 @@ public class LRDIsingPercolation extends Simulation
 		params.add("Bseed",1);
 		params.add("Sseed",1);
 		
-		params.addm("T", new DoubleValue(99, 0, 100).withSlider());
+		params.addm("T", new DoubleValue(99, 0, 10000).withSlider());
 		params.addm("H", new DoubleValue(0, -2, 2).withSlider());
 		
 		params.add("MCS");
@@ -90,7 +90,7 @@ public class LRDIsingPercolation extends Simulation
 		params.add("reduced M");
 	}
 	
-	public void SaturateM(IsingStructure Ising, int R, int L, int Tq, int copies, int steplimit)
+	/*public void SaturateM(IsingStructure Ising, int R, int L, int Tq, int copies, int steplimit)
 	{
 		int run=0;
 		String path="/Users/liukang2002507/Desktop/simulation/LRDIP/R="+fmt.format(R)+"-L="+fmt.format(L)+"-run="+fmt.format(run)+".txt";
@@ -128,7 +128,7 @@ public class LRDIsingPercolation extends Simulation
 	            
 		}
 		
-	}
+	}*/
 	
 	public void Singlerun(IsingStructure Ising, int R, int L, double Tq, int steplimit, double q)
 	{
@@ -139,23 +139,29 @@ public class LRDIsingPercolation extends Simulation
 		
 		for(run=1; run<=1; run++)
 		{
-				IS.Dinitialization(run, run, 10, 10);
+				Ising.Dinitialization(run, run, R, R);
 				params.set("copies", run);
-	            params.set("deadsites",IS.deadsites);
-	            IS.Sinitialization(0, run);
-	            Istemp=IS.clone();
+	            params.set("deadsites",Ising.deadsites);
+	            Ising.Sinitialization(0, run);
+	            Istemp=Ising.clone();
 	            double mag=0;
 	            int positive=0;
 	            int negative=0;
 
 	            Job.animate();
 	            int presteplimit=50;
+	            params.set("T",99);
+	            
+	            Random heat=new Random(run);
+	            Random flip=new Random(run);
+	            
+	            
 	            for(int prestep=0; prestep<presteplimit; prestep++)
 	            {
-	            	params.set("T",99);
+	            	
 	            	T=params.fget("T");
 	            	H=params.fget("H");
-	            	Random heat=new Random(run);
+	            	
 	            	Istemp.MCS(T,H,heat,1);
 	            	params.set("MCS", prestep-presteplimit);
 	            	Job.animate();
@@ -170,7 +176,7 @@ public class LRDIsingPercolation extends Simulation
 	            {
 	            	T=params.fget("T");
 	            	H=params.fget("H");
-	            	Random flip=new Random(run);
+	            	
 	            	Istemp.MCS(T,H,flip,1);
 	            	params.set("MCS", step);
 	            	mag=Istemp.Magnetization();
@@ -228,10 +234,27 @@ public class LRDIsingPercolation extends Simulation
 		    	biaspercent=percent;
 		    	params.set("percent",percent);
 		    	params.set("biaspercent",biaspercent);
-		    	IS=new IsingStructure(L,L,R,NJ,percent,biaspercent,"diamond");
-	            Istemp=new IsingStructure(L,L,R,NJ,percent,biaspercent,"diamond");
-
-	            Singlerun(IS, R, L, 0.001*(1-percent), 20000, percent);
+		    	IS=new IsingStructure(L,L,R,NJ,percent,percent,"diamond");
+	            Istemp=new IsingStructure(L,L,R,NJ,percent,percent,"diamond");
+	            
+	            /*
+	         	IS.Dinitialization(Dseed, Bseed, R, R);
+            	IS.Sinitialization(0,Sseed);
+            	Istemp=IS.clone();
+            	Random checkrand=new Random(2);
+	            Job.animate();
+                for(int check=0; check<1000000; check++)
+                {
+                	   T=params.fget("T");
+                	   H=params.fget("H");
+                       Istemp.MCS(T, H, checkrand, 1);
+                       double magtemp=Istemp.Magnetization();
+                       params.set("MCS", check);
+                       params.set("magnetization", magtemp);
+                       Job.animate();
+                }*/
+          
+	            Singlerun(IS, R, L, 0.001*(1-percent), 50000, percent);
 	            //SaturateM(IS,R,L,0.001,20,1000);
 		    }
 			
