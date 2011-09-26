@@ -65,11 +65,11 @@ public class LRDIsingPercolation extends Simulation
 		LRDIsingPercolation.frame (grid1);
 		LRDIsingPercolation.frame (grid2);
 
-		params.add("Lmin", 512);
-		params.add("Lmax", 512);
+		params.add("Lmin", 256);
+		params.add("Lmax", 256);
 		params.add("qmin",0);
 		params.add("qmax",1.00);
-		params.add("qnumber",50);
+		params.add("qnumber",100);
 		
 		params.add("L");
 		params.add("R",2);
@@ -186,7 +186,7 @@ public class LRDIsingPercolation extends Simulation
 	            	params.set("reduced M", reducedM);
 	            	Job.animate();
 	            	PrintUtil.printlnToFile(path, step, mag, reducedM);
-	            	if(steplimit-step<=100)
+	            	if(steplimit-step<=(steplimit/2))
 	            	{
 	            		if(reducedM<0)
 	            			negative++;
@@ -253,8 +253,11 @@ public class LRDIsingPercolation extends Simulation
                        params.set("magnetization", magtemp);
                        Job.animate();
                 }*/
-          
-	            Singlerun(IS, R, L, 0.001*(1-percent), 50000, percent);
+                
+	            double Tquench=0.01*(1-percent);
+	            Singlerun(IS, R, L, Tquench, 5000, percent);
+	            
+	            
 	            //SaturateM(IS,R,L,0.001,20,1000);
 		    }
 			
