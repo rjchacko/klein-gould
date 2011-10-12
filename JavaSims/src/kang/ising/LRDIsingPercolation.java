@@ -65,10 +65,10 @@ public class LRDIsingPercolation extends Simulation
 		LRDIsingPercolation.frame (grid1);
 		LRDIsingPercolation.frame (grid2);
 
-		params.add("Lmin", 256);
-		params.add("Lmax", 256);
-		params.add("qmin",0);
-		params.add("qmax",1.00);
+		params.add("Lmin", 512);
+		params.add("Lmax", 512);
+		params.add("qmin",0.65);
+		params.add("qmax",0.75);
 		params.add("qnumber",100);
 		
 		params.add("L");
@@ -255,7 +255,7 @@ public class LRDIsingPercolation extends Simulation
                 }*/
                 
 	            double Tquench=0.01*(1-percent);
-	            Singlerun(IS, R, L, Tquench, 5000, percent);
+	            Singlerun(IS, R, L, Tquench, 20000, percent);
 	            
 	            
 	            //SaturateM(IS,R,L,0.001,20,1000);
