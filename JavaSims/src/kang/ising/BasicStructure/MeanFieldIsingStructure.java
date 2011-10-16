@@ -2,7 +2,7 @@ package kang.ising.BasicStructure;
 
 import chris.util.Random;
 
-public class MeanFieldIsingStructure{// the class of fully connected ising model
+public class MeanFieldIsingStructure{// the class of fully connected ising model but not good because of the spin structure, use FCIsing class instead for fast calculation
 	
 	public int spin[];
 	public int initialcopy[];
