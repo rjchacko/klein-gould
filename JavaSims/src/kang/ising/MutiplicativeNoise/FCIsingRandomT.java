@@ -1,4 +1,4 @@
-package kang.ising.MutiplicativeNoise;
+package kang.ising.MutiplicativeNoise; // noise-3 is the multiplicative noise with the Gaussian distribution, this is the right noise to map ising model onto black-scholes equation
 
 import java.text.DecimalFormat;
 
@@ -42,6 +42,23 @@ public class FCIsingRandomT extends Simulation
 	private DecimalFormat fmt = new DecimalFormat("000");
 	private DecimalFormat smt = new DecimalFormat("000000");
 	
+	public double[] Gaussian(Random rand) // the function using Box-Muller transformation to generate a gaussian distributed random number
+	{
+		double x1, x2, w;
+		double y[]=new double[2];
+		
+		do{
+			x1=2.0*rand.nextDouble()-1.0;
+			x2=2.0*rand.nextDouble()-1.0;
+			w=x1*x1+x2*x2;
+		}while(w>=1.0);
+		
+		w=Math.sqrt((-2.0)*Math.log(w)/w);
+		y[0]=x1*w;
+		y[1]=x2*w;
+		return y;
+		
+	}
 	
  	public void Heatup(String dynamics, FCIsing ising, int hseed, int steplimit)
  	{
@@ -294,7 +311,8 @@ public class FCIsingRandomT extends Simulation
  		
  		
  	}
- 	public void MRNoANoise(int L, int copies, int runs, double T, double dT, int steplimit, int noisetype, String dynamics)
+ 	
+    public void MRNoANoise(int L, int copies, int runs, double T, double dT, int steplimit, int noisetype, String dynamics)
  	{
  		double[]tempM= new double[steplimit];
  		double[]noiseT= new double[steplimit];
@@ -330,6 +348,13 @@ public class FCIsingRandomT extends Simulation
  	 			if(noisetype==0)
  	 			{
  	 				noiseT[s]=T;
+ 	 			}
+ 	 			
+ 	 			if(noisetype==3)
+ 	 			{
+ 	 				noiseT[s]=T+dT*Gaussian(Trand)[0];
+ 	 				s++;
+ 	 				noiseT[s]=T+dT*Gaussian(Trand)[1];
  	 			}
 	    	}
 	    	
