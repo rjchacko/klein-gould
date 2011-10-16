@@ -44,6 +44,14 @@ public class FCIsing {
 	    assert (this.m==m);
 	}
 	
+	public void initialize(int delta)
+	{
+		Nu=N/2+delta/2;
+		Nd=N/2-delta/2;
+		M=delta;
+		this.m=M/N;
+	}
+	
 	public void spinflip(Random spinrand, Random fliprand, double T, double H)   //spinrand for choosing the up or down spin, fliprand for determining the spinflip
 	{
 		double Echange=0;
