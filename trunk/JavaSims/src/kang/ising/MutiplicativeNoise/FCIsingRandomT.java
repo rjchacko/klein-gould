@@ -352,9 +352,9 @@ public class FCIsingRandomT extends Simulation
  	 			
  	 			if(noisetype==3)
  	 			{
- 	 				noiseT[s]=T+dT*Gaussian(Trand)[0];
+ 	 				noiseT[s]=T+dT*(Gaussian(Trand)[0]);
  	 				s++;
- 	 				noiseT[s]=T+dT*Gaussian(Trand)[1];
+ 	 				noiseT[s]=T+dT*(Gaussian(Trand)[1]);
  	 			}
 	    	}
 	    	
@@ -423,7 +423,7 @@ public class FCIsingRandomT extends Simulation
  	 			
  	 			params.set("MCS", step);
  	 			params.set("T", t);
- 	 			m=Istemp.M/N;
+ 	 			m=Istemp.m;
  	 			PrintUtil.printlnToFile(SaveAs, step,(double)m, (double)t);
  	 			tempM[step]=m;
  	 			Job.animate();	
@@ -457,8 +457,8 @@ public class FCIsingRandomT extends Simulation
 		params.add("copies" , 20);
 		params.add("runs",20);
 		
-		params.addm("T", new DoubleValue(3, 0, 5).withSlider());
-		params.addm("H", new DoubleValue(0, -2, 2).withSlider());
+		params.addm("T",3.0);
+		params.addm("H",0.0);
 		params.addm("Dynamics", new ChoiceValue("Metropolis", "Glauber"));
 		
 		params.add("#run");
@@ -486,9 +486,9 @@ public class FCIsingRandomT extends Simulation
 		//SizeEffectOnDuration(copies, 100, 1600, 1.78, 0.4, 1000, 2, dynamics);
 		//SizeEffectOnDuration(copies, 100, 1600, 1.78, 0.6, 1000, 2, dynamics);
 		
-		SEwithoutANoise(copies, runs, 100, 400, 1.78, 0.2, 1000, 2, dynamics);
-		SEwithoutANoise(copies, runs, 100, 400, 1.78, 0.4, 1000, 0, dynamics);
-		SEwithoutANoise(copies, runs, 100, 400, 1.78, 0.0, 1000, 0, dynamics);
+		SEwithoutANoise(copies, runs, 100, 200, 1.78, 0.40, 1000, 3, dynamics);
+		SEwithoutANoise(copies, runs, 100, 200, 1.78, 0.40, 1000, 0, dynamics);
+		//SEwithoutANoise(copies, runs, 100, 400, 3.80, 1.80, 1000, 0, dynamics);
 		
 		//SearchforTc(100,3.88,3.96,0.002, 1000, 5000);  //[3.88,3.96]
 		//SearchforTc(200,3.92,3.98,0.002, 1000, 5000);  //[3.92,3.98]
