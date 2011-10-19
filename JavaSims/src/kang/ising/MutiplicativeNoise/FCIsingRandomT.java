@@ -97,10 +97,10 @@ public class FCIsingRandomT extends Simulation
  					t=T+dT/2;
  	 			ising.MCS(dynamics,Frand, Frand, t, 0, 1);
  			}
-	 		if(noisetype==3)
- 	 		{
+	 		//if(noisetype==3)
+ 	 		/*{
  	 			Istemp.MCSnoise(dynamics, Frand, Frand, Trand, T, dT, 0, 1);
- 	 		}
+ 	 		}*/
 	 		if(noisetype==0)
  	 		{
  	 			t=T;
