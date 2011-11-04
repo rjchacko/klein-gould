@@ -128,7 +128,7 @@ public class BlackScholes extends Simulation
 
  	public void SEwithoutANoise(int copies, int runs, int Min, int Max, double T, double dT, int steplimit, int noisetype, String dynamics)//size effect on duration without the additive noise
  	{
- 		String path = "/Users/liukang2002507/Desktop/simulation/BlackScholes/"+dynamics+"/noise"+fmt.format(noisetype)+"/SizeEffect"+"<"+fmt.format(T*100)+","+fmt.format(dT*100)+">"+".txt";
+ 		String path = "/Users/liukang2002507/Desktop/simulation/BlackScholes/"+dynamics+"/noise"+fmt.format(noisetype)+"/SizeEffect"+"<"+fmt.format(T*100)+","+fmt.format(dT*100)+">"+" noise"+fmt.format(noisetype)+".txt";
  		for(int i=Min; i<=Max; i=i*2)
  		{
  			params.set("L",i);
@@ -149,7 +149,7 @@ public class BlackScholes extends Simulation
  		
  		for(int r=0; r<runs; r++)
  		{
- 			Random spinfliprand= new Random(r+1);
+ 			Random spinfliprand= new Random(r+noiseseed+1);  //by introducing noiseseed, even with 0 noiseT we still have different durations
  			params.set("#run", r+1);
  			
  			String SaveAs = "/Users/liukang2002507/Desktop/simulation/BlackScholes/"+dynamics+"/noise"+fmt.format(noisetype)+"/noiseruns/copyruns/L="+fmt.format(L)+"<"+fmt.format(T*100)+","+fmt.format(dT*100)+">"+"noise#"+fmt.format(noiseseed)+" run#"+fmt.format(r+1)+".txt";
@@ -252,12 +252,12 @@ public class BlackScholes extends Simulation
 
 		params.add("L", 100);
 		params.add("NJ",-4.0);
-		params.add("copies" , 20);  //number of noises
+		params.add("copies" , 50);  //number of noises
 		params.add("runs",20);   //number of lattice copies for ensemble average to get rid of the additive noise
 		
 		params.addm("T",3.0);
 		params.addm("H",0.0);
-		params.addm("m0", 0.001);
+		params.addm("m0", 0.00);
 		params.addm("Dynamics", new ChoiceValue("Glauber","Metropolis"));
 		
 		params.add("#run");
@@ -276,12 +276,12 @@ public class BlackScholes extends Simulation
 		runs=(int)params.fget("runs");
 		m0=params.fget("m0");
 		
-		threshold=0.2;
+		threshold=0.5;
 		duration= new int[copies];
 		String dynamics= params.sget("Dynamics");
 		
-		SEwithoutANoise(copies, runs, 400, 400, 3.60, 0.40, 500, 1, dynamics);
-		SEwithoutANoise(copies, runs, 400, 400, 3.60, 0.40, 500, 0, dynamics);
+		SEwithoutANoise(copies, runs, 100, 200, 3.60, 0.60, 500, 1, dynamics);
+		SEwithoutANoise(copies, runs, 100, 200, 3.60, 0.60, 500, 0, dynamics);
 	}
 	
 	
