@@ -228,7 +228,6 @@ public class Percolation{
 		bondsrand = new Random(Pseed);
 		//boolean nearestneighbor;
 		
-		
 		for (int k=0; k<SN; k++)
 			for(int a=0; a<2; a++)  //only consider 2 neighbors in order to avoid double counting
 			{
@@ -245,7 +244,7 @@ public class Percolation{
 			}
 		
 		int totalbonds=PN;
-		int temp[]= new int [SN];
+		int temp[]= new int [SN];     //store the locations of the sites belonging to current cluster
 		int writeintotemp;
 		for(int tp=0; tp<SN; tp++)
 		{
