@@ -226,28 +226,22 @@ public class Percolation{
 		Random bondsrand;
 		int pin;
 		bondsrand = new Random(Pseed);
-		boolean nearestneighbor;
+		//boolean nearestneighbor;
 		
 		
 		for (int k=0; k<SN; k++)
-			for(int j=0; j<k; j++)
+			for(int a=0; a<2; a++)  //only consider 2 neighbors in order to avoid double counting
 			{
-				nearestneighbor=false;
-				for(int a=0; a<4; a++)
+				int j=ISP.Nneighber(a, stablespin[k]);
+				if(ISP.spin[j]==-1)
 				{
-					if(ISP.Nneighber(a, stablespin[k])==stablespin[j])  // if j and k are nearest neighbors
-						nearestneighbor=true;
-				}
-				
-				
-				if(nearestneighbor)
 					if(bondsrand.nextDouble()<=probability)		// third, throw random numbers on all the possible bonds to determine the percolation bonds
-				{
+				   {
 					RBH[PN]=stablespin[k];
-					RBT[PN]=stablespin[j];
+					RBT[PN]=j;
 					PN++;
+				    }
 				}
-				
 			}
 		
 		int totalbonds=PN;
