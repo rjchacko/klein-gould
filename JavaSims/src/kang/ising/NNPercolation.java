@@ -82,7 +82,7 @@ public class NNPercolation extends Simulation
 		params.add("M");
 	    params.add("deadsites");
 	    params.add("livingsites");
-		params.add("percent", 0.10);
+		params.add("percent", 0.0);
 		
 		params.add("pb",1.0);     //bond probability
 		params.add("pmin",0.01); 
@@ -175,7 +175,7 @@ public class NNPercolation extends Simulation
 		
 		NNP=new Percolation(Ising, 1);// keep track of 2 largest clusters
 		NNP.SetProbability(probability);
-		NNP.NNMapping(Pseed);
+		NNP.fastNNMapping(Pseed);
 		
 		for(int j=0; j<(L*L); j++)
 		{
@@ -242,8 +242,8 @@ public class NNPercolation extends Simulation
 		
 		Job.animate();
 
-		singlerun(IS, Pseed, pb);
-        //multiruns(IS, Pseed, pmin, pmax, increment);
+		//singlerun(IS, Pseed, pb);
+        multiruns(IS, Pseed, pmin, pmax, increment);
 		
 	}
 	
