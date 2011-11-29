@@ -438,7 +438,7 @@ public class Percolation{
             		       pin++;
         		       }
     			   }
-        		   if(a0[stablespin[i2]]==1)     //now look at its down neighbor
+        		   if(a2[stablespin[i2]]==1)     //now look at its down neighbor
         		   {
         	           neighbor=ISP.Nneighber(2,stablespin[i2]); 
         	           if(copymap[neighbor]!=-3)
@@ -448,7 +448,7 @@ public class Percolation{
             		       pin++;
         		       }
         		   }
-        		   if(a1[stablespin[i2]]==1)     //now look at its left neighbor
+        		   if(a3[stablespin[i2]]==1)     //now look at its left neighbor
     			   {
     			       neighbor=ISP.Nneighber(3,stablespin[i2]); 
     			       if(copymap[neighbor]!=-3)

@@ -65,7 +65,7 @@ public class IsingBasic{
 	
 
 	
-	public double Susceptibility(IsingStructure ising, int presteplimit, int number, int copies, double T, double H)
+	public double Susceptibility(IsingStructure ising, int presteplimit, int number, int copies, double T, double H, String dynamics)
 	{
 		double tempM[]= new double [number];
 		double totalX=0;
@@ -75,7 +75,7 @@ public class IsingBasic{
 			Random cflip=new Random(c);
 			for(int heat=0; heat<5; heat++)
 			{
-				Istemp.MCS(9, H, cflip, 1);	
+				Istemp.MCS(9, H, cflip, 1, dynamics);	
 			}
 			
 			for(int prestep=0; prestep<presteplimit; prestep++)

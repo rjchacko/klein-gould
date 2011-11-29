@@ -5,7 +5,7 @@ import java.text.DecimalFormat;
 import chris.util.Random;
 //import chris.util.PrintUtil;
 
-public class IsingStructure{
+public class IsingStructure3D{ 
 	
 	//structures and parameters
 	public int spin[];
@@ -15,7 +15,7 @@ public class IsingStructure{
 	
 	
 	
-	public int L1, L2, M; //parameters for the lattice                                                                                                                                                                                                                                                                                                                                                                                                        
+	public int L1, L2, L3, M; //parameters for the lattice                                                                                                                                                                                                                                                                                                                                                                                                        
 	public double J;     //interaction constant after normalization
 	public double NJ;    //interaction constant before normalization
 	public double percent;  //dilution percent
@@ -30,15 +30,17 @@ public class IsingStructure{
 	
 	public int biasA;
 	public int biasB;
+	public int biasC;
 	public double biaspercent;
 	
-	//the function for this class IsingStructure
+	//the function for this class IsingStructure3D
 	
-	public IsingStructure(int L1, int L2, int R, double NJ, double percent, double biaspercent, String shape)     //generating function
+	public IsingStructure3D(int L1, int L2, int L3, int R, double NJ, double percent, double biaspercent, String shape)     //generating function
 	{
 		this.L1=L1;
 		this.L2=L2;
-		this.M=L1*L2;
+		this.L3=L3;
+		this.M=L1*L2*L3;
 		this.R=R;
 		this.percent=percent;
 		this.biaspercent=biaspercent;
@@ -46,13 +48,11 @@ public class IsingStructure{
 
 		this.NJ=NJ;
 		if(R==0)
-			this.J=NJ/4;
+			this.J=NJ/6;
 		if(R>0)
 			{
 			if(shape=="square")
-				this.J=NJ/((2*R+1)*(2*R+1)-1);
-			if(shape=="diamond")
-				this.J=NJ/((R+1)*(R+1)+R*R-1);
+				this.J=NJ/((2*R+1)*(2*R+1)*(2*R+1)-1);
 			}
 				
 		this.spin=new int [M];
@@ -62,9 +62,9 @@ public class IsingStructure{
 		
 	}
 	
-	public IsingStructure clone()
+	public IsingStructure3D clone()
 	{
-		IsingStructure copy= new IsingStructure(L1, L2, R, NJ, percent, biaspercent, shape);
+		IsingStructure3D copy= new IsingStructure3D(L1, L2, L3, R, NJ, percent, biaspercent, shape);
 		for(int t=0;t<M; t++)
 		{
 			copy.spin[t]=spin[t];
@@ -74,6 +74,7 @@ public class IsingStructure{
 		}
 		copy.biasA=biasA;
 		copy.biasB=biasB;
+		copy.biasC=biasC;
 		copy.totalspin=totalspin;
 		copy.totalintenergy=totalintenergy;
 		
@@ -81,12 +82,13 @@ public class IsingStructure{
 		return copy;
 	}
 	
-	public void Dinitialization(int Dseed, int Bseed, int A, int B )//dilution initialization
+	public void Dinitialization(int Dseed, int Bseed, int A, int B, int C )//dilution initialization
 	{
 		Random Drand= new Random(Dseed);
 		Random Brand= new Random(Bseed);
 		biasA=A;
 		biasB=B;
+		biasC=C;
 		deadsites=0;
 
 		
@@ -98,11 +100,13 @@ public class IsingStructure{
 			}
 			
 		
-		int cx, cy; //x,y index for the center
+		int cx, cy, cz; //x,y,z index for the center
+		
 		cx=(int)L1/2;
 		cy=(int)L2/2;
+		cz=(int)L3/2;
 		if(biaspercent!=percent)
-		    rectangle(biaslabel, A,B, cx,cy);
+		    //cube(biaslabel, A,B, C, cx,cy, cz);       need to wrtie a function named cube which draws a cube centered at cx,cy,cz                      
 		
 		for(int j=0; j<M; j++)
 		{
@@ -188,7 +192,7 @@ public class IsingStructure{
 		
 	}
 	
-	//basic functions
+//basic functions
 	
 	
 	
@@ -217,7 +221,31 @@ public class IsingStructure{
 		ratio=dilutedsite/totalinrange;
 		return ratio;
 	}
+	
+	public int getX(int i)
+	{
+		int X=0;
+		X=(int)(i/(L2*L3));
+		return X;
 
+	}
+	
+	public int getY(int i)
+	{
+		int Y=0;
+		Y=(int)((int)i%(L2*L3))/L3;
+		return Y;
+
+	}
+	
+	public int getZ(int i)
+	{
+		int Z=0;
+		Z=(int)((int)i%(L2*L3))%L3;
+		return Z;
+
+	}
+	
 	public int X(int bx)
 	{
 		int realx=bx;
@@ -238,18 +266,34 @@ public class IsingStructure{
 		return realy;
 	}
 	
+	public int Z(int bz)
+	{
+		int realz=bz;
+		if (bz>=L3)
+			realz=bz-L3;
+		if (bz<0)
+			realz=bz+L3;
+		return realz;
+	}
+	
 	public int distance (int a, int b)     // the code to calculate the square of the distance between two points on the lattice
 	{
 		int dis=0;
-		int ax, ay, bx, by;
-		int dx2, dy2;
+		int ax, ay, az, bx, by, bz;
+		int dx2, dy2, dz2;
 		ax= a/L2;
 		ay= a%L2;
-		bx= b/L2;
-		by= b%L2;
+		ax=(int)(a/(L2*L3));
+		ay=(int)((int)a%(L2*L3))/L3;
+		az=(int)((int)a%(L2*L3))%L3;
+		
+		bx=(int)(b/(L2*L3));
+		by=(int)((int)b%(L2*L3))/L3;
+		bz=(int)((int)b%(L2*L3))%L3;
 		
 		dx2=(ax-bx)*(ax-bx);
 		dy2=(ay-by)*(ay-by);
+		dz2=(az-bz)*(az-bz);
 		if((ax-bx+L1)*(ax-bx+L1)<(ax-bx)*(ax-bx))
 			dx2=(ax-bx+L1)*(ax-bx+L1);
 		if((ax-bx-L1)*(ax-bx-L1)<(ax-bx)*(ax-bx))
@@ -258,140 +302,108 @@ public class IsingStructure{
 			dy2=(ay-by+L2)*(ay-by+L2);
 		if((ay-by-L2)*(ay-by-L2)<(ay-by)*(ay-by))
 			dy2=(ay-by-L2)*(ay-by-L2);
+		if((az-bz+L3)*(az-bz+L3)<(az-bz)*(az-bz))
+			dz2=(az-bz+L3)*(az-bz+L3);
+		if((az-bz-L3)*(az-bz-L3)<(az-bz)*(az-bz))
+			dz2=(az-bz-L3)*(az-bz-L3);
 
-		dis=dx2+dy2;
+		dis=dx2+dy2+dz2;
 		return dis;
-	}
-
-	public int CenterOfMass(String CGshape)              // return the index in the array corresponding to the center of mass (with specific coarse graining shape)
-	{
-		int center=0;
-		
-		int totalM=TotalSpin();	
-		int minorityspin=0;
-		// now determine which direction is the minority direction
-		if(totalM>0)
-			minorityspin=-1;
-		if(totalM<0)
-			minorityspin=1;
-		// now record all the sites with minority direction
-		int map[]= new int[M];
-		int CGmap[]= new int[M];    // the coarse grained map[]
-		int totalMinorityspins=0;
-		
-		for(int mi=0; mi<M; mi++)
-		{
-			if(spin[mi]==minorityspin)
-				{
-				     map[mi]=1;
-				     totalMinorityspins++;     //find out how many minority spins are there in the whole lattice and then determine the range of CG
-				}
-			else
-				map[mi]=0;
-		}
-		
-		int CGR= (int)(Math.sqrt(totalMinorityspins)/2);   //estimate the best range for CG
-		int MAX=0;
-		int maxi=0;
-		for(int ci=0; ci<M; ci++)
-		{
-			CGmap[ci]=SumInRange(map,ci,CGR, CGshape);
-			if(CGmap[ci]>MAX)
-				{
-				     maxi=ci;
-				     MAX=CGmap[ci];
-				}
-		}
-		center=maxi;
-		
-		return center;
-		
 	}
 	
 	public int SumInRange(int spin[], int j, int R, String shape)  //sum in the range of (2R+1)*(2R+1) square or (R+1)^2-R^2 diamond
 	{
 		int S=0;
-		int nx=j/L2;
-		int ny=j%L2;
-		int kx, ky;
+		int nx=(int)(j/(L2*L3));
+		int ny=(int)((int)j%(L2*L3))/L3;
+		int nz=(int)((int)j%(L2*L3))%L3;
+		int kx, ky, kz;
 
 		if(shape=="square")
 		{
 			for (int m=-R; m<=R; m++)
 				for (int n=-R; n<=R; n++)
+					for(int l=-R; l<=R; l++)
 			    {
 				   kx=X(nx+m);
 				   ky=Y(ny+n);
-				   S+=spin[kx*L2+ky];	
+				   kz=Z(nz+l);
+				   S+=spin[kx*L2*L3+ky*L3+kz];	
 			    }
 		}
-		if(shape=="diamond")
-		{
-			for (int m=-R; m<=R; m++)
-				for (int n=-(R-Math.abs(m)); n<=(R-Math.abs(m)); n++)
-				{
-					kx=X(nx+m);
-					ky=Y(ny+n);
-					S+=spin[kx*L2+ky];	
-				}
-		}
+
 		
 		return S;
 	}
 	
-
-	
-	public void rectangle(int label[], int a, int b, int cx, int cy)  //draw a rectangle of 2a*2b at (cx,cy)
+	public void cube(int label[], int a, int b,int c, int cx, int cy, int cz)  //draw a cube of 2a*2b*2c at (cx,cy,cz)
 	{
-		int bx, by;
-		int x,y;
+		int bx, by, bz;
+		int x,y,z;
 		
 		for(bx=cx-a; bx<cx+a; bx++)
 			for(by=cy-b; by<cy+b; by++)
+				for(bz=cz-c; bz<cz+c; bz++)
 			{
 				x=X(bx);
 				y=Y(by);
-				label[x*L2+y]=1;
+				z=Z(bz);
+				label[x*L2*L3+y*L3+z]=1;
 			}
 	}
 	
- 	public int Nneighber(int a,int i )// function for the index of nearest neighbor
- 	{
-		int nx,ny; //index for neighbor
+	public int Nneighber(int a,int i ){// function for the index of nearest neighbor
+		int nx,ny,nz; //index for neighbor
 		int ni=0;
-		nx=(int)i/L2;
-		ny=(int)i%L2;
+		nx=(int)(i/(L2*L3));
+		ny=(int)((int)i%(L2*L3))/L3;
+		nz=(int)((int)i%(L2*L3))%L3;
 		
 		if (a==0) {
-			ni=nx*L2+ny-1;
+			ni=nx*L2*L3+(ny-1)*L3+nz;
 			if  (ny==0) {
-				ni=nx*L2+ny+L2-1;
+				ni=nx*L2*L3+(ny+L2-1)*L3+nz;
 		}
 			
-		}//(x,y-1) up
+		}//(x,y-1,z) up
 		
      	if (a==1){
-			ni=(nx+1)*L2+ny;
+			ni=(nx+1)*L2*L3+ny*L3+nz;
 			if  (nx==L1-1) {
-				ni=(nx-L1+1)*L2+ny;
+				ni=(nx-L1+1)*L2*L3+ny*L3+nz;
 			}
 			
-		}//(x+1,y) right
+		}//(x+1,y,z) right
 		
 		if (a==2){
-			ni=nx*L2+ny+1;
+			ni=nx*L2*L3+(ny+1)*L3+nz;
 			if  (ny==L2-1) {
-				ni=nx*L2+ny-L2+1;
+				ni=nx*L2*L3+(ny-L2+1)*L3+nz;
 			}
 			
-		}//(x,y+1) down
+		}//(x,y+1,z) down
 		
 		if (a==3){
-			ni=(nx-1)*L2+ny;
+			ni=(nx-1)*L2*L3+ny*L3+nz;
 			if  (nx==0) {
-				ni=(nx+L1-1)*L2+ny;
+				ni=(nx+L1-1)*L2*L3+ny*L3+nz;
 			}
-		}//(x-1,y) left
+		}//(x-1,y,z) left
+		
+		if (a==4){
+			ni=nx*L2*L3+ny*L3+nz+1;
+			if  (nz==L3-1) {
+				ni=nx*L2*L3+ny*L3+nz-L3+1;
+			}
+		}//(x,y,z+1) up in z
+		
+		if (a==5){
+			ni=nx*L2*L3+ny*L3+nz-1;
+			if  (nz==0) {
+				ni=nx*L2*L3+ny*L3+nz+L3-1;
+			}
+		}//(x,y,z-1) down in z
+		
 		
 		return ni;
 		
@@ -404,7 +416,7 @@ public class IsingStructure{
 		if (R==0)
 		{
 			int b,k;
-		    for(b=0; b<4;b++)
+		    for(b=0; b<6;b++)
 		    {
 			k=Nneighber(b,j);
 			Energy=Energy+J*spin[j]*spin[k];
@@ -423,7 +435,8 @@ public class IsingStructure{
 		
 		return Energychange;	
     }
-
+ 	
+ 	
  	public void MetropolisSpinflip(int j, Random flip, double temperature, double field)
 	{
 		
@@ -498,7 +511,6 @@ public class IsingStructure{
 
 	}
 	
- 	
   	public int TotalSpin()
  	{
  		int total=0;
@@ -518,7 +530,7 @@ public class IsingStructure{
  			{
  
  				int b,k;
- 			    for(b=0; b<4;b++)
+ 			    for(b=0; b<6;b++)
  			    {
  				k=Nneighber(b,j);
  				SpinE+=J*spin[j]*spin[k];
@@ -575,7 +587,9 @@ public class IsingStructure{
     	}
     	return sumD/size;
     }
-  	
-  	
+ 	
+ 	
  	
 }
+
+	
