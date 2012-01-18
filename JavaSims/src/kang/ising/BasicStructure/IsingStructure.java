@@ -127,11 +127,14 @@ public class IsingStructure{
 	*/
 	}
 	
-	public void dilutionmap(int range)
+	public void dilutionmap(int range, String shape)
 	{
 		for(int k=0; k<M; k++)
 		{
-			dilutionmap[k]=dilutionratio(R,k);
+			if(shape=="Square")
+				dilutionmap[k]=dilutionratioSquare(R,k);
+			if(shape=="Circle")
+				dilutionmap[k]=dilutionratioCircle(R,k);
 		}
 	}
 	
@@ -190,9 +193,35 @@ public class IsingStructure{
 	
 	//basic functions
 	
+	public double dilutionratioSquare(int r, int i)
+	{
+		double ratio;
+		double dilutedsite;
+		dilutedsite=0;
+		double totalinrange;
+		totalinrange=0;
+		
+		int nx=i/L2;
+		int ny=i%L2;
+		int kx, ky;
+			
+		for (int m=-R; m<=R; m++)
+			for (int n=-R; n<=R; n++)
+			    {
+				   kx=X(nx+m);
+				   ky=Y(ny+n);
+				   totalinrange++;
+				   if(spin[kx*L2+ky]==0)
+					   dilutedsite++;			   	
+			    }
+	
+		ratio=dilutedsite/totalinrange;
+		return ratio;
+	}
 	
 	
-	public double dilutionratio(int r, int i)    //calculate the dilution ratio within the circle with radius r
+	
+	public double dilutionratioCircle(int r, int i)    //calculate the dilution ratio within the circle with radius r
 	{
 		double ratio;
 		double dilutedsite;
