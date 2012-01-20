@@ -50,11 +50,13 @@ public class Metastablelifetime extends Simulation
 	//measurement quantities
 	public double meantau;         //mean life time of the meta-stable states
 	public double deltatau;         // stand deviation of tau
+	public double mediantau;       //median life time  haven't put in the function to do average over different dilution realizations
 	
 	public double taudata[];
 	public double tauSD[];
 	public double taudatatemp;
 	public double tauSDtemp;
+	public double mediantautemp;
 	
 	
 	public void animate()
@@ -105,19 +107,14 @@ public class Metastablelifetime extends Simulation
 		params.add("totalcopies",1);
 		params.add("totalruns",50);
 		
-		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 		//params.add("Dseed",1);    //seed for dilution configuration
 		//params.add("Sseed",1);    //seed for spin flip
 		
-		
-		
 		params.addm("T", 1.008);
 		params.addm("H", 0.0);
-		
-		
-		
+			
 		params.add("MCS");
 		params.add("runs");
 		params.add("copies");
@@ -138,7 +135,7 @@ public class Metastablelifetime extends Simulation
 			if(meantau>steplimit)
 				lowerfield=false;
 			
-			PrintUtil.printlnToFile(path , field , meantau, deltatau);
+			PrintUtil.printlnToFile(path , field , mediantau, meantau, deltatau);
 			
 		}
 	}
@@ -154,7 +151,7 @@ public class Metastablelifetime extends Simulation
 			Dseed=copy+1;
 			//params.set("Dseed", Dseed);   //set the random number seed for dilution
 			ising.Dinitialization(Dseed, Dseed, 10, 10);
-			ising.Sinitialization(0, Dseed);
+			ising.Sinitialization(1, Dseed);
 			Istemp=ising.clone();
 			params.set("deadsites",ising.deadsites);
 			Job.animate();
@@ -167,6 +164,7 @@ public class Metastablelifetime extends Simulation
 		{
 			meantau=taudata[0];
 			deltatau=tauSD[0];
+			mediantau=mediantautemp;
 			
 		}
 		else
@@ -182,6 +180,7 @@ public class Metastablelifetime extends Simulation
 	{
 		
 		String check = "/Users/liukang2002507/Desktop/simulation/Metalifetime/"+dynamics+"/check"+"<T="+fmt.format(T*1000)+", L= "+fmt.format(L)+">.txt";
+		String pic="/Users/liukang2002507/Desktop/simulation/Metalifetime/"+dynamics+"/pic/<T="+fmt.format(T*1000)+", L= "+fmt.format(L)+">";
 		
 		int lifetimedata[]= new int[runs];
 		
@@ -194,19 +193,19 @@ public class Metastablelifetime extends Simulation
 			double totalM=0;
 			int totalnumber=0;
 			int prelimit=200;
-			if(meantau>100)
-				prelimit=(int)meantau*2;
+			//if(meantau>100)
+				//prelimit=(int)meantau*2;
 			int step;
 			
-			for(int heatstep=0; heatstep<20; heatstep++)
+			/*for(int heatstep=0; heatstep<20; heatstep++)
 			{
 				ising.MCS(99, H, hrand, 1, dynamics);
 				Job.animate();
 				params.set("MCS", -99999);
-			}
+			}*/
 			for(int prestep=0; prestep<prelimit; prestep++)
 			{
-				ising.MCS(T, H, srand, 1, dynamics);
+				ising.MCS(T, H, hrand, 1, dynamics);
 				Job.animate();
 				params.set("MCS", prestep-prelimit);
 				if(prestep>(prelimit-20))
@@ -227,11 +226,14 @@ public class Metastablelifetime extends Simulation
 			}
 			lifetimedata[run]=step;
 			PrintUtil.printlnToFile(check , H , run, step);
+			Tools.Picture(grid2,run+1,step, pic);
 			
 		}
 		
 		taudatatemp=Tools.Mean(lifetimedata, runs);
+		
 		tauSDtemp=Tools.SD(lifetimedata, runs, taudatatemp);
+		mediantautemp=Tools.Median(lifetimedata, runs);
 		
 	
 	}
@@ -255,14 +257,10 @@ public class Metastablelifetime extends Simulation
 		
 		L = (int)params.fget("L");
 		M = L * L;
-		
-		
 		NJ = params.fget("NJ");
 
 		percent=params.fget("percent");
 		String dynamics= params.sget("Dynamics");
-		
-		
 		//Dseed = (int)params.fget("Dseed");
 		//Sseed = (int)params.fget("Sseed");
 		MaxH = params.fget("MaxH");
@@ -271,8 +269,6 @@ public class Metastablelifetime extends Simulation
 		totalcopies=(int)params.fget("totalcopies");
 		totalruns=(int)params.fget("totalruns");
 		threshold=0.9;
-
-		
 		
 	    IS=new IsingStructure(L,L,0,NJ,percent,percent,"square");   
 	    Istemp=new IsingStructure(L,L,0,NJ,percent,percent,"square");
@@ -282,7 +278,7 @@ public class Metastablelifetime extends Simulation
 	    /*{ 
 	    	IS.Dinitialization(Dseed, Dseed, 10, 10);
 	    	params.set("deadsites",IS.deadsites);
-	    	IS.Sinitialization(0, Sseed);
+	    	IS.Sinitialization(1, Sseed);
 	    	Istemp=IS.clone();
 	    }*/
 	    
@@ -290,7 +286,13 @@ public class Metastablelifetime extends Simulation
 	    
 	    //testrun(Istemp, dynamics);
 	    //meantau=20000;
-	    Scanfield(IS, T, MaxH, MinH, increment, 10000, dynamics);
+	    //Scanfield(IS, T, MaxH, MinH, increment, 20000, dynamics);
+	    
+	    
+	    Scanfield(IS, T, 1, 0.70, 0.05, 200000, dynamics);
+	    Scanfield(IS, T, 0.70, 0.50, 0.02, 200000, dynamics);
+	    Scanfield(IS, T, 0.50, 0.40, 0.01, 200000, dynamics);
+	    Scanfield(IS, T, 0.40, 0.20, 0.005, 200000, dynamics);
 
       
         
