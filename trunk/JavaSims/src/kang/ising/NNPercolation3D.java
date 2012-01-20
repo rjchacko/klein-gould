@@ -20,7 +20,7 @@ import scikit.jobs.params.DoubleValue;
 
 public class NNPercolation3D extends Simulation
 {
-	//Grid grid1=new Grid("grid1");     // the map to display the dilution configuration
+	Grid grid1=new Grid("grid1");     // the map to display the dilute ising configuration
 	//Grid grid2=new Grid("grid2");     // the map to display the largest cluster
 	Grid gridX=new Grid("X plane");
 	Grid gridY=new Grid("Y plane");
@@ -43,6 +43,7 @@ public class NNPercolation3D extends Simulation
 	public double ratio;
 	public int Dseed, Pseed;
 	public boolean span;
+	public int spannumber; //the number of dimension in which the cluster spans
 	public double T;
 	
 	public int size;    // size of the largest cluster
@@ -51,6 +52,7 @@ public class NNPercolation3D extends Simulation
 	public int displayX[];
 	public int displayY[];
 	public int displayZ[];
+	public int isingdisplay[];
 	public int dx,dy,dz;   //x, y, z indices for side-show display
 	
 	
@@ -65,8 +67,8 @@ public class NNPercolation3D extends Simulation
 		ising.setColor(3, Color.darkGray);    // the centers of the clusters
 		
 		
-		//grid1.setColors(ising);
-		//grid1.registerData(IS.L1, IS.L2, IS.spin);
+		grid1.setColors(ising);
+		grid1.registerData(L, L, isingdisplay);
 		gridX.setColors(ising);
 		gridX.registerData(L, L, displayX);
 		gridY.setColors(ising);
@@ -82,7 +84,7 @@ public class NNPercolation3D extends Simulation
 	
 	public void clear()
 	{
-		//grid1.clear();
+		grid1.clear();
 		//grid2.clear();
 		gridX.clear();
 		gridY.clear();
@@ -96,7 +98,7 @@ public class NNPercolation3D extends Simulation
 	
 	public void load(Control NNPercolation3D)
 	{
-		//NNPercolation.frame (grid1);
+		NNPercolation3D.frame (grid1);
 		//NNPercolation3D.frame (grid2);
 		NNPercolation3D.frame (gridX);
 		NNPercolation3D.frame (gridY);
@@ -106,13 +108,13 @@ public class NNPercolation3D extends Simulation
 		params.add("M");
 	    params.add("deadsites");
 	    params.add("livingsites");
-		params.add("percent", 0.0);
+		params.add("percent", 0.60);
 		
 		
 		
 		params.add("pb",0.358);     //bond probability
-		params.add("pmin",0.30); 
-		params.add("pmax",0.50); 
+		params.add("pmin",0.90); 
+		params.add("pmax",1.00); 
 		params.add("increment",0.001); 
 		
         params.add("Np");  //size of the largest cluster
@@ -126,7 +128,7 @@ public class NNPercolation3D extends Simulation
 		params.add("prestep",20);
 		params.add("steplimit",10000);
 		params.add("MCS");
-		params.add("T",4.51152);
+		params.add("T",1.44910);
 		
 
 	}
@@ -141,6 +143,7 @@ public class NNPercolation3D extends Simulation
 		boolean spanX=true;
 		boolean spanY=true;
 		boolean spanZ=true;
+		spannumber=0;
 		
 		int X[]=new int[L];
 		int Y[]=new int[L];
@@ -182,11 +185,20 @@ public class NNPercolation3D extends Simulation
 		}
 
 		if(spanX)
+			{
 			span=true;
+			spannumber++;
+			}
 		if(spanY)
+			{
 			span=true;
+			spannumber++;
+			}
 		if(spanZ)
+			{
 			span=true;
+			spannumber++;
+			}
 		 
 		return span;
 	}
@@ -247,9 +259,9 @@ public class NNPercolation3D extends Simulation
 		ratio=size/(M-deadsite);
 		Job.animate();
 		if(span)
-			PrintUtil.printlnToFile(data, probability, ratio, 1);
+			PrintUtil.printlnToFile(data, probability, ratio, 1, spannumber);
 		else
-			PrintUtil.printlnToFile(data, probability, ratio, 0);
+			PrintUtil.printlnToFile(data, probability, ratio, 0, spannumber);
 		//save image
 	}
 	
@@ -281,6 +293,7 @@ public class NNPercolation3D extends Simulation
 		displayX=new int[L*L];
 		displayY=new int[L*L];
 		displayZ=new int[L*L];
+		isingdisplay=new int[L*L];
 		
 		pb= params.fget("pb");
 		pmin= params.fget("pmin");
@@ -298,6 +311,10 @@ public class NNPercolation3D extends Simulation
 		for(int prestep=0; prestep<prelimit; prestep++)
 		{
 			IS.MCS(99, 0, mcflip, 1, "Glauber");
+			for(int dis=0; dis<L*L; dis++)
+			{
+				isingdisplay[dis]=IS.spin[L*L/2+dis];
+			}
 			Job.animate();
 			params.set("MCS",prestep-prelimit);
 		}
@@ -305,6 +322,10 @@ public class NNPercolation3D extends Simulation
 		{
 			T=params.fget("T");
 			IS.MCS(T, 0, mcflip, 1, "Glauber");
+			for(int dis2=0; dis2<L*L; dis2++)
+			{
+				isingdisplay[dis2]=IS.spin[L*L/2+dis2];
+			}
 			Job.animate();
 			params.set("MCS",step);
 		}

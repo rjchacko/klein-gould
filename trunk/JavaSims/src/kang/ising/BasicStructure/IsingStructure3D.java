@@ -106,7 +106,7 @@ public class IsingStructure3D{
 		cy=(int)L2/2;
 		cz=(int)L3/2;
 		if(biaspercent!=percent)
-		    //cube(biaslabel, A,B, C, cx,cy, cz);       need to wrtie a function named cube which draws a cube centered at cx,cy,cz                      
+		    cube(biaslabel, A,B, C, cx,cy, cz);      // need to wrtie a function named cube which draws a cube centered at cx,cy,cz                      
 		
 		for(int j=0; j<M; j++)
 		{
