@@ -98,7 +98,7 @@ public class Metastablelifetime extends Simulation
 		params.add("NJ",-4.0);
 	    params.add("deadsites");
 	    //params.add("livingsites");
-		params.add("percent", 0.0);
+		params.add("percent", 0.333);
 		 
 		params.add("MaxH",1.0);
 		params.add("MinH",0.01);
@@ -112,7 +112,7 @@ public class Metastablelifetime extends Simulation
 		//params.add("Dseed",1);    //seed for dilution configuration
 		//params.add("Sseed",1);    //seed for spin flip
 		
-		params.addm("T", 1.008);
+		params.addm("T", 0.402);
 		params.addm("H", 0.0);
 			
 		params.add("MCS");
@@ -192,7 +192,7 @@ public class Metastablelifetime extends Simulation
 			Random srand= new Random(run+1);
 			double totalM=0;
 			int totalnumber=0;
-			int prelimit=200;
+			int prelimit=3000;
 			//if(meantau>100)
 				//prelimit=(int)meantau*2;
 			int step;
@@ -289,10 +289,10 @@ public class Metastablelifetime extends Simulation
 	    //Scanfield(IS, T, MaxH, MinH, increment, 20000, dynamics);
 	    
 	    
-	    Scanfield(IS, T, 1, 0.70, 0.05, 200000, dynamics);
-	    Scanfield(IS, T, 0.70, 0.50, 0.02, 200000, dynamics);
-	    Scanfield(IS, T, 0.50, 0.40, 0.01, 200000, dynamics);
-	    Scanfield(IS, T, 0.40, 0.20, 0.005, 200000, dynamics);
+	    Scanfield(IS, T, 0.60, 0.30, 0.05, 200000, dynamics);
+	    Scanfield(IS, T, 0.30, 0.20, 0.02, 200000, dynamics);
+	    Scanfield(IS, T, 0.20, 0.10, 0.01, 200000, dynamics);
+	    Scanfield(IS, T, 0.10, 0.01, 0.005, 200000, dynamics);
 
       
         
