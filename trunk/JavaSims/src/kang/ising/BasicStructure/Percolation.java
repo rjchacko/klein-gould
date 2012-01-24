@@ -21,6 +21,15 @@ public class Percolation{
 	public Cluster cltemp;
 	public double probability;
 	
+	public int clustersize[];
+	public int clusterindex;
+	public double meanclustersize;
+	public double SDclustersize;
+	public int totalclusters;   //the number of the total clusters
+	public double totalsites;   // the number of the total sites for this percolation problem
+	public double OP;  // order parameter
+	
+	
 	public Percolation()
 	{
 		
@@ -30,6 +39,11 @@ public class Percolation{
 	{
 		this.ISP= IS.clone();
 		this.CS= new ClusterSet(number);
+		clustersize=new int[IS.M];
+		for(int jj=0; jj<IS.M; jj++)
+		{
+			clustersize[jj]=-1;   //preset the clustersize array
+		}
 	}
 
 	public void SetProbability(double p)
@@ -358,7 +372,7 @@ public class Percolation{
 		
 		// second, determine all the possible bonds and restore to a0[ISP.M] and a1[ISP.M]
 
-		
+		totalsites=SN;
 		Random bondsrand;
 		int pin;
 		bondsrand = new Random(Pseed);
@@ -518,6 +532,8 @@ public class Percolation{
         			   copytemp[ct]=temp[ct];
         		   }
         		   cltemp=new Cluster(ISP.L1,ISP.L2,copytemp);
+        		   clustersize[clusterindex]=cltemp.size;
+        		   clusterindex++;
         		   CS.AddCluster(cltemp);   
         	   }
            } // the end of i2 cycle
@@ -528,7 +544,47 @@ public class Percolation{
 
 	}
 	
+	public void ClusterSize()
+	{
+		double totalsize=0;
+		totalclusters=0;
+	    
+		for(int i=0; clustersize[i]>=0; i++)
+		{
+			totalsize+=clustersize[i];
+			totalclusters++;
+		}
+		if(totalclusters>0)
+			meanclustersize=totalsize/totalclusters;
+		else
+			meanclustersize=-1;    //this indicates that there is no cluster at all
+	}
 	
+	public void SDClusterSize()
+	{
+		double totalSD=0;
+		double SD=0;
+		if(totalclusters>0)
+		{
+			for(int p=0; p<totalclusters;p++)
+			{
+				totalSD+=((clustersize[p]-meanclustersize)*(clustersize[p]-meanclustersize));
+			}
+			SD=Math.sqrt(totalSD/totalclusters);
+		}
+		else
+			SD=-1;  // this indicates that there is no cluster at all
+		
+		SDclustersize=SD;
+	}
+	
+    public void OrderParameter()
+    {
+    	if(totalsites>0)
+    		OP=((double)CS.maximumsize)/totalsites;
+    	else
+    		OP=-1;   // this indicates that there is no stable spin sites
+    }
 	
 	
 }

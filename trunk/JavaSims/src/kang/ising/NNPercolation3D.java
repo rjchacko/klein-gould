@@ -108,14 +108,14 @@ public class NNPercolation3D extends Simulation
 		params.add("M");
 	    params.add("deadsites");
 	    params.add("livingsites");
-		params.add("percent", 0.60);
+		params.add("percent", 0.0);
 		
 		
 		
 		params.add("pb",0.358);     //bond probability
-		params.add("pmin",0.90); 
+		params.add("pmin",0.01); 
 		params.add("pmax",1.00); 
-		params.add("increment",0.001); 
+		params.add("increment",0.01); 
 		
         params.add("Np");  //size of the largest cluster
         params.add("ratio",0.00);  //the raito of largest cluster/the total occupied sites
@@ -128,7 +128,7 @@ public class NNPercolation3D extends Simulation
 		params.add("prestep",20);
 		params.add("steplimit",10000);
 		params.add("MCS");
-		params.add("T",1.44910);
+		params.add("T",4.51152);
 		
 
 	}
@@ -136,13 +136,21 @@ public class NNPercolation3D extends Simulation
 	public boolean SpanningCluster(int map[], int L)
 	{
 		//the logic of determine if the cluster spans the whole lattice:
-		//1 the coordinate x covers 0 to L-1
-		//2 the coordinate y covers 0 to L-1
-		//3 the site of cluster on edge has neighbor on the other edge
+		//1 the coordinate x,y or z covers 0 to L-1
+		//2 the site of cluster on edge has neighbor on the other edge
+		//if x covers 0 to L-1, then spanX=true, then check on the x=0 and x=L-1 plane, if there is point y,z on both plane to determine spanXpbc
+		
+		
 		boolean span=false;
 		boolean spanX=true;
 		boolean spanY=true;
 		boolean spanZ=true;
+		boolean spanXpbc=false;     //the cluster wrap back to itself under periodic boundary condition              
+		boolean spanYpbc=false;
+		boolean spanZpbc=false;
+		
+		//int plane[]= new int[L*L];
+		
 		spannumber=0;
 		
 		int X[]=new int[L];
@@ -185,20 +193,54 @@ public class NNPercolation3D extends Simulation
 		}
 
 		if(spanX)
+		{
+			for(int ty=0; ty<L; ty++)
+				for(int tz=0; tz<L; tz++)
+				{
+					if((map[ty*L+tz]+map[(L-1)*L*L+ty*L+tz])==4)
+						spanXpbc=true;
+				}
+			
+			if(spanXpbc)
 			{
-			span=true;
-			spannumber++;
+				span=true;
+				spannumber++;
 			}
+			
+		}
 		if(spanY)
+		{
+			for(int tx=0; tx<L; tx++)
+				for(int tz=0; tz<L; tz++)
+				{
+					if((map[tx*L*L+tz]+map[tx*L*L+L*(L-1)+tz])==4)
+						spanYpbc=true;
+				}
+			
+			if(spanYpbc)
 			{
-			span=true;
-			spannumber++;
+				span=true;
+				spannumber++;
 			}
+			
+		}
 		if(spanZ)
+		{
+			for(int ty=0; ty<L; ty++)
+				for(int tx=0; tx<L; tx++)
+				{
+					if((map[tx*L*L+ty*L]+map[tx*L*L+ty*L+L-1])==4)
+						spanZpbc=true;
+				}
+			
+			if(spanZpbc)
 			{
-			span=true;
-			spannumber++;
+				span=true;
+				spannumber++;
 			}
+			
+		}
+		
 		 
 		return span;
 	}
@@ -229,6 +271,10 @@ public class NNPercolation3D extends Simulation
 		NNP=new Percolation3D(Ising, 1);// keep track of 2 largest clusters
 		NNP.SetProbability(probability);
 		NNP.fastNNMapping(Pseed);
+		NNP.ClusterSize();
+		NNP.SDClusterSize();
+		NNP.OrderParameter();
+		
 		NNP.CS.set[NNP.CS.maximumpin].Center();
 		dx=NNP.CS.set[NNP.CS.maximumpin].cx;
 		dy=NNP.CS.set[NNP.CS.maximumpin].cy;
@@ -259,9 +305,13 @@ public class NNPercolation3D extends Simulation
 		ratio=size/(M-deadsite);
 		Job.animate();
 		if(span)
-			PrintUtil.printlnToFile(data, probability, ratio, 1, spannumber);
+			{
+			PrintUtil.printlnToFile(data, probability, ratio,NNP.OP, NNP.meanclustersize, NNP.SDclustersize, 1, spannumber);
+			}
 		else
-			PrintUtil.printlnToFile(data, probability, ratio, 0, spannumber);
+			{
+			PrintUtil.printlnToFile(data, probability, ratio,NNP.OP, NNP.meanclustersize, NNP.SDclustersize, 0, spannumber);
+			}
 		//save image
 	}
 	
