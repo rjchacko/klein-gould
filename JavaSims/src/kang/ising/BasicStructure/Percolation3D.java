@@ -1,7 +1,7 @@
 package kang.ising.BasicStructure;
 
 import chris.util.Random;
-
+import kang.ising.BasicStructure.BasicTools;
 
 /*the way to use this class is 
  * 
@@ -21,6 +21,16 @@ public class Percolation3D{
 	public Cluster3D cltemp;
 	public double probability;
 	
+	
+	public int clustersize[];
+	public int clusterindex;
+	public double meanclustersize;
+	public double SDclustersize;
+	public int totalclusters;   //the number of the total clusters
+	public double totalsites;   // the number of the total sites for this percolation problem
+	public double OP;  // order parameter
+	
+	
 	public Percolation3D()
 	{
 		
@@ -30,6 +40,11 @@ public class Percolation3D{
 	{
 		this.ISP= IS.clone();
 		this.CS= new ClusterSet3D(number);
+		clustersize=new int[IS.M];
+		for(int jj=0; jj<IS.M; jj++)
+		{
+			clustersize[jj]=-1;   //preset the clustersize array
+		}
 	}
 
 	public void SetProbability(double p)
@@ -37,7 +52,7 @@ public class Percolation3D{
 		probability=p;
 	}
 	
-	public void probability(double T)
+	public void probability(double T)     // the coniglio-klein pb near spinodal
 	{
 		double percolationM=ISP.magnetization;
 		probability=1- Math.exp(-(-ISP.J*(1+(percolationM/(1-ISP.percent)))/T));
@@ -78,7 +93,7 @@ public class Percolation3D{
 		
 		// second, determine all the possible bonds and restore to a0[ISP.M] and a1[ISP.M]
 
-		
+		totalsites=SN;
 		Random bondsrand;
 		int pin;
 		bondsrand = new Random(Pseed);
@@ -86,7 +101,7 @@ public class Percolation3D{
 		int totalbonds=0;
 		
 		for (int k=0; k<SN; k++)
-			for(int a=0; a<6; a++)  //consider 4 neighbors with double counting
+			for(int a=0; a<6; a++)  //consider 6 neighbors with double counting
 			{
 				int j=ISP.Nneighber(a, stablespin[k]);
 				if(ISP.spin[j]==-1)
@@ -137,7 +152,7 @@ public class Percolation3D{
 		
 		if(totalbonds>0)
 		{
-		  
+		   clusterindex=0;
            for (int i2=0; i2<SN; i2++)     //the loop of finding different clusters
            {
         	   if(copymap[stablespin[i2]]==-1)    //the site stablespin[i2] has not been visited
@@ -294,6 +309,8 @@ public class Percolation3D{
         			   copytemp[ct]=temp[ct];
         		   }
         		   cltemp=new Cluster3D(ISP.L1,ISP.L2,ISP.L3,copytemp);
+        		   clustersize[clusterindex]=cltemp.size;
+        		   clusterindex++;
         		   CS.AddCluster(cltemp);   
         	   }
            } // the end of i2 cycle
@@ -304,7 +321,46 @@ public class Percolation3D{
 
 	}
 	
+	public void ClusterSize()
+	{
+		double totalsize=0;
+		totalclusters=0;
+	    
+		for(int i=0; clustersize[i]>=0; i++)
+		{
+			totalsize+=clustersize[i];
+			totalclusters++;
+		}
+		if(totalclusters>0)
+			meanclustersize=totalsize/totalclusters;
+		else
+			meanclustersize=-1;    //this indicates that there is no cluster at all
+	}
 	
+	public void SDClusterSize()
+	{
+		double totalSD=0;
+		double SD=0;
+		if(totalclusters>0)
+		{
+			for(int p=0; p<totalclusters;p++)
+			{
+				totalSD+=((clustersize[p]-meanclustersize)*(clustersize[p]-meanclustersize));
+			}
+			SD=Math.sqrt(totalSD/totalclusters);
+		}
+		else
+			SD=-1;  // this indicates that there is no cluster at all
+		
+		SDclustersize=SD;
+	}
 	
+    public void OrderParameter()
+    {
+    	if(totalsites>0)
+    		OP=((double)CS.maximumsize)/totalsites;
+    	else
+    		OP=-1;   // this indicates that there is no stable spin sites
+    }
 	
 }
