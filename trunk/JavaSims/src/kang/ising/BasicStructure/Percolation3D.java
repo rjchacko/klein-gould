@@ -30,6 +30,9 @@ public class Percolation3D{
 	public double totalsites;   // the number of the total sites for this percolation problem
 	public double OP;  // order parameter
 	
+	public boolean span;
+	public int spannumber; //the number of dimension in which the cluster spans
+	
 	
 	public Percolation3D()
 	{
@@ -321,6 +324,118 @@ public class Percolation3D{
 
 	}
 	
+	public void SpanningCluster()       //if want to check the largest cluster then, map[]==CS.set[order[0]].lattice[]
+	{
+		//the logic of determine if the cluster spans the whole lattice:
+		//1 the coordinate x,y or z covers 0 to L-1
+		//2 the site of cluster on edge has neighbor on the other edge
+		//if x covers 0 to L-1, then spanX=true, then check on the x=0 and x=L-1 plane, if there is point y,z on both plane to determine spanXpbc
+		
+		int L= ISP.L1;
+	    span=false;
+		boolean spanX=true;
+		boolean spanY=true;
+		boolean spanZ=true;
+		boolean spanXpbc=false;     //the cluster wrap back to itself under periodic boundary condition              
+		boolean spanYpbc=false;
+		boolean spanZpbc=false;
+		
+		//int plane[]= new int[L*L];
+		
+		spannumber=0;
+		
+		int X[]=new int[L];
+		int Y[]=new int[L];
+		int Z[]=new int[L];
+		int x, y, z;
+		//int x1, y1, xL, yL;   //the coordinate j of the site in cluster on the edge
+		
+		for(int i=0; i<L; i++)
+		{
+			X[i]=1;
+			Y[i]=1;
+			Z[i]=1;
+			
+		}// preset the array to count the x and y coordinates
+		for(int j=0; j<(L*L*L); j++)
+		{
+			if(CS.set[CS.maximumpin].lattice[j]==2)
+			{
+				
+				x=(int)(j/(L*L));
+				y=(int)((int)j%(L*L))/L;
+				z=(int)((int)j%(L*L))%L;
+				
+				X[x]=0;
+				Y[y]=0;
+				Z[z]=0;
+		
+				
+			}
+		}// scan the whole cluster distribution to mark all the occupied x and y coordinates 
+		for(int k=0; k<L; k++)
+		{
+			if(X[k]!=0)
+				spanX=false;
+			if(Y[k]!=0)
+				spanY=false;
+			if(Z[k]!=0)
+				spanZ=false;
+		}
+
+		if(spanX)
+		{
+			for(int ty=0; ty<L; ty++)
+				for(int tz=0; tz<L; tz++)
+				{
+					if((CS.set[CS.maximumpin].lattice[ty*L+tz]+CS.set[CS.maximumpin].lattice[(L-1)*L*L+ty*L+tz])==4)
+						spanXpbc=true;
+				}
+			
+			if(spanXpbc)
+			{
+				span=true;
+				spannumber++;
+			}
+			
+		}
+		if(spanY)
+		{
+			for(int tx=0; tx<L; tx++)
+				for(int tz=0; tz<L; tz++)
+				{
+					if((CS.set[CS.maximumpin].lattice[tx*L*L+tz]+CS.set[CS.maximumpin].lattice[tx*L*L+L*(L-1)+tz])==4)
+						spanYpbc=true;
+				}
+			
+			if(spanYpbc)
+			{
+				span=true;
+				spannumber++;
+			}
+			
+		}
+		if(spanZ)
+		{
+			for(int ty=0; ty<L; ty++)
+				for(int tx=0; tx<L; tx++)
+				{
+					if((CS.set[CS.maximumpin].lattice[tx*L*L+ty*L]+CS.set[CS.maximumpin].lattice[tx*L*L+ty*L+L-1])==4)
+						spanZpbc=true;
+				}
+			
+			if(spanZpbc)
+			{
+				span=true;
+				spannumber++;
+			}
+			
+		}
+		
+		 
+	
+	}
+	
 	public void ClusterSize()
 	{
 		double totalsize=0;
@@ -331,8 +446,20 @@ public class Percolation3D{
 			totalsize+=clustersize[i];
 			totalclusters++;
 		}
+		if(span)   //get rid of the largest cluster
+		{
+			totalsize-=CS.maximumsize;
+		}
+		
+		
 		if(totalclusters>0)
-			meanclustersize=totalsize/totalclusters;
+		{
+			if(span)
+				meanclustersize=totalsize/(totalclusters-1);
+			else
+				meanclustersize=totalsize/totalclusters;
+		}
+			
 		else
 			meanclustersize=-1;    //this indicates that there is no cluster at all
 	}
@@ -347,7 +474,15 @@ public class Percolation3D{
 			{
 				totalSD+=((clustersize[p]-meanclustersize)*(clustersize[p]-meanclustersize));
 			}
-			SD=Math.sqrt(totalSD/totalclusters);
+			if(span)
+			{
+				totalSD-=((CS.maximumsize-meanclustersize)*(CS.maximumsize-meanclustersize));
+			}
+			
+			if(span)
+				SD=Math.sqrt(totalSD/(totalclusters-1));
+			else
+				SD=Math.sqrt(totalSD/totalclusters);
 		}
 		else
 			SD=-1;  // this indicates that there is no cluster at all
