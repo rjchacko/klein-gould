@@ -10,6 +10,7 @@ import javax.imageio.ImageIO;
 import chris.util.PrintUtil;
 import chris.util.Random;
 
+import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
@@ -31,6 +32,8 @@ public class CNTdilution extends Simulation{
 	Grid grid2=new Grid("simulation");     // the map to display the simulation
 	Grid grid3=new Grid("intervention copy");
 	Grid grid4=new Grid("evolution display"); 
+	Grid grid5=new Grid("total spin");
+	Grid grid6=new Grid("dilution map");
 	
 	public IsingStructure IS;
 	public IsingStructure Istemp;
@@ -70,6 +73,13 @@ public class CNTdilution extends Simulation{
 	public Percolation Droplet;
 	public int dropletsize;
 	
+	//droplet distribution parameter
+	public double spintotal[];
+	public double dilutionmap[];
+    public double meanNT;    //mean nucleation time
+    public double SDNT;   //standard deviation of nucleation time
+    public double nucleationevents[];
+
 	
 	
 	//public int ti, tf, tm;     //the MCS time of the intervention range[ti,tf] tm=(ti+tf)/2
@@ -86,7 +96,7 @@ public class CNTdilution extends Simulation{
 		ising.setColor(2, Color.BLUE);       //clusters
 		ising.setColor(-2, Color.GREEN);     //
 		ising.setColor(3, Color.darkGray);    // the centers of the clusters
-		
+
 		
 		grid1.setColors(ising);
 		grid1.registerData(L, L, IS.spin);
@@ -97,6 +107,12 @@ public class CNTdilution extends Simulation{
 		grid4.setColors(ising);
 		grid4.registerData(L, L, Evolution.spin);
 		
+		
+		ColorGradient heatmap = new ColorGradient();
+		grid5.setColors(heatmap);
+		grid5.registerData(L, L, spintotal);
+		grid6.setColors(heatmap);
+		grid6.registerData(L, L, dilutionmap);
 	}
 	
 	public void clear()
@@ -105,6 +121,8 @@ public class CNTdilution extends Simulation{
 		grid2.clear();
 		grid3.clear();
 		grid4.clear();
+		grid5.clear();
+		grid6.clear();
 	}
 
 	public static void main (String[] CNTdilution){
@@ -116,7 +134,7 @@ public class CNTdilution extends Simulation{
 	public void load(Control CNTdilution)
 	{
 
-		CNTdilution.frameTogether("Display", grid1 ,grid2, grid3, grid4);
+		CNTdilution.frameTogether("Display", grid1 ,grid2, grid3, grid4, grid5, grid6);
 
 		params.add("L", 200);
 		params.add("la",10);    // scale of the bias dilution region
@@ -125,8 +143,8 @@ public class CNTdilution extends Simulation{
 		params.add("NJ",-4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.0);
-		params.add("biaspercent", 1);
+		params.add("percent", 0.250);
+		params.add("biaspercent", 0.250);
 		params.add("totalruns",20);     //the number of total intervention runs
 		 
 
@@ -136,21 +154,18 @@ public class CNTdilution extends Simulation{
 		//params.add("Dseed",1);    //seed for dilution configuration
 		//params.add("Sseed",1);    //seed for spin flip
 		
-		params.addm("T", 1.008);
-		params.addm("H", 0.33);
-		
-		
-		
-		
+		params.addm("T", 0.576);
+		params.addm("H", 0.05);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
-		params.add("runs");    //intervention copy number
+		params.add("runs");    //intervention run number
 		params.add("grow");
 		params.add("decay");
 		//params.add("copies");     
 		params.add("magnetization");
 		params.add("Dropletsize");
+		params.add("copies");    //ensemble copy for droplet distribution
 		
 
 	}
@@ -260,7 +275,7 @@ public class CNTdilution extends Simulation{
 			Evolution.MCS(T, H, Erand, 1, dynamics);
 			Job.animate();
 			params.set("Emcs", ps+90);
-			params.set("magnetization", ising.magnetization);
+			params.set("magnetization", Evolution.magnetization);
 		}
 		double Ms=totalM/10;    //calculate the saturate magnetization
 		params.set("H", -H);//flip the field;
@@ -272,20 +287,20 @@ public class CNTdilution extends Simulation{
 			params.set("Emcs", ss);
 			params.set("magnetization", Evolution.magnetization);
 			PrintUtil.printlnToFile(singlepath , ss , Evolution.magnetization/Ms);
-			Tools.Picture(grid4, ss, (int)(H*1000), singlepic);
+			if(ss%2000==0)
+			{
+				Tools.Picture(grid4, ss, (int)(H*1000), singlepic);
+			}
 		}
 		
 		
-		
-		
 	}
-	
 	
 	public void Intervention(IsingStructure ising, Random rand, double T, double H, int breakpoint, int steplimit)
 	{
 		String Irun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
 		String Ipath = "/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Intervention log.txt";
-		String Ipic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Interventionpic/<H= "+fmt.format(H*1000)+">"+Irun;
+		String Ipic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Interventionpic/<t= "+fmt.format(breakpoint)+">"+Irun;
 		String Bpic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Breakpoint/"+Irun;
 		String Dpic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Droplet/"+Irun;
 		
@@ -311,7 +326,7 @@ public class CNTdilution extends Simulation{
 			Evolution.MCS(T, H, Erand, 1, dynamics);
 			Job.animate();
 			params.set("Emcs", ps+90);
-			params.set("magnetization", ising.magnetization);
+			params.set("magnetization", Evolution.magnetization);
 		}
 		double Ms=totalM/10;    //calculate the saturate magnetization
 		params.set("H", -H);//flip the field;
@@ -324,7 +339,9 @@ public class CNTdilution extends Simulation{
 			params.set("magnetization", Evolution.magnetization);
 		}
 		Evolution.MCS(T, -H, Erand, 1, dynamics);
+		params.set("magnetization", Evolution.magnetization);
 		Job.animate();
+		double Mc=Evolution.magnetization;
 		
 		
 		
@@ -337,7 +354,9 @@ public class CNTdilution extends Simulation{
 			dropletsize=Droplet.CS.maximumsize;
 			for(int jj=0; jj<ising.M; jj++)
 			{
-				Istemp.spin[jj]=Evolution.spin[jj];
+				Istemp.spin[jj]=-1;
+				if(Evolution.spin[jj]==0)
+					Istemp.spin[jj]=0;
 				if(Droplet.CS.set[Droplet.CS.maximumpin].lattice[jj]==2)
 					Istemp.spin[jj]=2;
 				
@@ -345,7 +364,7 @@ public class CNTdilution extends Simulation{
 			params.set("Dropletsize",dropletsize);
 			Job.animate();
 		}
-		Tools.Picture(grid2, breakpoint, 9999, Dpic);        //the snapshot at the intervention point
+		Tools.Picture(grid2, breakpoint, dropletsize, Dpic);        //the snapshot at the intervention point
 		
 		
 		
@@ -366,7 +385,7 @@ public class CNTdilution extends Simulation{
 				params.set("Imcs", is);
 				params.set("magnetization", Intervention.magnetization);
 			}
-			if(Intervention.magnetization>threshold*Ms)
+			if(Intervention.magnetization>threshold*Mc)
 			{
 				decaynumber++;
 				params.set("decay", decaynumber);
@@ -393,6 +412,86 @@ public class CNTdilution extends Simulation{
 	
 	}
 	
+	public void Dropletdistribution(IsingStructure ising, double T, double H, int copies, double thresholdM)
+	{
+		nucleationevents=new double[copies];
+		
+		
+		String Drun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String Dpath = "/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/nucleation log.txt";
+		String ddpic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/map/"+Drun;
+		String Npic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/nucleationevents/"+Drun;
+		
+		for(int cc=0; cc<copies; cc++)
+		{
+			
+			
+			Evolution=ising.clone();
+			Random crand=new Random(cc+99);
+			params.set("H", H);
+			params.set("copies", cc+1);
+			
+			for(int pres=0; pres<90; pres++)
+			{
+				Evolution.MCS(T, H, crand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", pres);
+				params.set("magnetization", Evolution.magnetization);
+			}
+		
+			double totalM=0;
+			for(int ps=0; ps<10; ps++)
+			{
+				totalM+=Evolution.magnetization;
+				Evolution.MCS(T, H, crand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", ps+90);
+				params.set("magnetization", Evolution.magnetization);
+			}
+			
+			double Ms=totalM/10;    //calculate the saturate magnetization
+			params.set("H", -H);//flip the field;
+			int ss=0;
+			for(ss=0; Evolution.magnetization>(Ms*thresholdM);ss++)
+			{
+				Evolution.MCS(T, -H, crand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", ss);
+				params.set("magnetization", Evolution.magnetization);
+				
+			}
+			Tools.Picture(grid4, ss, (int)(H*1000), Npic);
+			
+			PrintUtil.printlnToFile(Dpath ,cc+1, ss , Evolution.magnetization);
+			nucleationevents[cc]=ss;
+			
+			for(int jjj=0; jjj<ising.M; jjj++)
+			{
+				spintotal[jjj]+=Evolution.spin[jjj];
+			}
+			Job.animate();
+			
+			Tools.Picture(grid5, cc+1, ss, ddpic);
+			
+		}
+		
+		
+		
+		meanNT=Tools.Mean(nucleationevents, copies);
+		SDNT=Tools.SD(nucleationevents, copies, meanNT);
+		
+		
+		PrintUtil.printlnToFile(Dpath , Drun);
+		PrintUtil.printlnToFile(Dpath , "meanNT=  ",meanNT);
+		PrintUtil.printlnToFile(Dpath , "SDNT =  ", SDNT);
+
+		PrintUtil.printlnToFile(Dpath , "    ");
+		
+		Tools.Picture(grid5, 9999, 9999, ddpic);   //the final totalspin distribution
+		
+		
+	}
+	
 	public void run(){
 		
 		
@@ -416,6 +515,9 @@ public class CNTdilution extends Simulation{
 	    Intervention=new IsingStructure(L,L,0,NJ,percent,biaspercent,"square");
 	    Evolution=new IsingStructure(L,L,0,NJ,percent,biaspercent,"square");
 	    Droplet=new Percolation();
+	    spintotal= new double[IS.M];
+	    dilutionmap= new double[IS.M];
+	   
 	    
 	    
 	    Tools=new BasicTools();
@@ -437,17 +539,17 @@ public class CNTdilution extends Simulation{
 	    
 	    //testrun(Istemp);
 	    
-	    //Properh(IS, rand, T, 0.1, 0.6, 0.02);
+	    //Properh(IS, rand, T, 0.01, 0.6, 0.01);
 	    
-	    //Singlerun(IS, rand, T, H);
+	    Singlerun(IS, rand, T, H);
 
 	    
-	    breakpoint= 2365;
-	    threshold= 0.98;
+	    breakpoint= 7994;
+	    threshold= 0.995;
 	    steplimit= 200;
-	    Intervention(IS, rand, T, H, breakpoint, steplimit);
+	    //Intervention(IS, rand, T, H, breakpoint, steplimit);
       
-        
+	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
 	    
 	    
