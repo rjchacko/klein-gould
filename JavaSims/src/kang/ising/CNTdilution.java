@@ -79,7 +79,7 @@ public class CNTdilution extends Simulation{
     public double meanNT;    //mean nucleation time
     public double SDNT;   //standard deviation of nucleation time
     public double nucleationevents[];
-
+    public double lifetime[];
 	
 	
 	//public int ti, tf, tm;     //the MCS time of the intervention range[ti,tf] tm=(ti+tf)/2
@@ -143,8 +143,8 @@ public class CNTdilution extends Simulation{
 		params.add("NJ",-4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.250);
-		params.add("biaspercent", 0.250);
+		params.add("percent", 0.111);
+		params.add("biaspercent", 0.111);
 		params.add("totalruns",20);     //the number of total intervention runs
 		 
 
@@ -154,8 +154,8 @@ public class CNTdilution extends Simulation{
 		//params.add("Dseed",1);    //seed for dilution configuration
 		//params.add("Sseed",1);    //seed for spin flip
 		
-		params.addm("T", 0.576);
-		params.addm("H", 0.05);
+		params.addm("T", 0.826);
+		params.addm("H", 0.30);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
@@ -179,7 +179,7 @@ public class CNTdilution extends Simulation{
 			H=params.fget("H");
 			ising.MCS(T, H, trand, 1, dynamics);
 			Job.animate();
-			params.set("MCS", tstep);
+			params.set("Emcs", tstep);
 			params.set("magnetization", ising.magnetization);
 		}
 	}
@@ -492,6 +492,86 @@ public class CNTdilution extends Simulation{
 		
 	}
 	
+	public void Singlehistogram(IsingStructure ising, double T, double H, int runs, double thresholdM, int DPseed)
+	{
+		lifetime=new double[runs];
+		
+		String Srun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String Spath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/"+Srun;
+		String Slog="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/singlehistogramlog.txt";
+		String Spic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/"+Srun;
+
+		Job.animate();
+		
+		for(int rr=0; rr<runs; rr++)
+		{
+			Evolution=ising.Dperturbation(DPseed);
+			Evolution.Sinitialization(1,Sseed);
+			
+			Random rrand=new Random(rr+99);
+			params.set("H", H);
+			params.set("copies", rr+1);
+			Job.animate();
+			
+			for(int pres=0; pres<90; pres++)
+			{
+				Evolution.MCS(T, H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", pres);
+				params.set("magnetization", Evolution.magnetization);
+			}
+		
+			double totalM=0;
+			for(int ps=0; ps<10; ps++)
+			{
+				totalM+=Evolution.magnetization;
+				Evolution.MCS(T, H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", ps+90);
+				params.set("magnetization", Evolution.magnetization);
+			}
+			
+			double Ms=totalM/10;    //calculate the saturate magnetization
+			params.set("H", -H);//flip the field;
+			int ss=0;
+			for(ss=0; Evolution.magnetization>(Ms*thresholdM);ss++)
+			{
+				Evolution.MCS(T, -H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", ss);
+				params.set("magnetization", Evolution.magnetization);
+				
+			}
+			
+			PrintUtil.printlnToFile(Spath ,rr+1, ss);
+			lifetime[rr]=ss;
+			
+			for(int jjj=0; jjj<ising.M; jjj++)
+			{
+				spintotal[jjj]+=Evolution.spin[jjj];
+			}
+			Job.animate();
+						
+		}
+		meanNT=Tools.Mean(lifetime, runs);
+		SDNT=Tools.SD(lifetime, runs, meanNT);
+		
+		
+		PrintUtil.printlnToFile(Slog , Srun);
+		PrintUtil.printlnToFile(Slog, "threshold= ", thresholdM);
+		PrintUtil.printlnToFile(Slog , "meanNT=  ",meanNT);
+		PrintUtil.printlnToFile(Slog , "SDNT =  ", SDNT);
+		PrintUtil.printlnToFile(Slog , "deadsites=  ",Evolution.deadsites);
+
+		PrintUtil.printlnToFile(Slog , "    ");
+		
+		Tools.Picture(grid5, 9999, 9999, Spic);   //the final totalspin distribution
+		
+		
+		
+		
+	}
+	
 	public void run(){
 		
 		
@@ -530,6 +610,7 @@ public class CNTdilution extends Simulation{
 	    	params.set("deadsites",IS.deadsites);
 	    	IS.Sinitialization(1, Sseed);
 	    	Istemp=IS.clone();
+	    	//Istemp.Sinitialization(1, Sseed);
 	    	Intervention=IS.clone();
 	    }
 	    
@@ -541,8 +622,8 @@ public class CNTdilution extends Simulation{
 	    
 	    //Properh(IS, rand, T, 0.01, 0.6, 0.01);
 	    
-	    Singlerun(IS, rand, T, H);
-
+	    //Singlerun(IS, rand, T, H);
+        
 	    
 	    breakpoint= 7994;
 	    threshold= 0.995;
@@ -551,6 +632,7 @@ public class CNTdilution extends Simulation{
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
+	    Singlehistogram(IS, T, H, 200, 0.8, 2);
 	    
 	    
 	    
