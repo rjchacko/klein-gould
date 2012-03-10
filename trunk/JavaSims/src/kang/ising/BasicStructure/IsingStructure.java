@@ -43,6 +43,7 @@ public class IsingStructure{
 		this.percent=percent;
 		this.biaspercent=biaspercent;
 		this.shape=shape;
+		this.deadsites=0;
 
 		this.NJ=NJ;
 		if(R==0)
@@ -76,9 +77,37 @@ public class IsingStructure{
 		copy.biasB=biasB;
 		copy.totalspin=totalspin;
 		copy.totalintenergy=totalintenergy;
+		copy.deadsites=deadsites;
 		
 		
 		return copy;
+	}
+	
+	public IsingStructure Dperturbation(int seed)
+	{
+		IsingStructure perturb=new IsingStructure(L1, L2, R, NJ, 0, 0, shape);
+		perturb.Dinitialization(1, 1, 0, 0);
+		perturb.percent=percent;
+		perturb.biaspercent=biaspercent;
+		
+		Random DPrand=new Random(seed);
+		int j;
+		int i=deadsites;
+	
+
+		while(i>0)
+		{
+			j=(int)(DPrand.nextDouble()*L1*L2);
+			if(perturb.spin[j]!=0)
+			{
+				perturb.spin[j]=0;
+				perturb.deadsites++;
+				i--;
+			}
+		}
+		perturb.Sinitialization(1, 1);
+		
+		return perturb;
 	}
 	
 	public void Dinitialization(int Dseed, int Bseed, int A, int B )//dilution initialization
