@@ -496,7 +496,7 @@ public class CNTdilution extends Simulation{
 	{
 		lifetime=new double[runs];
 		
-		String Srun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String Srun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">"+"Seed= "+fmt.format(DPseed);
 		String Spath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/"+Srun;
 		String Slog="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/singlehistogramlog.txt";
 		String Spic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/"+Srun;
@@ -558,6 +558,8 @@ public class CNTdilution extends Simulation{
 		
 		
 		PrintUtil.printlnToFile(Slog , Srun);
+		
+		PrintUtil.printlnToFile(Slog , "DPseed=  ", DPseed);
 		PrintUtil.printlnToFile(Slog, "threshold= ", thresholdM);
 		PrintUtil.printlnToFile(Slog , "meanNT=  ",meanNT);
 		PrintUtil.printlnToFile(Slog , "SDNT =  ", SDNT);
@@ -565,7 +567,7 @@ public class CNTdilution extends Simulation{
 
 		PrintUtil.printlnToFile(Slog , "    ");
 		
-		Tools.Picture(grid5, 9999, 9999, Spic);   //the final totalspin distribution
+		Tools.Picture(grid5, 9999, DPseed, Spic);   //the final totalspin distribution
 		
 		
 		
@@ -632,7 +634,9 @@ public class CNTdilution extends Simulation{
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
-	    Singlehistogram(IS, T, H, 200, 0.8, 2);
+	    Singlehistogram(IS, T, H, 500, 0.6, 1);
+	    
+	    Singlehistogram(IS, T, H, 500, 0.6, 2);
 	    
 	    
 	    
