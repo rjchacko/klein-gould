@@ -159,7 +159,7 @@ public class CNTdilution extends Simulation{
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
-		params.add("runs");    //intervention run number
+		params.add("runs");    //intervention run number   
 		params.add("grow");
 		params.add("decay");
 		//params.add("copies");     
@@ -492,12 +492,101 @@ public class CNTdilution extends Simulation{
 		
 	}
 	
+	public void Multihistogram(IsingStructure ising, double T, double H, int runs, int copies, double thresholdM)
+	{
+		lifetime=new double[runs];
+		String Mrun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">"+"threshold= "+fmt.format(thresholdM*1000);
+		String Mpath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/lifetime"+Mrun+".txt";
+		String MSDpath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/SDlifetime"+Mrun+".txt";
+		String Mlog="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/multihistogramlog.txt";
+		String Mpic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/"+Mrun;
+		
+		
+		
+		for(int cc=0; cc<copies; cc++)
+		{
+			params.set("copies", cc+1);
+			spintotal=new double[ising.M];
+			Job.animate();
+			
+			for(int rr=0; rr<runs; rr++)
+			{
+				Evolution=ising.Dperturbation(cc+1);
+				Evolution.Sinitialization(1,Sseed);
+				
+				Random rrand=new Random(rr+99);
+				params.set("H", H);
+				params.set("runs", rr+1);
+				Job.animate();
+				
+				for(int pres=0; pres<90; pres++)
+				{
+					Evolution.MCS(T, H, rrand, 1, dynamics);
+					Job.animate();
+					params.set("Emcs", pres);
+					params.set("magnetization", Evolution.magnetization);
+				}
+			
+				double totalM=0;
+				for(int ps=0; ps<10; ps++)
+				{
+					totalM+=Evolution.magnetization;
+					Evolution.MCS(T, H, rrand, 1, dynamics);
+					Job.animate();
+					params.set("Emcs", ps+90);
+					params.set("magnetization", Evolution.magnetization);
+				}
+				
+				double Ms=totalM/10;    //calculate the saturate magnetization
+				params.set("H", -H);//flip the field;
+				int ss=0;
+				for(ss=0; Evolution.magnetization>(Ms*thresholdM);ss++)
+				{
+					Evolution.MCS(T, -H, rrand, 1, dynamics);
+					Job.animate();
+					params.set("Emcs", ss);
+					params.set("magnetization", Evolution.magnetization);
+					
+				}
+				
+				lifetime[rr]=ss;
+				
+				for(int jjj=0; jjj<ising.M; jjj++)
+				{
+					spintotal[jjj]+=Evolution.spin[jjj];
+				}
+				Job.animate();
+							
+			}
+			meanNT=Tools.Mean(lifetime, runs);
+			SDNT=Tools.SD(lifetime, runs, meanNT);
+			
+			
+			PrintUtil.printlnToFile(Mlog , Mrun);
+			
+			PrintUtil.printlnToFile(Mpath , cc+1, meanNT);
+			PrintUtil.printlnToFile(MSDpath, cc+1, SDNT);
+			
+			PrintUtil.printlnToFile(Mlog , "copies=  ", cc+1);
+			PrintUtil.printlnToFile(Mlog , "deadsites=  ",Evolution.deadsites);
+
+			PrintUtil.printlnToFile(Mlog , "    ");
+			
+			Tools.Picture(grid5, 9999, cc+1, Mpic);   //the final totalspin distribution
+			
+			
+			
+			
+		}
+		
+	}
+	
 	public void Singlehistogram(IsingStructure ising, double T, double H, int runs, double thresholdM, int DPseed)
 	{
 		lifetime=new double[runs];
 		
 		String Srun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">"+"Seed= "+fmt.format(DPseed);
-		String Spath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/"+Srun;
+		String Spath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/"+Srun+".txt";
 		String Slog="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/singlehistogramlog.txt";
 		String Spic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlehistogram/"+Srun;
 
@@ -510,7 +599,7 @@ public class CNTdilution extends Simulation{
 			
 			Random rrand=new Random(rr+99);
 			params.set("H", H);
-			params.set("copies", rr+1);
+			params.set("runs", rr+1);
 			Job.animate();
 			
 			for(int pres=0; pres<90; pres++)
@@ -634,9 +723,9 @@ public class CNTdilution extends Simulation{
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
-	    Singlehistogram(IS, T, H, 500, 0.6, 1);
+	    //Singlehistogram(IS, T, H, 500, 0.6, 1);
 	    
-	    Singlehistogram(IS, T, H, 500, 0.6, 2);
+	    Multihistogram(IS, T, H, 5, 5, 0.6);
 	    
 	    
 	    
