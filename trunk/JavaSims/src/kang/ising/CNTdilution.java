@@ -497,7 +497,7 @@ public class CNTdilution extends Simulation{
 		lifetime=new double[runs];
 		String Mrun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">"+"threshold= "+fmt.format(thresholdM*1000);
 		String Mpath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/lifetime"+Mrun+".txt";
-		String MSDpath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/SDlifetime"+Mrun+".txt";
+		//String MSDpath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/SDlifetime"+Mrun+".txt";
 		String Mlog="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/multihistogramlog.txt";
 		String Mpic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multihistogram/"+Mrun;
 		
@@ -564,8 +564,8 @@ public class CNTdilution extends Simulation{
 			
 			PrintUtil.printlnToFile(Mlog , Mrun);
 			
-			PrintUtil.printlnToFile(Mpath , cc+1, meanNT);
-			PrintUtil.printlnToFile(MSDpath, cc+1, SDNT);
+			PrintUtil.printlnToFile(Mpath , cc+1, meanNT, SDNT);
+			//PrintUtil.printlnToFile(MSDpath, cc+1, SDNT);
 			
 			PrintUtil.printlnToFile(Mlog , "copies=  ", cc+1);
 			PrintUtil.printlnToFile(Mlog , "deadsites=  ",Evolution.deadsites);
@@ -725,7 +725,7 @@ public class CNTdilution extends Simulation{
 	    
 	    //Singlehistogram(IS, T, H, 500, 0.6, 1);
 	    
-	    Multihistogram(IS, T, H, 5, 5, 0.6);
+	    Multihistogram(IS, T, H, 10, 500, 0.9);
 	    
 	    
 	    
