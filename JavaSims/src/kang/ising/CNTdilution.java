@@ -155,7 +155,7 @@ public class CNTdilution extends Simulation{
 		//params.add("Sseed",1);    //seed for spin flip
 		
 		params.addm("T", 0.826);
-		params.addm("H", 0.30);
+		params.addm("H", 0.35);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
@@ -725,7 +725,11 @@ public class CNTdilution extends Simulation{
 	    
 	    //Singlehistogram(IS, T, H, 500, 0.6, 1);
 	    
-	    Multihistogram(IS, T, H, 10, 500, 0.9);
+	    Multihistogram(IS, T, H, 10, 500, 0.8);
+	    
+	    Multihistogram(IS, T, H, 10, 500, 0.7);
+	    
+	    Multihistogram(IS, T, H, 10, 500, 0.5);
 	    
 	    
 	    
