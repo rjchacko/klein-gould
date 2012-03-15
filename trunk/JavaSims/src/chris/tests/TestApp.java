@@ -25,6 +25,8 @@ public class TestApp extends Simulation {
 
 	public void run() {
 		
+		System.out.println("hi");
+		
 		int[] a  = new int[]{1, 4, 9, 16, 25, 36, 49, 64, 81, 100, 121, 144, 169};
 		int sum2 = 0; 
 		for(int ii : a){
