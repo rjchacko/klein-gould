@@ -97,24 +97,26 @@ public class NNPercolation3D extends Simulation
 	
 	public void load(Control NNPercolation3D)
 	{
-		NNPercolation3D.frame (grid1);
+		
+		NNPercolation3D.frameTogether("Display", grid1, gridX, gridY, gridZ);
+		//NNPercolation3D.frame (grid1);
 		//NNPercolation3D.frame (grid2);
-		NNPercolation3D.frame (gridX);
-		NNPercolation3D.frame (gridY);
-		NNPercolation3D.frame (gridZ);
+		//NNPercolation3D.frame (gridX);
+		//NNPercolation3D.frame (gridY);
+		//NNPercolation3D.frame (gridZ);
 
-		params.add("L", 50);
+		params.add("L", 60);
 		params.add("M");
 	    params.add("deadsites");
 	    params.add("livingsites");
-		params.add("percent", 0.60);
+		params.add("percent", 0.10);
 		
 		
 		
 		params.add("pb",0.358);     //bond probability
-		params.add("pmin",0.01); 
-		params.add("pmax",1.00); 
-		params.add("increment",0.01); 
+		params.add("pmin",0.35); 
+		params.add("pmax",0.45); 
+		params.add("increment",0.001); 
 		
         params.add("Np");  //size of the largest cluster
         params.add("ratio",0.00);  //the raito of largest cluster/the total occupied sites
@@ -127,7 +129,7 @@ public class NNPercolation3D extends Simulation
 		params.add("prestep",20);
 		params.add("steplimit",10000);
 		params.add("MCS");
-		params.add("T",1.44910);
+		params.add("T",4.03104);
 		
 
 	}
