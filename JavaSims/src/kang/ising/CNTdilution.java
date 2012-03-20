@@ -155,7 +155,7 @@ public class CNTdilution extends Simulation{
 		//params.add("Sseed",1);    //seed for spin flip
 		
 		params.addm("T", 0.826);
-		params.addm("H", 0.35);
+		params.addm("H", 0.18);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
@@ -492,6 +492,7 @@ public class CNTdilution extends Simulation{
 		
 	}
 	
+	
 	public void Multihistogram(IsingStructure ising, double T, double H, int runs, int copies, double thresholdM)
 	{
 		lifetime=new double[runs];
@@ -723,13 +724,16 @@ public class CNTdilution extends Simulation{
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
-	    //Singlehistogram(IS, T, H, 500, 0.6, 1);
+	    Singlehistogram(IS, T, H, 500, 0.9, 1);
 	    
-	    Multihistogram(IS, T, H, 10, 500, 0.8);
+
+	    //Multihistogram(IS, T, H, 10, 500, 0.9);
 	    
-	    Multihistogram(IS, T, H, 10, 500, 0.7);
+	    //Multihistogram(IS, T, H, 10, 500, 0.8);
 	    
-	    Multihistogram(IS, T, H, 10, 500, 0.5);
+	    //Multihistogram(IS, T, H, 10, 500, 0.7);
+	    
+	    //Multihistogram(IS, T, H, 10, 500, 0.5);
 	    
 	    
 	    
