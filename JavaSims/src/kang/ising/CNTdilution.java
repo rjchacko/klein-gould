@@ -595,7 +595,11 @@ public class CNTdilution extends Simulation{
 		
 		for(int rr=0; rr<runs; rr++)
 		{
-			Evolution=ising.Dperturbation(DPseed);
+			if(DPseed==0)
+				Evolution=ising.clone();
+			else
+				Evolution=ising.Dperturbation(DPseed);
+			
 			Evolution.Sinitialization(1,Sseed);
 			
 			Random rrand=new Random(rr+99);
@@ -664,6 +668,124 @@ public class CNTdilution extends Simulation{
 		
 	}
 	
+	public void Singlegrowth(IsingStructure ising, double T, double H, int runs, int DPseed)  //single realization of dilution, multiple runs, thNumber (default-6) is the total number of thresholds
+	{
+		double growtime[][]=new double[6][runs];
+		int inttime[][]=new int[6][runs];  //integer form of growtime
+		double threshold[]=new double[6];
+		double meanNT[]=new double[6];
+		double SDNT[]=new double[6];
+		
+		
+		
+		threshold[0]=0.95;
+		threshold[1]=0.90;
+		threshold[2]=0.80;
+		threshold[3]=0.70;
+		threshold[4]=0.60;
+		threshold[5]=0.50;
+		
+		//about the array of[thNumber]: 0-95%  1-90%  2-80%  3-70%  4-60%  5-50%
+		
+		String Srun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">"+"Seed= "+fmt.format(DPseed);
+		String Spath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlegrowth/"+Srun+".txt";
+		String Slog="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlegrowth/singlegrowthlog.txt";
+		String Spic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlegrowth/"+Srun;
+
+		Job.animate();
+		
+		for(int rr=0; rr<runs; rr++)
+		{
+			if(DPseed==0)
+				Evolution=ising.clone();
+			else
+				Evolution=ising.Dperturbation(DPseed);
+			
+			Evolution.Sinitialization(1,Sseed);
+			
+			Random rrand=new Random(rr+99);
+			params.set("H", H);
+			params.set("runs", rr+1);
+			Job.animate();
+			
+			for(int pres=0; pres<90; pres++)
+			{
+				Evolution.MCS(T, H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", pres);
+				params.set("magnetization", Evolution.magnetization);
+			}
+		
+			double totalM=0;
+			for(int ps=0; ps<10; ps++)
+			{
+				totalM+=Evolution.magnetization;
+				Evolution.MCS(T, H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", ps+90);
+				params.set("magnetization", Evolution.magnetization);
+			}
+			
+			double Ms=totalM/10;    //calculate the saturate magnetization
+			params.set("H", -H);//flip the field;
+			int ss=0;
+			int tempin=0;
+			for(ss=0; tempin<6; ss++)
+			{
+				Evolution.MCS(T, -H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", ss);
+				params.set("magnetization", Evolution.magnetization);
+				if(Evolution.magnetization<(Ms*threshold[tempin]))
+				{
+					growtime[tempin][rr]=ss;
+					inttime[tempin][rr]=ss;
+					tempin++;
+				}
+			}
+			
+			PrintUtil.printlnToFile(Spath ,rr+1, inttime[0][rr], inttime[1][rr], inttime[2][rr], inttime[3][rr], inttime[4][rr], inttime[5][rr]);
+			
+			
+			for(int jjj=0; jjj<ising.M; jjj++)
+			{
+				spintotal[jjj]+=Evolution.spin[jjj];
+			}
+			Job.animate();
+						
+		}
+		
+		for(int ppp=0; ppp<6; ppp++)
+		{
+			meanNT[ppp]=Tools.Mean(growtime[ppp], runs);
+			SDNT[ppp]=Tools.SD(growtime[ppp], runs, meanNT[ppp]);
+		}
+		
+		
+		
+		PrintUtil.printlnToFile(Slog , Srun);
+		
+		PrintUtil.printlnToFile(Slog , "DPseed=  ", DPseed);
+		
+		PrintUtil.printlnToFile(Slog , "threshold=  ");
+		PrintUtil.printlnToFile(Slog , threshold[0], threshold[1], threshold[2], threshold[3], threshold[4], threshold[5]);
+		
+		PrintUtil.printlnToFile(Slog , "meanNT=  ");
+		PrintUtil.printlnToFile(Slog , meanNT[0], meanNT[1], meanNT[2], meanNT[3], meanNT[4], meanNT[5]);
+		
+		PrintUtil.printlnToFile(Slog , "SDNT =  ");
+		PrintUtil.printlnToFile(Slog , SDNT[0], SDNT[1], SDNT[2], SDNT[3], SDNT[4], SDNT[5]);
+		
+		PrintUtil.printlnToFile(Slog , "deadsites=  ",Evolution.deadsites);
+
+		PrintUtil.printlnToFile(Slog , "    ");
+		
+		Tools.Picture(grid5, 9999, DPseed, Spic);   //the final totalspin distribution
+		
+		
+		
+	}
+	
 	public void run(){
 		
 		
@@ -724,8 +846,9 @@ public class CNTdilution extends Simulation{
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
-	    Singlehistogram(IS, T, H, 500, 0.9, 1);
+	    //Singlehistogram(IS, T, H, 500, 0.9, 1);
 	    
+	    Singlegrowth(IS, T, H, 500, 1);
 
 	    //Multihistogram(IS, T, H, 10, 500, 0.9);
 	    
