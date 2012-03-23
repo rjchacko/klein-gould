@@ -476,6 +476,26 @@ public class PrintUtil {
 		}
 	}
 	
+	static public void printScalarAndVectorToFile(String fileName, int t1, int[] vector){
+
+		int Length = vector.length;	
+		try{
+			File file = new File(fileName);
+			PrintWriter pw = new PrintWriter(new FileWriter(file, true), true);
+			pw.print(t1);
+			pw.print("\t");
+			for (int ii = 0 ; ii<Length ; ii++){
+				pw.print(vector[ii]);
+				pw.print("\t");
+			}
+			pw.println();
+
+		} catch (IOException ex){
+			ex.printStackTrace();
+		}
+	}
+	
+	
 
 	static public void printlnToFile(String fileName, Boolean b1, Boolean b2){
 		try{

@@ -155,7 +155,7 @@ public class CNTdilution extends Simulation{
 		//params.add("Sseed",1);    //seed for spin flip
 		
 		params.addm("T", 0.826);
-		params.addm("H", 0.30);
+		params.addm("H", 0.18);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
@@ -669,15 +669,18 @@ public class CNTdilution extends Simulation{
 		
 	}
 	
-	public void Singlegrowth(IsingStructure ising, double T, double H, int runs, int DPseed)  //single realization of dilution, multiple runs, thNumber (default-6) is the total number of thresholds
+	public void Singlegrowth(IsingStructure ising, double T, double H, int runs, int DPseed, int thNumber)  //single realization of dilution, multiple runs, thNumber (default-6) is the total number of thresholds
 	{
-		int thNumber=20;
+		//int thNumber=20;
 		double growtime[][]=new double[thNumber][runs];
 		int inttime[][]=new int[thNumber][runs];  //integer form of growtime
+		int printtemp[]=new int[thNumber];
+		
 		double threshold[]=new double[thNumber];
 		double meanNT[]=new double[thNumber];
 		double SDNT[]=new double[thNumber];
 		
+		int snapshottarget=1;
 		for(int th=0; th<thNumber; th++)
 		{
 			threshold[th]=0.95-0.05*th;
@@ -738,24 +741,30 @@ public class CNTdilution extends Simulation{
 				params.set("magnetization", Evolution.magnetization);
 				if(Evolution.magnetization<(Ms*threshold[tempin]))
 				{
+					if(tempin==snapshottarget)
+					{
+						for(int jjj=0; jjj<ising.M; jjj++)
+						{
+							spintotal[jjj]+=Evolution.spin[jjj];
+						}
+						Job.animate();
+					}	
 					growtime[tempin][rr]=ss;
 					inttime[tempin][rr]=ss;
+					printtemp[tempin]=ss;
 					tempin++;
 				}
 			}
 			
-			PrintUtil.printlnToFile(Spath ,rr+1, inttime[0][rr], inttime[1][rr], inttime[2][rr], inttime[3][rr], inttime[4][rr], inttime[5][rr]);
+			PrintUtil.printScalarAndVectorToFile(Spath, rr+1, printtemp);
+			//PrintUtil.printlnToFile(Spath ,rr+1, inttime[0][rr], inttime[1][rr], inttime[2][rr], inttime[3][rr], inttime[4][rr], inttime[5][rr]);
 			
 			
-			for(int jjj=0; jjj<ising.M; jjj++)
-			{
-				spintotal[jjj]+=Evolution.spin[jjj];
-			}
-			Job.animate();
+
 						
 		}
 		
-		for(int ppp=0; ppp<6; ppp++)
+		for(int ppp=0; ppp<thNumber; ppp++)
 		{
 			meanNT[ppp]=Tools.Mean(growtime[ppp], runs);
 			SDNT[ppp]=Tools.SD(growtime[ppp], runs, meanNT[ppp]);
@@ -768,13 +777,16 @@ public class CNTdilution extends Simulation{
 		PrintUtil.printlnToFile(Slog , "DPseed=  ", DPseed);
 		
 		PrintUtil.printlnToFile(Slog , "threshold=  ");
-		PrintUtil.printlnToFile(Slog , threshold[0], threshold[1], threshold[2], threshold[3], threshold[4], threshold[5]);
+		PrintUtil.printScalarAndVectorToFile(Slog, 0, threshold);
+		//PrintUtil.printlnToFile(Slog , threshold[0], threshold[1], threshold[2], threshold[3], threshold[4], threshold[5]);
 		
 		PrintUtil.printlnToFile(Slog , "meanNT=  ");
-		PrintUtil.printlnToFile(Slog , meanNT[0], meanNT[1], meanNT[2], meanNT[3], meanNT[4], meanNT[5]);
+		PrintUtil.printScalarAndVectorToFile(Slog, 0, meanNT);
+		//PrintUtil.printlnToFile(Slog , meanNT[0], meanNT[1], meanNT[2], meanNT[3], meanNT[4], meanNT[5]);
 		
 		PrintUtil.printlnToFile(Slog , "SDNT =  ");
-		PrintUtil.printlnToFile(Slog , SDNT[0], SDNT[1], SDNT[2], SDNT[3], SDNT[4], SDNT[5]);
+		PrintUtil.printScalarAndVectorToFile(Slog, 0, SDNT);
+		//PrintUtil.printlnToFile(Slog , SDNT[0], SDNT[1], SDNT[2], SDNT[3], SDNT[4], SDNT[5]);
 		
 		PrintUtil.printlnToFile(Slog , "deadsites=  ",Evolution.deadsites);
 
@@ -848,7 +860,7 @@ public class CNTdilution extends Simulation{
 	    
 	    //Singlehistogram(IS, T, H, 500, 0.9, 1);
 	    
-	    Singlegrowth(IS, T, H, 500, 1);
+	    Singlegrowth(IS, T, H, 500, 0, 20);
 
 	    //Multihistogram(IS, T, H, 10, 500, 0.9);
 	    
