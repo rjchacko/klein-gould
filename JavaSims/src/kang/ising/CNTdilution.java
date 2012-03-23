@@ -7,7 +7,7 @@ import java.text.DecimalFormat;
 
 import javax.imageio.ImageIO;
 
-import chris.util.PrintUtil;
+import kang.util.PrintUtil;
 import chris.util.Random;
 
 import scikit.graphics.ColorGradient;
@@ -155,7 +155,7 @@ public class CNTdilution extends Simulation{
 		//params.add("Sseed",1);    //seed for spin flip
 		
 		params.addm("T", 0.826);
-		params.addm("H", 0.18);
+		params.addm("H", 0.30);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
@@ -493,6 +493,7 @@ public class CNTdilution extends Simulation{
 	}
 	
 	
+	
 	public void Multihistogram(IsingStructure ising, double T, double H, int runs, int copies, double thresholdM)
 	{
 		lifetime=new double[runs];
@@ -670,25 +671,24 @@ public class CNTdilution extends Simulation{
 	
 	public void Singlegrowth(IsingStructure ising, double T, double H, int runs, int DPseed)  //single realization of dilution, multiple runs, thNumber (default-6) is the total number of thresholds
 	{
-		double growtime[][]=new double[6][runs];
-		int inttime[][]=new int[6][runs];  //integer form of growtime
-		double threshold[]=new double[6];
-		double meanNT[]=new double[6];
-		double SDNT[]=new double[6];
+		int thNumber=20;
+		double growtime[][]=new double[thNumber][runs];
+		int inttime[][]=new int[thNumber][runs];  //integer form of growtime
+		double threshold[]=new double[thNumber];
+		double meanNT[]=new double[thNumber];
+		double SDNT[]=new double[thNumber];
+		
+		for(int th=0; th<thNumber; th++)
+		{
+			threshold[th]=0.95-0.05*th;
+		}
 		
 		
 		
-		threshold[0]=0.95;
-		threshold[1]=0.90;
-		threshold[2]=0.80;
-		threshold[3]=0.70;
-		threshold[4]=0.60;
-		threshold[5]=0.50;
-		
-		//about the array of[thNumber]: 0-95%  1-90%  2-80%  3-70%  4-60%  5-50%
+		//about the array of[thNumber]: 0---95%  i---(95%-i*5%)
 		
 		String Srun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">"+"Seed= "+fmt.format(DPseed);
-		String Spath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlegrowth/"+Srun+".txt";
+		String Spath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlegrowth/growth"+fmt.format(thNumber)+Srun+".txt";
 		String Slog="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlegrowth/singlegrowthlog.txt";
 		String Spic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Singlegrowth/"+Srun;
 
@@ -730,7 +730,7 @@ public class CNTdilution extends Simulation{
 			params.set("H", -H);//flip the field;
 			int ss=0;
 			int tempin=0;
-			for(ss=0; tempin<6; ss++)
+			for(ss=0; tempin<thNumber; ss++)
 			{
 				Evolution.MCS(T, -H, rrand, 1, dynamics);
 				Job.animate();
