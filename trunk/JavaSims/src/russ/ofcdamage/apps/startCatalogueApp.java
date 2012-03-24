@@ -2,8 +2,8 @@ package russ.ofcdamage.apps;
 
 import java.io.File;
 
-import chris.ofcdamage.ofc2Dfast;
 import chris.util.PrintUtil;
+import russ.ofcdamage2.ofc2Dfast;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.params.ChoiceValue;

@@ -6,12 +6,12 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import java.text.DecimalFormat;
 
+import russ.ofcdamage2.ofc2Dfast;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
-import chris.ofcdamage.ofc2Dfast;
 import chris.util.PrintUtil;
 
 public class fastEqApp extends Simulation{

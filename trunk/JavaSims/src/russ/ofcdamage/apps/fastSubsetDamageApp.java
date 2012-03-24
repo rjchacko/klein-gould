@@ -6,13 +6,13 @@ import java.text.DecimalFormat;
 
 import javax.imageio.ImageIO;
 
+import russ.ofcdamage2.damage2Dfast;
 import scikit.graphics.dim2.Grid;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
-import chris.ofcdamage.damage2Dfast;
 import chris.util.CloneUtil;
 import chris.util.DirUtil;
 import chris.util.MathUtil;

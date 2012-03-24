@@ -5,12 +5,12 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 
+import russ.ofcdamage2.damage2Dfast;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
-import chris.ofcdamage.damage2Dfast;
 
 public class phiAlphaWidthApp extends Simulation{
 
