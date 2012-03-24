@@ -2,13 +2,13 @@ package russ.ofcdamage.apps;
 
 import java.io.File;
 
+import russ.ofcdamage2.ofc2Dfast;
 import scikit.dataset.Histogram;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
-import chris.ofcdamage.ofc2Dfast;
 import chris.util.PrintUtil;
 
 public class fastStrainRateApp extends Simulation{

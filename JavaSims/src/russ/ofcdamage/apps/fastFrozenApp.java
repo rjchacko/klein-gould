@@ -3,6 +3,7 @@ package russ.ofcdamage.apps;
 import java.io.File;
 import java.text.DecimalFormat;
 
+import russ.ofcdamage2.damage2Dfast;
 import scikit.dataset.Histogram;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
@@ -10,7 +11,6 @@ import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.Parameters;
-import chris.ofcdamage.damage2Dfast;
 import chris.util.PrintUtil;
 import chris.util.dummyParamUtil;
 

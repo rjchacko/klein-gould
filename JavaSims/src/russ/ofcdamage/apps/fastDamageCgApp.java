@@ -3,14 +3,14 @@ package russ.ofcdamage.apps;
 import java.io.File;
 import java.text.DecimalFormat;
 
+import russ.ofcdamage2.damage2Dfast;
+import russ.ofcdamage2.ofc2Dfast;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
 import scikit.jobs.params.DirectoryValue;
-import chris.ofcdamage.damage2Dfast;
 import chris.ofcdamage.damage2DfastCG;
-import chris.ofcdamage.ofc2Dfast;
 
 public class fastDamageCgApp extends Simulation{
 

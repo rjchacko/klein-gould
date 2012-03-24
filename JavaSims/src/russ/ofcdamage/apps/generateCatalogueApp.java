@@ -5,12 +5,12 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
+import russ.ofcdamage2.ofc2Dfast;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.FileValue;
 import scikit.jobs.params.Parameters;
-import chris.ofcdamage.ofc2Dfast;
 import chris.util.PrintUtil;
 import chris.util.ReadInUtil;
 

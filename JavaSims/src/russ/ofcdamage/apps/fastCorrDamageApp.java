@@ -2,12 +2,13 @@ package russ.ofcdamage.apps;
 
 import java.io.File;
 import java.text.DecimalFormat;
+
+import russ.ofcdamage2.damage2Dfast;
 import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 import scikit.jobs.params.Parameters;
-import chris.ofcdamage.damage2Dfast;
 import chris.util.LatticeNeighbors;
 import chris.util.MathUtil;
 import chris.util.PrintUtil;
