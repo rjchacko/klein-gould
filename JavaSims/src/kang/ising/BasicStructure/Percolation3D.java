@@ -1,7 +1,7 @@
 package kang.ising.BasicStructure;
 
 import chris.util.Random;
-import kang.ising.BasicStructure.BasicTools;
+
 
 /*the way to use this class is 
  * 

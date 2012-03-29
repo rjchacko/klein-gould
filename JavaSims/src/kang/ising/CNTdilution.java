@@ -1,11 +1,10 @@
 package kang.ising;
 
 import java.awt.Color;
-import java.io.File;
-import java.io.IOException;
+
 import java.text.DecimalFormat;
 
-import javax.imageio.ImageIO;
+
 
 import kang.util.PrintUtil;
 import chris.util.Random;
@@ -17,7 +16,7 @@ import scikit.jobs.Control;
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.ChoiceValue;
-import scikit.jobs.params.DoubleValue;
+
 
 
 import kang.ising.BasicStructure.IsingStructure;
@@ -45,7 +44,7 @@ public class CNTdilution extends Simulation{
 	
 	private DecimalFormat fmt = new DecimalFormat("000");
 	private DecimalFormat bmt = new DecimalFormat("0000");
-	private DecimalFormat qmt = new DecimalFormat("00000");
+	
 	
 	
 	//initialization parameters
@@ -798,6 +797,133 @@ public class CNTdilution extends Simulation{
 		
 	}
 	
+	public void Multigrowth(IsingStructure ising, double T, double H, int copies, int thNumber)  //single realization of dilution, multiple runs, thNumber (default-6) is the total number of thresholds
+	{
+		//int thNumber=20;
+		double growtime[][]=new double[thNumber][copies];
+		int inttime[][]=new int[thNumber][copies];  //integer form of growtime
+		int printtemp[]=new int[thNumber];
+		
+		double threshold[]=new double[thNumber];
+		double meanNT[]=new double[thNumber];
+		double SDNT[]=new double[thNumber];
+		
+		int snapshottarget=1;
+		for(int th=0; th<thNumber; th++)
+		{
+			threshold[th]=0.95-0.05*th;
+		}
+		
+		
+		
+		//about the array of[thNumber]: 0---95%  i---(95%-i*5%)
+		
+		String Mrun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String Mpath="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multigrowth/growth"+fmt.format(thNumber)+Mrun+".txt";
+		String Mlog="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multigrowth/Multigrowthlog.txt";
+		String Mpic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Multigrowth/"+Mrun;
+
+		Job.animate();
+		
+		for(int cc=0; cc<copies; cc++)
+		{
+			
+			Evolution=ising.Dperturbation(cc+1);
+			
+			Evolution.Sinitialization(1,Sseed);
+			
+			Random rrand=new Random(cc+99);
+			params.set("H", H);
+			params.set("copies", cc+1);
+			params.set("deadsites", Evolution.deadsites);
+			Job.animate();
+			
+			for(int pres=0; pres<90; pres++)
+			{
+				Evolution.MCS(T, H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", pres);
+				params.set("magnetization", Evolution.magnetization);
+			}
+		
+			double totalM=0;
+			for(int ps=0; ps<10; ps++)
+			{
+				totalM+=Evolution.magnetization;
+				Evolution.MCS(T, H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", ps+90);
+				params.set("magnetization", Evolution.magnetization);
+			}
+			
+			double Ms=totalM/10;    //calculate the saturate magnetization
+			params.set("H", -H);//flip the field;
+			int ss=0;
+			int tempin=0;
+			for(ss=0; tempin<thNumber; ss++)
+			{
+				Evolution.MCS(T, -H, rrand, 1, dynamics);
+				Job.animate();
+				params.set("Emcs", ss);
+				params.set("magnetization", Evolution.magnetization);
+				if(Evolution.magnetization<(Ms*threshold[tempin]))
+				{
+					if(tempin==snapshottarget)
+					{
+						for(int jjj=0; jjj<ising.M; jjj++)
+						{
+							spintotal[jjj]+=Evolution.spin[jjj];
+						}
+						Job.animate();
+					}	
+					growtime[tempin][cc]=ss;
+					inttime[tempin][cc]=ss;
+					printtemp[tempin]=ss;
+					tempin++;
+				}
+			}
+			
+			PrintUtil.printScalarAndVectorToFile(Mpath, cc+1, printtemp);
+			
+			
+			
+
+						
+		}
+		
+		for(int ppp=0; ppp<thNumber; ppp++)
+		{
+			meanNT[ppp]=Tools.Mean(growtime[ppp], copies);
+			SDNT[ppp]=Tools.SD(growtime[ppp], copies, meanNT[ppp]);
+		}
+		
+		
+		
+		PrintUtil.printlnToFile(Mlog , Mrun);
+		
+		
+		PrintUtil.printlnToFile(Mlog , "threshold=  ");
+		PrintUtil.printScalarAndVectorToFile(Mlog, 0, threshold);
+		//PrintUtil.printlnToFile(Slog , threshold[0], threshold[1], threshold[2], threshold[3], threshold[4], threshold[5]);
+		
+		PrintUtil.printlnToFile(Mlog , "meanNT=  ");
+		PrintUtil.printScalarAndVectorToFile(Mlog, 0, meanNT);
+		//PrintUtil.printlnToFile(Slog , meanNT[0], meanNT[1], meanNT[2], meanNT[3], meanNT[4], meanNT[5]);
+		
+		PrintUtil.printlnToFile(Mlog , "SDNT =  ");
+		PrintUtil.printScalarAndVectorToFile(Mlog, 0, SDNT);
+		//PrintUtil.printlnToFile(Slog , SDNT[0], SDNT[1], SDNT[2], SDNT[3], SDNT[4], SDNT[5]);
+		
+		PrintUtil.printlnToFile(Mlog , "deadsites=  ",Evolution.deadsites);
+
+		PrintUtil.printlnToFile(Mlog , "    ");
+		
+		Tools.Picture(grid5, 9999, snapshottarget, Mpic);   //the final totalspin distribution
+		
+		
+		
+	}
+	
 	public void run(){
 		
 		
@@ -842,7 +968,7 @@ public class CNTdilution extends Simulation{
 	    
 	    Job.animate();
 	    
-	    Random rand=new Random(Sseed);
+	    //Random rand=new Random(Sseed);
 	    
 	    //testrun(Istemp);
 	    
@@ -851,16 +977,18 @@ public class CNTdilution extends Simulation{
 	    //Singlerun(IS, rand, T, H);
         
 	    
-	    breakpoint= 7994;
-	    threshold= 0.995;
-	    steplimit= 200;
+	    breakpoint= 9335;
+	    threshold= 0.99;
+	    steplimit= 2000;
 	    //Intervention(IS, rand, T, H, breakpoint, steplimit);
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
 	    //Singlehistogram(IS, T, H, 500, 0.9, 1);
 	    
-	    Singlegrowth(IS, T, H, 500, 0, 20);
+	    //Singlegrowth(IS, T, H, 500, 0, 20);
+	    
+	    Multigrowth(IS, T, H, 500, 20);
 
 	    //Multihistogram(IS, T, H, 10, 500, 0.9);
 	    

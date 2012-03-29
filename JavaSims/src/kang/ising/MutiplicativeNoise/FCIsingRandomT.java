@@ -2,22 +2,19 @@ package kang.ising.MutiplicativeNoise; // noise-3 is the multiplicative noise wi
 
 import java.text.DecimalFormat;
 
-import kang.ising.Randomtemperature;
-import kang.ising.BasicStructure.FCIsing;
-import kang.ising.BasicStructure.MeanFieldIsingStructure;
 
-import java.awt.Color;
-import java.text.DecimalFormat;
+import kang.ising.BasicStructure.FCIsing;
+
 
 import chris.util.PrintUtil;
 import chris.util.Random;
 
-import scikit.graphics.ColorPalette;
+
 import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.Control;
 import scikit.jobs.params.ChoiceValue;
-import scikit.jobs.params.DoubleValue;
+
 
 
 public class FCIsingRandomT extends Simulation
