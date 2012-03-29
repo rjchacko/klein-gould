@@ -1,6 +1,6 @@
 package kang.ising.BasicStructure;
 
-import java.text.DecimalFormat;
+
 
 import chris.util.Random;
 //import chris.util.PrintUtil;
