@@ -83,8 +83,13 @@ public class J1J2Structure{
 		copy.biasA=biasA;
 		copy.biasB=biasB;
 		copy.totalspin=totalspin;
+		copy.totalspinX=totalspinX;
+		copy.totalspinY=totalspinY;
 		copy.totalintenergy=totalintenergy;
 		copy.deadsites=deadsites;
+		copy.mx=mx;
+		copy.my=my;
+		copy.mm2=mm2;
 		
 		
 		return copy;
@@ -169,6 +174,8 @@ public class J1J2Structure{
 		Random spinrand= new Random(Sseed);
 		totalintenergy=0;
 		totalspin=0;
+		totalspinX=0;
+		totalspinY=0;
 		
 		
 		if(type==0)
@@ -210,10 +217,16 @@ public class J1J2Structure{
 
 			initialcopy[i]=spin[i];  // here, make the copy of the system
 			totalspin+=spin[i];      // calculate the total spin at the beginning
+			totalspinX+=Xsign(i)*spin[i];
+			totalspinY+=Ysign(i)*spin[i];
 		}
 		
 		totalintenergy= TotalIntEnergy();
 		magnetization=Magnetization();
+		mx=Mx();
+		my=My();
+		mm2=MM2();
+		
 		
 	}
 	
@@ -568,7 +581,7 @@ public class J1J2Structure{
 				mx=Mx();
 				my=My();
 				mm2=MM2();
-				//totalintenergy+=IntEchange;
+				totalintenergy+=IntEchange;
 				
 			}
 			
@@ -584,7 +597,8 @@ public class J1J2Structure{
 								mx=Mx();
 								my=My();
 								mm2=MM2();
-								//totalintenergy+=IntEchange;	
+								totalintenergy+=IntEchange;	
+								
 						}
 			}
 		}
@@ -613,7 +627,7 @@ public class J1J2Structure{
 								mx=Mx();
 								my=My();
 								mm2=MM2();
-								//totalintenergy+=IntEchange;	
+								totalintenergy+=IntEchange;	
 						}
 			
 		}
