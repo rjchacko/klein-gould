@@ -226,7 +226,7 @@ public class J1J2Nucleation extends Simulation{
 	
 	public void Singlerun(J1J2Structure jjising, Random rand, double Ti, double Tf)
 	{
-		String singlerun="g="+fmt.format(g*1000)+"L= "+fmt.format(L) +"<Ti="+pmt.format(Ti*10000)+", Tf="+pmt.format(Tf*10000)+">"+"seed"+fmt.format(rseed);
+		String singlerun="g="+fmt.format(g*1000)+" L= "+fmt.format(L) +"<Ti="+pmt.format(Ti*10000)+", Tf="+pmt.format(Tf*10000)+">"+"seed"+fmt.format(rseed);
 		String singlepath = "/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/singlerun "+singlerun+".txt";
 		String singlepic="/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/singlerunpic/"+singlerun;
 		
@@ -344,7 +344,7 @@ public class J1J2Nucleation extends Simulation{
 	    
 	    //testrun(JJstemp);
 	    
-	    Singlerun(JJstemp, rand, 9, 0.7715);
+	    Singlerun(JJstemp, rand, 9, 0.7710);
 	    //Multipleruns(JJstemp, rand, 0.77, 0.01, 0.04);
 	    
 	}
