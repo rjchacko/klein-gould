@@ -986,9 +986,12 @@ public class CNTdilution extends Simulation{
 	    
 	    //Singlehistogram(IS, T, H, 500, 0.9, 1);
 	    
-	    //Singlegrowth(IS, T, H, 500, 0, 20);
 	    
-	    Multigrowth(IS, T, H, 500, 20);
+	    
+	    Singlegrowth(IS, T, H, 500, 4, 20);
+	    
+	    Singlegrowth(IS, T, H, 500, 5, 20);
+	    //Multigrowth(IS, T, H, 500, 20);
 
 	    //Multihistogram(IS, T, H, 10, 500, 0.9);
 	    
