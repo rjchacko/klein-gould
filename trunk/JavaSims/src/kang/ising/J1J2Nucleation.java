@@ -119,6 +119,8 @@ public class J1J2Nucleation extends Simulation{
 	{
 		grid1.clear();
 		grid2.clear();
+		grid3.clear();
+		grid4.clear();
 	
 	}
 	
@@ -138,7 +140,7 @@ public class J1J2Nucleation extends Simulation{
 		params.add("lb",10); 
 		
 		params.add("NJ1",-4.0);     //ferromagnetic NJ1
-		params.add("NJ2", 2.2);      //antiferromagnetic NJ2  
+		params.add("NJ2", 2.8);      //antiferromagnetic NJ2  
 		params.add("g", 0.0);
 	    params.add("deadsites");
 
@@ -187,9 +189,7 @@ public class J1J2Nucleation extends Simulation{
 			
 		}
 	}
-	
-	
-	
+		
 	public void testrun(J1J2Structure jjising)
 	{
 		Random trand= new Random(1);
@@ -223,7 +223,7 @@ public class J1J2Nucleation extends Simulation{
 		}
 	}
 	
-	
+
 	public void Singlerun(J1J2Structure jjising, Random rand, double Ti, double Tf)
 	{
 		String singlerun="g="+fmt.format(g*1000)+" L= "+fmt.format(L) +"<Ti="+pmt.format(Ti*10000)+", Tf="+pmt.format(Tf*10000)+">"+"seed"+fmt.format(rseed);
@@ -270,7 +270,7 @@ public class J1J2Nucleation extends Simulation{
 		
 		params.set("T", Tf);//flip the field;
 		int ss=0;
-		for(ss=0; (jjising.mm2<0.7)&(ss<500000);ss++)
+		for(ss=0; (jjising.mm2<0.7)&(ss<200000);ss++)
 		{
 			jjising.MCS(Tf, H, Erand, 1, dynamics);
 			Job.animate();
@@ -344,8 +344,8 @@ public class J1J2Nucleation extends Simulation{
 	    
 	    //testrun(JJstemp);
 	    
-	    Singlerun(JJstemp, rand, 9, 0.7710);
-	    //Multipleruns(JJstemp, rand, 0.77, 0.01, 0.04);
+	    //Singlerun(JJstemp, rand, 9, 0.7709);
+	    Multipleruns(JJstemp, rand, 1.2799, 1.2781, 0.0002);
 	    
 	}
 	
