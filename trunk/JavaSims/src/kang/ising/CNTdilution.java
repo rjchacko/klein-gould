@@ -80,6 +80,9 @@ public class CNTdilution extends Simulation{
     public double nucleationevents[];
     public double lifetime[];
 	
+    public int surfacedilution[];
+    public int surfacemetaspin[];
+    public int surfacemap[];  //the map to record the configuration of surface of the droplet: 0-background 1-surface
 	
 	//public int ti, tf, tm;     //the MCS time of the intervention range[ti,tf] tm=(ti+tf)/2
 	//public Random randi;  //the random number @ the beginning of the intervention range
@@ -182,19 +185,6 @@ public class CNTdilution extends Simulation{
 			params.set("magnetization", ising.magnetization);
 		}
 	}
-	
-	/*public void Evolve(IsingStructure ising, int step, Random rand, double T, double H)
-	{
-		Random flip= rand.clone();
-		for(int s=0; s<step; s++)
-		{
-			ising.MCS(T, H, flip, 1, dynamics);
-			Job.animate();
-			params.set("Emcs", s);
-			params.set("magnetization", ising.magnetization);
-		}
-	}  // the function to run ising N steps with T and H using specific random number rand 
-	*/
 	
 	
 	public void Properh(IsingStructure ising, Random rand, double T, double minH, double maxH, double dH)  // output the time of nucleation for different h, threshold=90%
@@ -922,6 +912,95 @@ public class CNTdilution extends Simulation{
 		
 		
 		
+	}
+	
+	public void Surface(IsingStructure ising, Random rand, double T, double H, int steplength)
+	{
+		String singlerun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String singlepath = "/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Surface/"+singlerun+".txt";
+		String singlepic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Surface/pic/"+singlerun;
+	    surfacedilution=new int[ising.M];
+		surfacemetaspin=new int[ising.M];
+		surfacemap=new int [ising.M];  //the map to record the configuration of surface of the droplet: 0-background 1-surface
+			
+		
+		
+		
+		
+		Evolution=ising.clone();
+		Job.animate();
+		Erand=rand.clone();
+		params.set("H", H);
+		//Evolve(Evolution, 90, Erand, T, H);
+		for(int pres=0; pres<90; pres++)
+		{
+			
+			Evolution.MCS(T, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", pres);
+			params.set("magnetization", Evolution.magnetization);
+		}
+		
+		
+		
+		double totalM=0;
+		for(int ps=0; ps<10; ps++)
+		{
+			totalM+=Evolution.magnetization;
+			Evolution.MCS(T, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ps+90);
+			params.set("magnetization", Evolution.magnetization);
+		}
+		double Ms=totalM/10;    //calculate the saturate magnetization
+		params.set("H", -H);//flip the field;
+		for(int pp=0; Evolution.magnetization>(Ms*0.97); pp++)
+		{
+			Evolution.MCS(T, -H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", -pp);
+			params.set("magnetization", Evolution.magnetization);
+		}
+		
+		
+		for(int ss=0; Evolution.magnetization>-(Ms*0.0);ss++)
+		{
+			Evolution.MCS(T, -H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ss);
+			params.set("magnetization", Evolution.magnetization);
+			PrintUtil.printlnToFile(singlepath , ss , Evolution.magnetization/Ms);
+			if(ss%steplength==0)
+			{
+				Tools.Picture(grid4, ss, (int)(H*1000), singlepic);
+				
+				
+				{                       
+					Droplet=new Percolation(Evolution,2);            //percolation mapping to determine the droplet
+					Droplet.SetProbability(1);
+					Droplet.fastNNMapping(47);
+					dropletsize=Droplet.CS.maximumsize;
+					surfacedilution=Droplet.CS.set[Droplet.CS.maximumpin].Surface(Evolution.spin,0);
+					surfacemetaspin=Droplet.CS.set[Droplet.CS.maximumpin].Surface(Evolution.spin,1);
+					
+					
+					for(int jj=0; jj<ising.M; jj++)
+					{
+						Istemp.spin[jj]=-1;
+						if(Evolution.spin[jj]==0)
+							Istemp.spin[jj]=0;
+						if(Droplet.CS.set[Droplet.CS.maximumpin].lattice[jj]==2)
+							Istemp.spin[jj]=2;
+						
+					}
+					params.set("Dropletsize",dropletsize);
+					Job.animate();
+				}
+				
+				
+				
+			}
+		}
 	}
 	
 	public void run(){

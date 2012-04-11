@@ -111,6 +111,16 @@ public class BasicTools{
  		
  		return SD;
  	}
+ 	
+ 	public int Sum(int data[], int size)
+ 	{
+ 		int total=0;
+ 		for(int p=0; p<size; p++)
+ 		{
+ 			total+=data[p];
+ 		}
+ 		return total;
+ 	}
 	
 	public void Picture(Grid grid, int index1, int index2, String path)   //function to capture the grid
 	{

@@ -9,6 +9,7 @@ public class Cluster{
 	public int sites[];    // the array of the location labels for the cluster
 	public int center; // located the center position of the cluster on the lattice
 	
+	
 	public Cluster(int L1, int L2, int clustertemp[])
 	{
 		this.L1=L1;
@@ -46,6 +47,31 @@ public class Cluster{
 		this.center=-1;
 		this.sites=null;
 		this.lattice=null;
+	}
+	
+	public int[] Surface(int map[], int target)   //the function to calculate the number of neighbors on the surface of the cluster (note:this function only works for nearest neighbor)
+	//input-map[] is the distribution we want to analyze
+	//target is the kind of neighbor we want to count, target=+1 or -1 or 0, depending on the map[]
+	{
+		int surface[]=new int [M];
+		for(int ii=0; ii<M; ii++)
+		{
+			surface[ii]=0;
+			if(lattice[ii]==2)
+			{
+				int total=0;
+				for(int a=0; a<4; a++)
+				{
+					if(map[Nneighber(a, ii)]==target)
+						total++;
+					
+				}
+				surface[ii]=total;
+			}
+
+		}
+	
+		return surface;
 	}
 	
 	public Cluster clone()
