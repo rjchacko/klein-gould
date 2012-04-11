@@ -13,6 +13,9 @@ public class ClusterSet{
 	
 	public int minimumsize;
 	public int minimumpin;
+	
+
+	
 	public Cluster set[];
 	
 	
