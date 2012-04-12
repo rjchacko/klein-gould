@@ -282,7 +282,7 @@ public class J1J2Nucleation extends Simulation{
 			params.set("InteractionE",jjising.totalintenergy);
 			
 			PrintUtil.printlnToFile(singlepath , ss , jjising.magnetization, jjising.mx,jjising.my,jjising.mm2, jjising.totalintenergy);
-			if(ss%10==0)
+			if(ss%20==0)
 			{
 				Tools.Picture(grid2, ss, (int)(Tf*1000), singlepic);
 			}
