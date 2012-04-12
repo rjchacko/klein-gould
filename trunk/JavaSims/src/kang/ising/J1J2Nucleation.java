@@ -202,7 +202,6 @@ public class J1J2Nucleation extends Simulation{
 			
 			Getfield(jjising, h, hx, hy);
 			
-			
 			jjising.MCS(T, H, trand, 1, dynamics);
 			Job.animate();
 			params.set("Emcs", tstep);
@@ -230,7 +229,6 @@ public class J1J2Nucleation extends Simulation{
 		String singlepath = "/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/singlerun "+singlerun+".txt";
 		String singlepic="/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/singlerunpic/"+singlerun;
 		
-	
 		Job.animate();
 		Erand=rand.clone();
 		params.set("T", Ti);
@@ -248,8 +246,6 @@ public class J1J2Nucleation extends Simulation{
 			params.set("InteractionE",jjising.totalintenergy);
 			
 		}
-		
-		
 		
 		double totalM=0;
 		
@@ -290,6 +286,92 @@ public class J1J2Nucleation extends Simulation{
 		
 		
 	}
+	
+	public void XtoX(J1J2Structure jjising, Random rand, double T, double Hx)
+	{
+		String singlerun="g="+fmt.format(g*1000)+" L= "+fmt.format(L) +"<T="+pmt.format(T*10000)+", Hx="+pmt.format(Hx*10000)+">"+"seed"+fmt.format(rseed);
+		String singlepath = "/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/XtoX "+singlerun+".txt";
+		String singlepic="/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/XtoXpic/"+singlerun;
+		
+		Job.animate();
+		Erand=rand.clone();
+		params.set("T", 9);
+		params.set("h", 0);
+		params.set("hy", 0);
+		params.set("hx", Hx);
+		Getfield(jjising, 0, Hx, 0);
+		
+		for(int heat=0; heat<20; heat++)
+		{
+			jjising.MCS(9, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", -heat);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+		}
+		
+		params.set("T", T);
+		for(int pres=0; pres<90; pres++)
+		{
+			
+			jjising.MCS(T, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", pres);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+			
+		}
+		
+		double totalMx=0;
+		
+		for(int ps=0; ps<10; ps++)
+		{
+			totalMx+=jjising.mx;
+			jjising.MCS(T, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ps+90);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+			
+		}
+		
+		double Mxs=totalMx/10;    //calculate the saturate magnetization
+		params.set("hx", -Hx);//flip the field;
+		Getfield(jjising, 0, -Hx, 0);
+		
+		int ss=0;
+		for(ss=0; (jjising.mx<0.0)&(ss<200000);ss++)
+		{
+			jjising.MCS(T, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ss);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+			
+			PrintUtil.printlnToFile(singlepath , ss , jjising.magnetization, jjising.mx,jjising.my,jjising.mm2, jjising.totalintenergy);
+			if(ss%200==0)
+			{
+				Tools.Picture(grid2, ss, (int)(Hx*1000), singlepic);
+			}
+		}
+		
+		
+		
+		
+	}
+	
 	
 	public void run(){
 		

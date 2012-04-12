@@ -100,16 +100,16 @@ public class NNPercolation3D extends Simulation
 		
 		NNPercolation3D.frameTogether("Display", grid1, gridX, gridY, gridZ);
 
-		params.add("L", 60);
+		params.add("L", 50);
 		params.add("M");
 	    params.add("deadsites");
 	    params.add("livingsites");
-		params.add("percent", 0.10);
+		params.add("percent", 0.20);
 		
 		params.add("pb",0.358);     //bond probability
 		params.add("pmin",0.35); 
-		params.add("pmax",0.45); 
-		params.add("increment",0.001); 
+		params.add("pmax",0.50); 
+		params.add("increment",0.01); 
 		
         params.add("Np");  //size of the largest cluster
         params.add("ratio",0.00);  //the raito of largest cluster/the total occupied sites
@@ -122,7 +122,7 @@ public class NNPercolation3D extends Simulation
 		params.add("prestep",20);
 		params.add("steplimit",10000);
 		params.add("MCS");
-		params.add("T",4.03104);
+		params.add("T",3.50590);
 		
 	}
 	
