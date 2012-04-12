@@ -71,6 +71,11 @@ public class CNTdilution extends Simulation{
 	//percolation mapping parameters for determining the droplet size with pb=1
 	public Percolation Droplet;
 	public int dropletsize;
+	public int surfacesize;    //count the number of surface interaction pairs of the largest growing cluster
+	public int dilutionsize;   //count the number of the dilute neighbor on the surface of the largest growing cluster
+	public int checksurfacesize;
+	
+	
 	
 	//droplet distribution parameter
 	public double spintotal[];
@@ -80,10 +85,15 @@ public class CNTdilution extends Simulation{
     public double nucleationevents[];
     public double lifetime[];
 	
-    public int surfacedilution[];
-    public int surfacemetaspin[];
+    public int dilution[];
+    public int metaspin[];
+    public int stabspin[];
     public int surfacemap[];  //the map to record the configuration of surface of the droplet: 0-background 1-surface
-	
+	public int surfacedilution[];
+
+    
+    
+    
 	//public int ti, tf, tm;     //the MCS time of the intervention range[ti,tf] tm=(ti+tf)/2
 	//public Random randi;  //the random number @ the beginning of the intervention range
 	//public IsingStructure isingi;   //the ising configuration @ the beginning of the intervention range
@@ -145,8 +155,8 @@ public class CNTdilution extends Simulation{
 		params.add("NJ",-4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.111);
-		params.add("biaspercent", 0.111);
+		params.add("percent", 0.250);
+		params.add("biaspercent", 0.250);
 		params.add("totalruns",20);     //the number of total intervention runs
 		 
 
@@ -156,8 +166,8 @@ public class CNTdilution extends Simulation{
 		//params.add("Dseed",1);    //seed for dilution configuration
 		//params.add("Sseed",1);    //seed for spin flip
 		
-		params.addm("T", 0.826);
-		params.addm("H", 0.18);
+		params.addm("T", 0.576);
+		params.addm("H", 0.08);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
@@ -919,13 +929,11 @@ public class CNTdilution extends Simulation{
 		String singlerun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
 		String singlepath = "/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Surface/"+singlerun+".txt";
 		String singlepic="/Users/liukang2002507/Desktop/simulation/CNTdilution/"+dynamics+"/Surface/pic/"+singlerun;
-	    surfacedilution=new int[ising.M];
-		surfacemetaspin=new int[ising.M];
+	    dilution=new int[ising.M];
+		metaspin=new int[ising.M];
+		stabspin=new int[ising.M];
 		surfacemap=new int [ising.M];  //the map to record the configuration of surface of the droplet: 0-background 1-surface
-			
-		
-		
-		
+		surfacedilution=new int[ising.M];	
 		
 		Evolution=ising.clone();
 		Job.animate();
@@ -954,7 +962,7 @@ public class CNTdilution extends Simulation{
 		}
 		double Ms=totalM/10;    //calculate the saturate magnetization
 		params.set("H", -H);//flip the field;
-		for(int pp=0; Evolution.magnetization>(Ms*0.97); pp++)
+		for(int pp=0; Evolution.magnetization>(Ms*0.93); pp++)
 		{
 			Evolution.MCS(T, -H, Erand, 1, dynamics);
 			Job.animate();
@@ -969,19 +977,38 @@ public class CNTdilution extends Simulation{
 			Job.animate();
 			params.set("Emcs", ss);
 			params.set("magnetization", Evolution.magnetization);
-			PrintUtil.printlnToFile(singlepath , ss , Evolution.magnetization/Ms);
+			
 			if(ss%steplength==0)
 			{
 				Tools.Picture(grid4, ss, (int)(H*1000), singlepic);
-				
 				
 				{                       
 					Droplet=new Percolation(Evolution,2);            //percolation mapping to determine the droplet
 					Droplet.SetProbability(1);
 					Droplet.fastNNMapping(47);
 					dropletsize=Droplet.CS.maximumsize;
-					surfacedilution=Droplet.CS.set[Droplet.CS.maximumpin].Surface(Evolution.spin,0);
-					surfacemetaspin=Droplet.CS.set[Droplet.CS.maximumpin].Surface(Evolution.spin,1);
+					
+					metaspin=Droplet.CS.set[Droplet.CS.maximumpin].Surface(Evolution.spin,1);
+					dilution=Droplet.CS.set[Droplet.CS.maximumpin].Surface(Evolution.spin,0);
+					stabspin=Droplet.CS.set[Droplet.CS.maximumpin].Surface(Evolution.spin,-1);
+					
+					for(int s=0; s<ising.M; s++)
+					{
+						surfacemap[s]=0;
+						surfacedilution[s]=0;
+						if(metaspin[s]!=0)
+							{
+							surfacemap[s]=1;
+							surfacedilution[s]=dilution[s];
+							
+							}
+						Intervention.spin[s]=surfacemap[s];    //borrow intervention to display the growing surface
+					}
+					surfacesize=Tools.Sum(metaspin, ising.M);
+					dilutionsize=Tools.Sum(surfacedilution, ising.M);
+					checksurfacesize=Tools.Sum(surfacemap, ising.M);
+					
+					PrintUtil.printlnToFile(singlepath , ss , dropletsize, dilutionsize, surfacesize, checksurfacesize);
 					
 					
 					for(int jj=0; jj<ising.M; jj++)
@@ -1047,7 +1074,7 @@ public class CNTdilution extends Simulation{
 	    
 	    Job.animate();
 	    
-	    //Random rand=new Random(Sseed);
+	    Random rand=new Random(Sseed);
 	    
 	    //testrun(Istemp);
 	    
@@ -1059,6 +1086,9 @@ public class CNTdilution extends Simulation{
 	    breakpoint= 9335;
 	    threshold= 0.99;
 	    steplimit= 2000;
+	    
+	    Surface(IS, rand, T, H, 100);
+	    
 	    //Intervention(IS, rand, T, H, breakpoint, steplimit);
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
@@ -1067,9 +1097,10 @@ public class CNTdilution extends Simulation{
 	    
 	    
 	    
-	    Singlegrowth(IS, T, H, 500, 4, 20);
+	    //Singlegrowth(IS, T, H, 500, 4, 20);
 	    
-	    Singlegrowth(IS, T, H, 500, 5, 20);
+	    //Singlegrowth(IS, T, H, 500, 5, 20);
+	    
 	    //Multigrowth(IS, T, H, 500, 20);
 
 	    //Multihistogram(IS, T, H, 10, 500, 0.9);

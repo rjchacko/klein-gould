@@ -140,7 +140,7 @@ public class J1J2Nucleation extends Simulation{
 		params.add("lb",10); 
 		
 		params.add("NJ1",-4.0);     //ferromagnetic NJ1
-		params.add("NJ2", 2.8);      //antiferromagnetic NJ2  
+		params.add("NJ2", 2.2);      //antiferromagnetic NJ2  
 		params.add("g", 0.0);
 	    params.add("deadsites");
 
@@ -282,7 +282,7 @@ public class J1J2Nucleation extends Simulation{
 			params.set("InteractionE",jjising.totalintenergy);
 			
 			PrintUtil.printlnToFile(singlepath , ss , jjising.magnetization, jjising.mx,jjising.my,jjising.mm2, jjising.totalintenergy);
-			if(ss%5000==0)
+			if(ss%10==0)
 			{
 				Tools.Picture(grid2, ss, (int)(Tf*1000), singlepic);
 			}
@@ -344,8 +344,8 @@ public class J1J2Nucleation extends Simulation{
 	    
 	    //testrun(JJstemp);
 	    
-	    //Singlerun(JJstemp, rand, 9, 0.7709);
-	    Multipleruns(JJstemp, rand, 1.2799, 1.2781, 0.0002);
+	    Singlerun(JJstemp, rand, 9, 0.7710);
+	    //Multipleruns(JJstemp, rand, 1.2799, 1.2781, 0.0002);
 	    
 	}
 	

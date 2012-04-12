@@ -99,19 +99,12 @@ public class NNPercolation3D extends Simulation
 	{
 		
 		NNPercolation3D.frameTogether("Display", grid1, gridX, gridY, gridZ);
-		//NNPercolation3D.frame (grid1);
-		//NNPercolation3D.frame (grid2);
-		//NNPercolation3D.frame (gridX);
-		//NNPercolation3D.frame (gridY);
-		//NNPercolation3D.frame (gridZ);
 
 		params.add("L", 60);
 		params.add("M");
 	    params.add("deadsites");
 	    params.add("livingsites");
 		params.add("percent", 0.10);
-		
-		
 		
 		params.add("pb",0.358);     //bond probability
 		params.add("pmin",0.35); 
@@ -121,20 +114,17 @@ public class NNPercolation3D extends Simulation
         params.add("Np");  //size of the largest cluster
         params.add("ratio",0.00);  //the raito of largest cluster/the total occupied sites
 		
+        params.add("run", 0);
         params.add("span",false);
 		params.add("Dseed",1);    //seed for dilution configuration
 		params.add("Pseed",1);    //seed for percolation
-		
 		
 		params.add("prestep",20);
 		params.add("steplimit",10000);
 		params.add("MCS");
 		params.add("T",4.03104);
 		
-
 	}
-	
-
 	
 	public int ClusterSize(int map[], int L)
 	{
@@ -156,8 +146,6 @@ public class NNPercolation3D extends Simulation
 		{
 			clustermap[j]=Ising.spin[j];
 		}
-		
-		
 		
 		NNP=new Percolation3D(Ising, 1);// keep track of 2 largest clusters
 		NNP.SetProbability(probability);
@@ -190,10 +178,8 @@ public class NNPercolation3D extends Simulation
 			{
 				displayX[di*L+dj]=clustermap[dx*L*L+di*L+dj];
 				displayY[di*L+dj]=clustermap[dj*L*L+dy*L+di];
-				displayZ[di*L+dj]=clustermap[di*L*L+dj*L+dz];
-				
+				displayZ[di*L+dj]=clustermap[di*L*L+dj*L+dz];	
 			}
-		
 		
 		//size=ClusterSize(clustermap,L);
 		//ratio=size/(M-deadsite);
@@ -219,6 +205,82 @@ public class NNPercolation3D extends Simulation
 			params.set("pb", pp);
 			singlerun(Ising, ii, pp);
 		}
+	}
+	
+	public void multiaverageruns(IsingStructure3D Ising, int totalruns, double pmin, double pmax, double increment)
+	{
+		int ii=1;
+		for(double pp=pmin; pp<=pmax; pp+=increment)
+		{
+			ii++;
+			
+			params.set("pb", pp);
+			averagerun(Ising, totalruns, pp);
+		}
+	}
+	
+	public void averagerun(IsingStructure3D Ising, int totalruns, double probability)
+	{
+		String averagedata="/Users/liukang2002507/Desktop/simulation/NNP3D/averagedata/L="+fmt.format(L)+"-q=0."+fmt.format(percent*1000)+"-T="+qmt.format(T*100000)+".txt";
+		//String image="/Users/liukang2002507/Desktop/simulation/NNP/image/L="+fmt.format(L)+"-q=0."+fmt.format(percent*1000)+"-Pb=0."+qmt.format(probability*10000)+".txt";
+		
+		for(int j=0; j<(L*L*L); j++)
+		{
+			clustermap[j]=Ising.spin[j];
+		}
+		
+		double totalspan=0;
+		for(int r=0; r<totalruns; r++)
+		{
+			params.set("run", r+1);
+			NNP=new Percolation3D(Ising, 1);// keep track of the largest cluster
+			NNP.SetProbability(probability);
+			NNP.fastNNMapping(r+1);
+			NNP.SpanningCluster();
+			
+			NNP.ClusterSize();
+			NNP.SDClusterSize();
+			NNP.OrderParameter();
+			
+			NNP.CS.set[NNP.CS.maximumpin].Center();
+			dx=NNP.CS.set[NNP.CS.maximumpin].cx;
+			dy=NNP.CS.set[NNP.CS.maximumpin].cy;
+			dz=NNP.CS.set[NNP.CS.maximumpin].cz;
+
+			Job.animate();
+			params.set("span", NNP.span);
+			if(NNP.span)
+			{
+				totalspan++;
+			}
+			
+			
+			for(int j=0; j<(L*L*L); j++)
+			{
+				if(Ising.spin[j]==-1)
+				{
+					if(NNP.CS.set[NNP.CS.maximumpin].lattice[j]==2)
+						{
+						clustermap[j]=2;
+						}
+				}
+			}
+			for(int di=0; di<L; di++)
+				for(int dj=0; dj<L; dj++)
+				{
+					displayX[di*L+dj]=clustermap[dx*L*L+di*L+dj];
+					displayY[di*L+dj]=clustermap[dj*L*L+dy*L+di];
+					displayZ[di*L+dj]=clustermap[di*L*L+dj*L+dz];	
+				}
+			
+			//size=ClusterSize(clustermap,L);
+			//ratio=size/(M-deadsite);
+			Job.animate();
+		}
+		
+
+		PrintUtil.printlnToFile(averagedata, probability, totalspan/totalruns);
+
 	}
 	
 	public void run()
@@ -287,7 +349,9 @@ public class NNPercolation3D extends Simulation
 		Job.animate();
 
 		//singlerun(IS, Pseed, pb);
-        multiruns(IS, Pseed, pmin, pmax, increment);
+        //multiruns(IS, Pseed, pmin, pmax, increment);
+		//averagerun(IS, 10, pb);
+		multiaverageruns(IS, 10, pmin, pmax, increment);
 		
 	}
 	
