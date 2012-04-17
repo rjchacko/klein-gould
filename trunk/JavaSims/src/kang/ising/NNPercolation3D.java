@@ -100,16 +100,16 @@ public class NNPercolation3D extends Simulation
 		
 		NNPercolation3D.frameTogether("Display", grid1, gridX, gridY, gridZ);
 
-		params.add("L", 50);
+		params.add("L", 60);
 		params.add("M");
 	    params.add("deadsites");
 	    params.add("livingsites");
-		params.add("percent", 0.20);
+		params.add("percent", 0.60);
 		
 		params.add("pb",0.358);     //bond probability
-		params.add("pmin",0.35); 
-		params.add("pmax",0.50); 
-		params.add("increment",0.01); 
+		params.add("pmin",0.81); 
+		params.add("pmax",0.92); 
+		params.add("increment",0.002); 
 		
         params.add("Np");  //size of the largest cluster
         params.add("ratio",0.00);  //the raito of largest cluster/the total occupied sites
@@ -122,7 +122,7 @@ public class NNPercolation3D extends Simulation
 		params.add("prestep",20);
 		params.add("steplimit",10000);
 		params.add("MCS");
-		params.add("T",3.50590);
+		params.add("T",1.44910);
 		
 	}
 	
@@ -224,14 +224,17 @@ public class NNPercolation3D extends Simulation
 		String averagedata="/Users/liukang2002507/Desktop/simulation/NNP3D/averagedata/L="+fmt.format(L)+"-q=0."+fmt.format(percent*1000)+"-T="+qmt.format(T*100000)+".txt";
 		//String image="/Users/liukang2002507/Desktop/simulation/NNP/image/L="+fmt.format(L)+"-q=0."+fmt.format(percent*1000)+"-Pb=0."+qmt.format(probability*10000)+".txt";
 		
-		for(int j=0; j<(L*L*L); j++)
-		{
-			clustermap[j]=Ising.spin[j];
-		}
+		
 		
 		double totalspan=0;
 		for(int r=0; r<totalruns; r++)
 		{
+			for(int j=0; j<(L*L*L); j++)
+			{
+				clustermap[j]=Ising.spin[j];
+			}
+			
+			
 			params.set("run", r+1);
 			NNP=new Percolation3D(Ising, 1);// keep track of the largest cluster
 			NNP.SetProbability(probability);
