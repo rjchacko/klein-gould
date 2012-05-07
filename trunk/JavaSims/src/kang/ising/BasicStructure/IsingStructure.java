@@ -1,7 +1,7 @@
 package kang.ising.BasicStructure;
 
 
-
+import kang.ising.BasicStructure.StructureFactor;
 import chris.util.Random;
 //import chris.util.PrintUtil;
 
@@ -12,6 +12,14 @@ public class IsingStructure{
 	public int initialcopy[];   //the array of the initial copy of the system
 	public int biaslabel[];
 	public double dilutionmap[];
+	
+	public StructureFactor SFup;
+	public StructureFactor SFdown;
+	public StructureFactor SFdilution;
+	
+	public double upspin[];
+	public double downspin[];
+	public double damage[];
 	
 	
 	
@@ -60,6 +68,7 @@ public class IsingStructure{
 		this.initialcopy=new int [M];
 		this.biaslabel=new int [M];
 		this.dilutionmap=new double[M];
+		this.damage=new double[M];
 		
 	}
 	
@@ -72,6 +81,8 @@ public class IsingStructure{
 			copy.initialcopy[t]=initialcopy[t];
 			copy.biaslabel[t]=biaslabel[t];
 			copy.dilutionmap[t]=dilutionmap[t];
+			copy.damage[t]=damage[t];
+
 		}
 		copy.biasA=biasA;
 		copy.biasB=biasB;
@@ -101,6 +112,7 @@ public class IsingStructure{
 			if(perturb.spin[j]!=0)
 			{
 				perturb.spin[j]=0;
+				perturb.damage[j]=1;
 				perturb.deadsites++;
 				i--;
 			}
@@ -124,6 +136,7 @@ public class IsingStructure{
 			spin[t]=1;
 			biaslabel[t]=0;
 			dilutionmap[t]=0;
+			damage[t]=0;
 			}
 			
 		
@@ -139,12 +152,14 @@ public class IsingStructure{
 				if(Brand.nextDouble()<biaspercent)
 					{
 					spin[j]=0;
+					damage[j]=1;
 					deadsites++;
 					}
 			if (biaslabel[j]==0)
 				if(Drand.nextDouble()<percent)
 					{
 					spin[j]=0;
+					damage[j]=1;
 					deadsites++;
 					}
 		}
@@ -169,6 +184,8 @@ public class IsingStructure{
 	
 	public void Sinitialization(int type, int Sseed)//spin config initialization (type: 0-random 1-spin up   2-spin down)
 	{
+		
+		
 		Random spinrand= new Random(Sseed);
 		totalintenergy=0;
 		totalspin=0;
@@ -180,10 +197,10 @@ public class IsingStructure{
 			   if(spin[i]!=0)
 			   {
 				   spin[i]=-1;
+				   
 			   if (spinrand.nextDouble()> 0.5)
 				   {
 				   spin[i]=1;
-
 				   }
 			   
 			   }
@@ -193,8 +210,9 @@ public class IsingStructure{
 			for (int i=0; i<M; i++)
 		    {
 			   if(spin[i]!=0)
-				   {spin[i]=1;
-
+				   {
+				   spin[i]=1;
+				   
 				   }
 		    }
 		
@@ -204,7 +222,7 @@ public class IsingStructure{
 			   if(spin[i]!=0)
 				   {
 				   spin[i]=-1;
-
+				   
 				   }
 		    }
 		
@@ -220,6 +238,22 @@ public class IsingStructure{
 		
 	}
 	
+	public void SpinSetup()
+	{
+		upspin=new double[M];
+		downspin=new double[M];
+		for(int j=0; j<M;j++)
+		{
+			upspin[j]=0;
+			downspin[j]=0;
+			if(spin[j]==1)
+				upspin[j]=1;
+			else if(spin[j]==-1)
+				downspin[j]=1;	
+		}
+	}
+	
+
 	//basic functions
 	
 	public double dilutionratioSquare(int r, int i)
@@ -247,8 +281,6 @@ public class IsingStructure{
 		ratio=dilutedsite/totalinrange;
 		return ratio;
 	}
-	
-	
 	
 	public double dilutionratioCircle(int r, int i)    //calculate the dilution ratio within the circle with radius r
 	{
@@ -396,9 +428,7 @@ public class IsingStructure{
 		
 		return S;
 	}
-	
-
-	
+		
 	public void rectangle(int label[], int a, int b, int cx, int cy)  //draw a rectangle of 2a*2b at (cx,cy)
 	{
 		int bx, by;
@@ -634,6 +664,21 @@ public class IsingStructure{
     	return sumD/size;
     }
   	
-  	
+    public void SpinSF()
+    {
+    	SpinSetup();
+    	SFup=new StructureFactor(L1, (double)L1);  //this only works if L1==L2
+    	SFdown=new StructureFactor(L1, (double)L1);  //this only works if L1==L2
+    	SFup.takeFT(upspin);
+    	SFdown.takeFT(downspin);
+    }
+    
+    public void DilutionSF()
+    {
+    	
+    	SFdilution=new StructureFactor(L1, (double)L1);  //this only works if L1==L2
+    	SFdilution.takeFT(damage);
+    }
+    
  	
 }

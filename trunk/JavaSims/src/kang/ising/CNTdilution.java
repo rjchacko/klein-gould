@@ -188,6 +188,15 @@ public class CNTdilution extends Simulation{
 			T=params.fget("T");
 			H=params.fget("H");
 			ising.MCS(T, H, trand, 1, dynamics);
+			
+			{
+				ising.DilutionSF();
+				for(int i=0; i<ising.M; i++)
+				{
+					dilutionmap[i]=ising.SFdilution.sFactor[i];
+				}
+			}
+			
 			Job.animate();
 			params.set("Emcs", tstep);
 			params.set("magnetization", ising.magnetization);
@@ -1072,7 +1081,7 @@ public class CNTdilution extends Simulation{
 	    
 	    Random rand=new Random(Sseed);
 	    
-	    //testrun(Istemp);
+	    testrun(Istemp);
 	    
 	    //Properh(IS, rand, T, 0.01, 0.6, 0.01);
 	    
@@ -1089,7 +1098,7 @@ public class CNTdilution extends Simulation{
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
-	    Singlehistogram(IS, T, H, 500, 0.9, 246);
+	    //Singlehistogram(IS, T, H, 500, 0.9, 246);
 	    
 	    
 	    
