@@ -220,7 +220,7 @@ public class Criticalpoint extends Simulation
 		
 	}
 	
-	
+
  	public void findTc(IsingStructure ising,double Tmin, double Tmax, double dT, String dynamics)
  	{
  		double Cv=0;
@@ -314,7 +314,7 @@ public class Criticalpoint extends Simulation
 
 		params.add("L1", 200);
 		params.add("L2", 200);
-		params.add("R", 20);
+		params.add("R", 10);
 		params.add("NJ",-4.0);	
 		params.add("percent", new DoubleValue(0.0,0,1).withSlider());
 		params.add("biaspercent", new DoubleValue(0.0,0,1).withSlider());
@@ -362,12 +362,12 @@ public class Criticalpoint extends Simulation
 	    
 	    Job.animate();
 	    //findTc(IS,3.52,3.59,0.001, dynamics);
-	    //findTcviaX(IS,3.75,3.79,0.01, dynamics);
+	    findTcviaX(IS,3.90,4.10,0.005, dynamics);
         
-	    T=params.fget("T");
-	    scanHs(IS,0,1.27,0.01, dynamics);
+	    //T=params.fget("T");
+	    //scanHs(IS,0,1.27,0.01, dynamics);
 	    //startH=1.010;
-	    findHs(IS,startH-0.5,startH,0.005, dynamics);
+	    //findHs(IS,startH-0.5,startH,0.005, dynamics);
       
 		//CriticalpointsCv(IS, 4.00, 3.70, 0.01, 4, 2000, 2000, 5, dynamics);
 	    

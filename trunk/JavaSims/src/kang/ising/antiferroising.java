@@ -693,7 +693,7 @@ public class antiferroising extends Simulation{
 		
 		params.add("lattice's width", 128);
 		params.add("lattice's length", 128);
-		params.add("Lp", 128);
+		params.add("Lp", 32);
 		params.add("dq", new DoubleValue(0.1,0,50).withSlider());
 		params.add("Diluted Percentage", new DoubleValue(0.1,0,1).withSlider());
 		params.add("Bias percent", new DoubleValue(0.1, 0, 1).withSlider());
@@ -784,7 +784,7 @@ public class antiferroising extends Simulation{
 		spinflipseed = (int)((field+1)*QuenchT*10000);
 		spinfliprand= new Random (spinflipseed);
 		
-		for (prestep=0; prestep < 4900000; prestep++)
+		for (prestep=0; prestep < 49; prestep++)
 		{
 		//temperaturequench(9);	
 		MCS(isingspin, spinfliprand ,1);
@@ -803,7 +803,7 @@ public class antiferroising extends Simulation{
 			for(int rs=0; rs<100; rs++)
 			{
 			MCS(isingspin, spinfliprand, 0.01);
-			/*for(int ft=0; ft<M; ft++)
+			for(int ft=0; ft<M; ft++)
 			{
 				fftspin[ft]=isingspin[ft];
 			}
@@ -812,7 +812,7 @@ public class antiferroising extends Simulation{
 			{
 				sf[e]=SFO.sFactor[e];
 			}
-			*/
+			
 			params.set("MC time", step);
 			Job.animate();
 			if((step==-1)&(rs==111250))
