@@ -26,9 +26,10 @@ public class NNPercolation3D extends Simulation
 	Grid gridY=new Grid("Y plane");
 	Grid gridZ=new Grid("Z plane");     // the map to display the largest cluster(choose 3 characteristic planes)
 	
-	
+	public String dynamics="Glauber";
 	
 	public IsingStructure3D IS;
+	public IsingStructure3D Istemp;
 	public Percolation3D NNP;   //nearest neighbor percolation object
 	
 	private DecimalFormat fmt = new DecimalFormat("000");
@@ -44,6 +45,10 @@ public class NNPercolation3D extends Simulation
 	public int Dseed, Pseed;
 	
 	public double T;
+	
+	public int totalup, totaldown;
+	public int absupdown;  //abs(totalup-totaldown)
+	public double totalabsM;  //total absolute magnetization used to determine if the system is ordered
 	
 	public int size;    // size of the largest cluster
 	
@@ -104,12 +109,12 @@ public class NNPercolation3D extends Simulation
 		params.add("M");
 	    params.add("deadsites");
 	    params.add("livingsites");
-		params.add("percent", 0.60);
+		params.add("percent", 0.00);
 		
 		params.add("pb",0.358);     //bond probability
-		params.add("pmin",0.81); 
-		params.add("pmax",0.92); 
-		params.add("increment",0.002); 
+		params.add("pmin",0.35); 
+		params.add("pmax",0.45); 
+		params.add("increment",0.005); 
 		
         params.add("Np");  //size of the largest cluster
         params.add("ratio",0.00);  //the raito of largest cluster/the total occupied sites
@@ -122,7 +127,12 @@ public class NNPercolation3D extends Simulation
 		params.add("prestep",20);
 		params.add("steplimit",10000);
 		params.add("MCS");
-		params.add("T",1.44910);
+		params.add("T",4.525);
+		
+		params.add("magnetization", 0.0);
+		params.add("totalup", 0.0);
+		params.add("totaldown", 0.0);
+
 		
 	}
 	
@@ -286,6 +296,136 @@ public class NNPercolation3D extends Simulation
 
 	}
 	
+	public void prepare(IsingStructure3D Ising,int prelimit, int steplimit, Random mcflip)
+	{
+		for(int prestep=0; prestep<prelimit; prestep++)
+		{
+			Ising.MCS(99, 0, mcflip, 1, "Glauber");
+			for(int dis=0; dis<L*L; dis++)
+			{
+				isingdisplay[dis]=Ising.spin[L*L/2+dis];
+			}
+			Job.animate();
+			params.set("MCS",prestep-prelimit);
+		}
+		for(int step=0; step<steplimit; step++)
+		{
+			T=params.fget("T");
+			Ising.MCS(T, 0, mcflip, 1, "Glauber");
+			for(int dis2=0; dis2<L*L; dis2++)
+			{
+				isingdisplay[dis2]=Ising.spin[L*L/2+dis2];
+			}
+			Job.animate();
+			params.set("MCS",step);
+		}
+		if(Ising.Magnetization()>0)
+			for(int jj=0; jj<(L*L*L);jj++)
+			{
+				Ising.spin[jj]=-Ising.spin[jj];  //here, choose the stable direction,but didn't change the energy and magnetization, be careful
+			}
+		
+		for(int j=0; j<M; j++)
+		{
+			clustermap[j]=Ising.spin[j];
+		}
+		
+		Job.animate();
+	}
+	
+	public double susceptibility(IsingStructure3D Ising, double T, double H, int equstep, int length, int runs)//measure the susceptibility
+	{
+		double chi=0;
+		
+		double tempM[];
+	    tempM= new double [length];
+	    double totalX=0;
+	    absupdown=0;
+	    totalabsM=0;
+		
+		for(int rr=0; rr<runs; rr++)
+		{
+			params.set("run", rr+1);
+			Istemp=Ising.clone();
+			Random cflip=new Random(rr+1);
+			totalup=0;
+		    totaldown=0;
+		    params.set("totalup", totalup);
+			params.set("totaldown", totaldown);
+			
+			
+			for(int heat=0; heat<50; heat++)
+			{
+				Istemp.MCS(9, H, cflip, 1, dynamics);
+				params.set("magnetization", Istemp.Magnetization());
+				for(int dis=0; dis<L*L; dis++)
+				{
+					isingdisplay[dis]=Istemp.spin[L*L/2+dis];
+				}
+				Job.animate();
+				params.set("MCS", -9999);
+
+			}
+			for(int prestep=0; prestep< equstep; prestep++)
+			{
+				
+				Istemp.MCS(T, H, cflip, 1, dynamics);
+				params.set("magnetization", Istemp.Magnetization());
+				if(prestep%20==0){
+					for(int dis=0; dis<L*L; dis++)
+					{
+						isingdisplay[dis]=Istemp.spin[L*L/2+dis];
+					}
+					Job.animate();
+				}
+				params.set("MCS", prestep-equstep);
+			}
+			for(int step=0; step<length; step++)
+			{
+				
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/NNP3D/progress.txt", T, rr, step);
+				Istemp.MCS(T, H, cflip, 1, dynamics);
+				tempM[step]=Istemp.TotalSpin();
+				totalabsM+=Math.abs(tempM[step]/Istemp.M);
+				if(tempM[step]>0)
+					totalup++;
+				else
+					totaldown++;
+				params.set("magnetization", Istemp.Magnetization());
+				params.set("totalup", totalup);
+				params.set("totaldown", totaldown);
+				Job.animate();
+				if(step%20==0){
+					for(int dis=0; dis<L*L; dis++)
+					{
+						isingdisplay[dis]=Istemp.spin[L*L/2+dis];
+					}
+					Job.animate();
+				}
+				
+				params.set("MCS", step);
+			}
+			totalX+=IS.Fluctuation(tempM, length);
+			absupdown+=Math.abs(totalup-totaldown);
+		}
+		
+		chi=totalX/runs;
+		return chi;
+	}
+	
+	public void chiscanforTc(IsingStructure3D Ising, double minT, double maxT, double dT, int equstep, int length, int runs)//measure the susceptibility for different temperature to determine the critical temperature
+	{
+		double Xtemp;
+		String path="/Users/liukang2002507/Desktop/simulation/NNP3D/chiforTc <L="+fmt.format(L)+"-q=0."+fmt.format(percent*1000)+"> Dseed="+fmt.format(Dseed)+".txt";
+		for(double t=minT; t<maxT; t+=dT)
+		{
+			params.set("T", t);
+			Xtemp=susceptibility(Ising, t, 0, equstep, length, runs);
+			PrintUtil.printlnToFile(path, t, Xtemp, Xtemp/(Ising.M-Ising.deadsites), totalabsM, absupdown);
+		}
+		
+	}
+	
 	public void run()
 	{
 		
@@ -313,48 +453,22 @@ public class NNPercolation3D extends Simulation
 		Random mcflip=new Random(47);
 		
 		IS=new IsingStructure3D(L,L,L,0,-6,percent,percent,"square");
+		Istemp=new IsingStructure3D(L,L,L,0,-6,percent,percent,"square");
 		IS.Dinitialization(Dseed, Dseed,10, 10, 10);
 		IS.Sinitialization(0, Dseed);    //set all the occupied sites to have down spins(white in display)
 		params.set("deadsites", IS.deadsites);
 		params.set("livingsites", M-IS.deadsites);
-		for(int prestep=0; prestep<prelimit; prestep++)
-		{
-			IS.MCS(99, 0, mcflip, 1, "Glauber");
-			for(int dis=0; dis<L*L; dis++)
-			{
-				isingdisplay[dis]=IS.spin[L*L/2+dis];
-			}
-			Job.animate();
-			params.set("MCS",prestep-prelimit);
-		}
-		for(int step=0; step<steplimit; step++)
-		{
-			T=params.fget("T");
-			IS.MCS(T, 0, mcflip, 1, "Glauber");
-			for(int dis2=0; dis2<L*L; dis2++)
-			{
-				isingdisplay[dis2]=IS.spin[L*L/2+dis2];
-			}
-			Job.animate();
-			params.set("MCS",step);
-		}
-		if(IS.Magnetization()>0)
-			for(int jj=0; jj<(L*L*L);jj++)
-			{
-				IS.spin[jj]=-IS.spin[jj];  //here, choose the stable direction,but didn't change the energy and magnetization, be careful
-			}
 		
-		for(int j=0; j<M; j++)
-		{
-			clustermap[j]=IS.spin[j];
-		}
 		
-		Job.animate();
+		prepare(IS, prelimit, steplimit, mcflip);
 
 		//singlerun(IS, Pseed, pb);
         //multiruns(IS, Pseed, pmin, pmax, increment);
 		//averagerun(IS, 10, pb);
+		
 		multiaverageruns(IS, 10, pmin, pmax, increment);
+		
+		//chiscanforTc(IS, 3.39, 3.59, 0.005, 5000, 1000, 10);
 		
 	}
 	

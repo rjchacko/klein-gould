@@ -155,19 +155,17 @@ public class CNTdilution extends Simulation{
 		params.add("NJ",-4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.250);
-		params.add("biaspercent", 0.250);
+		params.add("percent", 0.111);
+		params.add("biaspercent", 0.111);
 		params.add("totalruns",20);     //the number of total intervention runs
-		 
-
-		
+		 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 		//params.add("Dseed",1);    //seed for dilution configuration
 		//params.add("Sseed",1);    //seed for spin flip
 		
-		params.addm("T", 0.576);
-		params.addm("H", 0.08);
+		params.addm("T", 0.826);
+		params.addm("H", 0.18);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
@@ -195,7 +193,6 @@ public class CNTdilution extends Simulation{
 			params.set("magnetization", ising.magnetization);
 		}
 	}
-	
 	
 	public void Properh(IsingStructure ising, Random rand, double T, double minH, double maxH, double dH)  // output the time of nucleation for different h, threshold=90%
 	{
@@ -490,7 +487,6 @@ public class CNTdilution extends Simulation{
 		
 		
 	}
-	
 	
 	
 	public void Multihistogram(IsingStructure ising, double T, double H, int runs, int copies, double thresholdM)
@@ -1087,13 +1083,13 @@ public class CNTdilution extends Simulation{
 	    threshold= 0.99;
 	    steplimit= 2000;
 	    
-	    Surface(IS, rand, T, H, 100);
+	    //Surface(IS, rand, T, H, 100);
 	    
 	    //Intervention(IS, rand, T, H, breakpoint, steplimit);
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
-	    //Singlehistogram(IS, T, H, 500, 0.9, 1);
+	    Singlehistogram(IS, T, H, 500, 0.9, 246);
 	    
 	    
 	    
