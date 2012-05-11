@@ -586,7 +586,6 @@ public class IsingStructure{
 
 	}
 	
- 	
   	public int TotalSpin()
  	{
  		int total=0;
