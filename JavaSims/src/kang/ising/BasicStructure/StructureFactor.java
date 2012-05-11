@@ -50,6 +50,10 @@ public class StructureFactor{
 		for(int i = 0; i<Lp*Lp; i++)
 			sFactor[i] = temp[i];
 	}
-	
+
+	public void CircularAverage()
+	{
+		
+	}
 
 }
