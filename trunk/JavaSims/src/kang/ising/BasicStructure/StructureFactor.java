@@ -7,6 +7,9 @@ public class StructureFactor{
 	ComplexDouble2DFFT fft;
 	double[] fftData;       // Fourier transform data
 	public double sFactor [];
+	public double circularSF[];
+	public double squareSF[];
+	
 	int Lp;                 // # elements per side
 	double L;               // the actual system length, L = Lp*dx, where dx is lattice spacing
 	static double squarePeakValue = 4.4934092;
@@ -15,7 +18,9 @@ public class StructureFactor{
 	public StructureFactor(int Lp, double L) {
 		this.Lp = Lp;
 		this.L = L;
-		sFactor = new double [Lp*Lp];	
+		sFactor = new double [Lp*Lp];
+		circularSF = new double[Lp/2];
+		squareSF = new double[Lp/2];
 		fft = new ComplexDouble2DFFT(Lp, Lp);
 		fftData = new double[2*Lp*Lp];
 	}
@@ -51,8 +56,35 @@ public class StructureFactor{
 			sFactor[i] = temp[i];
 	}
 
-	public void CircularAverage()
+	public void CircularAverage(double dR)    //has to be called after shift the sFactor[]
 	{
+		int cx=Lp/2;
+		int cy=Lp/2;
+		int count[]=new int[Lp/2];
+		
+		for(int r=0; r<Lp/2; r++)
+		{
+              for(int dx=-r; dx<=r;dx++)
+            	  for(int dy=-r; dy<=r; dy++)
+            	  {
+            		  
+            	  }
+              
+		}
+	}
+	
+	public void SquareAverage(double dR)   //has to be called after shift the sFactor[]
+	{
+		int cx=Lp/2;
+		int cy=Lp/2;
+		double sum=0;
+	
+		for(int r=0; r<Lp/2; r++)
+		{
+			sum=0;
+			sum=sFactor[(cx+r)*Lp+cy]+sFactor[(cx-r)*Lp+cy]+sFactor[cx*Lp+cy+r]+sFactor[cx*Lp+cy-r];
+			squareSF[r]=sum/4;
+		}
 		
 	}
 
