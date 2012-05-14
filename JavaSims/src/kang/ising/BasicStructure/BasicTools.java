@@ -99,6 +99,36 @@ public class BasicTools{
  		return median;
  	}
  	
+ 	public int Max(double data[], int size)
+ 	{
+ 		double temp=data[0];
+ 		int Max=0;
+ 		for(int s=0; s<size; s++)
+ 		{
+ 			if(data[s]>=temp)
+ 			{
+ 				Max=s;
+ 				temp=data[s];
+ 			}
+ 		}
+ 		return Max;
+ 	}
+ 	
+ 	public int Min(double data[], int size)
+ 	{
+ 		double temp=data[0];
+ 		int Min=0;
+ 		for(int s=0; s<size; s++)
+ 		{
+ 			if(data[s]<=temp)
+ 			{
+ 				Min=s;
+ 				temp=data[s];
+ 			}
+ 		}
+ 		return Min;
+ 	}
+ 	
  	public double SD(double data[], int size, double mean)
  	{
  		double totalSD=0;
