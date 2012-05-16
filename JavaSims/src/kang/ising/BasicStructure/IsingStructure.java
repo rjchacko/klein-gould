@@ -670,6 +670,8 @@ public class IsingStructure{
     	SFdown=new StructureFactor(L1, (double)L1);  //this only works if L1==L2
     	SFup.takeFT(upspin);
     	SFdown.takeFT(downspin);
+    	SFup.SquareAverage();
+    	SFdown.SquareAverage();
     }
     
     public void DilutionSF()
@@ -677,6 +679,7 @@ public class IsingStructure{
     	
     	SFdilution=new StructureFactor(L1, (double)L1);  //this only works if L1==L2
     	SFdilution.takeFT(damage);
+    	
     }
     
  	

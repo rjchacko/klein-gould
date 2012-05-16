@@ -73,7 +73,7 @@ public class StructureFactor{
 		}
 	}
 	
-	public void SquareAverage(double dR)   //has to be called after shift the sFactor[]
+	public void SquareAverage()   //has to be called after shift the sFactor[]
 	{
 		int cx=Lp/2;
 		int cy=Lp/2;
@@ -86,6 +86,12 @@ public class StructureFactor{
 			squareSF[r]=sum/4;
 		}
 		
+	}
+	
+	public int findBestSquareInt(double R){
+		double bestValue = L*squarePeakValue/(2.0*PI*R);
+		int bestInt = (int)Math.floor(bestValue + 0.5d);
+		return bestInt;
 	}
 
 }
