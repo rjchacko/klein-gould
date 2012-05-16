@@ -43,7 +43,7 @@ public class LRAIM extends Simulation{
 	public double sfactor[];
 	
 	//initialization parameters
-	public int L,la,lb, Lp;
+	public int L,la,lb,R, Lp;
 	public double M;
 	public double NJ;
 	public int Dseed, Bseed, Sseed;
@@ -98,23 +98,24 @@ public class LRAIM extends Simulation{
 
 		LRAIM.frameTogether("Display", grid1 ,grid2, grid3);
 
-		params.add("L", 200);
-		params.add("Lp", 200);
+		params.add("L", 128);
+		params.add("Lp", 128);
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
+		params.add("R", 23);
 		
 		params.add("NJ", 4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.111);
-		params.add("biaspercent", 0.111);
+		params.add("percent", 0.20);
+		params.add("biaspercent", 0.20);
 		
 		 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 	
-		params.addm("T", 0.826);
-		params.addm("H", 0.18);
+		params.addm("T", 1.0);
+		params.addm("H", 0.0);
 		params.add("Emcs");    //MCS time for evolution
 	
 		    
@@ -132,11 +133,14 @@ public class LRAIM extends Simulation{
 			ising.MCS(T, H, trand, 1, dynamics);
 			
 			{
-				ising.DilutionSF();
+				ising.SpinSF();
 				for(int i=0; i<ising.M; i++)
 				{
-					sfactor[i]=ising.SFdilution.sFactor[i];
+					sfactor[i]=ising.SFdown.sFactor[i];
+					
 				}
+				sfactor[Lp/2*Lp+Lp/2]=0;
+				
 			}
 			
 			Job.animate();
@@ -145,6 +149,101 @@ public class LRAIM extends Simulation{
 		}
 	}
 	
+	public void temperatureScan(IsingStructure ising, double Tmax, double Tmin, double dT, int steplimit, int seed)
+	{
+		for(double t=Tmax; t>=Tmin; t-=dT)
+		{
+			singlerun(ising, t, 0, steplimit, seed);
+		}
+	}
+	
+	public void singlerun(IsingStructure ising, double T, double H,int steplimit, int seed)
+	{
+		String singlerun="<L="+fmt.format(L)+", Lp="+fmt.format(Lp)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String singlepath = "/Users/liukang2002507/Desktop/simulation/LRAIM/"+dynamics+"/"+singlerun;
+		
+		Random rand= new Random(seed);
+		for(int prestep=0; prestep<50; prestep++)
+		{
+			params.set("T", 9);
+			params.set("H", 0);
+			ising.MCS(9, 0, rand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", prestep-50);
+			params.set("magnetization", ising.magnetization);
+		}
+		
+		for(int step=0; step<steplimit; step++)
+		{
+			params.set("T", T);
+			params.set("H", H);
+			ising.MCS(T, 0, rand, 1, dynamics);
+			
+			{
+				ising.SpinSF();
+				for(int i=0; i<ising.M; i++)
+				{
+					sfactor[i]=ising.SFdown.sFactor[i];
+					
+				}
+				sfactor[Lp/2*Lp+Lp/2]=0;
+				
+			}
+			
+			Job.animate();
+			params.set("Emcs", step);
+			params.set("magnetization", ising.magnetization);
+			
+		}
+		
+		outputSquareSF(ising, singlepath, T, H);
+		
+		
+	}
+	
+	public void outputSquareSF(IsingStructure ising, String path, double T, double H)
+	{
+		String newpath= path+"[T="+fmt.format(T*100)+", H="+fmt.format(H*100)+"]"+".txt";
+		double temp1=ising.SFup.squareSF[1];
+		double temp2=ising.SFdown.squareSF[1];
+		int peak1=1;
+		int peak2=1;
+		for(int r=0; r<Lp/2; r++)
+		{
+			PrintUtil.printlnToFile(newpath , r , ising.SFup.squareSF[r], ising.SFdown.squareSF[r]);
+			if(r!=0)
+				{
+				if(ising.SFup.squareSF[r]>temp1) 
+					{
+					peak1=r;
+					temp1=ising.SFup.squareSF[r];
+					}
+				if(ising.SFdown.squareSF[r]>temp2) 
+					{
+					peak2=r;
+					temp2=ising.SFdown.squareSF[r];
+					}
+				}
+					
+		}
+		PrintUtil.printlnToFile(newpath , "peak1 at r=  " , peak1,  ising.SFup.squareSF[peak1]);
+		PrintUtil.printlnToFile(newpath , "peak2 at r=  " , peak2,  ising.SFdown.squareSF[peak2]);
+		
+		int bestpeak1=ising.SFup.findBestSquareInt(ising.R);
+		int bestpeak2=ising.SFdown.findBestSquareInt(ising.R);
+		
+		PrintUtil.printlnToFile(newpath , "theorypeak1 at r=  " , bestpeak1,  ising.SFup.squareSF[bestpeak1]);
+		PrintUtil.printlnToFile(newpath , "theorypeak2 at r=  " , bestpeak2,  ising.SFdown.squareSF[bestpeak2]);
+		
+		
+		
+		//now print to overall entry
+		PrintUtil.printlnToFile(path+".txt" , T,  H, ising.SFup.squareSF[peak1], ising.SFdown.squareSF[peak2], peak1, peak2);
+		
+		
+	}
+	
+	
 	public void run(){
 		
 		
@@ -152,6 +251,7 @@ public class LRAIM extends Simulation{
 		Lp = (int)params.fget("Lp");
 		la = (int)params.fget("la");
 		lb = (int)params.fget("lb");
+		R =(int)params.fget("R");
 		M = L * L;
 		NJ = params.fget("NJ");
 
@@ -164,8 +264,8 @@ public class LRAIM extends Simulation{
 		Sseed = 1;
 
 		
-	    IS=new IsingStructure(L,L,0,NJ,percent,biaspercent,"square");   
-	    Istemp=new IsingStructure(L,L,0,NJ,percent,biaspercent,"square");
+	    IS=new IsingStructure(L,L,R,NJ,percent,biaspercent,"square");   
+	    Istemp=new IsingStructure(L,L,R,NJ,percent,biaspercent,"square");
 
 	    sfactor= new double[Lp*Lp];
 	   
@@ -185,12 +285,13 @@ public class LRAIM extends Simulation{
 	    }
 	    
 	    Job.animate();
+	   
 	    
-	    Random rand=new Random(Sseed);
+	    //testrun(Istemp);
 	    
-	    testrun(Istemp);
-	    
+	    //singlerun(Istemp, 0.7, 0, 200, 1);
 	  
+	    temperatureScan(Istemp, 1.20, 0.10, 0.02, 1000, 1);
         
 	    
 
