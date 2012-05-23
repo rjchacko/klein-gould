@@ -98,24 +98,24 @@ public class LRAIM extends Simulation{
 
 		LRAIM.frameTogether("Display", grid1 ,grid2, grid3);
 
-		params.add("L", 128);
-		params.add("Lp", 128);
+		params.add("L", 256);
+		params.add("Lp", 256);
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
-		params.add("R", 23);
+		params.add("R", 92);
 		
 		params.add("NJ", 4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.20);
-		params.add("biaspercent", 0.20);
+		params.add("percent", 0.00);
+		params.add("biaspercent", 0.00);
 		
 		 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 	
 		params.addm("T", 1.0);
-		params.addm("H", 0.0);
+		params.addm("H", 0.2);
 		params.add("Emcs");    //MCS time for evolution
 	
 		    
@@ -153,9 +153,61 @@ public class LRAIM extends Simulation{
 	{
 		for(double t=Tmax; t>=Tmin; t-=dT)
 		{
-			singlerun(ising, t, 0, steplimit, seed);
+			singlerun(ising, t, H, steplimit, seed);
 		}
 	}
+	
+	public void evolution(IsingStructure ising, double T, double H,int steplimit, int seed)
+	{
+		String evolutionrun="evolution <L="+fmt.format(L)+", R="+fmt.format(ising.R)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String evolutionpath = "/Users/liukang2002507/Desktop/simulation/LRAIM/"+dynamics+"/"+evolutionrun+"[T="+fmt.format(T*100)+", H="+fmt.format(H*100)+"]"+".txt";
+		
+		Random rand= new Random(seed);
+		for(int prestep=0; prestep<50; prestep++)
+		{
+			params.set("T", 9);
+			params.set("H", H);
+			ising.MCS(9, H, rand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", prestep-50);
+			params.set("magnetization", ising.magnetization);
+		}
+		
+		for(int step=0; step<steplimit; step++)
+		{
+			params.set("T", T);
+			params.set("H", H);
+			ising.MCS(T, H, rand, 1, dynamics);
+			
+			{
+				ising.SpinSF();
+				for(int i=0; i<ising.M; i++)
+				{
+					sfactor[i]=ising.SFdown.sFactor[i];
+					
+				}
+				sfactor[Lp/2*Lp+Lp/2]=0;
+				
+			}
+			
+			Job.animate();
+			params.set("Emcs", step);
+			params.set("magnetization", ising.magnetization);
+			int bestpeak1=ising.SFup.findBestSquareInt(ising.R);
+			int bestpeak2=ising.SFdown.findBestSquareInt(ising.R);
+			
+			
+			PrintUtil.printlnToFile(evolutionpath, step, bestpeak1, ising.SFup.squareSF[bestpeak1], bestpeak2, ising.SFdown.squareSF[bestpeak2]);
+			
+			
+			
+		}
+		
+		
+		
+		
+	}
+	
 	
 	public void singlerun(IsingStructure ising, double T, double H,int steplimit, int seed)
 	{
@@ -166,7 +218,7 @@ public class LRAIM extends Simulation{
 		for(int prestep=0; prestep<50; prestep++)
 		{
 			params.set("T", 9);
-			params.set("H", 0);
+			params.set("H", H);
 			ising.MCS(9, 0, rand, 1, dynamics);
 			Job.animate();
 			params.set("Emcs", prestep-50);
@@ -177,7 +229,7 @@ public class LRAIM extends Simulation{
 		{
 			params.set("T", T);
 			params.set("H", H);
-			ising.MCS(T, 0, rand, 1, dynamics);
+			ising.MCS(T, H, rand, 1, dynamics);
 			
 			{
 				ising.SpinSF();
@@ -272,7 +324,7 @@ public class LRAIM extends Simulation{
 	    
 	    
 	    Tools=new BasicTools();
-	    T=params.fget("T");
+	    //T=params.fget("T");
 	    H=params.fget("H");
 	    
 	    {//initialization
@@ -291,9 +343,9 @@ public class LRAIM extends Simulation{
 	    
 	    //singlerun(Istemp, 0.7, 0, 200, 1);
 	  
-	    temperatureScan(Istemp, 1.20, 0.10, 0.02, 1000, 1);
+	    //temperatureScan(Istemp, 1.20, 0.10, 0.02, 1000, 1);
         
-	    
+	    evolution(Istemp, 0.85, 0, 100, 1);
 
 	}
 	
