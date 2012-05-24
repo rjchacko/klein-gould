@@ -98,11 +98,11 @@ public class LRAIM extends Simulation{
 
 		LRAIM.frameTogether("Display", grid1 ,grid2, grid3);
 
-		params.add("L", 256);
-		params.add("Lp", 256);
+		params.add("L", 128);
+		params.add("Lp", 128);
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
-		params.add("R", 92);
+		params.add("R", 46);
 		
 		params.add("NJ", 4.0);
 	    params.add("deadsites");
@@ -115,7 +115,7 @@ public class LRAIM extends Simulation{
 
 	
 		params.addm("T", 1.0);
-		params.addm("H", 0.2);
+		params.addm("H", 0.1);
 		params.add("Emcs");    //MCS time for evolution
 	
 		    
@@ -149,7 +149,7 @@ public class LRAIM extends Simulation{
 		}
 	}
 	
-	public void temperatureScan(IsingStructure ising, double Tmax, double Tmin, double dT, int steplimit, int seed)
+	public void temperatureScan(IsingStructure ising, double H, double Tmax, double Tmin, double dT, int steplimit, int seed)
 	{
 		for(double t=Tmax; t>=Tmin; t-=dT)
 		{
@@ -343,9 +343,9 @@ public class LRAIM extends Simulation{
 	    
 	    //singlerun(Istemp, 0.7, 0, 200, 1);
 	  
-	    //temperatureScan(Istemp, 1.20, 0.10, 0.02, 1000, 1);
+	    temperatureScan(Istemp, 0.10, 1.20, 0.10, 0.02, 1000, 1);
         
-	    evolution(Istemp, 0.85, 0, 100, 1);
+	    //evolution(Istemp, 0.85, 0, 100, 1);
 
 	}
 	
