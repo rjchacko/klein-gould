@@ -134,28 +134,36 @@ public class ClusterScaling extends Simulation{
 	
 	public void singlerunHs(IsingStructure ising, double T, double H, int steplimit, boolean keeplargest,int seed)
 	{
-		String singlerun="Hs <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", H="+fmt.format(H*100)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String singlerun="Hs <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", H="+bmt.format(H*1000)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
 		String singlepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+singlerun+".txt";
 		
 		Random rand= new Random(seed);
-
+        double totalm=0;
+        int mnumber=0;
+		
 		for(int step=0; step<steplimit; step++)
 		{
 			params.set("T", T);
 			params.set("H", -H);
-			ising.MCS(T, -H, rand, -1, dynamics);
+			ising.MCS(T, -H, rand, 1, dynamics);
 			
 			Job.animate();
 			params.set("Emcs", step);
 			params.set("magnetization", ising.magnetization);
+			if(step>steplimit-100)
+			{
+				totalm+=ising.magnetization;
+				mnumber++;
+			}
+			
 			
 		}
-		///////double pb=1-Math.exp(2*ising.J/T);
-		int direction=1;
-		if(ising.magnetization<0)
-			direction=-1;
+		
+		double mag=totalm/mnumber;
+	    double pb=1-Math.exp((1+mag/(1-ising.percent))*ising.J/T);
+		int direction=-1;
 			
-		///clustersize=ising.Clustergrowth(ising.spin, direction, pb, seed, seed, keeplargest);
+		clustersize=ising.Clustergrowth(ising.spin, direction, pb, seed, seed, keeplargest);
 		printdata(singlepath, clustersize);
 		
 	}
@@ -183,8 +191,8 @@ public class ClusterScaling extends Simulation{
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 	
-		params.addm("T", 4.00);
-		params.addm("H", 0.0);
+		params.addm("T", 0.889);
+		params.addm("H", 0.575);
 		params.add("Emcs");    //MCS time for evolution
 	
 		    
@@ -233,7 +241,9 @@ public class ClusterScaling extends Simulation{
 	    
 	    Job.animate();
 	   
-	    singlerunTc(Istemp, T, 500, true, 1);
+	    //singlerunTc(Istemp, T, 2000, true, 1);
+	    singlerunHs(Istemp, T, H, 1000, true, 1);
+	    
 	    Job.animate();
 
 	}
