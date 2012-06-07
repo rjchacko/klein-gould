@@ -749,7 +749,29 @@ public class IsingStructure{
     		{
     			int kx=cltemp[k]/L2;
     			int ky=cltemp[k]%L2;
-    			for(int m=-R; m<=R; m++)
+    			
+    			if(R==0)       //for nearest neighbor case
+    			{
+    				for(int a=0; a<4; a++)
+    				{
+    					int s=Nneighber(a, cltemp[k]);
+    					if(im[s]>=0)
+    						if(rrand.nextDouble()<=pb)
+    						{
+    							cltemp[clpin]=s;  //add s into cltemp
+    							clpin++;  //increase the length of cltemp, alway point to the first -1
+    							im[ul[ulpin]]=im[s];   //swap in indexmap
+    							ul[im[s]]=ul[ulpin];  //swap in ul[]			
+    							im[s]=-1;  //delete from indexmap
+    							ulpin--;   //delete from ul[]
+    							}
+    				}
+    			}
+    			
+    			
+    			if(R>0)
+    			{
+    				for(int m=-R; m<=R; m++)
     				for(int n=-R; n<=R; n++)
     				{
     					int sx=X(kx+m);
@@ -764,10 +786,9 @@ public class IsingStructure{
     							ul[im[s]]=ul[ulpin];  //swap in ul[]			
     							im[s]=-1;  //delete from indexmap
     							ulpin--;   //delete from ul[]
-    							
-    						}
+    							}
     				}
-    			
+    		    }
     		}
     		if(k>Max)
     		{
