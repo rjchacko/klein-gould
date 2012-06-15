@@ -64,7 +64,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 
 	public void load(Control c) {
 		c.frameTogether("Data",deadGrid, gammaGrid);
-		params.add("Data Dir",new DirectoryValue("/Users/erdomi/data/damage/contract2/testRuns"));
+		params.add("Data Dir",new DirectoryValue("/Users/racheledominguez/data/RM/scaling/biggerSystemRuns/testRuns/"));
 		String rd = "Random";
 		String br = "RandomBlocks";
 		String ds = "DeadStrip";
@@ -76,7 +76,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		String bl = "DeadBlocks";
 		String pd = "PlaceDeadBlocks";
 		String ac = "AliveCascade";
-		params.add("Type of Damage", new ChoiceValue(cr, rd, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
+		params.add("Type of Damage", new ChoiceValue(db, rd, cr, ac, pd, bl, cs, br, ds, pr, cr, db, dr));
 		params.add("Dead dissipation?", new ChoiceValue("Yes", "No") );
 		params.add("Boundary Conditions", new ChoiceValue("Periodic", "Open"));
 		String ca = "Constant";
@@ -92,9 +92,9 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		String az =  "Gaussian about zero";
 		params.add("Alpha Distribution", new ChoiceValue(ca, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
 		params.addm("Random Seed", 0);
-		params.addm("Size Power",8);
-		params.addm("R", 16);
-		params.addm("Init Percent Dead", .15);
+		params.addm("Size Power",10);
+		params.addm("R", 12);
+		params.addm("Init Percent Dead", .05);
 		params.addm("Dead Parameter", 150);
 		params.addm("Number Dead", 1024);
 		params.addm("Coarse Grained dt (PU)", 1);

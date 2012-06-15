@@ -104,6 +104,7 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		}
 		
 		maxNbors = findCircleNbors(R);
+		System.out.println("No Neighbors = " + maxNbors);
 		nborList = new int [N][maxNbors];
 		p("Finding circle nbors");
 		findCircleNbors(R, maxNbors);	
