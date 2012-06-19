@@ -683,6 +683,338 @@ public class IsingStructure{
     	SFdilution.takeFT(damage);
     	
     }
+   
+    public int[] ClusterInfo(int cluster[])    // the function to calculate the center position and the size of it and store as: clusterinfo[0]=size clusterinfo[1]=center
+	{
+		int clusterinfo[]=new int[2];
+    	int sites[]= new int[cluster.length];
+		int pin=0;
+    	for(int ii=0; ii< cluster.length; ii++)
+		{
+			if(cluster[ii]==2)
+				{
+				sites[pin]=ii;
+				pin++;
+				}
+		}
+    	int size=pin;
+    	
+    	int fp,fx,fy;
+		fp=sites[0];
+		fx=fp/L2;
+		fy=fp%L2;
+		double sumx,sumy;
+		sumx=0;
+		sumy=0;
+		int cx,cy;
+		int clx[];
+		int cly[];
+		int tempx,tempy;
+		clx= new int[size];
+		cly= new int[size];
+		clx[0]=fx;
+		cly[0]=fy;
+		sumx=fx;
+		sumy=fy;
+		
+		for(int cl=1; cl<size; cl++)
+		{
+			tempx=sites[cl]/L2;
+			tempy=sites[cl]%L2;
+			clx[cl]=tempx;
+			cly[cl]=tempy;
+			if((tempx-fx)*(tempx-fx)>(tempx-L1-fx)*(tempx-L1-fx))
+				clx[cl]=tempx-L1;
+			if((tempx-fx)*(tempx-fx)>(tempx+L1-fx)*(tempx+L1-fx))
+				clx[cl]=tempx+L1;
+			if((tempy-fy)*(tempy-fy)>(tempy-L2-fy)*(tempy-L2-fy))
+				cly[cl]=tempy-L2;
+			if((tempy-fy)*(tempy-fy)>(tempy+L2-fy)*(tempy+L2-fy))
+				cly[cl]=tempy+L2;
+			sumx+=clx[cl];
+			sumy+=cly[cl];
+		}
+		cx=(int)(sumx/size);
+		cy=(int)(sumy/size);
+		
+		clusterinfo[0]=size;
+		clusterinfo[1]=X(cx)*L2+Y(cy);
+		
+		return clusterinfo;
+	}
+    
+    public int[] LargestCluster(int spin[], int direction, double pb, int Sseed, int Rseed)
+    {
+    	int Max=0;
+    	int cluster[]=new int[spin.length];
+    	int[] cltemp;   // store the location on the lattice of the current cluster
+    	int[] clustersize= new int[M];
+    	int[] ul=new int[M];      //usefullocation array store the spin's location on the lattice
+    	int[] im=new int[M];      //indexmap stores the index of a spin in ul[] array
+    	int ulpin=0;    // the index of the last non negative element in ul[] array, ulpin+1=total number of useful spins
+    	
+    	//now do the initalization of ul[] and im[] also clustersize[]
+    	for(int i=0; i<M; i++)
+    	{
+    		ul[i]=-1;
+    		im[i]=-1;
+    		clustersize[i]=-1;
+    	}
+    	
+    	//and take spin[] to make the real ul and im
+    	for(int i=0;i<M;i++)
+    	{
+ 
+    		if(spin[i]==direction)
+    		{
+    			ul[ulpin]=i;
+    			im[i]=ulpin;
+    			ulpin++;   //now ulpin point to the first -1, ulpin= total
+    		}
+    	}
+    	ulpin--;  //now ulpin point to the last spin location, so uplin+1=total
+    	
+    	
+    	
+    	////////////////////////////now end of the initialization/////////////////////////
+    	Random srand=new Random(Sseed);
+    	Random rrand=new Random(Rseed);
+    	
+    	int sizepin=0;
+    	
+    	while(ulpin>0)  // this loop is for the seed of each cluster, the seed site is randomly chosen from the left over useful sites
+    	{
+    		int totalleft=ulpin+1;  //total left over useful spin
+    		cltemp=new int[M];
+    		int clpin=1;
+    		for(int c=0; c<M; c++)
+    		{
+    			cltemp[c]=-1;
+    		}
+    		
+    		int j=(int)(srand.nextDouble()*(totalleft));    //pick the seed site from ul[]
+    		//use j as the seed for the cluster, plant the seed
+    		{
+    			cltemp[0]=ul[j];    //write ul[j] into cltemp
+    			im[ul[j]]=-1;       //delete j from indexmap
+    			im[ul[ulpin]]=j;    //swap in indexmap
+    			ul[j]=ul[ulpin];    //swap in ul[]
+    			ulpin--;            //delete j from ul[]
+    		}
+    		
+    		//now generate the cluster from this seed
+    		int k=0;
+    		
+    		if(ulpin>=0)
+    		{
+    			for(k=0; cltemp[k]>=0; k++)
+        		{
+        			int kx=cltemp[k]/L2;
+        			int ky=cltemp[k]%L2;
+        			
+        			if(ulpin>0)
+        			
+        			if(R==0)       //for nearest neighbor case
+        			{
+        				for(int a=0; a<4; a++)
+        				{
+        					int s=Nneighber(a, cltemp[k]);
+        					if(im[s]>=0)
+        						if(rrand.nextDouble()<=pb)
+        						{
+        							cltemp[clpin]=s;  //add s into cltemp
+        							clpin++;  //increase the length of cltemp, always point to the first -1
+        							im[ul[ulpin]]=im[s];   //swap in indexmap
+        							ul[im[s]]=ul[ulpin];  //swap in ul[]			
+        							im[s]=-1;  //delete from indexmap
+        							ulpin--;   //delete from ul[]
+        							}
+        				}
+        			}
+        		    
+        			if(R>0)
+        			{
+        				for(int m=-R; m<=R; m++)
+        				for(int n=-R; n<=R; n++)
+        				{
+        					int sx=X(kx+m);
+        					int sy=Y(ky+n);
+        					int s=sx*L2+sy;
+        					if((im[s]>=0)&&(s!=cltemp[k]))
+        						if(rrand.nextDouble()<=pb)
+        						{
+        							cltemp[clpin]=s;  //add s into cltemp
+        							clpin++;  //increase the length of cltemp, always point to the first -1
+        							im[ul[ulpin]]=im[s];   //swap in indexmap
+        							ul[im[s]]=ul[ulpin];  //swap in ul[]			
+        							im[s]=-1;  //delete from indexmap
+        							ulpin--;   //delete from ul[]
+        							}
+        				}
+        		    }
+        		}
+    		}
+    		else
+    			k=1;
+    		
+    		if(k>Max)
+    		{
+    			Max=k;
+    			for(int ii=0; ii<spin.length; ii++)
+    			{
+    				cluster[ii]=-1;
+    			}
+    			
+    			for(int jj=0; jj<spin.length; jj++)
+    			{
+    				if(cltemp[jj]>=0)
+    					cluster[cltemp[jj]]=2;
+    			}
+    		}
+    		clustersize[sizepin]=k;
+    		sizepin++;
+    	}
+    	
+    	if(ulpin==0)
+    	{
+    		clustersize[sizepin]=1;      //the last site left over
+    		sizepin++;
+    	}
+    	
+    	
+    	return cluster;
+    }
+    
+    public int LargestClusterSize(int spin[], int direction, double pb, int Sseed, int Rseed)   //a shorter version of code just to return the size of the largest cluster
+    {
+    	int Max=0;
+    	int[] cltemp;   // store the location on the lattice of the current cluster
+    	int[] clustersize= new int[M];
+    	int[] ul=new int[M];      //usefullocation array store the spin's location on the lattice
+    	int[] im=new int[M];      //indexmap stores the index of a spin in ul[] array
+    	int ulpin=0;    // the index of the last non negative element in ul[] array, ulpin+1=total number of useful spins
+    	
+    	//now do the initalization of ul[] and im[] also clustersize[]
+    	for(int i=0; i<M; i++)
+    	{
+    		ul[i]=-1;
+    		im[i]=-1;
+    		clustersize[i]=-1;
+    	}
+    	
+    	//and take spin[] to make the real ul and im
+    	for(int i=0;i<M;i++)
+    	{
+ 
+    		if(spin[i]==direction)
+    		{
+    			ul[ulpin]=i;
+    			im[i]=ulpin;
+    			ulpin++;   //now ulpin point to the first -1, ulpin= total
+    		}
+    	}
+    	ulpin--;  //now ulpin point to the last spin location, so uplin+1=total
+    	
+    	
+    	
+    	////////////////////////////now end of the initialization/////////////////////////
+    	Random srand=new Random(Sseed);
+    	Random rrand=new Random(Rseed);
+    	
+    	int sizepin=0;
+    	
+    	while(ulpin>0)  // this loop is for the seed of each cluster, the seed site is randomly chosen from the left over useful sites
+    	{
+    		int totalleft=ulpin+1;  //total left over useful spin
+    		cltemp=new int[M];
+    		int clpin=1;
+    		for(int c=0; c<M; c++)
+    		{
+    			cltemp[c]=-1;
+    		}
+    		
+    		int j=(int)(srand.nextDouble()*(totalleft));    //pick the seed site from ul[]
+    		//use j as the seed for the cluster, plant the seed
+    		{
+    			cltemp[0]=ul[j];    //write ul[j] into cltemp
+    			im[ul[j]]=-1;       //delete j from indexmap
+    			im[ul[ulpin]]=j;    //swap in indexmap
+    			ul[j]=ul[ulpin];    //swap in ul[]
+    			ulpin--;            //delete j from ul[]
+    		}
+    		
+    		//now generate the cluster from this seed
+    		int k=0;
+    		
+    		if(ulpin>=0)
+    		{
+    			for(k=0; cltemp[k]>=0; k++)
+        		{
+        			int kx=cltemp[k]/L2;
+        			int ky=cltemp[k]%L2;
+        			
+        			if(ulpin>0)
+        			
+        			if(R==0)       //for nearest neighbor case
+        			{
+        				for(int a=0; a<4; a++)
+        				{
+        					int s=Nneighber(a, cltemp[k]);
+        					if(im[s]>=0)
+        						if(rrand.nextDouble()<=pb)
+        						{
+        							cltemp[clpin]=s;  //add s into cltemp
+        							clpin++;  //increase the length of cltemp, always point to the first -1
+        							im[ul[ulpin]]=im[s];   //swap in indexmap
+        							ul[im[s]]=ul[ulpin];  //swap in ul[]			
+        							im[s]=-1;  //delete from indexmap
+        							ulpin--;   //delete from ul[]
+        							}
+        				}
+        			}
+        		    
+        			if(R>0)
+        			{
+        				for(int m=-R; m<=R; m++)
+        				for(int n=-R; n<=R; n++)
+        				{
+        					int sx=X(kx+m);
+        					int sy=Y(ky+n);
+        					int s=sx*L2+sy;
+        					if((im[s]>=0)&&(s!=cltemp[k]))
+        						if(rrand.nextDouble()<=pb)
+        						{
+        							cltemp[clpin]=s;  //add s into cltemp
+        							clpin++;  //increase the length of cltemp, always point to the first -1
+        							im[ul[ulpin]]=im[s];   //swap in indexmap
+        							ul[im[s]]=ul[ulpin];  //swap in ul[]			
+        							im[s]=-1;  //delete from indexmap
+        							ulpin--;   //delete from ul[]
+        							}
+        				}
+        		    }
+        		}
+    		}
+    		else
+    			k=1;
+    		
+    		if(k>Max)
+    		{
+    			Max=k;
+    		}
+    		clustersize[sizepin]=k;
+    		sizepin++;
+    	}
+    	
+    	if(ulpin==0)
+    	{
+    		clustersize[sizepin]=1;      //the last site left over
+    		sizepin++;
+    	}
+    	
+    	
+    	return Max;
+    }
     
     public int[] Clustergrowth(int spin[], int direction, double pb, int Sseed, int Rseed, boolean keeplargest)  // given the spin configuration and stable direction, generate the cluster size distribution data use cluster growth
     {
@@ -744,52 +1076,61 @@ public class IsingStructure{
     		}
     		
     		//now generate the cluster from this seed
-    		int k;
-    		for(k=0; cltemp[k]>=0; k++)
+            int k=0;
+    		
+    		if(ulpin>=0)
     		{
-    			int kx=cltemp[k]/L2;
-    			int ky=cltemp[k]%L2;
-    			
-    			if(R==0)       //for nearest neighbor case
-    			{
-    				for(int a=0; a<4; a++)
-    				{
-    					int s=Nneighber(a, cltemp[k]);
-    					if(im[s]>=0)
-    						if(rrand.nextDouble()<=pb)
-    						{
-    							cltemp[clpin]=s;  //add s into cltemp
-    							clpin++;  //increase the length of cltemp, alway point to the first -1
-    							im[ul[ulpin]]=im[s];   //swap in indexmap
-    							ul[im[s]]=ul[ulpin];  //swap in ul[]			
-    							im[s]=-1;  //delete from indexmap
-    							ulpin--;   //delete from ul[]
-    							}
-    				}
-    			}
-    			
-    			
-    			if(R>0)
-    			{
-    				for(int m=-R; m<=R; m++)
-    				for(int n=-R; n<=R; n++)
-    				{
-    					int sx=X(kx+m);
-    					int sy=Y(ky+n);
-    					int s=sx*L2+sy;
-    					if(im[s]>=0)
-    						if(rrand.nextDouble()<=pb)
-    						{
-    							cltemp[clpin]=s;  //add s into cltemp
-    							clpin++;  //increase the length of cltemp, alway point to the first -1
-    							im[ul[ulpin]]=im[s];   //swap in indexmap
-    							ul[im[s]]=ul[ulpin];  //swap in ul[]			
-    							im[s]=-1;  //delete from indexmap
-    							ulpin--;   //delete from ul[]
-    							}
-    				}
-    		    }
+        		for(k=0; cltemp[k]>=0; k++)
+        		{
+        			int kx=cltemp[k]/L2;
+        			int ky=cltemp[k]%L2;
+        			
+        			if(R==0)       //for nearest neighbor case
+        			{
+        				for(int a=0; a<4; a++)
+        				{
+        					int s=Nneighber(a, cltemp[k]);
+        					if(im[s]>=0)
+        						if(rrand.nextDouble()<=pb)
+        						{
+        							cltemp[clpin]=s;  //add s into cltemp
+        							clpin++;  //increase the length of cltemp, alway point to the first -1
+        							im[ul[ulpin]]=im[s];   //swap in indexmap
+        							ul[im[s]]=ul[ulpin];  //swap in ul[]			
+        							im[s]=-1;  //delete from indexmap
+        							ulpin--;   //delete from ul[]
+        							}
+        				}
+        			}
+        			
+        			
+        			if(R>0)
+        			{
+        				for(int m=-R; m<=R; m++)
+        				for(int n=-R; n<=R; n++)
+        				{
+        					int sx=X(kx+m);
+        					int sy=Y(ky+n);
+        					int s=sx*L2+sy;
+        					if((im[s]>=0)&&(s!=cltemp[k]))
+        						if(rrand.nextDouble()<=pb)
+        						{
+        							cltemp[clpin]=s;  //add s into cltemp
+        							clpin++;  //increase the length of cltemp, alway point to the first -1
+        							im[ul[ulpin]]=im[s];   //swap in indexmap
+        							ul[im[s]]=ul[ulpin];  //swap in ul[]			
+        							im[s]=-1;  //delete from indexmap
+        							ulpin--;   //delete from ul[]
+        							}
+        				}
+        		    }
+        		}
     		}
+    		
+    		else
+    			k=1;
+    		
+    		
     		if(k>Max)
     		{
     			Max=k;
@@ -812,12 +1153,15 @@ public class IsingStructure{
     		sizepin++;
     		
     		
-    		
     	}
     	
     	
+    	if(ulpin==0)
+    	{
+    		clustersize[sizepin]=1;      //the last site left over
+    		sizepin++;
+    	}
     	
-
     	
     	return clustersize;
     }

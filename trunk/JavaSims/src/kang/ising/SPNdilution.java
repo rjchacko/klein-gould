@@ -67,9 +67,16 @@ public class SPNdilution extends Simulation{
 	public int breakpoint;
 	public int steplimit;
 	
-	//percolation mapping parameters for determining the droplet size with pb=1
-	public Percolation Droplet;
+	//percolation mapping parameters
+	public int cluster[];
+	public int clusterinfo[];   //clusterinfo[0]=size  clusterinfo[1]=center
 	public int dropletsize;
+	public int Cx, Cy;  //center coordinates for the cluster
+	
+	
+	public int largestclustersize;
+	
+	
 	
 	//droplet distribution parameter
 	public double spintotal[];
@@ -78,6 +85,8 @@ public class SPNdilution extends Simulation{
     public double SDNT;   //standard deviation of nucleation time
     public double nucleationevents[];
     public double lifetime[];
+    
+
 	
 	
 	//public int ti, tf, tm;     //the MCS time of the intervention range[ti,tf] tm=(ti+tf)/2
@@ -134,16 +143,16 @@ public class SPNdilution extends Simulation{
 
 		SPNdilution.frameTogether("Display", grid1 ,grid2, grid3, grid4, grid5, grid6);
 
-		params.add("L", 100);
+		params.add("L", 200);
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
-		params.add("R",5); 
+		params.add("R",10); 
 		
 		params.add("NJ",-4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.000);
-		params.add("biaspercent", 0.000);
+		params.add("percent", 0.800);
+		params.add("biaspercent", 0.800);
 		params.add("totalruns",20);     //the number of total intervention runs
 		 
 
@@ -153,8 +162,8 @@ public class SPNdilution extends Simulation{
 		//params.add("Dseed",1);    //seed for dilution configuration
 		//params.add("Sseed",1);    //seed for spin flip
 		
-		params.addm("T", 1.778);
-		params.addm("H", 1.08);
+		params.addm("T", 0.356);
+		params.addm("H", 0.25);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
@@ -296,10 +305,82 @@ public class SPNdilution extends Simulation{
 			PrintUtil.printlnToFile(singlepath , ss , Evolution.magnetization/Ms);
 			if(ss%2000==0)
 			{
-				Tools.Picture(grid4, ss, (int)(H*1000), singlepic);
+				Tools.Picture(grid2, ss, (int)(H*1000), singlepic);
 			}
 		}
 		
+		
+	}
+	
+	public void Clusterrun(IsingStructure ising, Random rand, double T, double H)
+	{
+		
+
+		String clusterrun="<T="+fmt.format(T*1000)+", H="+fmt.format(H*1000)+", L= "+fmt.format(L)+", R="+fmt.format(R)+", la= "+fmt.format(la)+", lb= "+fmt.format(lb)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String clusterpath = "/Users/liukang2002507/Desktop/simulation/SPNdilution/"+dynamics+"/clusterrun "+clusterrun+".txt";
+		String clusterpic="/Users/liukang2002507/Desktop/simulation/SPNdilution/"+dynamics+"/clusterpic/"+clusterrun;
+	
+		Evolution=ising.clone();
+		Job.animate();
+		Erand=rand.clone();
+		params.set("H", H);
+		//Evolve(Evolution, 90, Erand, T, H);
+		for(int pres=0; pres<100; pres++)
+		{
+			Evolution.MCS(T, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", pres);
+			params.set("magnetization", Evolution.magnetization);
+		}
+	
+		double totalM=0;
+		// here, it's a little bit different from the nearest neighbor model, the saturated magnetization is measured in the metastable state not the stable state as before
+		
+		for(int ps=0; ps<10; ps++)      
+		{
+			//totalM+=Evolution.magnetization;
+			Evolution.MCS(T, -H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ps-10);
+			params.set("magnetization", Evolution.magnetization);
+		}
+		
+		for(int ps=0; ps<10; ps++)
+		{
+			totalM+=Evolution.magnetization;
+			Evolution.MCS(T, -H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ps);
+			params.set("magnetization", Evolution.magnetization);
+		}
+		double Ms=totalM/10;    //calculate the saturate magnetization
+		params.set("H", -H);//flip the field;
+		int ss=0;
+		for(ss=0; Evolution.magnetization>-(Ms*0.5);ss++)
+		{
+			Evolution.MCS(T, -H, Erand, 1, dynamics);
+			double pb=1-Math.exp((1+Evolution.magnetization/(1-Evolution.percent))*Evolution.J/T);
+			cluster=Evolution.LargestCluster(Evolution.spin, -1, pb, 1,1);
+			clusterinfo=new int[2];
+			clusterinfo=Evolution.ClusterInfo(cluster);
+			largestclustersize=clusterinfo[0];
+			Cx=Evolution.X(clusterinfo[1]/Evolution.L2);
+			Cy=Evolution.Y(clusterinfo[1]%Evolution.L2);
+			
+			for(int jj=0; jj<ising.M; jj++)
+			{
+				Istemp.spin[jj]=cluster[jj];	
+			}
+			Istemp.spin[clusterinfo[1]]=0;
+			
+			Job.animate();
+			Tools.Picture(grid2, ss, largestclustersize, clusterpic);
+			
+			params.set("Emcs", ss);
+			params.set("magnetization", Evolution.magnetization);
+			PrintUtil.printlnToFile(clusterpath , ss , Evolution.magnetization/Ms, largestclustersize, Cx, Cy);
+		
+		}
 		
 	}
 	
@@ -363,19 +444,16 @@ public class SPNdilution extends Simulation{
 		
 		
 		Tools.Picture(grid4, breakpoint, 9999, Bpic);        //the snapshot at the intervention point
-		{                       
-			Droplet=new Percolation(Evolution,2);            //percolation mapping to determine the droplet
-			Droplet.SetProbability(1);
-			Droplet.fastNNMapping(47);
-			dropletsize=Droplet.CS.maximumsize;
+		{    
+			double pb=1-Math.exp((1+Evolution.magnetization/(1-Evolution.percent))*Evolution.J/T);
+			cluster=Evolution.LargestCluster(Evolution.spin, -1, pb, 1, 1);
+			
+			dropletsize=0;
 			for(int jj=0; jj<ising.M; jj++)
 			{
-				Istemp.spin[jj]=-1;
-				if(Evolution.spin[jj]==0)
-					Istemp.spin[jj]=0;
-				if(Droplet.CS.set[Droplet.CS.maximumpin].lattice[jj]==2)
-					Istemp.spin[jj]=2;
-				
+				Istemp.spin[jj]=cluster[jj];
+				if(cluster[jj]==2)
+					dropletsize++;
 			}
 			params.set("Dropletsize",dropletsize);
 			Job.animate();
@@ -507,8 +585,6 @@ public class SPNdilution extends Simulation{
 		
 		
 	}
-	
-	
 	
 	public void Multihistogram(IsingStructure ising, double T, double H, int runs, int copies, double thresholdM)
 	{
@@ -1013,10 +1089,10 @@ public class SPNdilution extends Simulation{
 	    Istemp=new IsingStructure(L,L,R,NJ,percent,biaspercent,"square");
 	    Intervention=new IsingStructure(L,L,R,NJ,percent,biaspercent,"square");
 	    Evolution=new IsingStructure(L,L,R,NJ,percent,biaspercent,"square");
-	    Droplet=new Percolation();
+	   
 	    spintotal= new double[IS.M];
 	    dilutionmap= new double[IS.M];
-	   
+	    
 	    
 	    
 	    Tools=new BasicTools();
@@ -1039,21 +1115,21 @@ public class SPNdilution extends Simulation{
 	    
 	    //testrun(Istemp);
 	    
-	    //Properh(IS, rand, T, 0.6, 0.9, 0.005);
+	    Properh(IS, rand, T, 0.05, 0.23, 0.005);
 	    
 	    //Singlerun(IS, rand, T, H);
-        
+        //Clusterrun(IS, rand, T, H);
 	    
-	    breakpoint= 9335;
-	    threshold= 0.99;
-	    steplimit= 2000;
+	    breakpoint= 1065;
+	    threshold= 0.98;
+	    steplimit= 200;
 	    //Intervention(IS, rand, T, H, breakpoint, steplimit);
       
 	    //Dropletdistribution(IS, T, H, 100, 0.97);
 	    
 	    //Singlehistogram(IS, T, H, 500, 0.9, 1);
 	    
-	    Singlegrowth(IS, T, H, 500, 0, 20);
+	    //Singlegrowth(IS, T, H, 500, 0, 20);
 	    
 	    //Multigrowth(IS, T, H, 500, 20);
 
