@@ -1,7 +1,7 @@
 package rachele.damage2D.apps;
 
-
 import java.io.File;
+
 import rachele.damage2D.multidx.FrozenDamageLattice;
 import rachele.util.FileUtil;
 import scikit.dataset.Accumulator;
@@ -16,12 +16,8 @@ import scikit.jobs.params.DirectoryValue;
 import scikit.util.DoubleArray;
 import scikit.util.Utilities;
 
-/**
- * Code is a downsizing of frozenDamageMultidxApp
- * No metric calcs are done.
- */
-public class FrozenDamageScalingOnlyApp extends Simulation{
-	
+public class SW_TesterApp extends Simulation{
+
 	int dt;
 	int pow;
 	int maxSize;	
@@ -59,7 +55,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 //	int [] eventCount;
 
 	public static void main(String[] args) {
-		new Control(new FrozenDamageScalingOnlyApp(), "OFC Damage Model Scaling Only");
+		new Control(new SW_TesterApp(), "OFC Damage Model Scaling Only");
 	}
 
 	public void load(Control c) {
@@ -100,9 +96,9 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		params.addm("Coarse Grained dt (PU)", 1);
 		params.addm("Equilibration Updates", 100000);
 		params.addm("Max PU",1000000000);
-		params.addm("Data points per write", 10000000);
+		params.addm("Data points per write", 10000);
 		params.addm("Residual Stress", 0.625);
-		params.addm("Res. Max Noise", 0.125);
+		params.addm("Res. Max Noise", 0.0);
 		params.addm("Dissipation Param", 0.16);
 		params.addm("Damage Tolerance", 1.0);
 		params.add("Av Size");
@@ -202,7 +198,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 				writeAccumulatedData();
 				dataPointsCount = 0;
 			}
-			if(ofc.plateUpdates%100000==0){
+			if(ofc.plateUpdates%1000000==0){
 				writeShFile(shCount);
 				shCount += 1;
 			}
@@ -285,4 +281,6 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		FileUtil.initFile(sizeFile, params, " Max Avalanche Size Data File", " time (plate updates),  max avalanche size");
 		sizeHistFile = parentDir + "sh.txt";
 	}
+	
+	
 }
