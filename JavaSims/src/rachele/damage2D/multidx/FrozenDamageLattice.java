@@ -230,8 +230,11 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 			for (int i = 0; i < N; i++){
 				int ct = 0;
 				for (int j = 0; j < maxNbors; j++){
-					if (aliveLattice[nborList[i][j]]){
-						ct += 1;
+					if (nborList[i][j]>-1){
+//						System.out.println(i+ " " + j);
+						if (aliveLattice[nborList[i][j]]){
+							ct += 1;
+						}
 					}
 					int noDead = maxNbors - ct;
 					fracDeadNbors[i] = (double)noDead/maxNbors;
@@ -330,13 +333,20 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 						if (distance <= range){
 							int xx = (x+dx);
 							int yy = (y+dy);
-							if(xx>=0 & xx<L & yy>=0 & yy<L){
+							//System.out.println("site " + s);
+							if(dx==0 & dy==0){
+								//System.out.println("no nbor set for site " + s);
+							}else if(xx>=0 & xx<L & yy>=0 & yy<L){
 								int nborSite = yy*L+xx;
 								nborList[s][nborIndex] = nborSite;
+								//System.out.println("nbor index = " + s + " " + nborIndex  + " nbor = " + nborList[s][nborIndex]  + " nbor = " + dx + " " + dy);
+								nborIndex += 1;
 							}else{
 								nborList[s][nborIndex] = -1;
+								//System.out.println("nbor index = " + s + " "  + nborIndex  + " nbor = "   + nborList[s][nborIndex]  + " nbor = " + dx + " " + dy);
+								nborIndex += 1;
 							}
-							nborIndex += 1;
+
 						}
 					}
 				}
@@ -383,16 +393,17 @@ public class FrozenDamageLattice extends AbstractOFC_Multidx{
 		int nextSiteToFail = checkFail();
 		while(nextSiteToFail >= 0){
 //			failedSites[nextSiteToFail]+=1;
-			failedSitesList[failIndex]=nextSiteToFail;
+//			failedSitesList[failIndex]=nextSiteToFail;
+			failedSitesList[failIndex%N]=nextSiteToFail;			
 			failIndex+=1;
 			fail(nextSiteToFail);
 			nextSiteToFail = checkFail();
 			avSize += 1;
-			if (avSize%N==0){
-				System.out.println("Error:  Av Size = " + avSize);
-				nextSiteToFail = -1;
-				FileUtil.printlnToFile(infoFileName, "Av Size = " , avSize);
-			}
+//			if (avSize%N==0){
+//				System.out.println("Error:  Av Size = " + avSize);
+//				nextSiteToFail = -1;
+//				FileUtil.printlnToFile(infoFileName, "Av Size = " , avSize);
+//			}
 		}
 		
 
