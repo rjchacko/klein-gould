@@ -37,16 +37,16 @@ public class AbstractOFC_Lattice {
 		bringToFailure();
 		fail(epicenterSite);
 		scanLattice();
-		int it = 1;
+		//int it = 1;
 		while(sitesToFail[0] >= 0){
 			int i = 0;
 			while(sitesToFail[i] >= 0){
 				fail(sitesToFail[i]);
 				i ++;
 			}
-			int scanFails = scanLattice();
+			scanLattice();
 			//System.out.println("Scan " + it + " has " + scanFails + " fails");
-			it ++;
+			//it ++;
 		}
 		plateUpdates += 1;
 	}
@@ -100,7 +100,7 @@ public class AbstractOFC_Lattice {
 	 * Scans the lattice and stores all sites that are above
 	 * threshold stress into array sitesToFail.
 	 */
-	int scanLattice(){
+	void scanLattice(){
 		for (int i = 0; i < N; i++){
 			sitesToFail[i]=-1;
 		}
@@ -111,8 +111,19 @@ public class AbstractOFC_Lattice {
 				index ++;
 			}
 		}
-		return index;
-	//	System.out.println("# above threshold for scan = " + index);
+	}
+	
+	void initStress(){
+		for(int i = 0; i < N; i++){
+			double rand = random.nextDouble();
+			stress[i] = rand;
+		}
+	}
+	
+	void initSitesToFail(){
+		for(int i = 0; i < N; i++){
+			sitesToFail[i] = -1;
+		}
 	}
 	
 }
