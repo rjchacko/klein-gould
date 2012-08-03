@@ -92,8 +92,8 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		String az =  "Gaussian about zero";
 		params.add("Alpha Distribution", new ChoiceValue(ca, mg, ca, ei, qu , fr, mg, da, ah, gs, ga, fa, az));
 		params.addm("Random Seed", 0);
-		params.addm("Size Power",5);
-		params.addm("R", 1);
+		params.addm("Size Power",6);
+		params.addm("R", 16);
 		params.addm("Init Percent Dead", 0.0);
 		params.addm("Dead Parameter", 0);
 		params.addm("Number Dead", 0);
@@ -102,7 +102,7 @@ public class FrozenDamageScalingOnlyApp extends Simulation{
 		params.addm("Max PU",1000000000);
 		params.addm("Data points per write", 10000000);
 		params.addm("Residual Stress", 0.625);
-		params.addm("Res. Max Noise", 0.125);
+		params.addm("Res. Max Noise", 0.0);
 		params.addm("Dissipation Param", 0.16);
 		params.addm("Damage Tolerance", 1.0);
 		params.add("Av Size");

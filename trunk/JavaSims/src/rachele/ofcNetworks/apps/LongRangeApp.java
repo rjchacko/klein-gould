@@ -1,14 +1,14 @@
 /**
- * nnApp is a nearest neighbor OFC app
+ * LongRangeApp is a long stress transfer range OFC app
  * 
  * @author Rachele Dominguez
- * @version 1.0 July 11, 2012
+ * @version 1.0 July 13, 2012
  */
 package rachele.ofcNetworks.apps;
 
 import java.io.File;
 
-import rachele.ofcNetworks.NearNborLattice;
+import rachele.ofcNetworks.LongRangeLattice;
 import rachele.util.FileUtil;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Grid;
@@ -17,11 +17,11 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 
-public class nnApp extends Simulation{
+public class LongRangeApp extends Simulation{
 
 
 	Grid latticeGrid = new Grid("Lattice");
-	NearNborLattice ofc;
+	LongRangeLattice ofc;
 	
 	Histogram sizeHist = new Histogram(1);
 	Histogram cumSizeHist = new Histogram(1);
@@ -29,7 +29,7 @@ public class nnApp extends Simulation{
 	String cumSizeHistFile;
 	
 	public static void main(String[] args) {
-		new Control(new nnApp(), "NN OFC");
+		new Control(new LongRangeApp(), "Long Range OFC");
 	}
 
 	public void load(Control c) {
@@ -39,6 +39,7 @@ public class nnApp extends Simulation{
 		int Lstart = 32;
 		params.addm("L",Lstart);
 		params.addm("alpha", 0.16);
+		params.addm("R", 1);
 		int equilStart = Lstart*Lstart*100;
 		params.addm("Equilibration Updates", equilStart);
 		params.add("Av Size");
@@ -59,7 +60,7 @@ public class nnApp extends Simulation{
 	
 	public void run() {
 		//construct a new lattice
-		ofc = new NearNborLattice(params);
+		ofc = new LongRangeLattice(params);
 		Job.animate();
 		initFiles();
 		int shCount = 1;
@@ -116,6 +117,5 @@ public class nnApp extends Simulation{
 	}
 
 
-	
-	
+
 }

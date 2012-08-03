@@ -4,7 +4,6 @@ import scikit.jobs.params.Parameters;
 
 public class NearNborLattice extends AbstractOFC_Lattice{
 
-	int nextToFail;
 	/**
 	 * Constructor for Near Nbor Lattice Class
 	 */
@@ -60,18 +59,7 @@ public class NearNborLattice extends AbstractOFC_Lattice{
 		}
 	}
 
-	void initStress(){
-		for(int i = 0; i < N; i++){
-			double rand = random.nextDouble();
-			stress[i] = rand;
-		}
-	}
-	
-	void initSitesToFail(){
-		for(int i = 0; i < N; i++){
-			sitesToFail[i] = -1;
-		}
-	}
+
 	
 
 	
