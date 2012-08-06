@@ -11,7 +11,7 @@ public class NearNborLattice extends AbstractOFC_Lattice{
 		
 		setParams(params);
 		initStress();
-		setNbors();
+		setNearNbors();
 	}
 	
 	void setParams(Parameters params){
@@ -21,49 +21,8 @@ public class NearNborLattice extends AbstractOFC_Lattice{
 		alpha = params.fget("alpha");
 		nbor = new int [N][4];			// 4 neighbors for nearest neighbor lattice
 		noNbors = 4;
-		sitesToFail = new int [N];
+		sitesToFail = new int [N+1];
+		stressAdd = new double [N];
 	}
-	
-	/**
-	 * Boundary conditions for now are OPEN only!
-	 */
-	void setNbors(){
-		for(int i = 0; i < N; i++){
-			int x = i % L;
-			int y = i / L;
-			
-			// left neighbor
-			if (x == 0){
-				nbor[i][0] = -1;
-			}else{
-				nbor[i][0] = i - 1;
-			}
-			// bottom neighbor
-			if (y == 0){
-				nbor[i][1] = -1;
-			}else{
-				nbor[i][1] = i - L;
-			}
-			// right neighbor
-			if (x == L-1){
-				nbor[i][2] = -1;
-			}else{
-				nbor[i][2] = i + 1;
-			}
-			// top neighbor
-			if (y == L-1){
-				nbor[i][3] = -1;
-			}else{
-				nbor[i][3] = i + L;
-			}
-		}
-	}
-
-
-	
-
-	
-
-	
 
 }
