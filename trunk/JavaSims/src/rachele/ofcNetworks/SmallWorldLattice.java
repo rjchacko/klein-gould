@@ -4,9 +4,11 @@ import scikit.jobs.params.Parameters;
 
 public class SmallWorldLattice extends AbstractOFC_Lattice{
 
+	public double percentRewired;
 	
 	double prob;
 	int randomOrder [];
+
 	
 	/**
 	 * Constructor for Small World Lattice Class
@@ -20,6 +22,7 @@ public class SmallWorldLattice extends AbstractOFC_Lattice{
 	}
 	
 	void setParams(Parameters params){
+		random.setSeed(params.iget("Random Seed"));
 		L = params.iget("L");
 		N = L*L;
 		prob = params.fget("Rewire Probability");
@@ -28,14 +31,16 @@ public class SmallWorldLattice extends AbstractOFC_Lattice{
 		alpha = params.fget("alpha");
 		nbor = new int [N][4];			// 4 neighbors for nearest neighbor lattice
 		noNbors = 4;
-		sitesToFail = new int [N];
+		sitesToFail = new int [N+1];
 		stressAdd = new double [N];
 		randomOrder = new int [N];
 	}
 	
 	void rewire(){
 		randomizeOrder();
-		for (int site1 = 0; site1 < N; site1++){
+		int noRewired = 0;
+		for (int k = 0; k < N; k++){
+			int site1 = randomOrder[k];
 			double r = random.nextDouble();
 			if (r < prob){												//test for rewire
 				int site2 = -1;	
@@ -43,9 +48,11 @@ public class SmallWorldLattice extends AbstractOFC_Lattice{
 				int nbor2Index = -1;
 				boolean notReady = false;
 				do{
-					nbor1Index = (int)(random.nextDouble()*noNbors); 
-					int nbor1 = nbor[site1][nbor1Index];
-					
+					int nbor1 = -1;
+					while(nbor1==-1){
+						nbor1Index = (int)(random.nextDouble()*noNbors); 
+						nbor1 = nbor[site1][nbor1Index];
+					}
 					site2 = (int)(random.nextDouble()*N);  //choose a random site
 					if (site1 == site2){						//Make sure you haven't picked the 
 						notReady = true;
@@ -53,8 +60,11 @@ public class SmallWorldLattice extends AbstractOFC_Lattice{
 						if(connected(site1, site2)){
 							notReady = true;
 						}else{
-							nbor2Index = (int)(random.nextDouble()*noNbors);			
-							int nbor2 = nbor[site2][nbor2Index];
+							int nbor2 = -1;
+							while(nbor2 == -1){
+								nbor2Index = (int)(random.nextDouble()*noNbors);			
+								nbor2 = nbor[site2][nbor2Index];
+							}
 							if(nbor1 == nbor2){
 								notReady = true;
 							}else{	
@@ -67,14 +77,18 @@ public class SmallWorldLattice extends AbstractOFC_Lattice{
 									int site1Index = noNbors;
 									int site2Index = noNbors;
 									for(int i = 0; i < noNbors; i++){
+										//Possible problem if these nbors are boundary sites
 										if(nbor[nbor1][i]==site1) site1Index = i;
 										if(nbor[nbor2][i]==site2) site2Index = i;
 									}
 									nbor[site1][nbor1Index] = site2;
-									nbor[nbor1][site1Index] = nbor2;
 									nbor[site2][nbor2Index] = site1;
 									nbor[nbor2][site2Index] = nbor1;
-									System.out.println("Rewired sites " + site1 + " and " + site2);
+									nbor[nbor1][site1Index] = nbor2;
+									//System.out.println("Rewired sites " + site1 + " and " + site2);
+									//System.out.println("Not Ready = " + notReady);
+									noRewired ++;
+									notReady = false;
 								}			
 							}
 						}
@@ -82,6 +96,8 @@ public class SmallWorldLattice extends AbstractOFC_Lattice{
 				}while(notReady);
 			}
 		}
+		percentRewired = (double)noRewired/(double)N;
+		System.out.println("Percent Rewired = " + percentRewired);
 	}
 	
 

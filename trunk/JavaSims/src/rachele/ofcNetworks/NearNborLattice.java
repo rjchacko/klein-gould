@@ -15,6 +15,7 @@ public class NearNborLattice extends AbstractOFC_Lattice{
 	}
 	
 	void setParams(Parameters params){
+		random.setSeed(params.iget("Random Seed"));
 		L = params.iget("L");
 		N = L*L;
 		stress = new double [N];
