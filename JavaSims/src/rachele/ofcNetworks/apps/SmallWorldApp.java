@@ -23,6 +23,7 @@ public class SmallWorldApp extends Simulation{
 	Histogram cumSizeHist = new Histogram(1);
 	String sizeHistFile;
 	String cumSizeHistFile;
+	String infoFile;
 	
 	public static void main(String[] args) {
 		new Control(new SmallWorldApp(), "Small World OFC");
@@ -33,11 +34,11 @@ public class SmallWorldApp extends Simulation{
 		c.frame(connectionGrid);
 		params.add("Data Dir",new DirectoryValue("/Users/racheledominguez/data/RM/OFC_networks/testRuns/"));
 		params.addm("Random Seed", 0);
-		int Lstart = 16;
+		int Lstart = 256;
 		params.addm("L",Lstart);
 		params.addm("alpha", 0.16);
 		params.addm("R", 1);
-		params.addm("Rewire Probability", 0.1);
+		params.addm("Rewire Probability", 0.0059);
 		int equilStart = Lstart*Lstart*100;
 		params.addm("Equilibration Updates", equilStart);
 		params.add("Av Size");
@@ -45,7 +46,7 @@ public class SmallWorldApp extends Simulation{
 	}
 
 	public void clear() {
-		
+		connectionGrid.clearDrawables();
 	}
 	
 	public void animate() {
@@ -107,12 +108,14 @@ public class SmallWorldApp extends Simulation{
 		FileUtil.printHistToFile(sizeHistFile, sizeHist);
 		FileUtil.initFile(cumSizeHistFile, params, " Cumulative Avalanch Size Histogram Data File");
 		FileUtil.printHistToFile(cumSizeHistFile, cumSizeHist);
-		}
+	}
 	
 	void initFiles(){
 		String parentDir = params.sget("Data Dir") + File.separator;
 		sizeHistFile = parentDir + "sh.txt";
 		cumSizeHistFile = parentDir + "ch.txt";
+		infoFile = parentDir + "info.txt";
+		FileUtil.printlnToFile(infoFile, "Percent Rewired = ", ofc.percentRewired);
 	}
 	
 	void drawConnections(){
@@ -124,12 +127,13 @@ public class SmallWorldApp extends Simulation{
 		connectionGrid.registerData(ofc.L, ofc.L, blank);
 		for(int i = 0; i < ofc.N; i++){
 			double [] position = findCenter(i);
-			connectionGrid.addDrawable(Geom2D.circle(position[0], position[1], 0.002, Color.black));
+			//connectionGrid.addDrawable(Geom2D.circle(position[0], position[1], 0.005, Color.black));
+			//connectionGrid.addDrawable(Geom2D.circle(position[0], position[1], 0.002, Color.black));
 			for(int j = 0; j < ofc.noNbors; j++){
 				int nbor = ofc.nbor[i][j];
 				if(nbor>=0){
 					double [] nposition = findCenter(ofc.nbor[i][j]);
-					connectionGrid.addDrawable(Geom2D.line(position[0], position[1], nposition[0], nposition[1], Color.red));
+					connectionGrid.addDrawable(Geom2D.line(position[0], position[1], nposition[0], nposition[1], Color.black));
 				}
 			}
 		}
