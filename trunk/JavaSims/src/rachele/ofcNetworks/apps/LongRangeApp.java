@@ -35,11 +35,11 @@ public class LongRangeApp extends Simulation{
 	public void load(Control c) {
 		c.frame(latticeGrid);
 		params.add("Data Dir",new DirectoryValue("/Users/racheledominguez/data/RM/OFC_networks/testRuns/"));
-		params.addm("Random Seed", 0);
-		int Lstart = 32;
+		params.addm("Random Seed", 40);
+		int Lstart = 64;
 		params.addm("L",Lstart);
-		params.addm("alpha", 0.16);
-		params.addm("R", 1);
+		params.addm("alpha", 0.1);
+		params.addm("R", 8);
 		int equilStart = Lstart*Lstart*100;
 		params.addm("Equilibration Updates", equilStart);
 		params.add("Av Size");
@@ -81,12 +81,13 @@ public class LongRangeApp extends Simulation{
 				}
 
 				if(ofc.plateUpdates % 10000 == 0) writeAccumulatedData(); 
-				if(ofc.plateUpdates%10000000==0){
+	//			if(ofc.plateUpdates%10000000==0){
+				if(ofc.plateUpdates%100000==0){
 					writeShFile(shCount);
 					shCount += 1;
 				}
 				Job.animate();
-				if(ofc.plateUpdates >= 1000000000){
+				if(ofc.plateUpdates >= 10000000){
 					Job.signalStop();
 				}
 			}
