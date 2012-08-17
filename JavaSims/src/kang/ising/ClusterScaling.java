@@ -6,6 +6,8 @@ import java.text.DecimalFormat;
 import kang.ising.BasicStructure.BasicTools;
 import kang.ising.BasicStructure.IsingStructure;
 import kang.util.PrintUtil;
+import kang.ising.BasicStructure.BasicTools;
+
 import scikit.graphics.ColorGradient;
 import scikit.graphics.ColorPalette;
 import scikit.graphics.dim2.Grid;
@@ -168,31 +170,79 @@ public class ClusterScaling extends Simulation{
 		
 	}
 	
+	public void approachHs(IsingStructure ising, double T, double Hmin, double Hmax, double dH, int steplimit, int seed)
+	{
+		String SPCrun="SPC data <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+"p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String SPCpath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+SPCrun+".txt";
+		double pb=1-Math.exp((1+0.745/(1-ising.percent))*ising.J/T);;     //need to use the bond probability at spinodal
+		
+		int spantemp=0;
+		for(double h=Hmin; h<Hmax; h+=dH)
+		{
+		  
+			spantemp=findlargestcluster(ising, T, h, steplimit, pb, seed);
+			PrintUtil.printlnToFile(SPCpath, h, spantemp);
+			
+		}
+		
+	}
 	
+	public int findlargestcluster(IsingStructure ising, double T, double H, int steplimit, double pb, int seed)
+	{
+		
+		int largestsize=0;
+		
+		String FLCrun="FLC <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", H="+bmt.format(H*1000)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String FLCpath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+FLCrun+".txt";
+		String FLCpic = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/FLCpic/cluster";
+		
+		ising.Sinitialization(1, Sseed);
+		Random rand= new Random(seed);
+		for(int step=0; step<steplimit; step++)
+		{
+			params.set("T", T);
+			params.set("H", -H);
+			ising.MCS(T, -H, rand, 1, dynamics);
+			
+			Job.animate();
+			params.set("Emcs", step);
+			params.set("magnetization", ising.magnetization);
+		}
+		clustersize=ising.Clustergrowth(ising.spin, -1, pb, seed, seed, true);
+		Job.animate();
+		printdata(FLCpath, clustersize);
+		Tools.Picture(grid3, (int)(H*1000), (int)(percent*1000), FLCpic);
+		
+		int[] clinfotemp=new int [2];
+		clinfotemp=ising.ClusterInfo(ising.largestcluster);
+		largestsize=clinfotemp[0];
+		
+		return largestsize;
+	}
 	
 	public void load(Control ClusterScaling)
 	{
 
 		ClusterScaling.frameTogether("Display", grid1 ,grid2, grid3);
 
-		params.add("L", 400);
+		params.add("L", 800);
 		
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
-		params.add("R", 20);
+		params.add("R", 40);
 		
 		params.add("NJ", -4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.50);
-		params.add("biaspercent", 0.50);
+		params.add("percent", 0.00);
+		params.add("biaspercent", 0.00);
 		
 		 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 	
-		params.addm("T", 0.889);
-		params.addm("H", 0.575);
+		params.addm("T", 1.778);
+		params.addm("H", 1.26);
 		params.add("Emcs");    //MCS time for evolution
 	
 		    
@@ -242,7 +292,9 @@ public class ClusterScaling extends Simulation{
 	    Job.animate();
 	   
 	    //singlerunTc(Istemp, T, 2000, true, 1);
-	    singlerunHs(Istemp, T, H, 1000, true, 1);
+	    //singlerunHs(Istemp, T, H, 200, true, 1);
+	    
+	    approachHs(Istemp, T, 1.26, 1.265, 0.001, 100, 1);
 	    
 	    Job.animate();
 
