@@ -10,6 +10,8 @@ public class FCIsing {
 	public double M;
 	public double m;
 	public double J;
+	public double percent;   //the percent of the dilution
+	public double livesites;  //the livesites=N*(1-percent)
 	
 	public FCIsing(int N)
 	{
@@ -25,14 +27,22 @@ public class FCIsing {
 		copy.M=M;
 		copy.m=m;
 		copy.J=J;
+		copy.percent=percent;
+		copy.livesites=livesites;
+		
 		return copy;
 	}
 	
 	public void setJ(double NJ)
 	{
 
-		this.J=NJ/(N-1);
+		this.J=NJ/(N-1);                     //normalize the interaction constant
 	
+	}
+	
+	public void dilutesetJ(double NJ, double percent)
+	{
+		
 	}
 	
 	public void initialize(double m)
@@ -131,8 +141,6 @@ public class FCIsing {
 		}
 		m=M/N;
 	}
-	
-	
 	
 	
 	public void MCS(String dynamics, Random spinrand, Random fliprand, double T, double H, double ratio)
