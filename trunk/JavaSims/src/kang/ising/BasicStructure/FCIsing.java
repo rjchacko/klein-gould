@@ -1,6 +1,7 @@
 package kang.ising.BasicStructure;
 
 
+import scikit.jobs.Job;
 import chris.util.Random;
 
 public class FCIsing {
@@ -16,6 +17,7 @@ public class FCIsing {
 	public FCIsing(int N)
 	{
 		this.N=N;
+		this.livesites=N;
 	}
 	
 	
@@ -33,17 +35,31 @@ public class FCIsing {
 		return copy;
 	}
 	
+	public void dilute(double percent)
+	{
+		this.percent=percent;
+		this.livesites=(int)(this.N*(1-percent));
+	}
+	
 	public void setJ(double NJ)
 	{
 
-		this.J=NJ/(N-1);                     //normalize the interaction constant
-	
+		this.J=NJ/(this.N-1);                     //normalize the interaction constant
 	}
 	
-	public void dilutesetJ(double NJ, double percent)
+	
+	
+	public void initializeDilution(double m)    //initialization of the dilute system
 	{
-		
+		this.Nu=Math.round((1-percent+m)*N/2);
+		this.Nd=this.livesites-this.Nu;
+		this.M=this.Nu-this.Nd;
+	    this.m=M/N;
+	    assert (this.m==m);
+	    
+	   
 	}
+	
 	
 	public void initialize(double m)
 	{
@@ -65,10 +81,10 @@ public class FCIsing {
 	public void spinflip(Random spinrand, Random fliprand, double T, double H)   //spinrand for choosing the up or down spin, fliprand for determining the spinflip
 	{
 		double Echange=0;
-		if(spinrand.nextDouble()<(Nu/N))
+		if(spinrand.nextDouble()<(Nu/livesites))
 		{
 			Echange=-2*J*(Nu-Nd)+2*J+2*H;
-			if(Echange<0)
+			if(Echange<=0)
 			{
 				Nu--;
 				Nd++;
@@ -76,7 +92,7 @@ public class FCIsing {
 			}
 			else
 			{
-				if(fliprand.nextDouble()<Math.exp(-Echange/T))
+				if(fliprand.nextDouble()<=Math.exp(-Echange/T))
 				{
 					Nu--;
 					Nd++;
@@ -87,7 +103,7 @@ public class FCIsing {
 		else
 		{
 			Echange=2*J*(Nu-Nd)+2*J-2*H;
-			if(Echange<0)
+			if(Echange<=0)
 			{
 				Nu++;
 				Nd--;
@@ -95,7 +111,7 @@ public class FCIsing {
 			}
 			else
 			{
-				if(fliprand.nextDouble()<Math.exp(-Echange/T))
+				if(fliprand.nextDouble()<=Math.exp(-Echange/T))
 				{
 					Nu++;
 					Nd--;
@@ -112,7 +128,7 @@ public class FCIsing {
 	{
 		double Echange=0;
 		double Pglauber=0;
-		if(spinrand.nextDouble()<(Nu/N))
+		if(spinrand.nextDouble()<(Nu/livesites))
 		{
 			Echange=-2*J*(Nu-Nd)+2*J+2*H;
 			Pglauber=1/(1+Math.exp(Echange/T));
@@ -145,15 +161,18 @@ public class FCIsing {
 	
 	public void MCS(String dynamics, Random spinrand, Random fliprand, double T, double H, double ratio)
 	{
-		int flipnumber=(int)(ratio*N);
+		int flipnumber=(int)(ratio*livesites);
 		for(int j=0; j<flipnumber; j++)
 		{
 			if(dynamics=="Metropolis")
 				spinflip(spinrand, fliprand, T, H);
 			if(dynamics=="Glauber")
 				spinflipGlauber(spinrand, fliprand, T, H);
+			//Job.animate();
 		}
+		//Job.animate();
 	}
+	
 	
 	public void MCSnoise(String dynamics, Random spinrand, Random fliprand, Random Trand, double T, double dT, double H, double ratio)
 	{
@@ -177,10 +196,25 @@ public class FCIsing {
 	public double Energy(double H)
 	{
 		double E=0;
-		E=J/2*(M*M)-J/2*N-H*M;
+		E=J/2*(M*M)-J/2*livesites-H*M;
 		return E;
 	}
 	
+    public double Fluctuation(double data[], int size)
+    {
+    	double sum=0;
+    	for(int j=0; j<size; j++)
+    	{
+    		sum+=data[j];
+    	}
+    	double avg= sum/size;
+    	double sumD=0;
+    	for(int k=0;k<size;k++)
+    	{
+    		sumD+=(data[k]-avg)*(data[k]-avg);
+    	}
+    	return sumD/size;
+    }
 
 	
 	

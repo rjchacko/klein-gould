@@ -11,16 +11,18 @@ public class AEMStructure{
 	public double initialcopy[];   //the array of the initial copy of the system
 	public double skill[];  //the quantity of the agent's to make money in the trade
 	
-
-	
+    public double totalwealth;  //the total wealth of the whole system
+	public double meanwealth; //the average wealth of the system
+    
 	public int L1, L2, M; //parameters for the lattice                                                                                                                                                                                                                                                                                                                                                                                                        
 
 	public double percent;   //the trading percent of the less wealth holder's total wealth
 	public double tax;  //the universal tax rate during the trade
-	public double growth;  //the rate of the wealth growth average trading step
-    public double alpha;  // this represent the dissipation for the tax
-    
 	
+	public double Ngrowth;   // the amount of the wealth growth for every step
+	public double growth;  //the amount of the wealth growth after every trading event
+    public double alpha;  // this represent the dissipation for the tax
+   
 	public int R;   //interaction range R=0 is NN interaction
 	
     public double order; // a parameter to measure the inequality
@@ -28,7 +30,7 @@ public class AEMStructure{
 	
 	//the function for this class IsingStructure
 	
-	public AEMStructure(int L1, int L2, int R, double percent, double tax, double alpha, double growth)     //generating function
+	public AEMStructure(int L1, int L2, int R, double percent, double tax, double alpha, double Ngrowth)     //generating function
 	{
 		this.L1=L1;
 		this.L2=L2;
@@ -37,7 +39,9 @@ public class AEMStructure{
 		this.percent=percent;
 		this.tax=tax;
 		this.alpha=alpha;
-		this.growth=growth;
+		this.Ngrowth=Ngrowth;
+		this.growth=Ngrowth/this.M;
+		
 	
 		this.wealth=new double [M];
 		this.initialcopy=new double [M];
@@ -49,7 +53,7 @@ public class AEMStructure{
 	
 	public AEMStructure clone()
 	{
-		AEMStructure copy= new AEMStructure(L1, L2, R, percent, tax, alpha, growth);
+		AEMStructure copy= new AEMStructure(L1, L2, R, percent, tax, alpha, Ngrowth);
 		for(int t=0;t<M; t++)
 		{
 			copy.wealth[t]=wealth[t];
@@ -57,6 +61,8 @@ public class AEMStructure{
 			copy.skill[t]=skill[t];
 			
 		}
+		copy.totalwealth=totalwealth;
+		copy.meanwealth=meanwealth;
 
 		return copy;
 	}
@@ -66,12 +72,13 @@ public class AEMStructure{
 		
 		
 		Random rand= new Random(Sseed);
-	
+	    totalwealth=0;
 
 		for (int i=0; i<M; i++)
 		    {
 			   wealth[i]=min+rand.nextDouble()*(max-min);
 			   initialcopy[i]=wealth[i];  // here, make the copy of the system
+			   totalwealth+=wealth[i];
 		    }
 	
 		
@@ -84,6 +91,7 @@ public class AEMStructure{
 		   wealth[i]=wi;
 		   initialcopy[i]=wealth[i];  // here, make the copy of the system
 	    }
+		totalwealth=wi*M;
 	}
 	
 	public int X(int bx)
@@ -148,7 +156,6 @@ public class AEMStructure{
 		
 	}
 	
-	
 	public int findInRange(int j, int R, Random rand)  //randomly find a trading target in the range of (2R+1)*(2R+1) square or (R+1)^2-R^2 diamond
 	{
 		
@@ -189,7 +196,7 @@ public class AEMStructure{
 
 	}
 	
-	public void TS(Random flip, double percent, double tax, double alpha, double growth, String dynamics)// trading step
+	public void TSfast(Random flip, double percent, double tax, double alpha, double Ngrowth)// fast trading step  (growth after each step instead of each transaction)
 	{
         int j=0;
         int target=0;
@@ -234,13 +241,87 @@ public class AEMStructure{
 		   
 	    }
 	    
+		for(int g=0; g<M; g++)   //now everyone's wealth will grow with the same amount =growth
+		   {
+			   wealth[g]+=Ngrowth;
+			   
+		   }
+		
+		   totalwealth+=Ngrowth*M;
+		   meanwealth+=Ngrowth;
+	    
+	    
 	    for(int ii=0; ii<M; ii++)
 	    {
 	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
 	    	
-	    	wealth[ii]=wealth[ii]*(1+growth);    //after getting the tax, everybody earn some wealth proportion to their wealth
+	    	totalorder+=Math.log(wealth[ii]/meanwealth);
+	    }
+	    
+	    order=totalorder/M;
+	    
+	}
+	
+	public void TS(Random flip, double percent, double tax, double alpha, double growth)// trading step
+	{
+        int j=0;
+        int target=0;
+        int richer=0;    // not used, just a label for the richer
+        int poorer=0;
+        double tradeamount=0;
+        double aftertax=0;
+        double totaltax=0;
+	    double totalorder=0;
+	   
+	    for (int f=0; f< M; f++)
+	    {
+		   j=flip.nextInt(M);
+		   target=findInRange(j, R, flip);    //choose the trading target, then decide who is richer
+		   if(wealth[j]>=wealth[target])
+		   {
+			   richer=j;
+			   poorer=target;
+		   }
+		   else
+		   {
+			   richer=target;
+			   poorer=j;
+		   }
+		   //after deciding who is the poorer, we can decide the trading amount=percent*wealth[poorer]
+		   tradeamount=percent*wealth[poorer];
+		   aftertax=(1-tax)*tradeamount;
+		   totaltax+=tax*tradeamount;
+		   
+		   
+		   //now decide who win this trade
+		   if(flip.nextBoolean())    //assume this means j lose
+		   {
+			   wealth[j]-=aftertax;
+			   wealth[target]+=aftertax;
+		   }
+		   else     // this means j wins
+		   {
+			   wealth[j]+=aftertax;
+			   wealth[target]-=aftertax;
+		   }
+		   
+		   
+		   for(int g=0; g<M; g++)   //now everyone's wealth will grow with the same amount =growth
+		   {
+			   wealth[g]+=growth;
+			   
+		   }
+		   totalwealth+=growth*M;
+		   meanwealth+=growth;
+	    }
+	    
+	    
+	    
+	    for(int ii=0; ii<M; ii++)
+	    {
+	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
 	    	
-	    	totalorder+=Math.log(wealth[ii]);
+	    	totalorder+=Math.log(wealth[ii]/meanwealth);
 	    }
 	    
 	    order=totalorder/M;

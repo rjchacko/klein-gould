@@ -38,6 +38,58 @@ public class Criticalpoint extends Simulation
 	private DecimalFormat fmt = new DecimalFormat("000");
 	public double startH=0;
 	
+	public void HSboundary(IsingStructure ising, double T, double Hmin, double Hmax, double dH, String dynamics)
+	{
+		double lifetime[]=new double[2];
+ 		for(double h=Hmax; h>Hmin; h-=dH)
+ 		{
+			params.set("H", h);
+ 			lifetime=lifetime(ising,T,h,200, 10, dynamics);
+ 			
+			String SaveAs = "/Users/liukang2002507/Desktop/simulation/Hs/lifetime q=0."+fmt.format(percent*1000)+".txt";
+ 			PrintUtil.printlnToFile(SaveAs, h, lifetime[0], lifetime[1]);
+ 		} 
+	}
+	public double[] lifetime(IsingStructure ising, double T, double H, int presteplimit, int copies, String dynamics)
+	{
+		double lifetime[]=new double[2];
+		lifetime[0]=0;
+		lifetime[1]=0;
+		
+		int step;
+		
+		double temp[]=new double[copies];
+		
+		
+		for(int c=0; c<copies; c++)
+		{
+			step=0;
+			
+			Istemp=ising.clone();
+			Random cflip=new Random(c);
+			params.set("copies", c);
+			Istemp.Sinitialization(1, c);
+			for(int prestep=0; prestep< presteplimit; prestep++)
+			{
+				Istemp.MCS(T, H, cflip, 1, dynamics);
+				Job.animate();
+				params.set("MCS", prestep-presteplimit);
+			}
+			for(step=0; Istemp.magnetization>0; step++)
+			{
+				Istemp.MCS(T, -H, cflip, 1, dynamics);
+				Job.animate();
+				params.set("MCS", step);
+			}
+			temp[c]=step;
+		}
+		
+		
+		lifetime[0]=Tools.Mean(temp, copies);
+		lifetime[1]=Tools.SD(temp, copies, lifetime[0]);
+		return lifetime;
+	}
+	
 	public double XforTc(IsingStructure ising, double T, double H, int presteplimit, int number, int copies, String dynamics)  //calculate the specific heat of a given system at T,
 	{
 	    double tempM[];
@@ -220,7 +272,6 @@ public class Criticalpoint extends Simulation
 		
 	}
 	
-
  	public void findTc(IsingStructure ising,double Tmin, double Tmax, double dT, String dynamics)
  	{
  		double Cv=0;
@@ -245,7 +296,6 @@ public class Criticalpoint extends Simulation
  		}
  	}
  	
-	
  	public void findHs(IsingStructure ising,double Hmin, double Hmax, double dH, String dynamics)
  	{
  		double X=0;
@@ -278,7 +328,6 @@ public class Criticalpoint extends Simulation
  		}
  	}
 	
-
 	public void animate()
 	{
 		ColorPalette ising = new ColorPalette ();
@@ -288,7 +337,6 @@ public class Criticalpoint extends Simulation
 		ising.setColor(2, Color.BLUE);       //clusters
 		ising.setColor(-2, Color.GREEN);     //
 		ising.setColor(3, Color.darkGray);    // the centers of the clusters
-		
 		
 		grid1.setColors(ising);
 		grid1.registerData(IS.L1, IS.L2, IS.spin);
@@ -312,18 +360,18 @@ public class Criticalpoint extends Simulation
 		Criticalpoint.frame (grid1);
 		Criticalpoint.frame (grid2);
 
-		params.add("L1", 200);
-		params.add("L2", 200);
-		params.add("R", 10);
+		params.add("L1", 100);
+		params.add("L2", 100);
+		params.add("R", 5);
 		params.add("NJ",-4.0);	
-		params.add("percent", new DoubleValue(0.0,0,1).withSlider());
-		params.add("biaspercent", new DoubleValue(0.0,0,1).withSlider());
+		params.add("percent", new DoubleValue(0.40,0,1).withSlider());
+		params.add("biaspercent", new DoubleValue(0.40,0,1).withSlider());
 		params.add("deadsites");	
 		params.add("Dseed",1);
 		params.add("Bseed",1);
 		params.add("Sseed",1);
 		
-		params.addm("T", new DoubleValue(1.778, 0, 10).withSlider());
+		params.addm("T", new DoubleValue(1.067, 0, 10).withSlider());
 		params.addm("H", new DoubleValue(0, -2, 2).withSlider());
 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
@@ -362,15 +410,16 @@ public class Criticalpoint extends Simulation
 	    
 	    Job.animate();
 	    //findTc(IS,3.52,3.59,0.001, dynamics);
-	    findTcviaX(IS,3.90,4.10,0.005, dynamics);
+	    //findTcviaX(IS,3.90,4.10,0.005, dynamics);
         
-	    //T=params.fget("T");
-	    //scanHs(IS,0,1.27,0.01, dynamics);
-	    //startH=1.010;
-	    //findHs(IS,startH-0.5,startH,0.005, dynamics);
+	    T=params.fget("T");
+	    //scanHs(IS,0,1.260,0.001, dynamics);
+	    //startH=1.248;
+	    //findHs(IS,startH-0.5,startH,0.001, dynamics);
       
 		//CriticalpointsCv(IS, 4.00, 3.70, 0.01, 4, 2000, 2000, 5, dynamics);
 	    
+	    HSboundary(IS, T, 0.40, 0.85, 0.01, dynamics);
 	    
 	    
 	    
