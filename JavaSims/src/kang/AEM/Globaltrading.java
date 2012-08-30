@@ -34,8 +34,7 @@ public class Globaltrading extends Simulation{
 	private DecimalFormat fmt = new DecimalFormat("000");
 	private DecimalFormat bmt = new DecimalFormat("0000");
 	
-	
-	
+
 	//initialization parameters
 	public int L,R;
 	public double M;
@@ -44,6 +43,7 @@ public class Globaltrading extends Simulation{
 	public double percent;
 	public double tax;
 	public double growth;
+	public double Ngrowth;
 
 	public int time;
 	public double order;
@@ -58,7 +58,10 @@ public class Globaltrading extends Simulation{
 		
 		grid1.setColors(heatmap);
 		grid1.registerData(L, L, AHtemp.wealth);
-	
+		
+		params.set("totalwealth", AHtemp.totalwealth);
+		params.set("meanwealth", AHtemp.meanwealth);
+		params.set("order", AHtemp.order);
 		
 	}
 	
@@ -82,21 +85,147 @@ public class Globaltrading extends Simulation{
 		}
 	}
 	
+	public void singlerunfast(AEMStructure aem, int steplimit, int seed)
+	{
+		Random rand= new Random(seed);
+		for(int t=0; t<steplimit; t++)
+		{
+			aem.TSfast(rand, aem.percent, aem.tax, aem.alpha, aem.Ngrowth);
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"fast wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"fast wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"fast wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"fast wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"fast wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"fast wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}	
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void singlerun(AEMStructure aem, int steplimit, int seed)
+	{
+		Random rand= new Random(seed);
+		for(int t=0; t<steplimit; t++)
+		{
+			aem.TS(rand, aem.percent, aem.tax, aem.alpha, aem.growth);
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}	
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void singletrajectory(AEMStructure aem, int steplimit, int seed, int[] index)
+	{
+		Random rand= new Random(seed);
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			aem.TS(rand, aem.percent, aem.tax, aem.alpha, aem.growth);
+			params.set("time", t+1);
+			Job.animate();
+			if(t%200==0)
+			{
+				for(int j=0; j<index.length; j++)
+				{
+					String saveas="/Users/liukang2002507/Desktop/simulation/AEM/trajectory/"+"singletrajectory <L="+fmt.format(aem.L1)+", j="+fmt.format(j)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+					PrintUtil.printlnToFile(saveas, t+1, aem.wealth[index[j]], aem.meanwealth);
+				}
+			}
+			
+			
+			
+		}
+		
+		
+		
+	}
+	
+	public void output(AEMStructure aem, String path)
+	{
+		for(int i=0; i<aem.M; i++)
+		{
+			PrintUtil.printlnToFile(path, i+1, aem.wealth[i]);
+		}
+	}
+	
 	
 	public void load(Control Globaltrading)
 	{
 
 		Globaltrading.frameTogether("Display", grid1);
 
-		params.add("L", 800);
-		params.add("R", 800);
+		params.add("L", 50);
+		params.add("R", 50);
 		
-	    params.add("tax");
-		params.add("percent", 0.00);
-		params.add("growth", 0.00);
+	    params.add("tax",0.00);
+		params.add("percent", 0.10);
+		params.add("Ngrowth", 20.0);
 		
 		params.addm("time", 0);
-		params.addm("order", 1.26);
+		params.add("totalwealth");
+		params.add("meanwealth");
+		params.add("order");
 
 	}
 	
@@ -110,11 +239,12 @@ public class Globaltrading extends Simulation{
 
 		percent=params.fget("percent");
 		tax=params.fget("tax");
-		growth=params.fget("growth");
+	
+		Ngrowth=params.fget("Ngrowth");
 		
 		
-	    AH=new AEMStructure(L,L,R,percent,tax, 0, growth);   
-	    AHtemp=new AEMStructure(L,L,R,percent,tax, 0,growth);
+	    AH=new AEMStructure(L,L,R,percent,tax, 0, Ngrowth);   
+	    AHtemp=new AEMStructure(L,L,R,percent,tax, 0,Ngrowth);
 
 	    
 	    Tools=new BasicTools();
@@ -130,8 +260,18 @@ public class Globaltrading extends Simulation{
 	    
 	    Job.animate();
 	   
-	    singlerun(AHtemp, steplimit, 2000, true, 1);
-
+	    //singlerun(AHtemp, 101000,1);
+	    singlerunfast(AHtemp, 101000,1);
+	    
+	    /*{
+	    	int[] index=new int[5];
+	    	for(int j=0; j<index.length; j++)
+	    	{
+	    		index[j]=j;
+	    	}
+	    	
+	    	singletrajectory(AHtemp, 100000, 1, index);
+	    }*/
 	    
 	    Job.animate();
 
