@@ -1,7 +1,6 @@
 package kang.AEM.BasicStructure;
 
-import kang.ising.BasicStructure.IsingStructure;
-import kang.ising.BasicStructure.StructureFactor;
+
 import chris.util.Random;
 
 public class AEMStructure{
@@ -261,6 +260,8 @@ public class AEMStructure{
 	    order=totalorder/M;
 	    
 	}
+	
+	
 	
 	public void TS(Random flip, double percent, double tax, double alpha, double growth)// trading step
 	{

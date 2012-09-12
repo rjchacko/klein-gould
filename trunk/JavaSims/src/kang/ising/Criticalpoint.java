@@ -364,14 +364,14 @@ public class Criticalpoint extends Simulation
 		params.add("L2", 100);
 		params.add("R", 5);
 		params.add("NJ",-4.0);	
-		params.add("percent", new DoubleValue(0.40,0,1).withSlider());
-		params.add("biaspercent", new DoubleValue(0.40,0,1).withSlider());
+		params.add("percent", new DoubleValue(0.0,0,1).withSlider());
+		params.add("biaspercent", new DoubleValue(0.0,0,1).withSlider());
 		params.add("deadsites");	
 		params.add("Dseed",1);
 		params.add("Bseed",1);
 		params.add("Sseed",1);
 		
-		params.addm("T", new DoubleValue(1.067, 0, 10).withSlider());
+		params.addm("T", new DoubleValue(1.778, 0, 10).withSlider());
 		params.addm("H", new DoubleValue(0, -2, 2).withSlider());
 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
@@ -414,12 +414,12 @@ public class Criticalpoint extends Simulation
         
 	    T=params.fget("T");
 	    //scanHs(IS,0,1.260,0.001, dynamics);
-	    //startH=1.248;
-	    //findHs(IS,startH-0.5,startH,0.001, dynamics);
+	    //startH=1.239;
+	    //findHs(IS,startH-0.5,startH,0.002, dynamics);
       
 		//CriticalpointsCv(IS, 4.00, 3.70, 0.01, 4, 2000, 2000, 5, dynamics);
 	    
-	    HSboundary(IS, T, 0.40, 0.85, 0.01, dynamics);
+	    HSboundary(IS, T, 0.900, 1.090, 0.001, dynamics);
 	    
 	    
 	    
