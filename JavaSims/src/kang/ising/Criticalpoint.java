@@ -38,6 +38,102 @@ public class Criticalpoint extends Simulation
 	private DecimalFormat fmt = new DecimalFormat("000");
 	public double startH=0;
 	
+	
+	
+	public int count(IsingStructure ising, double t, double h, int presteplimit, String dynamics)
+	{
+		
+		int step;
+		int count=0;
+		for(int c=0; c<10; c++)
+		{
+			step=0;
+			
+			Istemp=ising.clone();
+			Random cflip=new Random(c);
+			params.set("copies", c+1);
+			Istemp.Sinitialization(1, c);
+			
+			params.set("H", h);
+			params.set("T", t);
+			
+			for(int prestep=0; prestep< presteplimit; prestep++)
+			{
+				
+				Istemp.MCS(t, h, cflip, 1, dynamics);
+				Job.animate();
+				params.set("MCS", prestep-presteplimit);
+			}
+			
+			params.set("H", -h);
+			params.set("T", t);
+			
+			for(step=0; (Istemp.magnetization>0)&&(step<3500); step++)
+			{
+				
+				Istemp.MCS(t, -h, cflip, 1, dynamics);
+				Job.animate();
+				params.set("MCS", step);
+			}
+			if(Istemp.magnetization>0)
+				count++;
+		}
+		
+		return count;
+	}
+	
+	public double[] Hfirstfive(IsingStructure ising, double t, double startfield, double dh, int presteplimit, String dynamics)
+	{
+		double count=0;
+		double targetfield=0;
+		double output[]=new double[2];  //output[0]=targetfield, output[1]=count
+		
+		double h;
+		for(h=startfield; count<6; h-=dh)
+		{
+			params.set("H", h);
+			count=count(ising, t, h, presteplimit, dynamics);
+		}
+		targetfield=h;
+		output[0]=targetfield;
+		output[1]=count;
+		
+		
+		return output;
+		
+	}
+	
+	public void ScanHsBoundary(double pmin, double pmax, double dp, double dh, String dynamics)
+	{
+		double temp, startfield;
+		for(double p=pmax; p>pmin; p-=dp)
+		{
+			params.set("percent", 1-p);
+			params.set("biaspercent", 1-p);
+			IS=new IsingStructure(L1,L2,R,NJ,1-p,1-p,"square");
+		    IS.Dinitialization(Dseed, Bseed, 10, 10);
+		    params.set("deadsites",Istemp.deadsites);
+		    IS.Sinitialization(0, Sseed);
+		    
+		    temp=1.778*p;
+		    startfield=1.27*p;
+		    
+		    params.set("T",temp);
+		    params.set("H",startfield);
+		    
+		    Job.animate();
+		    
+		    double output[]=new double[2];
+		    output=Hfirstfive(IS, temp, startfield, dh, 200, dynamics);   //ten runs to find which magnetic field provide 5 runs with more than 3500 MCS (pass zero)
+		    
+		    String SaveAs = "/Users/liukang2002507/Desktop/simulation/Hs/first5.txt";
+ 			PrintUtil.printlnToFile(SaveAs, p, temp, output[0], output[1]);
+		
+		
+		}
+	}
+	
+	
 	public void HSboundary(IsingStructure ising, double T, double Hmin, double Hmax, double dH, String dynamics)
 	{
 		double lifetime[]=new double[2];
@@ -50,6 +146,8 @@ public class Criticalpoint extends Simulation
  			PrintUtil.printlnToFile(SaveAs, h, lifetime[0], lifetime[1]);
  		} 
 	}
+	
+	
 	public double[] lifetime(IsingStructure ising, double T, double H, int presteplimit, int copies, String dynamics)
 	{
 		double lifetime[]=new double[2];
@@ -360,19 +458,19 @@ public class Criticalpoint extends Simulation
 		Criticalpoint.frame (grid1);
 		Criticalpoint.frame (grid2);
 
-		params.add("L1", 100);
-		params.add("L2", 100);
-		params.add("R", 5);
+		params.add("L1", 200);
+		params.add("L2", 200);
+		params.add("R", 10);
 		params.add("NJ",-4.0);	
-		params.add("percent", new DoubleValue(0.0,0,1).withSlider());
-		params.add("biaspercent", new DoubleValue(0.0,0,1).withSlider());
+		params.add("percent", 0.40);
+		params.add("biaspercent", 0.40);
 		params.add("deadsites");	
 		params.add("Dseed",1);
 		params.add("Bseed",1);
 		params.add("Sseed",1);
 		
-		params.addm("T", new DoubleValue(1.778, 0, 10).withSlider());
-		params.addm("H", new DoubleValue(0, -2, 2).withSlider());
+		params.addm("T", 1.067);
+		params.addm("H", 0.0);
 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 		
@@ -414,15 +512,17 @@ public class Criticalpoint extends Simulation
         
 	    T=params.fget("T");
 	    //scanHs(IS,0,1.260,0.001, dynamics);
-	    //startH=1.239;
-	    //findHs(IS,startH-0.5,startH,0.002, dynamics);
+	    
+	    //startH=0.510;
+	    
+	    //findHs(IS,startH-0.1,startH,0.002, dynamics);
       
 		//CriticalpointsCv(IS, 4.00, 3.70, 0.01, 4, 2000, 2000, 5, dynamics);
 	    
-	    HSboundary(IS, T, 0.900, 1.090, 0.001, dynamics);
+	    //HSboundary(IS, T, 0.900, 1.090, 0.001, dynamics);
 	    
 	    
-	    
+	    ScanHsBoundary(0.50, 1.00, 0.05, 0.005, dynamics);
 	    
 	    
 
