@@ -91,6 +91,7 @@ public class AEMStructure{
 		   initialcopy[i]=wealth[i];  // here, make the copy of the system
 	    }
 		totalwealth=wi*M;
+		meanwealth=wi;
 	}
 	
 	public int X(int bx)
@@ -254,10 +255,10 @@ public class AEMStructure{
 	    {
 	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
 	    	
-	    	totalorder+=Math.log(wealth[ii]/meanwealth);
+	    	totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);
 	    }
 	    
-	    order=totalorder/M;
+	    order=totalorder;
 	    
 	}
 	
@@ -322,10 +323,10 @@ public class AEMStructure{
 	    {
 	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
 	    	
-	    	totalorder+=Math.log(wealth[ii]/meanwealth);
+	    	totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);
 	    }
 	    
-	    order=totalorder/M;
+	    order=totalorder;
 	    
 	}
 	
