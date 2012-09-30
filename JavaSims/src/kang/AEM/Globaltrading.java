@@ -86,6 +86,26 @@ public class Globaltrading extends Simulation{
 		}
 	}
 	
+	public void entropyrunEXP(AEMStructure aem, int steplimit, int seed, double mu)
+	{
+		Random rand= new Random(seed);
+		double ngrowth=aem.Ngrowth;
+		for(int t=0; t<steplimit; t++)
+		{
+			aem.TSfast(rand, aem.percent, aem.tax, aem.alpha, ngrowth);
+			ngrowth=ngrowth*(1+mu);
+			String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"entropy <L="+fmt.format(aem.L1)+", p= "+fmt.format(aem.percent*1000)+",  mu="+fmt.format(mu*10000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t%100==0)
+			{
+				PrintUtil.printlnToFile(saveas, t+1, aem.order);
+			}
+
+		}
+	}
+	
 	public void singlerunfast(AEMStructure aem, int steplimit, int seed)
 	{
 		Random rand= new Random(seed);
@@ -443,7 +463,7 @@ public class Globaltrading extends Simulation{
 	    params.add("tax",0.00);
 		params.add("percent", 0.10);
 		params.add("Ngrowth", 1.0);
-		params.add("mu",0.0005);
+		params.add("mu",0.0002);
 		
 		params.addm("time", 0);
 		params.add("totalwealth");
@@ -486,9 +506,11 @@ public class Globaltrading extends Simulation{
 	    //singlerun(AHtemp, 101000,1);
 	    //singlerunfast(AHtemp, 101000,1);
 	    //singlerunexp(AHtemp, 51000, 1, mu);
+	    entropyrunEXP(AHtemp, 101000, 1, mu);
 	    
-	    //extremerun(AHtemp, 20000, 25, 1);
-	    extremerunexp(AHtemp, 20000, 25, 1, mu);
+	    
+	    //extremerun(AHtemp, 50000, 25, 1);
+	    //extremerunexp(AHtemp, 50000, 25, 1, mu);
 	    
 	    /*{
 	    	int[] index=new int[5];
