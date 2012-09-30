@@ -262,7 +262,144 @@ public class AEMStructure{
 	    
 	}
 	
+	public void TSfastRandom(Random flip, double min, double max, double tax, double alpha, double Ngrowth)// fast trading step  (growth after each step instead of each transaction)
+	{
+        int j=0;
+        int target=0;
+        int richer=0;    // not used, just a label for the richer
+        int poorer=0;
+        double tradeamount=0;
+        double aftertax=0;
+        double totaltax=0;
+	    double totalorder=0;
+	    
+	   
+	    for (int f=0; f< M; f++)
+	    {
+		   j=flip.nextInt(M);
+		   target=findInRange(j, R, flip);    //choose the trading target, then decide who is richer
+		   if(wealth[j]>=wealth[target])
+		   {
+			   richer=j;
+			   poorer=target;
+		   }
+		   else
+		   {
+			   richer=target;
+			   poorer=j;
+		   }
+		   //after deciding who is the poorer, we can decide the trading amount=percent*wealth[poorer]
+		   tradeamount=flip.nextDouble()*(max-min)+min;
+		   aftertax=(1-tax)*tradeamount;
+		   totaltax+=tax*tradeamount;
+		   
+		   if(wealth[poorer]>=tradeamount)
+		   {
+			 //now decide who win this trade
+			   if(flip.nextBoolean())    //assume this means j lose
+			   {
+				   wealth[j]-=aftertax;
+				   wealth[target]+=aftertax;
+			   }
+			   else     // this means j wins
+			   {
+				   wealth[j]+=aftertax;
+				   wealth[target]-=aftertax;
+			   }
+		   }
+		   
+		   
+	    }
+	    
+		for(int g=0; g<M; g++)   //now everyone's wealth will grow with the same amount =growth
+		   {
+			   wealth[g]+=Ngrowth;
+			   
+		   }
+		
+		   totalwealth+=Ngrowth*M;
+		   meanwealth+=Ngrowth;
+	    
+	    
+	    for(int ii=0; ii<M; ii++)
+	    {
+	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
+	    	
+	    	totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);
+	    }
+	    
+	    order=totalorder;
+	    
+	}
 	
+	public void TSfastFix(Random flip, double fixamount, double tax, double alpha, double Ngrowth)// fast trading step  (growth after each step instead of each transaction)
+	{
+        int j=0;
+        int target=0;
+        int richer=0;    // not used, just a label for the richer
+        int poorer=0;
+        double tradeamount=0;
+        double aftertax=0;
+        double totaltax=0;
+	    double totalorder=0;
+	   
+	    for (int f=0; f< M; f++)
+	    {
+		   j=flip.nextInt(M);
+		   target=findInRange(j, R, flip);    //choose the trading target, then decide who is richer
+		   if(wealth[j]>=wealth[target])
+		   {
+			   richer=j;
+			   poorer=target;
+		   }
+		   else
+		   {
+			   richer=target;
+			   poorer=j;
+		   }
+		   //after deciding who is the poorer, we can decide the trading amount=percent*wealth[poorer]
+		   tradeamount=fixamount;
+		   aftertax=(1-tax)*tradeamount;
+		   totaltax+=tax*tradeamount;
+		   
+		   if(wealth[poorer]>=tradeamount)
+		   {
+			 //now decide who win this trade
+			   if(flip.nextBoolean())    //assume this means j lose
+			   {
+				   wealth[j]-=aftertax;
+				   wealth[target]+=aftertax;
+			   }
+			   else     // this means j wins
+			   {
+				   wealth[j]+=aftertax;
+				   wealth[target]-=aftertax;
+			   }
+		   }
+		   
+		   
+	    }
+	    
+		for(int g=0; g<M; g++)   //now everyone's wealth will grow with the same amount =growth
+		   {
+			   wealth[g]+=Ngrowth;
+			   
+		   }
+		
+		   totalwealth+=Ngrowth*M;
+		   meanwealth+=Ngrowth;
+	    
+	    
+	    for(int ii=0; ii<M; ii++)
+	    {
+	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
+	    	
+	    	totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);
+	    }
+	    
+	    order=totalorder;
+	    
+	}
 	
 	public void TS(Random flip, double percent, double tax, double alpha, double growth)// trading step
 	{
