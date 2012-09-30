@@ -106,6 +106,26 @@ public class Globaltrading extends Simulation{
 		}
 	}
 	
+	public void FIXentropyrunEXP(AEMStructure aem, int steplimit, int seed, double mu, double fixamount)    //entropy run for the model with fixed trading amount
+	{
+		Random rand= new Random(seed);
+		double ngrowth=aem.Ngrowth;
+		for(int t=0; t<steplimit; t++)
+		{
+			aem.TSfastFix(rand, fixamount, aem.tax, aem.alpha, ngrowth);
+			ngrowth=ngrowth*(1+mu);
+			String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"FIXentropy <L="+fmt.format(aem.L1)+", W= "+fmt.format(fixamount)+",  mu="+fmt.format(mu*10000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t%100==0)
+			{
+				PrintUtil.printlnToFile(saveas, t+1, aem.order);
+			}
+
+		}
+	}
+	
 	public void singlerunfast(AEMStructure aem, int steplimit, int seed)
 	{
 		Random rand= new Random(seed);
