@@ -106,6 +106,26 @@ public class Globaltrading extends Simulation{
 		}
 	}
 	
+	public void BiasentropyrunEXP(double biasp, AEMStructure aem, int steplimit, int seed, double mu)
+	{
+		Random rand= new Random(seed);
+		double ngrowth=aem.Ngrowth;
+		for(int t=0; t<steplimit; t++)
+		{
+			aem.BiasTSfast(biasp, rand, aem.percent, aem.tax, aem.alpha, ngrowth);
+			ngrowth=ngrowth*(1+mu);
+			String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Biasentropy <L="+fmt.format(aem.L1)+", biasp= "+fmt.format(biasp*1000)+", p= "+fmt.format(aem.percent*1000)+",  mu="+fmt.format(mu*10000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t%100==0)
+			{
+				PrintUtil.printlnToFile(saveas, t+1, aem.order);
+			}
+
+		}
+	}
+	
 	public void FIXentropyrunEXP(AEMStructure aem, int steplimit, int seed, double mu, double fixamount)    //entropy run for the model with fixed trading amount
 	{
 		Random rand= new Random(seed);
@@ -115,6 +135,26 @@ public class Globaltrading extends Simulation{
 			aem.TSfastFix(rand, fixamount, aem.tax, aem.alpha, ngrowth);
 			ngrowth=ngrowth*(1+mu);
 			String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"FIXentropy <L="+fmt.format(aem.L1)+", W= "+fmt.format(fixamount)+",  mu="+fmt.format(mu*10000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t%100==0)
+			{
+				PrintUtil.printlnToFile(saveas, t+1, aem.order);
+			}
+
+		}
+	}
+	
+	public void PFIXentropyrunEXP(AEMStructure aem, int steplimit, int seed, double mu, double fixamountpercent)    //entropy run for the model with fixed trading amount
+	{
+		Random rand= new Random(seed);
+		double ngrowth=aem.Ngrowth;
+		for(int t=0; t<steplimit; t++)
+		{
+			aem.TSfastFixExp(rand, fixamountpercent, aem.tax, aem.alpha, ngrowth);
+			ngrowth=ngrowth*(1+mu);
+			String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"PFIXentropy <L="+fmt.format(aem.L1)+", fixp= "+fmt.format(fixamountpercent*10000)+",  mu="+fmt.format(mu*10000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
 			
 			params.set("time", t+1);
 			Job.animate();
@@ -170,6 +210,7 @@ public class Globaltrading extends Simulation{
 		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
 		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
 	}
+
 	
 	public void singlerunexp(AEMStructure aem, int steplimit, int seed, double mu)
 	{
@@ -210,6 +251,153 @@ public class Globaltrading extends Simulation{
 			if(t==50000)
 			{
 				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"exp wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}	
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void FIXsinglerunexp(AEMStructure aem, int steplimit, int seed, double mu, double fixamount)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"FIX check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.TSfastFix(rand, fixamount, aem.tax, aem.alpha, ngrowth);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"FIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"FIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"FIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"FIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"FIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}	
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void BiasFIXsinglerunexp(double biasp, AEMStructure aem, int steplimit, int seed, double mu, double fixamount)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"BiasFIX check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", biasp= "+fmt.format(biasp*1000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.BiasTSfastFix(biasp, rand, fixamount, aem.tax, aem.alpha, ngrowth);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"BiasFIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", biasp= "+fmt.format(biasp*1000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"BiasFIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", biasp= "+fmt.format(biasp*1000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"BiasFIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", biasp= "+fmt.format(biasp*1000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"BiasFIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", biasp= "+fmt.format(biasp*1000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"BiasFIX wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", biasp= "+fmt.format(biasp*1000)+", W= "+fmt.format(fixamount)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}	
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void Biassinglerunexp(double biasp, AEMStructure aem, int steplimit, int seed, double mu)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"biascheck <L="+fmt.format(aem.L1)+", biasp= "+fmt.format(biasp*1000)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.BiasTSfast(biasp, rand, aem.percent, aem.tax, aem.alpha, ngrowth);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biasexp wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biasexp wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biasexp wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biasexp wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biasexp wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
 		        output(aem, saveas);
 			}	
 
@@ -482,8 +670,8 @@ public class Globaltrading extends Simulation{
 		
 	    params.add("tax",0.00);
 		params.add("percent", 0.10);
-		params.add("Ngrowth", 1.0);
-		params.add("mu",0.0002);
+		params.add("Ngrowth", 20.0);
+		params.add("mu",0.0000);
 		
 		params.addm("time", 0);
 		params.add("totalwealth");
@@ -526,8 +714,15 @@ public class Globaltrading extends Simulation{
 	    //singlerun(AHtemp, 101000,1);
 	    //singlerunfast(AHtemp, 101000,1);
 	    //singlerunexp(AHtemp, 51000, 1, mu);
-	    entropyrunEXP(AHtemp, 101000, 1, mu);
+	    //entropyrunEXP(AHtemp, 101000, 1, mu);
+	    //FIXentropyrunEXP(AHtemp, 101000, 1, mu, 5);
+	    //PFIXentropyrunEXP(AHtemp, 101000, 1, mu, 0.0005);
+	    //BiasentropyrunEXP(0.6, AHtemp, 101000, 1, mu);
+	    //Biassinglerunexp(0.6, AHtemp, 51000, 1, mu);
 	    
+	    
+	    //FIXsinglerunexp(AHtemp, 51000, 1, mu, 10);
+	    BiasFIXsinglerunexp(0.6, AHtemp, 51000, 1, mu, 10);
 	    
 	    //extremerun(AHtemp, 50000, 25, 1);
 	    //extremerunexp(AHtemp, 50000, 25, 1, mu);
