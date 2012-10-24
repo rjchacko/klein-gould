@@ -148,7 +148,7 @@ public class Criticalpoint extends Simulation
 	}
 	
 	
-	public double[] lifetime(IsingStructure ising, double T, double H, int presteplimit, int copies, String dynamics)
+	public double[] lifetime(IsingStructure ising, double T, double h, int presteplimit, int copies, String dynamics)
 	{
 		double lifetime[]=new double[2];
 		lifetime[0]=0;
@@ -169,13 +169,13 @@ public class Criticalpoint extends Simulation
 			Istemp.Sinitialization(1, c);
 			for(int prestep=0; prestep< presteplimit; prestep++)
 			{
-				Istemp.MCS(T, H, cflip, 1, dynamics);
+				Istemp.MCS(T, h, cflip, 1, dynamics);
 				Job.animate();
 				params.set("MCS", prestep-presteplimit);
 			}
 			for(step=0; Istemp.magnetization>0; step++)
 			{
-				Istemp.MCS(T, -H, cflip, 1, dynamics);
+				Istemp.MCS(T, -h, cflip, 1, dynamics);
 				Job.animate();
 				params.set("MCS", step);
 			}
