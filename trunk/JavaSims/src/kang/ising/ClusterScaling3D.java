@@ -4,7 +4,7 @@ import java.awt.Color;
 import java.text.DecimalFormat;
 
 import kang.ising.BasicStructure.BasicTools;
-import kang.ising.BasicStructure.IsingStructure;
+import kang.ising.BasicStructure.IsingStructure3D;
 import kang.util.PrintUtil;
 import kang.ising.BasicStructure.BasicTools;
 
@@ -18,15 +18,17 @@ import scikit.jobs.params.ChoiceValue;
 import chris.util.Random;
 
 
-public class ClusterScaling extends Simulation{
+public class ClusterScaling3D extends Simulation{
 	
-	Grid grid1=new Grid("dilution configuration");     // the map to display the dilution configuration
-	Grid grid2=new Grid("simulation");     // the map to display the simulation
-	Grid grid3=new Grid("largest cluster");
+	Grid grid1=new Grid("x ising");     // the map to display the dilution configuration
+	Grid grid2=new Grid("y ising");     // the map to display the simulation
+	Grid grid3=new Grid("z ising");
+	Grid gridx=new Grid("x cluster");
+	Grid gridy=new Grid("y cluster");
+	Grid gridz=new Grid("z cluster");
 	
-	
-	public IsingStructure IS;
-	public IsingStructure Istemp;
+	public IsingStructure3D IS;
+	public IsingStructure3D Istemp;
 
 	public Random Erand;
 	
@@ -38,7 +40,7 @@ public class ClusterScaling extends Simulation{
 	
 	
 	//initialization parameters
-	public int L,la,lb,R, Lp;
+	public int L,la,lb,lc,R, Lp;
 	public double M;
 	public double NJ;
 	public int Dseed, Bseed, Sseed;
@@ -53,6 +55,17 @@ public class ClusterScaling extends Simulation{
 	//cluster parameters
 	public int[] clustersize;
 	
+	//arrays to display in 3D
+	public int isingx[];
+	public int isingy[];
+	public int isingz[];
+	
+	public int clusterx[];
+	public int clustery[];
+	public int clusterz[];
+	
+	public int clcx, clcy, clcz;  // location of the cluster center in 3D
+	
 	
 	public void animate()
 	{
@@ -64,14 +77,36 @@ public class ClusterScaling extends Simulation{
 		ising.setColor(-2, Color.GREEN);     //
 		ising.setColor(3, Color.darkGray);    // the centers of the clusters
 
+		for(int i=0;i<L; i++)
+			for(int j=0; j<L; j++)
+			{
+				isingx[i*L+j]=Istemp.spin[L/2*L*L+i*L+j];
+				isingy[i*L+j]=Istemp.spin[i*L*L+L/2*L+j];
+				isingz[i*L+j]=Istemp.spin[i*L*L+j*L+L/2];
+			}
 		
 		grid1.setColors(ising);
-		grid1.registerData(L, L, IS.spin);
+		grid1.registerData(L, L, isingx);
 		grid2.setColors(ising);
-		grid2.registerData(L, L, Istemp.spin);
-		
+		grid2.registerData(L, L, isingy);
 		grid3.setColors(ising);
-		grid3.registerData(L, L, Istemp.largestcluster);
+		grid3.registerData(L, L, isingz);
+		
+		for(int i=0;i<L; i++)
+			for(int j=0; j<L; j++)
+			{
+				clusterx[i*L+j]=Istemp.largestcluster[clcx*L*L+i*L+j];
+				clustery[i*L+j]=Istemp.largestcluster[i*L*L+clcy*L+j];
+				clusterz[i*L+j]=Istemp.largestcluster[i*L*L+j*L+clcz];
+			}
+		
+		
+		gridx.setColors(ising);
+		gridx.registerData(L, L, clusterx);
+		gridy.setColors(ising);
+		gridy.registerData(L, L, clustery);
+		gridz.setColors(ising);
+		gridz.registerData(L, L, clusterz);
 		
 	}
 	
@@ -81,10 +116,13 @@ public class ClusterScaling extends Simulation{
 		grid2.clear();
 		grid3.clear();
 
+		gridx.clear();
+		gridy.clear();
+		gridz.clear();
 	}
 	
-	public static void main (String[] ClusterScaling){
-		new Control(new ClusterScaling(), "Kang Liu's cluster scaling" );
+	public static void main (String[] ClusterScaling3D){
+		new Control(new ClusterScaling3D(), "Kang Liu's cluster scaling in 3D" );
 	}
 	
 	public void printdata(String path, int[] data)
@@ -97,10 +135,10 @@ public class ClusterScaling extends Simulation{
 		}
 	}
 	
-	public void singlerunTc(IsingStructure ising, double T, int steplimit, boolean keeplargest,int seed)
+	public void singlerunTc(IsingStructure3D ising, double T, int steplimit, boolean keeplargest,int seed)
 	{
 		String singlerun="<L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
-		String singlepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+singlerun+".txt";
+		String singlepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+singlerun+".txt";
 		
 		Random rand= new Random(seed);
 		for(int prestep=0; prestep<50; prestep++)
@@ -130,14 +168,21 @@ public class ClusterScaling extends Simulation{
 			direction=-1;
 			
 		clustersize=ising.Clustergrowth(ising.spin, direction, pb, seed, seed, keeplargest);
+		int center=ising.ClusterInfo(ising.largestcluster)[1];
+		clcx=ising.getX(center);
+		clcy=ising.getY(center);
+		clcz=ising.getZ(center);
+		
+		Job.animate();
+		
 		printdata(singlepath, clustersize);
 		
 	}
 	
-	public void singlerunHs(IsingStructure ising, double T, double H, int steplimit, boolean keeplargest,int seed)
+	public void singlerunHs(IsingStructure3D ising, double T, double H, int steplimit, boolean keeplargest,int seed)
 	{
 		String singlerun="Hs <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", H="+bmt.format(H*1000)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
-		String singlepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+singlerun+".txt";
+		String singlepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+singlerun+".txt";
 		
 		Random rand= new Random(seed);
         double totalm=0;
@@ -170,10 +215,10 @@ public class ClusterScaling extends Simulation{
 		
 	}
 	
-	public void approachHs(IsingStructure ising, double T, double Hmin, double Hmax, double dH, int steplimit, int seed)
+	public void approachHs(IsingStructure3D ising, double T, double Hmin, double Hmax, double dH, int steplimit, int seed)
 	{
 		String SPCrun="SPC data <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+"p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
-		String SPCpath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+SPCrun+".txt";
+		String SPCpath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+SPCrun+".txt";
 		double pb=1-Math.exp((1+0.745/(1-ising.percent))*ising.J/T);;     //need to use the bond probability at spinodal
 		
 		int spantemp=0;
@@ -187,14 +232,14 @@ public class ClusterScaling extends Simulation{
 		
 	}
 	
-	public int findlargestcluster(IsingStructure ising, double T, double H, int steplimit, double pb, int seed)
+	public int findlargestcluster(IsingStructure3D ising, double T, double H, int steplimit, double pb, int seed)
 	{
 		
 		int largestsize=0;
 		
 		String FLCrun="FLC <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", H="+bmt.format(H*1000)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
-		String FLCpath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+FLCrun+".txt";
-		String FLCpic = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/FLCpic/cluster";
+		String FLCpath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+FLCrun+".txt";
+		String FLCpic = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/FLCpic/cluster";
 		
 		ising.Sinitialization(1, Sseed);
 		Random rand= new Random(seed);
@@ -223,13 +268,14 @@ public class ClusterScaling extends Simulation{
 	public void load(Control ClusterScaling)
 	{
 
-		ClusterScaling.frameTogether("Display", grid1 ,grid2, grid3);
+		ClusterScaling.frameTogether("Display", grid1 ,grid2, grid3, gridx, gridy, gridz);
 
-		params.add("L", 800);
+		params.add("L", 50);
 		
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
-		params.add("R", 40);
+		params.add("lc",10); 
+		params.add("R", 0);
 		
 		params.add("NJ", -4.0);
 	    params.add("deadsites");
@@ -241,8 +287,8 @@ public class ClusterScaling extends Simulation{
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 	
-		params.addm("T", 1.778);
-		params.addm("H", 1.26);
+		params.addm("T", 4.515);
+		params.addm("H", 0.0);
 		params.add("Emcs");    //MCS time for evolution
 	
 		    
@@ -258,9 +304,18 @@ public class ClusterScaling extends Simulation{
 
 		la = (int)params.fget("la");
 		lb = (int)params.fget("lb");
+		lc = (int)params.fget("lc");
 		R =(int)params.fget("R");
-		M = L * L;
+		M = L*L*L;
 		NJ = params.fget("NJ");
+		
+		isingx=new int[L*L];
+		isingy=new int[L*L];
+		isingz=new int[L*L];
+		
+		clusterx=new int[L*L];
+		clustery=new int[L*L];
+		clusterz=new int[L*L];
 
 		percent=params.fget("percent");
 		biaspercent=params.fget("biaspercent");
@@ -271,8 +326,8 @@ public class ClusterScaling extends Simulation{
 		Sseed = 1;
 
 		
-	    IS=new IsingStructure(L,L,R,NJ,percent,biaspercent,"square");   
-	    Istemp=new IsingStructure(L,L,R,NJ,percent,biaspercent,"square");
+	    IS=new IsingStructure3D(L,L,L,R,NJ,percent,biaspercent,"square");   
+	    Istemp=new IsingStructure3D(L,L,L,R,NJ,percent,biaspercent,"square");
 
 	    
 	    Tools=new BasicTools();
@@ -281,7 +336,7 @@ public class ClusterScaling extends Simulation{
 	    
 	    {//initialization
 	    	
-	    	IS.Dinitialization(Dseed, Bseed, la, lb);
+	    	IS.Dinitialization(Dseed, Bseed, la, lb, lc);
 	    	params.set("deadsites",IS.deadsites);
 	    	IS.Sinitialization(1, Sseed);
 	    	Istemp=IS.clone();
@@ -291,10 +346,10 @@ public class ClusterScaling extends Simulation{
 	    
 	    Job.animate();
 	   
-	    //singlerunTc(Istemp, T, 2000, true, 1);
+	    singlerunTc(Istemp, T, 1000, true, 1);
 	    //singlerunHs(Istemp, T, H, 200, true, 1);
 	    
-	    approachHs(Istemp, T, 1.26, 1.265, 0.001, 100, 1);
+	    //approachHs(Istemp, T, 1.26, 1.265, 0.001, 100, 1);
 	    
 	    Job.animate();
 
