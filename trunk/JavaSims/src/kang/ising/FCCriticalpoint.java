@@ -445,9 +445,9 @@ public class FCCriticalpoint extends Simulation
 	    //findTcviaX(IS,3.90,4.10,0.005, dynamics);
         
 	    T=params.fget("T");
-	    scanHs(IS,1.24*(1-percent),1.27*(1-percent),0.0002, dynamics);
+	    scanHs(IS,1.24*(1-percent),1.27*(1-percent),0.0001, dynamics);
 	    //startH=1.010;
-	    findHs(IS,startH-0.1,startH,0.0002, dynamics);
+	    findHs(IS,startH-0.1,startH,0.0001, dynamics);
       
 		//CriticalpointsCv(IS, 4.00, 3.70, 0.01, 4, 2000, 2000, 5, dynamics);
 	    
