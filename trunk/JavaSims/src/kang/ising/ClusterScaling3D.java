@@ -138,7 +138,8 @@ public class ClusterScaling3D extends Simulation{
 	public void singlerunTc(IsingStructure3D ising, double T, int steplimit, boolean keeplargest,int seed)
 	{
 		String singlerun="<L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
-		String singlepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+singlerun+".txt";
+		String singlepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+singlerun+"positive.txt";
+		String secondpath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+singlerun+"negative.txt";
 		
 		Random rand= new Random(seed);
 		for(int prestep=0; prestep<50; prestep++)
@@ -174,9 +175,16 @@ public class ClusterScaling3D extends Simulation{
 		clcz=ising.getZ(center);
 		
 		Job.animate();
-		
 		printdata(singlepath, clustersize);
 		
+		clustersize=ising.Clustergrowth(ising.spin, -direction, pb, seed, seed, keeplargest);
+	    center=ising.ClusterInfo(ising.largestcluster)[1];
+		clcx=ising.getX(center);
+		clcy=ising.getY(center);
+		clcz=ising.getZ(center);
+		
+		Job.animate();
+		printdata(secondpath, clustersize);
 	}
 	
 	public void singlerunHs(IsingStructure3D ising, double T, double H, int steplimit, boolean keeplargest,int seed)
@@ -270,24 +278,24 @@ public class ClusterScaling3D extends Simulation{
 
 		ClusterScaling.frameTogether("Display", grid1 ,grid2, grid3, gridx, gridy, gridz);
 
-		params.add("L", 50);
+		params.add("L", 100);
 		
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
 		params.add("lc",10); 
 		params.add("R", 0);
 		
-		params.add("NJ", -4.0);
+		params.add("NJ", -6.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.00);
-		params.add("biaspercent", 0.00);
+		params.add("percent", 0.40);
+		params.add("biaspercent", 0.40);
 		
 		 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 	
-		params.addm("T", 4.515);
+		params.addm("T", 4.5115);
 		params.addm("H", 0.0);
 		params.add("Emcs");    //MCS time for evolution
 	
@@ -346,7 +354,7 @@ public class ClusterScaling3D extends Simulation{
 	    
 	    Job.animate();
 	   
-	    singlerunTc(Istemp, T, 1000, true, 1);
+	    singlerunTc(Istemp, T, 2000, true, 1);
 	    //singlerunHs(Istemp, T, H, 200, true, 1);
 	    
 	    //approachHs(Istemp, T, 1.26, 1.265, 0.001, 100, 1);
