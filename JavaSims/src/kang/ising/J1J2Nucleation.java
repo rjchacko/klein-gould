@@ -516,8 +516,8 @@ public class J1J2Nucleation extends Simulation{
 	    //Singlerun(JJstemp, rand, 9, 0.7710);
 	    //Multipleruns(JJstemp, rand, 1.2799, 1.2781, 0.0002);
 	    
-	    XtoX(JJstemp, rand, T, 0.20); 
-	    //XtoY(JJstemp, rand, T, 0.40); 
+	    //XtoX(JJstemp, rand, T, 0.20); 
+	    XtoY(JJstemp, rand, T, 0.40); 
 	    
 	}
 	

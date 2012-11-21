@@ -203,7 +203,7 @@ public class ClusterScaling3D extends Simulation{
 	
 	public void multiplerunsTc(IsingStructure3D ising, double T, int steplimit, boolean keeplargest,int seed, int copies)// average over multiple spin configurations, positve represent all up spin clusters
 	{
-		String multirun="<L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String multirun="multi <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
 		String positivepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+multirun+"positive.txt";
 		String negativepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+multirun+"negative.txt";
 		
@@ -283,7 +283,87 @@ public class ClusterScaling3D extends Simulation{
 		
 	}
 	
+	public void wrongrunsTc(IsingStructure3D ising, double T, int steplimit, boolean keeplargest,int seed, int copies)// the runs with pb=1, just to compare with the right bond probability
+	{
+		String wrongrun="wrong <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String positivepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+wrongrun+"positive.txt";
+		String negativepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling3D/"+dynamics+"/"+wrongrun+"negative.txt";
+		
+		int spincopies[][]=new int [copies][ising.M];
+		
+		
+		Random rand= new Random(seed);
+		for(int prestep=0; prestep<50; prestep++)
+		{
+			params.set("T", 999);
+			params.set("H", 0);
+			ising.MCS(999, 0, rand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", prestep-50);
+			params.set("magnetization", ising.magnetization);
+		}
+		
+		for(int step=0; step<steplimit; step++)
+		{
+			params.set("T", T);
+			params.set("H", 0);
+			ising.MCS(T, 0, rand, 1, dynamics);
+			
+			Job.animate();
+			params.set("Emcs", step);
+			params.set("magnetization", ising.magnetization);
+			
+		}
+		
+		double pb=1;
+		
+		for(int astep=0; astep<(10*copies); astep++)
+		{
+			params.set("T", T);
+			params.set("H", 0);
+			ising.MCS(T, 0, rand, 1, dynamics);
+			
+			Job.animate();
+			params.set("Emcs", steplimit+astep);
+			params.set("magnetization", ising.magnetization);
+			
+			if(astep%10==0)
+			{
+				for(int jj=0; jj<ising.M; jj++)
+				{
+					spincopies[astep/10][jj]=ising.spin[jj];
+				}
+			}
+		}
+		
+		int Pstart=0;
+		int Nstart=0;
+        for(int cc=0; cc<copies; cc++)
+        {
+        	
+        	clustersize=ising.Clustergrowth(spincopies[cc], 1, pb, seed, seed, keeplargest);
+    		int center=ising.ClusterInfo(ising.largestcluster)[1];
+    		clcx=ising.getX(center);
+    		clcy=ising.getY(center);
+    		clcz=ising.getZ(center);
+    		
+    		Job.animate();
+    		Pstart=adddata(positivepath, clustersize, Pstart);
+    		
+    		clustersize=ising.Clustergrowth(spincopies[cc], -1, pb, seed, seed, keeplargest);
+    	    center=ising.ClusterInfo(ising.largestcluster)[1];
+    		clcx=ising.getX(center);
+    		clcy=ising.getY(center);
+    		clcz=ising.getZ(center);
+    		
+    		Job.animate();
+    		Nstart=adddata(negativepath, clustersize, Nstart);
+        	
+        }
 	
+			
+		
+	}
 	
 	public void singlerunHs(IsingStructure3D ising, double T, double H, int steplimit, boolean keeplargest,int seed)
 	{
@@ -376,7 +456,7 @@ public class ClusterScaling3D extends Simulation{
 
 		ClusterScaling.frameTogether("Display", grid1 ,grid2, grid3, gridx, gridy, gridz);
 
-		params.add("L", 50);
+		params.add("L", 100);
 		
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
@@ -386,14 +466,14 @@ public class ClusterScaling3D extends Simulation{
 		params.add("NJ", -6.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.00);
-		params.add("biaspercent", 0.00);
+		params.add("percent", 0.10);
+		params.add("biaspercent", 0.10);
 		
 		 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
 
 	
-		params.addm("T", 4.5115);
+		params.addm("T", 8.00);
 		params.addm("H", 0.0);
 		params.add("Emcs");    //MCS time for evolution
 	
@@ -452,9 +532,9 @@ public class ClusterScaling3D extends Simulation{
 	    
 	    Job.animate();
 	   
-	    //singlerunTc(Istemp, T, 2000, true, 1);
+	    singlerunTc(Istemp, T, 2000, true, 1);
 	    
-	    multiplerunsTc(Istemp, T, 500, true, 1, 5);
+	    //multiplerunsTc(Istemp, T, 2000, true, 1, 10);
 	    //singlerunHs(Istemp, T, H, 200, true, 1);
 	    
 	    //approachHs(Istemp, T, 1.26, 1.265, 0.001, 100, 1);

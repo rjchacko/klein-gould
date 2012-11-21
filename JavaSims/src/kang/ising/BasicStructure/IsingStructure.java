@@ -529,7 +529,7 @@ public class IsingStructure{
 				spin[j]=-spin[j];
 				totalspin-=tempspin*2;
 				magnetization=Magnetization();
-				//totalintenergy+=IntEchange;
+				totalintenergy+=IntEchange;
 				
 			}
 			
@@ -540,7 +540,7 @@ public class IsingStructure{
 					            spin[j]=-spin[j];
 								totalspin-=tempspin*2;
 								magnetization=Magnetization();
-								//totalintenergy+=IntEchange;	
+								totalintenergy+=IntEchange;	
 						}
 			}
 		}
@@ -639,7 +639,7 @@ public class IsingStructure{
  	
   	public double TotalEnergy(double field)
  	{
- 	    return TotalIntEnergy()+field*totalspin;	
+ 	    return totalintenergy+field*totalspin;	
  	}
   	
   	public double Magnetization()

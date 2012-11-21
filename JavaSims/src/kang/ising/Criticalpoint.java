@@ -370,6 +370,84 @@ public class Criticalpoint extends Simulation
 		
 	}
 	
+	public double SpecificHeatHs(IsingStructure ising, double T, double H, int presteplimit, int number, int copies, String dynamics)  //calculate the specific heat of a given system at T,
+	{
+	    double tempE[];
+	    double usedE[];
+	    tempE= new double [number];
+	    usedE= new double [number-200-200];
+	    double totalCv=0;
+        usefulruns=0;
+        double tempCv[];
+        tempCv= new double[copies];
+	    
+		for(int c=0; c<copies;c++)
+		{
+			Istemp=ising.clone();
+			Random cflip=new Random(c);
+			params.set("copies", c);
+	
+			
+			int endofstep=-1;
+			int lifetime=2100;
+			
+			for(int heat=0; heat<5; heat++)
+			{
+				Istemp.MCS(9, H, cflip, 1, dynamics);
+				Job.animate();
+				params.set("MCS", -9999);
+
+			}
+		
+			for(int prestep=0; prestep< presteplimit; prestep++)
+			{
+				Istemp.MCS(T, H, cflip, 1, dynamics);
+				Job.animate();
+				params.set("MCS", prestep-presteplimit);
+			}
+			params.set("H",-H);
+			double field=-H;
+
+			
+			for(int step=0; (endofstep<0)&(step<number); step++)
+			{
+				
+				tempE[step]=Istemp.TotalEnergy(field);
+				if(Istemp.TotalSpin()<0)
+					{
+					endofstep=1;
+					lifetime=step;
+					}
+				Istemp.MCS(T, field, cflip, 1, dynamics);
+				Job.animate();
+				params.set("MCS", step);
+				params.set("magnetization", Istemp.TotalSpin()/M);
+			}
+			
+			if(lifetime>2000)
+			{
+				for(int t=0;t<number-200-200;t++)
+				{
+					usedE[t]=tempE[t+200];
+				}
+				tempCv[usefulruns]=IS.Fluctuation(usedE, number-200-200);
+				totalCv+=tempCv[usefulruns];
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Hs/Cv usefulrunsq=0."+fmt.format(percent*1000)+".txt",H, c);
+				usefulruns++;
+			}
+		}
+		double averageCv=totalCv/usefulruns;
+		double totalCv2=0;
+		for(int u=0;u<usefulruns; u++)
+		{
+			totalCv2+=(tempCv[u]-averageCv)*(tempCv[u]-averageCv);
+		}
+		varianceC=Math.sqrt(totalCv2/usefulruns);
+		
+		return averageCv;
+		
+	}
+	
  	public void findTc(IsingStructure ising,double Tmin, double Tmax, double dT, String dynamics)
  	{
  		double Cv=0;
@@ -404,6 +482,19 @@ public class Criticalpoint extends Simulation
  			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Hs/usefulrunsq=0."+fmt.format(percent*1000)+".txt","H=    ",(double)h );
 			String SaveAs = "/Users/liukang2002507/Desktop/simulation/Hs/q=0."+fmt.format(percent*1000)+".txt";
  			PrintUtil.printlnToFile(SaveAs, h, X, varianceX, usefulruns);
+ 		} 
+ 	}
+ 	
+ 	public void findHsCv(IsingStructure ising,double Hmin, double Hmax, double dH, String dynamics)
+ 	{
+ 		double Cv=0;
+ 		for(double h=Hmax; h>Hmin; h-=dH)
+ 		{
+			params.set("H", h);
+ 			Cv=SpecificHeatHs(ising,T,h,200,2000,10, dynamics);
+ 			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Hs/Cv usefulrunsq=0."+fmt.format(percent*1000)+".txt","H=    ",(double)h );
+			String SaveAs = "/Users/liukang2002507/Desktop/simulation/Hs/CV q=0."+fmt.format(percent*1000)+".txt";
+ 			PrintUtil.printlnToFile(SaveAs, h, Cv, varianceC, usefulruns);
  		} 
  	}
  	
@@ -442,6 +533,7 @@ public class Criticalpoint extends Simulation
 		grid2.registerData(Istemp.L1, Istemp.L2, Istemp.spin);
 		
 		params.set("magnetization", Istemp.magnetization);
+		params.set("intenergy", Istemp.totalintenergy);
 	}
 
 	public void clear()
@@ -458,9 +550,9 @@ public class Criticalpoint extends Simulation
 		Criticalpoint.frame (grid1);
 		Criticalpoint.frame (grid2);
 
-		params.add("L1", 100);
-		params.add("L2", 100);
-		params.add("R", 10);
+		params.add("L1", 200);
+		params.add("L2", 200);
+		params.add("R", 20);
 		params.add("NJ",-4.0);	
 		params.add("percent", 0.00);
 		params.add("biaspercent", 0.00);
@@ -477,6 +569,7 @@ public class Criticalpoint extends Simulation
 		params.add("MCS");
 		params.add("copies");
 		params.add("magnetization");
+		params.add("intenergy");
 	}
 
 	
@@ -511,18 +604,24 @@ public class Criticalpoint extends Simulation
 	    //findTcviaX(IS,3.90,4.10,0.005, dynamics);
         
 	    T=params.fget("T");
-	    //scanHs(IS,0,1.260,0.001, dynamics);
+	    
+	    
+	    scanHs(IS,0,1.260,0.002, dynamics);
 	    
 	    //startH=1.065;
 	    
 	    //findHs(IS,startH-0.1,startH,0.002, dynamics);
       
+	    findHsCv(IS,startH-0.1,startH,0.01, dynamics);
+	    
+	    
+	    
 		//CriticalpointsCv(IS, 4.00, 3.70, 0.01, 4, 2000, 2000, 5, dynamics);
 	    
 	    //HSboundary(IS, T, 0.900, 1.090, 0.001, dynamics);
 	    
 	    
-	    ScanHsBoundary(0.60, 1.00, 0.05, 0.005, dynamics);
+	    //ScanHsBoundary(0.60, 1.00, 0.05, 0.005, dynamics);
 	    
 	    
 
