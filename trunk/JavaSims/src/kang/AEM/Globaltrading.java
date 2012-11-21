@@ -211,7 +211,6 @@ public class Globaltrading extends Simulation{
 		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
 	}
 
-	
 	public void singlerunexp(AEMStructure aem, int steplimit, int seed, double mu)
 	{
 		double ngrowth=aem.Ngrowth;
@@ -259,6 +258,54 @@ public class Globaltrading extends Simulation{
 		
 		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
 		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void Unfairsinglerunexp(AEMStructure aem, int steplimit, int seed, double pmu)
+	{
+		
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"Unfair check <L="+fmt.format(aem.L1)+", pmu="+fmt.format(pmu*1000000)+", p= "+fmt.format(aem.percent*1000)+">.txt";
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.UnfairTSfast(rand, aem.percent, aem.tax, aem.alpha, pmu);
+		
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Unfair wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(pmu*1000000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Unfair wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(pmu*1000000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Unfair wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(pmu*1000000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Unfair wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(pmu*1000000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Unfair wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(pmu*1000000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}	
+
+		}
+		
+		
+		
 	}
 	
 	public void FIXsinglerunexp(AEMStructure aem, int steplimit, int seed, double mu, double fixamount)
@@ -670,8 +717,8 @@ public class Globaltrading extends Simulation{
 		
 	    params.add("tax",0.00);
 		params.add("percent", 0.10);
-		params.add("Ngrowth", 20.0);
-		params.add("mu",0.0000);
+		params.add("Ngrowth", 0.0);
+		params.add("mu",0.000100);     //for mu=0.0001    for pmu=0.000001
 		
 		params.addm("time", 0);
 		params.add("totalwealth");
@@ -722,7 +769,9 @@ public class Globaltrading extends Simulation{
 	    
 	    
 	    //FIXsinglerunexp(AHtemp, 51000, 1, mu, 10);
-	    BiasFIXsinglerunexp(0.6, AHtemp, 51000, 1, mu, 10);
+	    //BiasFIXsinglerunexp(0.6, AHtemp, 51000, 1, mu, 10);
+	    Unfairsinglerunexp(AHtemp, 101000, 1, mu);
+	    
 	    
 	    //extremerun(AHtemp, 50000, 25, 1);
 	    //extremerunexp(AHtemp, 50000, 25, 1, mu);

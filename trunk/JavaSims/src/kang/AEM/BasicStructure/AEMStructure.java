@@ -25,7 +25,7 @@ public class AEMStructure{
 	public int R;   //interaction range R=0 is NN interaction
 	
     public double order; // a parameter to measure the inequality
-
+   
 	
 	//the function for this class IsingStructure
 	
@@ -194,6 +194,73 @@ public class AEMStructure{
 		
 	    return target;
 
+	}
+	
+	public void UnfairTSfast(Random flip, double percent, double tax, double alpha, double pmu)  //the rich gets richer based on the growth mode(wi=wi*(1+mu))
+	{
+        int j=0;
+        int target=0;
+        int richer=0;    // not used, just a label for the richer
+        int poorer=0;
+        double tradeamount=0;
+        double aftertax=0;
+        double totaltax=0;
+	    double totalorder=0;
+	   
+	    for (int f=0; f< M; f++)
+	    {
+		   j=flip.nextInt(M);
+		   target=findInRange(j, R, flip);    //choose the trading target, then decide who is richer
+		   if(wealth[j]>=wealth[target])
+		   {
+			   richer=j;
+			   poorer=target;
+		   }
+		   else
+		   {
+			   richer=target;
+			   poorer=j;
+		   }
+		   //after deciding who is the poorer, we can decide the trading amount=percent*wealth[poorer]
+		   tradeamount=percent*wealth[poorer];
+		   aftertax=(1-tax)*tradeamount;
+		   totaltax+=tax*tradeamount;
+		   
+		   
+		   //now decide who win this trade
+		   if(flip.nextBoolean())    //assume this means j lose
+		   {
+			   wealth[j]-=aftertax;
+			   wealth[target]+=aftertax;
+		   }
+		   else     // this means j wins
+		   {
+			   wealth[j]+=aftertax;
+			   wealth[target]-=aftertax;
+		   }
+		   
+	    }
+	    
+	    totalwealth=0;
+		for(int g=0; g<M; g++)   //now everyone's wealth will grow with the same amount =growth
+		   {
+			   wealth[g]=wealth[g]*(1+pmu);
+			   totalwealth+=wealth[g];
+		   }
+		
+	
+		   meanwealth=totalwealth/M;
+	    
+	    
+	    for(int ii=0; ii<M; ii++)
+	    {
+	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
+	    	
+	    	if(wealth[ii]!=0)
+	    		totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);    //might be problematic if there is tax because of the change in the total wealth
+	    }
+	    
+	    order=totalorder;
 	}
 	
 	public void TSfast(Random flip, double percent, double tax, double alpha, double Ngrowth)// fast trading step  (growth after each step instead of each transaction)

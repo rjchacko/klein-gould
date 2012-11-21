@@ -5,6 +5,7 @@ import java.text.DecimalFormat;
 
 import kang.ising.BasicStructure.BasicTools;
 import kang.ising.BasicStructure.IsingStructure;
+import kang.ising.BasicStructure.IsingStructure3D;
 import kang.util.PrintUtil;
 import kang.ising.BasicStructure.BasicTools;
 
@@ -97,6 +98,38 @@ public class ClusterScaling extends Simulation{
 		}
 	}
 	
+	public int adddata(String path, int[] data, int start)
+	{
+		int j=0;
+		int end=0;
+		while(data[j]>=0)
+		{
+			PrintUtil.printlnToFile(path, j+start, data[j]);
+			j++;
+		}
+		
+		end=j+start;
+		return end;
+	}
+	
+	public double meansize(int[] data)
+	{
+		double totalsize=0;
+		double msize=0;
+		int j=0;
+		while(data[j]>=0)
+		{
+			totalsize+=(data[j]*data[j]);
+			j++;
+		}
+		if(j>0)
+		{
+			msize=totalsize;
+		}
+		
+		return msize;
+	}
+	
 	public void singlerunTc(IsingStructure ising, double T, int steplimit, boolean keeplargest,int seed)
 	{
 		String singlerun="<L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
@@ -134,6 +167,83 @@ public class ClusterScaling extends Simulation{
 		
 	}
 	
+	public void multiplerunsTc(IsingStructure3D ising, double T, int steplimit, boolean keeplargest,int seed, int copies)// average over multiple spin configurations, positve represent all up spin clusters
+	{
+		String multirun="multi <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String positivepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+multirun+"positive.txt";
+		String negativepath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+multirun+"negative.txt";
+		
+		int spincopies[][]=new int [copies][ising.M];
+		
+		
+		Random rand= new Random(seed);
+		for(int prestep=0; prestep<50; prestep++)
+		{
+			params.set("T", 999);
+			params.set("H", 0);
+			ising.MCS(999, 0, rand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", prestep-50);
+			params.set("magnetization", ising.magnetization);
+		}
+		
+		for(int step=0; step<steplimit; step++)
+		{
+			params.set("T", T);
+			params.set("H", 0);
+			ising.MCS(T, 0, rand, 1, dynamics);
+			
+			Job.animate();
+			params.set("Emcs", step);
+			params.set("magnetization", ising.magnetization);
+			
+		}
+		
+		double pb=1-Math.exp(2*ising.J/T);
+		
+		for(int astep=0; astep<(10*copies); astep++)
+		{
+			params.set("T", T);
+			params.set("H", 0);
+			ising.MCS(T, 0, rand, 1, dynamics);
+			
+			Job.animate();
+			params.set("Emcs", steplimit+astep);
+			params.set("magnetization", ising.magnetization);
+			
+			if(astep%10==0)
+			{
+				for(int jj=0; jj<ising.M; jj++)
+				{
+					spincopies[astep/10][jj]=ising.spin[jj];
+				}
+			}
+		}
+		
+		int Pstart=0;
+		int Nstart=0;
+        for(int cc=0; cc<copies; cc++)
+        {
+        	
+        	clustersize=ising.Clustergrowth(spincopies[cc], 1, pb, seed, seed, keeplargest);
+    		int center=ising.ClusterInfo(ising.largestcluster)[1];
+    		
+    		Job.animate();
+    		Pstart=adddata(positivepath, clustersize, Pstart);
+    		
+    		clustersize=ising.Clustergrowth(spincopies[cc], -1, pb, seed, seed, keeplargest);
+    	    center=ising.ClusterInfo(ising.largestcluster)[1];
+    		
+    		Job.animate();
+    		Nstart=adddata(negativepath, clustersize, Nstart);
+        	
+        }
+	
+			
+		
+	}
+	
+	
 	public void singlerunHs(IsingStructure ising, double T, double H, int steplimit, boolean keeplargest,int seed)
 	{
 		String singlerun="Hs <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+", H="+bmt.format(H*1000)+", p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
@@ -170,6 +280,25 @@ public class ClusterScaling extends Simulation{
 		
 	}
 	
+	public void chi(IsingStructure ising, double T, double Hmin, double Hmax, double dH, int steplimit, int seed)  // measure the mean size of clusters as a function of the field
+	{
+		String chirun="chi data <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+"p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
+		String chipath = "/Users/liukang2002507/Desktop/simulation/ClusterScaling/"+dynamics+"/"+chirun+".txt";
+		
+		double chitemp=0;
+		double totalms=0;
+		
+		for(double h=Hmin; h<Hmax; h+=dH)
+		{
+		  
+			totalms=meanclustersize(ising, T, h, steplimit, seed);
+			chitemp=2*totalms/(1-percent-ising.magnetization);
+			PrintUtil.printlnToFile(chipath, h, chitemp);
+			
+		}
+		
+	}
+	
 	public void approachHs(IsingStructure ising, double T, double Hmin, double Hmax, double dH, int steplimit, int seed)
 	{
 		String SPCrun="SPC data <L="+fmt.format(L)+", R="+fmt.format(R)+", T="+fmt.format(T*100)+"p= "+fmt.format(percent*1000)+", pb= "+bmt.format(biaspercent*1000)+">";
@@ -186,6 +315,34 @@ public class ClusterScaling extends Simulation{
 		}
 		
 	}
+	
+	public double meanclustersize(IsingStructure ising, double T, double H, int steplimit, int seed)
+	{
+		
+		double meansize=0;
+		
+		ising.Sinitialization(1, Sseed);
+		Random rand= new Random(seed);
+		for(int step=0; step<steplimit; step++)
+		{
+			params.set("T", T);
+			params.set("H", -H);
+			ising.MCS(T, -H, rand, 1, dynamics);
+			
+			Job.animate();
+			params.set("Emcs", step);
+			params.set("magnetization", ising.magnetization);
+		}
+		
+		double pb=1-Math.exp((1+ising.magnetization/(1-ising.percent))*ising.J/T);
+		
+		clustersize=ising.Clustergrowth(ising.spin, -1, pb, seed, seed, true);
+		Job.animate();
+		meansize=meansize(clustersize);
+		
+		return meansize;
+	}
+	
 	
 	public int findlargestcluster(IsingStructure ising, double T, double H, int steplimit, double pb, int seed)
 	{
@@ -225,11 +382,11 @@ public class ClusterScaling extends Simulation{
 
 		ClusterScaling.frameTogether("Display", grid1 ,grid2, grid3);
 
-		params.add("L", 800);
+		params.add("L", 600);
 		
 		params.add("la",10);    // scale of the bias dilution region
 		params.add("lb",10); 
-		params.add("R", 40);
+		params.add("R", 30);
 		
 		params.add("NJ", -4.0);
 	    params.add("deadsites");
@@ -294,7 +451,9 @@ public class ClusterScaling extends Simulation{
 	    //singlerunTc(Istemp, T, 2000, true, 1);
 	    //singlerunHs(Istemp, T, H, 200, true, 1);
 	    
-	    approachHs(Istemp, T, 1.26, 1.265, 0.001, 100, 1);
+	    //approachHs(Istemp, T, 1.26, 1.265, 0.001, 100, 1);
+	    chi(Istemp, T, 1.20*(1-percent), 1.24*(1-percent), 0.002, 50, 1);
+	    
 	    
 	    Job.animate();
 
