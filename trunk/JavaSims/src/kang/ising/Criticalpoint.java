@@ -236,7 +236,7 @@ public class Criticalpoint extends Simulation
 	    
 	    double totalM=0;
 	    double averageM=0;
-	    String check ="/Users/liukang2002507/Desktop/simulation/CriticalpointsCv/"+dynamics+"/check L="+fmt.format(ising.L1)+" q="+fmt.format(ising.percent*100)+".txt";
+	    String check ="/Users/liukang2002507/Desktop/simulation/CriticalpointsCv/"+dynamics+"/check L="+fmt.format(ising.L1)+" R="+fmt.format(ising.R)+" q="+fmt.format(ising.percent*100)+".txt";
 	    
 		for(int c=0; c<copies;c++)
 		{
@@ -278,7 +278,7 @@ public class Criticalpoint extends Simulation
 	
 	public void CriticalpointsCv(IsingStructure ising, double Tmax, double Tmin, double increment, double targetT, int limit, int number, int copies, String dynamics)
 	{
-		String path="/Users/liukang2002507/Desktop/simulation/CriticalpointsCv/"+dynamics+"/L="+fmt.format(ising.L1)+" q="+fmt.format(ising.percent*100)+".txt";
+		String path="/Users/liukang2002507/Desktop/simulation/CriticalpointsCv/"+dynamics+"/L="+fmt.format(ising.L1)+" R="+fmt.format(ising.R)+" q="+fmt.format(ising.percent*100)+".txt";
 		for(double t=Tmax; t>Tmin; t-=increment)
 		{
 			int prelimit=limit;
@@ -603,20 +603,20 @@ public class Criticalpoint extends Simulation
 	    //findTc(IS,3.52,3.59,0.001, dynamics);
 	    //findTcviaX(IS,3.90,4.10,0.005, dynamics);
         
-	    T=params.fget("T");
+	    //T=params.fget("T");
 	    
 	    
-	    scanHs(IS,0,1.260,0.002, dynamics);
+	    //scanHs(IS,0,1.260,0.002, dynamics);
 	    
 	    //startH=1.065;
 	    
 	    //findHs(IS,startH-0.1,startH,0.002, dynamics);
       
-	    findHsCv(IS,startH-0.1,startH,0.01, dynamics);
+	    //findHsCv(IS,startH-0.1,startH,0.01, dynamics);
 	    
 	    
 	    
-		//CriticalpointsCv(IS, 4.00, 3.70, 0.01, 4, 2000, 2000, 5, dynamics);
+		CriticalpointsCv(IS, 4.30, 4.00, 0.02, 4, 1000, 2000, 10, dynamics);
 	    
 	    //HSboundary(IS, T, 0.900, 1.090, 0.001, dynamics);
 	    
