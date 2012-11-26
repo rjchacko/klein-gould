@@ -33,6 +33,8 @@ public class IsingStructure3D{
 	public int biasC;
 	public double biaspercent;
 	
+
+	
 	//the function for this class IsingStructure3D
 	
 	public IsingStructure3D(int L1, int L2, int L3, int R, double NJ, double percent, double biaspercent, String shape)     //generating function
@@ -452,7 +454,7 @@ public class IsingStructure3D{
 				spin[j]=-spin[j];
 				totalspin-=tempspin*2;
 				magnetization=Magnetization();
-				//totalintenergy+=IntEchange;
+				totalintenergy+=IntEchange;
 				
 			}
 			
@@ -463,7 +465,7 @@ public class IsingStructure3D{
 					            spin[j]=-spin[j];
 								totalspin-=tempspin*2;
 								magnetization=Magnetization();
-								//totalintenergy+=IntEchange;	
+								totalintenergy+=IntEchange;	
 						}
 			}
 		}
@@ -487,7 +489,7 @@ public class IsingStructure3D{
 					            spin[j]=-spin[j];
 								totalspin-=tempspin*2;
 								magnetization=Magnetization();
-								//totalintenergy+=IntEchange;	
+								totalintenergy+=IntEchange;	
 						}
 			
 		}
