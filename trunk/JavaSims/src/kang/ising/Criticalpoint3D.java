@@ -204,7 +204,7 @@ public class Criticalpoint3D extends Simulation
 		ising.setColor(-2, Color.GREEN);     //
 		ising.setColor(3, Color.darkGray);    // the centers of the clusters
 		
-		for(int i=0;i<L; i++)
+		/*for(int i=0;i<L; i++)
 			for(int j=0; j<L; j++)
 			{
 				isingx[i*L+j]=Istemp.spin[L/2*L*L+i*L+j];
@@ -217,7 +217,7 @@ public class Criticalpoint3D extends Simulation
 		gridy.setColors(ising);
 		gridy.registerData(L, L, isingy);
 		gridz.setColors(ising);
-		gridz.registerData(L, L, isingz);
+		gridz.registerData(L, L, isingz);*/
 		
 		params.set("magnetization", Istemp.magnetization);
 		params.set("intenergy", Istemp.totalintenergy);
@@ -240,9 +240,9 @@ public class Criticalpoint3D extends Simulation
 		Criticalpoint3D.frameTogether("Display", gridx, gridy, gridz);
 		
 		
-		params.add("L", 30);
+		params.add("L", 50);
 
-		params.add("R", 3);
+		params.add("R", 5);
 		params.add("NJ",-6.0);	
 		params.add("percent", 0.00);
 		params.add("biaspercent", 0.00);
@@ -296,7 +296,7 @@ public class Criticalpoint3D extends Simulation
 
 	    
 	   
-		CriticalpointsCv(IS, 6.30, 6.00, 0.02, 6, 1000, 1000, 10, dynamics);
+		CriticalpointsCv(IS, 6.30, 6.01, 0.02, 6, 2000, 1000, 10, dynamics);
 	    
 	
 	    
