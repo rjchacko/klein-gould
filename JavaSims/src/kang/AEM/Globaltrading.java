@@ -766,8 +766,8 @@ public class Globaltrading extends Simulation{
 		
 	    params.add("tax",0.00);
 		params.add("percent", 0.10);
-		params.add("Ngrowth", 0.0);
-		params.add("mu",0.000100);     //for mu=0.0001    for pmu=0.000001
+		params.add("Ngrowth", 1.0);
+		params.add("mu",0.0010);     //for mu=0.0001    for pmu=0.000001
 		
 		params.addm("time", 0);
 		params.add("totalwealth");
@@ -820,7 +820,7 @@ public class Globaltrading extends Simulation{
 	    //FIXsinglerunexp(AHtemp, 51000, 1, mu, 10);
 	    //BiasFIXsinglerunexp(0.6, AHtemp, 51000, 1, mu, 10);
 	    //Unfairsinglerunexp(AHtemp, 101000, 1, mu);
-	    sublinearexp(AHtemp, 101000, 1, mu, 0.01);
+	    sublinearexp(AHtemp, 101000, 1, mu, 0.200);
 	    
 	    //extremerun(AHtemp, 50000, 25, 1);
 	    //extremerunexp(AHtemp, 50000, 25, 1, mu);

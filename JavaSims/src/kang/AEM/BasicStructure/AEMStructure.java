@@ -209,6 +209,7 @@ public class AEMStructure{
         double aftertax=0;
         double totaltax=0;
 	    double totalorder=0;
+	    growthmatrix=new double[M];
 	   
 	    double totalgrowth= Ngrowth*M;
 	    
