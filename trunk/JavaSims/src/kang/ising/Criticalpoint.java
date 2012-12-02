@@ -552,7 +552,7 @@ public class Criticalpoint extends Simulation
 
 		params.add("L1", 200);
 		params.add("L2", 200);
-		params.add("R", 20);
+		params.add("R", 10);
 		params.add("NJ",-4.0);	
 		params.add("percent", 0.00);
 		params.add("biaspercent", 0.00);
@@ -616,7 +616,7 @@ public class Criticalpoint extends Simulation
 	    
 	    
 	    
-		CriticalpointsCv(IS, 4.30, 4.00, 0.02, 4, 1000, 2000, 10, dynamics);
+		CriticalpointsCv(IS, 3.96, 3.905, 0.005, 4, 2000, 2000, 10, dynamics);
 	    
 	    //HSboundary(IS, T, 0.900, 1.090, 0.001, dynamics);
 	    
