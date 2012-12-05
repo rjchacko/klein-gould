@@ -252,6 +252,11 @@ public class Globaltrading extends Simulation{
 				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"sub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
 		        output(aem, saveas);
 			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"sub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
 
 		}
 		
@@ -820,7 +825,7 @@ public class Globaltrading extends Simulation{
 	    //FIXsinglerunexp(AHtemp, 51000, 1, mu, 10);
 	    //BiasFIXsinglerunexp(0.6, AHtemp, 51000, 1, mu, 10);
 	    //Unfairsinglerunexp(AHtemp, 101000, 1, mu);
-	    sublinearexp(AHtemp, 101000, 1, mu, 0.200);
+	    sublinearexp(AHtemp, 101000, 1, mu, 1.000);
 	    
 	    //extremerun(AHtemp, 50000, 25, 1);
 	    //extremerunexp(AHtemp, 50000, 25, 1, mu);
