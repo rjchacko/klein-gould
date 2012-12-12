@@ -27,7 +27,8 @@ public class AEMStructure{
    
 	public int R;   //interaction range R=0 is NN interaction
 	
-    public double order; // a parameter to measure the inequality
+    public double order; // a parameter to measure the inequality (entropy!=order   entropy=order/N+ln(N))
+ 
    
 	
 	//the function for this class IsingStructure

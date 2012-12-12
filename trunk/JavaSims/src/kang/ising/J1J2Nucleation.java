@@ -33,8 +33,16 @@ public class J1J2Nucleation extends Simulation{
 	Grid grid3=new Grid("Vertical vs Horizontal");
 	Grid grid4=new Grid("Order vs Disorder");
 	
+	Grid gridA=new Grid("Intervention Spin");     // the map to display the simulation
+	Grid gridB=new Grid("Intervention Display");
+	Grid gridC=new Grid("Intervention Vertical vs Horizontal");
+	Grid gridD=new Grid("Intervention Order vs Disorder");
+	
+	
 	public J1J2Structure JJS;
 	public J1J2Structure JJstemp;
+	
+	
 
 	public Random Erand;
 	public int rseed;
@@ -60,6 +68,15 @@ public class J1J2Nucleation extends Simulation{
 	public double h;   //the amplitude for the field
 	public double hx, hy;
 	public double[] H;
+	
+	
+	//intervention parameters
+	public int grownumber, decaynumber;
+	public J1J2Structure Intervention;     //the structure for intervention copies
+	public double threshold;              //the threshold to determine if the droplet grows or decays
+	
+	
+	
 	
 	public void animate()
 	{
@@ -111,6 +128,16 @@ public class J1J2Nucleation extends Simulation{
 		grid3.registerData(L, L, JJstemp.display);
 		grid4.setColors(ODJising);
 		grid4.registerData(L, L, JJstemp.display);
+		
+		
+		gridA.setColors(ising);
+		gridA.registerData(L, L, Intervention.spin);
+		gridB.setColors(JJising);
+		gridB.registerData(L, L, Intervention.display);
+		gridC.setColors(VHJising);
+		gridC.registerData(L, L, Intervention.display);
+		gridD.setColors(ODJising);
+		gridD.registerData(L, L, Intervention.display);
 	
 
 	}
@@ -121,6 +148,11 @@ public class J1J2Nucleation extends Simulation{
 		grid2.clear();
 		grid3.clear();
 		grid4.clear();
+		
+		gridA.clear();
+		gridB.clear();
+		gridC.clear();
+		gridD.clear();
 	
 	}
 	
@@ -134,6 +166,8 @@ public class J1J2Nucleation extends Simulation{
 	{
 
 		J1J2Nucleation.frameTogether("Display", grid1 ,grid2, grid3, grid4);
+		J1J2Nucleation.frameTogether("Intervention", gridA, gridB, gridC,gridD );
+		
 
 		params.add("L", 200);
 		params.add("la",10);    // scale of the bias dilution region
@@ -161,9 +195,13 @@ public class J1J2Nucleation extends Simulation{
 		params.addm("hx", 0.0);
 		params.addm("hy", 0.0);
 		params.add("Emcs");    //MCS time for evolution
-		//params.add("Imcs");     //MCS clock for each intervention run
+		params.add("Imcs");     //MCS clock for each intervention run
+		params.add("runs");    //intervention run number 
 		
-		params.add("runs");    //intervention run number   
+		params.add("grow");
+		params.add("decay");
+		
+		
 		params.add("mx");
 		params.add("my");
 		    
@@ -458,7 +496,168 @@ public class J1J2Nucleation extends Simulation{
 		
 	}
 	
+	public void InterventionXY(J1J2Structure jjising, Random rand, double t, double Hxy, int breakpoint, int steplimit, int totalruns)
+	{
+		String IrunXY="g="+fmt.format(g*1000)+" L= "+fmt.format(L) +"<T="+pmt.format(t*10000)+", Hxy="+pmt.format(Hxy*10000)+">"+"seed"+fmt.format(rseed);
+
+		String Ipath = "/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/XYnucleation/Intervention log.txt";
+		String Ipic="/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/XYnucleation/Interventionpic/<t= "+fmt.format(breakpoint)+">"+IrunXY;
+		String Bpic="/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/XYnucleation/Breakpoint/"+IrunXY;
+		String Dpic="/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/XYnucleation/Droplet/"+IrunXY;
+		
 	
+		Job.animate();
+		Erand=rand.clone();
+		
+		params.set("T", 9);
+		params.set("h", 0);
+		params.set("hy", 0);
+		params.set("hx", Hxy);
+		Getfield(jjising, 0, Hxy, 0);
+		
+		
+		for(int heat=0; heat<20; heat++)
+		{
+			jjising.MCS(9, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", -heat);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+		}
+		
+		params.set("T", t);
+		for(int pres=0; pres<90; pres++)
+		{
+			
+			jjising.MCS(t, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", pres);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+			
+		}
+	
+		for(int ps=0; ps<10; ps++)
+		{
+			
+			jjising.MCS(t, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ps+90);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+			
+		}
+	
+		params.set("hx", 0);//flip the field;
+		params.set("hy", Hxy);//flip the field;
+		Getfield(jjising, 0, 0, Hxy);
+		
+		
+		
+		
+		int ss=0;
+		for(ss=0; ss<breakpoint;ss++)
+		{
+			jjising.MCS(t, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ss);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+		}
+		
+		//one more step to breakpoint
+		{
+			jjising.MCS(t, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ss);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+		}
+		
+		
+		
+		
+		//define parameters to record the status of the system before intervention
+		double Mcx=jjising.mx;
+		double Mcy=jjising.my;
+		double Mcm2=jjising.mm2;  
+		
+		
+		Tools.Picture(grid2, breakpoint, 9999, Bpic);        //the snapshot at the intervention point
+		Tools.Picture(grid1, breakpoint, 9999, Dpic);        
+		
+	
+		//now is the intervention time
+		grownumber=0;
+		decaynumber=0;
+		
+		for(int c=0; c<totalruns; c++)
+		{
+			params.set("runs", c+1);
+			Intervention=jjising.clone();
+			Random irand=new Random(c+99);
+			for(int is=0; is<steplimit; is++)
+			{
+				Intervention.MCS(t, H, irand, 1, dynamics);;
+				Job.animate();
+				params.set("Imcs", is);
+				params.set("magnetization", Intervention.magnetization);
+				
+				
+				Intervention.MCS(t, H, irand, 1, dynamics);
+				Job.animate();
+				params.set("Imcs", is);
+				params.set("magnetization", Intervention.magnetization);
+				params.set("mx", Intervention.mx);
+				params.set("my", Intervention.my);
+				params.set("mm2", Intervention.mm2);
+				params.set("InteractionE", Intervention.totalintenergy);
+				
+				
+			}
+			if(Intervention.mx>threshold*Mcx)
+			{
+				decaynumber++;
+				params.set("decay", decaynumber);
+				Tools.Picture(gridB, c+1, 1111, Ipic);     //1111--decay
+			}
+			else
+			{
+				grownumber++;
+				params.set("grow", grownumber);
+				Tools.Picture(gridB, c+1, 8888, Ipic);     //8888--grow
+			}
+			
+		}
+		PrintUtil.printlnToFile(Ipath , IrunXY);
+		PrintUtil.printlnToFile(Ipath , "breakpoint=  ",breakpoint);
+		PrintUtil.printlnToFile(Ipath , "decay =  ", decaynumber);
+		PrintUtil.printlnToFile(Ipath , "grow =  ", grownumber);
+		//PrintUtil.printlnToFile(Ipath , "droplet size =  ", dropletsize);
+		PrintUtil.printlnToFile(Ipath , "m =  ", jjising.magnetization);
+		PrintUtil.printlnToFile(Ipath , "mx =  ", jjising.mx);
+		PrintUtil.printlnToFile(Ipath , "my =  ", jjising.my);
+		PrintUtil.printlnToFile(Ipath , "mm2 =  ", jjising.mm2);
+		PrintUtil.printlnToFile(Ipath , "    ");
+	
+	
+	
+	}
 	
 	public void run(){
 		
@@ -490,6 +689,7 @@ public class J1J2Nucleation extends Simulation{
 		
 	    JJS=new J1J2Structure(L,L,NJ1,NJ2,percent,biaspercent);   
 	    JJstemp=new J1J2Structure(L,L,NJ1,NJ2,percent,biaspercent);
+	    Intervention=new J1J2Structure(L,L,NJ1,NJ2,percent,biaspercent);
 	    
 	    Tools=new BasicTools();
 	    T=params.fget("T");
@@ -503,6 +703,7 @@ public class J1J2Nucleation extends Simulation{
 	    	params.set("deadsites",JJS.deadsites);
 	    	JJS.Sinitialization(0, Sseed);
 	        JJstemp=JJS.clone();
+	        Intervention=JJS.clone();
 	    
 	    }
 	    
@@ -517,8 +718,11 @@ public class J1J2Nucleation extends Simulation{
 	    //Multipleruns(JJstemp, rand, 1.2799, 1.2781, 0.0002);
 	    
 	    //XtoX(JJstemp, rand, T, 0.20); 
-	    XtoY(JJstemp, rand, T, 0.40); 
+	    //XtoY(JJstemp, rand, T, 0.48); 
 	    
+	    
+	    threshold=0.95;
+	    InterventionXY(JJstemp, rand, T, 0.48, 2918, 100, 20);
 	}
 	
 	

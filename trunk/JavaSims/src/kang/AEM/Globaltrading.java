@@ -211,11 +211,76 @@ public class Globaltrading extends Simulation{
 		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
 	}
 
+	public void negsubexp(AEMStructure aem, int steplimit, int seed, double mu, double gamma)  //negative sub-linear growth favoring the poor 
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"neg check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"neg order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		
+		double entropyC=Math.log(aem.M);
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.SublinearTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, -gamma);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			if(t%50==0)
+			{
+				PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"neg wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"neg wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"neg wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"neg wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"neg wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"neg wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}	
+	
+	
 	public void sublinearexp(AEMStructure aem, int steplimit, int seed, double mu, double gamma)
 	{
 		double ngrowth=aem.Ngrowth;
 		Random rand= new Random(seed);
 		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"sub check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"sub order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+
+		double entropyC=Math.log(aem.M);
+		
 		
 		for(int t=0; t<steplimit; t++)
 		{
@@ -223,7 +288,10 @@ public class Globaltrading extends Simulation{
 			aem.SublinearTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
 			ngrowth=ngrowth*(1+mu);
 			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
-			
+			if(t%50==0)
+			{
+				PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+			}
 			
 			params.set("time", t+1);
 			Job.animate();
@@ -825,7 +893,12 @@ public class Globaltrading extends Simulation{
 	    //FIXsinglerunexp(AHtemp, 51000, 1, mu, 10);
 	    //BiasFIXsinglerunexp(0.6, AHtemp, 51000, 1, mu, 10);
 	    //Unfairsinglerunexp(AHtemp, 101000, 1, mu);
-	    sublinearexp(AHtemp, 101000, 1, mu, 1.000);
+	    
+	    sublinearexp(AHtemp, 101000, 1, mu, 0.940);
+	    
+	    
+	    //negsubexp(AHtemp, 101000, 1, mu, 0.500);
+	    
 	    
 	    //extremerun(AHtemp, 50000, 25, 1);
 	    //extremerunexp(AHtemp, 50000, 25, 1, mu);
