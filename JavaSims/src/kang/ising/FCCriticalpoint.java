@@ -300,7 +300,7 @@ public class FCCriticalpoint extends Simulation
  		{
 			params.set("H", h);
  			data=DataHs(ising,T,h,200,2000,20, dynamics);
- 			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCising/Spinodals/"+dynamics+"usefulrunsq=0."+fmt.format(percent*1000)+".txt","H=    ",(double)h );
+ 			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCising/Spinodals/"+dynamics+"/usefulrunsq=0."+fmt.format(percent*1000)+".txt","H=    ",(double)h );
 			String SaveAs = "/Users/liukang2002507/Desktop/simulation/FCising/Spinodals/"+dynamics+"/data q=0."+fmt.format(percent*1000)+".txt";
  			PrintUtil.printlnToFile(SaveAs, h, data[0], varianceC, data[1], varianceX, usefulruns);
  		} 
@@ -410,7 +410,7 @@ public class FCCriticalpoint extends Simulation
 				totalCv+=tempCv[usefulruns];
 				totalX+=tempX[usefulruns];
 				
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCising/Spinodal/data usefulrunsq=0."+fmt.format(percent*1000)+" L="+fmt.format(L)+".txt",h, c);
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCising/Spinodals/"+dynamics+"/usefulrunsq=0."+fmt.format(percent*1000)+" L="+fmt.format(L)+".txt",h, c);
 				usefulruns++;
 			}
 		}
