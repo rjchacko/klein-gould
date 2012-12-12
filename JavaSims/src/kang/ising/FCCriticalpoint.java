@@ -34,11 +34,12 @@ public class FCCriticalpoint extends Simulation
     public double varianceX;
     public double varianceC;
     public double Cvdata[];
+    public double Chidata[];
     
 	private DecimalFormat fmt = new DecimalFormat("000");
 	public double startH=0;
 	
-	/*public double XforTc(FCIsing ising, double T, double H, int presteplimit, int number, int copies, String dynamics)  //calculate the specific heat of a given system at T,
+/*	public double XforTc(FCIsing ising, double T, double H, int presteplimit, int number, int copies, String dynamics)  //calculate the specific heat of a given system at T,
 	{
 	    double tempM[];
 	    tempM= new double [number];
@@ -73,13 +74,16 @@ public class FCCriticalpoint extends Simulation
 			}
 			totalX+=IS.Fluctuation(tempM, number);
 		}
+		
+		
+		
+		
+		
 		return totalX/copies;
 		
-	}
-	*/
-
-
-	public double Susceptibility(FCIsing ising, double T, double h, int presteplimit, int number, int copies, String dynamics)  //calculate the susceptibility of a given system at T H,
+	}*/
+	
+	public double Susceptibility(FCIsing ising, double T, double H, int presteplimit, int number, int copies, String dynamics)  //calculate the specific heat of a given system at T,
 	{
 	    double tempM[];
 	    double usedM[];
@@ -95,41 +99,42 @@ public class FCCriticalpoint extends Simulation
 			Istemp=ising.clone();
 			Random cflip=new Random(c);
 			params.set("copies", c);
+	
 			
 			int endofstep=-1;
 			int lifetime=2100;
 			
 			for(int heat=0; heat<5; heat++)
 			{
-				Istemp.MCS(dynamics, cflip, cflip, 99, h,  1);
+				Istemp.MCS(dynamics, cflip, cflip,9, H, 1);
 				Job.animate();
 				params.set("MCS", -9999);
+
 			}
 		
 			for(int prestep=0; prestep< presteplimit; prestep++)
 			{
-				Istemp.MCS(dynamics, cflip, cflip, T, h,  1);
-				
+				Istemp.MCS(dynamics, cflip, cflip, T, H,  1);
 				Job.animate();
 				params.set("MCS", prestep-presteplimit);
 			}
-			params.set("H",-h);
-			double field=-h;
+			params.set("H",-H);
+			double field=-H;
 
+			
 			for(int step=0; (endofstep<0)&(step<number); step++)
 			{
 				
-				tempM[step]=Istemp.m;
+				tempM[step]=Istemp.M;
 				if(tempM[step]<0)
 					{
 					endofstep=1;
 					lifetime=step;
 					}
 				Istemp.MCS(dynamics, cflip, cflip, T, field,  1);
-				
 				Job.animate();
 				params.set("MCS", step);
-				params.set("magnetization", tempM[step]);
+				params.set("magnetization", Istemp.m);
 			}
 			
 			if(lifetime>2000)
@@ -140,7 +145,7 @@ public class FCCriticalpoint extends Simulation
 				}
 				tempX[usefulruns]=IS.Fluctuation(usedM, number-200-200);
 				totalX+=tempX[usefulruns];
-				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCHs/usefulrunsq=0."+fmt.format(percent*1000)+".txt",h, c);
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCHs/usefulrunsq=0."+fmt.format(percent*1000)+".txt",H, c);
 				usefulruns++;
 			}
 		}
@@ -156,9 +161,151 @@ public class FCCriticalpoint extends Simulation
 		
 	}
 	
- 	
+	public double[] DataTc(FCIsing ising, double t, double h, int presteplimit, int number, int copies, String dynamics)  //calculate the susceptibility of a given system near Tc
+	{
+		double data[]=new double[2];   //data[0]=Cv, data[1]=Chi
+		double tempM[],tempE[];
+	    tempM= new double [number];
+	    tempE= new double [number];
+	    Chidata= new double [copies];
+	    Cvdata=new double[copies];
+	    double meanX=0;
+	    double meanC=0;
+	    
+	    double totalM=0;
+	    double totalE=0;
+	    double averageM=0;
+	    double averageE=0;
+	    String check ="/Users/liukang2002507/Desktop/simulation/FCising/Criticalpoints/"+dynamics+"/check L="+fmt.format(L)+" q="+fmt.format(ising.percent*100)+".txt";
+	    
+		for(int c=0; c<copies;c++)
+		{
+			Istemp=ising.clone();
+			Random cflip=new Random(c);
+			params.set("copies", c);
+			for(int heat=0; heat<5; heat++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, 9, h, 1);
+				Job.animate();
+				params.set("MCS", -9999);
 
- 	
+			}
+			for(int prestep=0; prestep< presteplimit; prestep++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, t, h, 1);
+				Job.animate();
+				params.set("MCS", prestep-presteplimit);
+			}
+			for(int step=0; step<number; step++)
+			{
+				
+				tempM[step]=Math.abs(Istemp.M);      //use the abs value
+				tempE[step]=Istemp.Energy(h);
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Tc/progress.txt", T, c, step);
+				Istemp.MCS(dynamics, cflip, cflip, t, h, 1);
+				totalM+=tempM[step];
+				totalE+=tempE[step];
+				Job.animate();
+				params.set("MCS", step);
+			}
+			averageM=totalM/number;
+			averageE=totalE/number;
+			PrintUtil.printlnToFile(check, T, c, averageM, averageE);
+			Chidata[c]=IS.Fluctuation(tempM, number);
+			Cvdata[c]=IS.Fluctuation(tempE, number);
+		}
+		meanX=Tools.Mean(Chidata, copies);
+		meanC=Tools.Mean(Cvdata, copies);
+		varianceX=Tools.SD(Chidata, copies, meanX);
+		varianceC=Tools.SD(Cvdata, copies, meanC);
+		data[0]=meanC;
+		data[1]=meanX;
+		
+		return data;
+		
+	}
+	
+	public void Criticalpoints(FCIsing ising, double Tmax, double Tmin, double increment, double targetT, int limit, int number, int copies, String dynamics)
+	{
+		String path="/Users/liukang2002507/Desktop/simulation/FCising/Criticalpoints/"+dynamics+"/data L="+fmt.format(L)+" q="+fmt.format(ising.percent*100)+".txt";
+		for(double t=Tmax; t>Tmin; t-=increment)
+		{
+			int prelimit=limit;
+			//prelimit=(int)(Math.sqrt((Tmax-targetT)/(t-targetT))*limit);
+			
+			params.set("T", t);
+			params.set("H", 0);
+			double data[]=new double[2];
+			data=DataTc(ising, t, 0, prelimit, number, copies, dynamics);
+			
+			PrintUtil.printlnToFile(path, t, data[0], varianceC, data[1], varianceX);
+		}
+	}
+	
+	
+	
+/*	public double SusceptibilityTc(FCIsing ising, double t, double h, int presteplimit, int number, int copies, String dynamics)  //calculate the susceptibility of a given system near Tc
+	{
+		double tempM[];
+	    tempM= new double [number];
+	    Chidata= new double [copies];
+	    double meanX=0;
+	    
+	    double totalM=0;
+	    double averageM=0;
+	    String check ="/Users/liukang2002507/Desktop/simulation/FCising/CriticalpointsChi/"+dynamics+"/check L="+fmt.format(L)+" q="+fmt.format(ising.percent*100)+".txt";
+	    
+		for(int c=0; c<copies;c++)
+		{
+			Istemp=ising.clone();
+			Random cflip=new Random(c);
+			params.set("copies", c);
+			for(int heat=0; heat<5; heat++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, 9, h, 1);
+				Job.animate();
+				params.set("MCS", -9999);
+
+			}
+			for(int prestep=0; prestep< presteplimit; prestep++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, t, h, 1);
+				Job.animate();
+				params.set("MCS", prestep-presteplimit);
+			}
+			for(int step=0; step<number; step++)
+			{
+				
+				tempM[step]=Math.abs(Istemp.M);      //use the abs value
+				//PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/Tc/progress.txt", T, c, step);
+				Istemp.MCS(dynamics, cflip, cflip, t, h, 1);
+				totalM+=tempM[step];
+				Job.animate();
+				params.set("MCS", step);
+			}
+			averageM=totalM/number;
+			PrintUtil.printlnToFile(check, T, c, averageM);
+			Chidata[c]=IS.Fluctuation(tempM, number);
+		}
+		meanX=Tools.Mean(Chidata, copies);
+		varianceX=Tools.SD(Chidata, copies, meanX);
+		return meanX;
+		
+	}*/
+	
+ 	public void Spinodals(FCIsing ising,double Hmin, double Hmax, double dH, String dynamics)
+ 	{
+ 		double[] data=new double[2];
+ 		for(double h=Hmax; h>Hmin; h-=dH)
+ 		{
+			params.set("H", h);
+ 			data=DataHs(ising,T,h,200,2000,20, dynamics);
+ 			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCising/Spinodals/"+dynamics+"usefulrunsq=0."+fmt.format(percent*1000)+".txt","H=    ",(double)h );
+			String SaveAs = "/Users/liukang2002507/Desktop/simulation/FCising/Spinodals/"+dynamics+"/data q=0."+fmt.format(percent*1000)+".txt";
+ 			PrintUtil.printlnToFile(SaveAs, h, data[0], varianceC, data[1], varianceX, usefulruns);
+ 		} 
+ 	}
+	
  	public void findHs(FCIsing ising,double Hmin, double Hmax, double dH, String dynamics)
  	{
  		double X=0;
@@ -171,6 +318,204 @@ public class FCCriticalpoint extends Simulation
  			PrintUtil.printlnToFile(SaveAs, h, X, varianceX, usefulruns);
  		} 
  	}
+ 	
+ 	public void findHsCv(FCIsing ising,double Hmin, double Hmax, double dH, String dynamics)
+ 	{
+ 		double Cv=0;
+ 		for(double h=Hmax; h>Hmin; h-=dH)
+ 		{
+			params.set("H", h);
+ 			Cv=SpecificHeatHs(ising,T,h,200,2000,10, dynamics);
+ 			PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCising/SpinodalCv/Cv usefulrunsq=0."+fmt.format(percent*1000)+" L="+fmt.format(L)+".txt","H=    ",(double)h );
+			String SaveAs = "/Users/liukang2002507/Desktop/simulation/FCising/SpinodalCv/CV q=0."+fmt.format(percent*1000)+" L="+fmt.format(L)+".txt";
+ 			PrintUtil.printlnToFile(SaveAs, h, Cv, varianceC, usefulruns);
+ 		} 
+ 	}
+ 	
+ 	
+	public double[] DataHs(FCIsing ising, double t, double h, int presteplimit, int number, int copies, String dynamics)  //calculate the specific heat of a given system at T,
+	{
+		double data[]= new double[2];      //data[0] is Cv and data[1] is chi
+		
+	    double tempE[];
+	    double tempM[];
+	    double usedE[];
+	    double usedM[];
+	    tempE= new double [number];
+	    tempM= new double [number];
+	    usedE= new double [number-200-200];
+	    usedM= new double [number-200-200];
+	    double totalCv=0;
+	    double totalX=0;
+        usefulruns=0;
+        double tempCv[];
+        double tempX[];
+        tempCv= new double[copies];
+        tempX = new double[copies];
+	    
+		for(int c=0; c<copies;c++)
+		{
+			Istemp=ising.clone();
+			Random cflip=new Random(c);
+			params.set("copies", c);
+	
+			
+			int endofstep=-1;
+			int lifetime=2100;
+			
+			params.set("H",h);
+			for(int heat=0; heat<5; heat++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, 9, h, 1);
+				Job.animate();
+				params.set("MCS", -9999);
+
+			}
+		
+			for(int prestep=0; prestep< presteplimit; prestep++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, t, h, 1);
+				Job.animate();
+				params.set("MCS", prestep-presteplimit);
+			}
+			params.set("H",-h);
+			double field=-h;
+
+			
+			for(int step=0; (endofstep<0)&(step<number); step++)
+			{
+				
+				tempE[step]=Istemp.Energy(field);
+				tempM[step]=Istemp.M;
+				if(Istemp.m<0)
+					{
+					endofstep=1;
+					lifetime=step;
+					}
+				Istemp.MCS(dynamics, cflip, cflip, t, field, 1);
+				Job.animate();
+				params.set("MCS", step);
+				params.set("magnetization", Istemp.m);
+			}
+			
+			if(lifetime>2000)
+			{
+				for(int tt=0;tt<number-200-200;tt++)
+				{
+					usedE[tt]=tempE[tt+200];
+					usedM[tt]=tempM[tt+200];
+				}
+				tempCv[usefulruns]=IS.Fluctuation(usedE, number-200-200);
+				tempX[usefulruns]=IS.Fluctuation(usedM, number-200-200);
+				totalCv+=tempCv[usefulruns];
+				totalX+=tempX[usefulruns];
+				
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCising/Spinodal/data usefulrunsq=0."+fmt.format(percent*1000)+" L="+fmt.format(L)+".txt",h, c);
+				usefulruns++;
+			}
+		}
+		double averageCv=totalCv/usefulruns;
+		double averageX=totalX/usefulruns;
+		double totalCv2=0;
+		double totalX2=0;
+		for(int u=0;u<usefulruns; u++)
+		{
+			totalCv2+=(tempCv[u]-averageCv)*(tempCv[u]-averageCv);
+			totalX2+=(tempX[u]-averageX)*(tempX[u]-averageX);
+		}
+		varianceC=Math.sqrt(totalCv2/usefulruns);
+		varianceX=Math.sqrt(totalX2/usefulruns);
+		
+		
+		data[0]=averageCv;
+		data[1]=averageX;
+		
+		return data;
+		
+	}
+ 	
+ 	
+ 	
+	public double SpecificHeatHs(FCIsing ising, double t, double h, int presteplimit, int number, int copies, String dynamics)  //calculate the specific heat of a given system at T,
+	{
+	    double tempE[];
+	    double usedE[];
+	    tempE= new double [number];
+	    usedE= new double [number-200-200];
+	    double totalCv=0;
+        usefulruns=0;
+        double tempCv[];
+        tempCv= new double[copies];
+	    
+		for(int c=0; c<copies;c++)
+		{
+			Istemp=ising.clone();
+			Random cflip=new Random(c);
+			params.set("copies", c);
+	
+			
+			int endofstep=-1;
+			int lifetime=2100;
+			
+			params.set("H",h);
+			for(int heat=0; heat<5; heat++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, 9, h, 1);
+				Job.animate();
+				params.set("MCS", -9999);
+
+			}
+		
+			for(int prestep=0; prestep< presteplimit; prestep++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, t, h, 1);
+				Job.animate();
+				params.set("MCS", prestep-presteplimit);
+			}
+			params.set("H",-h);
+			double field=-h;
+
+			
+			for(int step=0; (endofstep<0)&(step<number); step++)
+			{
+				
+				tempE[step]=Istemp.Energy(field);
+				if(Istemp.m<0)
+					{
+					endofstep=1;
+					lifetime=step;
+					}
+				Istemp.MCS(dynamics, cflip, cflip, t, field, 1);
+				Job.animate();
+				params.set("MCS", step);
+				params.set("magnetization", Istemp.m);
+			}
+			
+			if(lifetime>2000)
+			{
+				for(int tt=0;tt<number-200-200;tt++)
+				{
+					usedE[tt]=tempE[tt+200];
+				}
+				tempCv[usefulruns]=IS.Fluctuation(usedE, number-200-200);
+				totalCv+=tempCv[usefulruns];
+				PrintUtil.printlnToFile("/Users/liukang2002507/Desktop/simulation/FCising/SpinodalCv/Cv usefulrunsq=0."+fmt.format(percent*1000)+" L="+fmt.format(L)+".txt",H, c);
+				usefulruns++;
+			}
+		}
+		double averageCv=totalCv/usefulruns;
+		double totalCv2=0;
+		for(int u=0;u<usefulruns; u++)
+		{
+			totalCv2+=(tempCv[u]-averageCv)*(tempCv[u]-averageCv);
+		}
+		varianceC=Math.sqrt(totalCv2/usefulruns);
+		
+		return averageCv;
+		
+	}
+ 	
+ 	
  	
  	public void scanHs(FCIsing ising, double min, double max, double dh, String dynamics)    //for the 1st search
  	{   
@@ -393,7 +738,8 @@ public class FCCriticalpoint extends Simulation
 		
 	}
  	
-	public void CriticalpointsCv(FCIsing ising, double Tmax, double Tmin, double increment, double targetT, int limit, int number, int copies, String dynamics)
+	
+/*	public void CriticalpointsCv(FCIsing ising, double Tmax, double Tmin, double increment, double targetT, int limit, int number, int copies, String dynamics)
 	{
 		String path="/Users/liukang2002507/Desktop/simulation/FCising/CriticalpointsCv/"+dynamics+"/L="+fmt.format(L)+" q="+fmt.format(ising.percent*100)+".txt";
 		for(double t=Tmax; t>Tmin; t-=increment)
@@ -408,6 +754,25 @@ public class FCCriticalpoint extends Simulation
 			PrintUtil.printlnToFile(path, t, c, varianceC);
 		}
 	}
+	
+	public void CriticalpointsChi(FCIsing ising, double Tmax, double Tmin, double increment, double targetT, int limit, int number, int copies, String dynamics)
+	{
+		String path="/Users/liukang2002507/Desktop/simulation/FCising/CriticalpointsChi/"+dynamics+"/L="+fmt.format(L)+" q="+fmt.format(ising.percent*100)+".txt";
+		for(double t=Tmax; t>Tmin; t-=increment)
+		{
+			int prelimit=limit;
+			//prelimit=(int)(Math.sqrt((Tmax-targetT)/(t-targetT))*limit);
+			
+			params.set("T", t);
+			params.set("H", 0);
+			double x=SusceptibilityTc(ising, t, 0, prelimit, number, copies, dynamics);
+			
+			PrintUtil.printlnToFile(path, t, x, varianceX);
+		}
+	}
+	
+	*/
+	
  	
  	public void testrun(FCIsing ising, String dynamics)
  	{
@@ -446,12 +811,12 @@ public class FCCriticalpoint extends Simulation
 		
 
 		params.add("N");
-		params.add("L", 600);
+		params.add("L", 100);
 		params.add("NJ",-4.0);	
 		params.add("percent", 0.00);
 		params.add("livesites");	
 	
-		params.addm("T", 0.178);
+		params.addm("T", 1.778);
 		params.addm("H", 1.25);
 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
@@ -507,19 +872,28 @@ public class FCCriticalpoint extends Simulation
 	
 	    //findTcviaX(IS,3.90,4.10,0.005, dynamics);
         
+	   
+	    
+	    {T=params.fget("T");
+	    
+	    scanHs(IS,1.20*(1-percent),1.27*(1-percent),0.002, dynamics);
+	    //startH=1.260;
+	    
+	    //findHs(IS,startH-0.1,startH,0.0001, dynamics);
+	    //findHsCv(IS,startH-0.3,startH,0.002, dynamics);
 	    
 	    
-	    /*{T=params.fget("T");
-	    scanHs(IS,1.24*(1-percent),1.27*(1-percent),0.0001, dynamics);
-	    //startH=1.010;
-	    findHs(IS,startH-0.1,startH,0.0001, dynamics);}*/
+	    Spinodals(IS,startH-0.3,startH,0.002, dynamics);
+	    }
 	    
 	    
+	    //Criticalpoints(IS, 4.20, 3.80, 0.01, 4, 2000, 2000, 10, dynamics);
 	    
+	    //CriticalpointsChi(IS, 4.20, 3.80, 0.01, 4, 2000, 2000, 10, dynamics);
 	    
-	    CriticalpointsCv(IS, 4.30, 3.70, 0.02, 4, 2000, 2000, 10, dynamics);
+	    //CriticalpointsCv(IS, 4.20, 3.80, 0.02, 4, 2000, 2000, 10, dynamics);
       
-		//CriticalpointsCv(IS, 4.00, 3.70, 0.01, 4, 2000, 2000, 5, dynamics);
+
 	    
 	    //ScanHsBoundary(0.20, 1.0, 0.05, 0.0005, dynamics);
 	    
