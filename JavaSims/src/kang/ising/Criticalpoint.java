@@ -817,7 +817,7 @@ public class Criticalpoint extends Simulation
 	    	
 	    	scanHs(IS,0,1.260*(1-IS.percent),0.002, dynamics);
 	 	    
-	 	    //startH=1.065;
+	 	    //startH=1.065;    
 	 	    
 	 	    //findHs(IS,startH-0.1,startH,0.002, dynamics);
 	       
