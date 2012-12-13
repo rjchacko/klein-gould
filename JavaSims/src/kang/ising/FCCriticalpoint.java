@@ -811,7 +811,7 @@ public class FCCriticalpoint extends Simulation
 		
 
 		params.add("N");
-		params.add("L", 200);
+		params.add("L", 400);
 		params.add("NJ",-4.0);	
 		params.add("percent", 0.00);
 		params.add("livesites");	
