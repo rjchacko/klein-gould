@@ -828,7 +828,7 @@ public class Criticalpoint extends Simulation
 	    
 	    
 	   
-	    Criticalpoints(IS, 4.20*(1-IS.percent), 3.80*(1-IS.percent), 0.01, 4, 2000, 2000, 10, dynamics);
+	    Criticalpoints(IS, 3.80*(1-IS.percent), 3.60*(1-IS.percent), 0.01, 4, 2000, 2000, 10, dynamics);
 	    
 	    
 		//CriticalpointsCv(IS, 3.96, 3.905, 0.005, 4, 2000, 2000, 10, dynamics);
