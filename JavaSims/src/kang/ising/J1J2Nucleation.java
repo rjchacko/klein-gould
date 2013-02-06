@@ -325,6 +325,71 @@ public class J1J2Nucleation extends Simulation{
 		
 	}
 	
+	public void BinderCumulant(J1J2Structure jjising, Random rand, double t)
+	{
+		String Brun="g="+fmt.format(g*1000)+" L= "+fmt.format(L) +"<Ti="+pmt.format(Ti*10000)+", Tf="+pmt.format(Tf*10000)+">"+"seed"+fmt.format(rseed);
+		String Bpath = "/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/singlerun "+singlerun+".txt";
+		String Bpic="/Users/liukang2002507/Desktop/simulation/J1J2/"+dynamics+"/singlerunpic/"+singlerun;
+		
+		Job.animate();
+		Erand=rand.clone();
+		params.set("T", t);
+		
+		for(int pres=0; pres<90; pres++)
+		{
+			
+			jjising.MCS(Ti, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", pres);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+			
+		}
+		
+		double totalM=0;
+		
+		for(int ps=0; ps<10; ps++)
+		{
+			totalM+=jjising.magnetization;
+			jjising.MCS(Ti, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ps+90);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+			
+		}
+		//double Ms=totalM/10;    //calculate the saturate magnetization
+		
+		params.set("T", Tf);//flip the field;
+		int ss=0;
+		for(ss=0; (jjising.mm2<0.7)&(ss<200000);ss++)
+		{
+			jjising.MCS(Tf, H, Erand, 1, dynamics);
+			Job.animate();
+			params.set("Emcs", ss);
+			params.set("magnetization", jjising.magnetization);
+			params.set("mx", jjising.mx);
+			params.set("my", jjising.my);
+			params.set("mm2", jjising.mm2);
+			params.set("InteractionE",jjising.totalintenergy);
+			
+			PrintUtil.printlnToFile(singlepath , ss , jjising.magnetization, jjising.mx,jjising.my,jjising.mm2, jjising.totalintenergy);
+			if(ss%20==0)
+			{
+				Tools.Picture(grid2, ss, (int)(Tf*1000), singlepic);
+			}
+		}
+		
+		
+	}
+	
+	
 	public void XtoX(J1J2Structure jjising, Random rand, double T, double Hx)
 	{
 		String singlerun="g="+fmt.format(g*1000)+" L= "+fmt.format(L) +"<T="+pmt.format(T*10000)+", Hx="+pmt.format(Hx*10000)+">"+"seed"+fmt.format(rseed);
@@ -658,6 +723,10 @@ public class J1J2Nucleation extends Simulation{
 	
 	
 	}
+	
+	
+	
+	
 	
 	public void run(){
 		

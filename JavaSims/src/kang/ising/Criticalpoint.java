@@ -759,9 +759,9 @@ public class Criticalpoint extends Simulation
 		Criticalpoint.frame (grid1);
 		Criticalpoint.frame (grid2);
 
-		params.add("L1", 100);
-		params.add("L2", 100);
-		params.add("R", 5);
+		params.add("L1", 200);
+		params.add("L2", 200);
+		params.add("R", 10);
 		params.add("NJ",-4.0);	
 		params.add("percent", 0.00);
 		params.add("biaspercent", 0.00);
@@ -812,23 +812,23 @@ public class Criticalpoint extends Simulation
 	    //findTc(IS,3.52,3.59,0.001, dynamics);
 	    //findTcviaX(IS,3.90,4.10,0.005, dynamics);
         
-	   /* {
+	   /*{
 	    	T=params.fget("T");
 	    	
-	    	scanHs(IS,0,1.260*(1-IS.percent),0.002, dynamics);
+	    	scanHs(IS,0,1.260*(1-IS.percent),0.001, dynamics);
 	 	    
 	 	    //startH=1.065;    
 	 	    
-	 	    //findHs(IS,startH-0.1,startH,0.002, dynamics);
+	 	    findHs(IS,startH-0.1,startH,0.001, dynamics);
 	       
 	 	    //findHsCv(IS,startH-0.1,startH,0.01, dynamics);
 	 	    
-	 	    Spinodals(IS,startH-0.2,startH,0.002, dynamics);
+	 	    //Spinodals(IS,startH-0.2,startH,0.002, dynamics);
 	    }*/
 	    
 	    
 	   
-	    Criticalpoints(IS, 3.80*(1-IS.percent), 3.60*(1-IS.percent), 0.01, 4, 2000, 2000, 10, dynamics);
+	    Criticalpoints(IS, 4.20*(1-IS.percent), 3.60*(1-IS.percent), 0.01, 4, 2000, 2000, 10, dynamics);
 	    
 	    
 		//CriticalpointsCv(IS, 3.96, 3.905, 0.005, 4, 2000, 2000, 10, dynamics);
