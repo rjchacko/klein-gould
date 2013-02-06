@@ -411,6 +411,79 @@ public class FCCriticalpoint extends Simulation
  		
  	}
  	
+ 	public double[] HarrisDataTc(FCIsing ising, double[] randomp, double t, double h, int presteplimit, int number, String dynamics)
+ 	{
+ 		int copies=randomp.length;
+ 		double[] HData=new double [2*copies]; //  2*i is Cv and 2*i+1 is Chi
+ 		for(int in=0; in<copies; in++)
+ 		{
+ 			HData[in*2]=-1;      //initialize Cv to -1
+ 			HData[in*2+1]=-2;         //initialize Chi to -2
+ 		}
+ 		
+ 		
+ 		//given a random percentage distribution randomp[], generate copies and measure Cv and Chi for at (t, h)
+ 		
+ 		double tempE[];
+	    double tempM[];
+	    
+	    tempE= new double [number];
+	    tempM= new double [number];
+	   
+ 		
+ 		for(int c=0; c<copies;c++)
+ 		{
+ 			Istemp=ising.clone();
+ 			Istemp.dilute(randomp[c]);
+ 			Istemp.initializeDilution(0);
+ 			
+			Random cflip=new Random(c);
+			params.set("copies", c);
+			params.set("H",h);
+			
+			
+			for(int heat=0; heat<5; heat++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, 9, h, 1);
+				Job.animate();
+				params.set("MCS", -9999);
+
+			}
+		
+			for(int prestep=0; prestep< presteplimit; prestep++)
+			{
+				Istemp.MCS(dynamics, cflip, cflip, t, h, 1);
+				Job.animate();
+				params.set("MCS", prestep-presteplimit);
+			}
+			
+
+			for(int step=0; step<number; step++)
+			{
+				
+				tempM[step]=Math.abs(Istemp.M);      //use the abs value
+				tempE[step]=Istemp.Energy(h);
+				
+				Istemp.MCS(dynamics, cflip, cflip, t, h, 1);
+				Job.animate();
+				params.set("MCS", step);
+				params.set("magnetization", Istemp.m);
+			}
+			
+			//record the data
+			{
+				
+				HData[2*c]=IS.Fluctuation(tempE, number);
+				HData[2*c+1]=IS.Fluctuation(tempM, number);
+					
+			}
+		
+ 		}
+ 		
+ 		
+ 		return HData;
+ 		
+ 	}
  	
  	public void HarrisSpinodals(FCIsing ising, double Hmin, double Hmax, double dH, String dynamics, int copies)
  	{
@@ -437,6 +510,36 @@ public class FCCriticalpoint extends Simulation
  			{
  				String SaveAs = "/Users/liukang2002507/Desktop/simulation/FCising/Spinodals/"+dynamics+"/Harris/HarrisHs q=0."+fmt.format(percent*1000)+" "+pmt.format(pi+1)+".txt";
  	 			PrintUtil.printlnToFile(SaveAs, h, data[2*pi], data[2*pi+1]);
+ 			}
+ 			
+ 		}
+ 	}
+ 	
+ 	public void HarrisCriticalpoints(FCIsing ising, double Tmax, double Tmin, double dT, String dynamics, int copies)
+ 	{
+ 		double[] randomp=new double[copies];
+ 		double[] data=new double[2*copies];
+ 		
+ 		
+ 		String RandP = "/Users/liukang2002507/Desktop/simulation/FCising/Criticalpoints/"+dynamics+"/Harris/Random q=0."+fmt.format(percent*1000)+".txt";
+ 		for(int ri=0; ri<copies; ri++)
+ 		{
+ 			randomp[ri]=RandomPercent(ising.percent, ising.N, ri+1);
+ 			PrintUtil.printlnToFile(RandP, ri+1, randomp[ri]);     //keep track of each copies' dilution
+ 		}//generate the distribution of dilution percent for different systems
+ 		
+ 		
+ 		
+ 		
+ 		for(double t=Tmax; t>Tmin; t-=dT)
+ 		{
+			params.set("T", t);
+ 			data=HarrisDataTc(ising, randomp, t ,0,1000,2000, dynamics);
+ 			
+ 			for(int pi=0; pi<copies; pi++)
+ 			{
+ 				String SaveAs = "/Users/liukang2002507/Desktop/simulation/FCising/Criticalpoints/"+dynamics+"/Harris/HarrisTc q=0."+fmt.format(percent*1000)+" "+pmt.format(pi+1)+".txt";
+ 	 			PrintUtil.printlnToFile(SaveAs, t, data[2*pi], data[2*pi+1]);
  			}
  			
  		}
@@ -947,12 +1050,12 @@ public class FCCriticalpoint extends Simulation
 		
 
 		params.add("N");
-		params.add("L", 300);
+		params.add("L", 200);
 		params.add("NJ",-4.0);	
-		params.add("percent", 0.10);
+		params.add("percent", 0.40);
 		params.add("livesites");	
 	
-		params.addm("T", 1.600);
+		params.addm("T", 1.422);
 		params.addm("H", 1.25);
 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
@@ -1010,7 +1113,7 @@ public class FCCriticalpoint extends Simulation
         
 	   
 	    
-	    {T=params.fget("T");
+	    /*{T=params.fget("T");
 	     
 	    //scanHs(IS,1.20*(1-percent),1.27*(1-percent),0.002, dynamics);
 	    //startH=1.260;
@@ -1023,7 +1126,9 @@ public class FCCriticalpoint extends Simulation
 	    
 	    HarrisSpinodals(IS, 1.1*(1-IS.percent), 1.27*(1-IS.percent), 0.002, dynamics, 20);
 	    
-	    }
+	    }*/
+	    
+	    HarrisCriticalpoints(IS, 4.20*(1-IS.percent), 3.60*(1-IS.percent), 0.01, dynamics, 20);
 	    
 	    
 	    //Criticalpoints(IS, 4.20*(1-IS.percent), 3.60*(1-IS.percent), 0.01, 4, 2000, 2000, 10, dynamics);
