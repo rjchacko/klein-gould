@@ -165,7 +165,67 @@ public class BasicTools{
 		
 	}
 	
+	public double Correlation(double[] map1, double[] map2, int N)  //function to calculate the correlation between two maps
+	{
+		double C=0;
+		double avg1=Mean(map1, N);
+		double avg2=Mean(map2, N);
+		
+		double D1=SD(map1, N, avg1);
+		double D2=SD(map2, N, avg2);
 	
+		double totalc=0;
+		for(int i=0; i<N; i++)
+		{
+			totalc+=((map1[i]-avg1)*(map2[i]-avg2));
+		}
+		
+		C=totalc/(D1*D2*N);
+		
+		return C;
+	}
+
+	public double DCorrelation(double[] map1, double[] map2, int N)  //function to calculate the correlation between two maps except for the dilution
+	{
+		double C=0;
+		double total1=0;
+		double total2=0;
+		int totalnumber=0;
+		
+		for(int i=0; i<N; i++)
+		{
+			if(map1[i]!=0)
+			{
+				total1+=map1[i];
+				total2+=map2[i];
+				totalnumber++;
+			}
+		}
+		
+		
+		
+		double avg1=total1/totalnumber;
+		double avg2=total2/totalnumber;
+		
+		double D1=0;
+		double D2=0;
+		double totalc=0;
+		for(int i=0; i<N; i++)
+		{
+			if(map1[i]!=0)
+			{
+				D1+=((map1[i]-avg1)*(map1[i]-avg1));
+				D2+=((map2[i]-avg2)*(map2[i]-avg2));
+				totalc+=((map1[i]-avg1)*(map2[i]-avg2));
+			}
+			
+			
+		}
+		
+		C=totalc/Math.sqrt(D1*D2);
+		
+		return C;
+	}
 	
 	
 }

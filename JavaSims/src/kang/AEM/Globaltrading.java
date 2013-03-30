@@ -85,7 +85,7 @@ public class Globaltrading extends Simulation{
 			j++;
 		}
 	}
-	
+		
 	public void entropyrunEXP(AEMStructure aem, int steplimit, int seed, double mu)
 	{
 		Random rand= new Random(seed);
@@ -271,6 +271,44 @@ public class Globaltrading extends Simulation{
 		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
 	}	
 	
+	public void CompareSeed(AEMStructure aem, int steplimit, int totalseed, double mu, double gamma)  //the function to test the effect of different random number seeds on the wealth distribution
+	{
+		for(int seed=1; seed<=totalseed; seed++)
+		{
+			AHtemp=aem.clone();
+			double ngrowth=aem.Ngrowth;
+			Random rand= new Random(seed);
+			//String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"sub check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+			//String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"sub order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+            
+			
+			double entropyC=Math.log(aem.M);
+			
+			
+			for(int t=0; t<steplimit; t++)
+			{
+				
+				AHtemp.SublinearTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+				ngrowth=ngrowth*(1+mu);
+				//PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+				/*if(t%50==0)
+				{
+					PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+				}*/
+				
+				params.set("time", t+1);
+				Job.animate();
+	
+				if(t==10000)
+				{
+					String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Compare Seed <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+", seed= "+fmt.format(seed)+">.txt";
+			        output(AHtemp, saveas);
+				}
+
+			}
+		}
+	}
+	
 	public void sublinearexp(AEMStructure aem, int steplimit, int seed, double mu, double gamma)
 	{
 		double ngrowth=aem.Ngrowth;
@@ -330,6 +368,610 @@ public class Globaltrading extends Simulation{
 		
 		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
 		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void Biassublinearexp(AEMStructure aem, int steplimit, int seed, double mu, double gamma, double biasp)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"biassub check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"biassub order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+
+		double entropyC=Math.log(aem.M);
+		
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.BiasSubTS(rand, biasp, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			if(t%50==0)
+			{
+				PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biassub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biassub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biassub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biassub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biassub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"biassub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void IndexSkill(AEMStructure aem, int steplimit, int seed, double mu, double gamma)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"IndexSkill check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"IndexSkill order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+
+		double entropyC=Math.log(aem.M);
+		
+		//generate the skill matrix
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.IndexSkillTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			if(t%50==0)
+			{
+				PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"IndexSkill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"IndexSkill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"IndexSkill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"IndexSkill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"IndexSkill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"IndexSkill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void Volsubexp(AEMStructure aem, int steplimit, int seed, double mu, double gamma, double sigma)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"Volsub check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", sigma= "+fmt.format(sigma*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"Volsub order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", sigma= "+fmt.format(sigma*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+
+		double entropyC=Math.log(aem.M);
+		
+		//generate the skill matrix
+
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.VolSubTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma,sigma);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			if(t%50==0)
+			{
+				PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Volsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", sigma= "+fmt.format(sigma*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Volsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", sigma= "+fmt.format(sigma*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Volsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", sigma= "+fmt.format(sigma*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Volsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", sigma= "+fmt.format(sigma*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Volsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", sigma= "+fmt.format(sigma*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Volsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", sigma= "+fmt.format(sigma*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void Skillsublinearexp(AEMStructure aem, int steplimit, int seed, double mu, double gamma, double kappa)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillsub check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillsub order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+
+		double entropyC=Math.log(aem.M);
+		
+		//generate the skill matrix
+		for(int j=0; j<aem.M; j++)
+		{
+			aem.skill[j]=Math.pow(j+1, kappa);
+		}
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.SkillSubTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			if(t%50==0)
+			{
+				PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillsub wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void EXPSkillsublinearexp(AEMStructure aem, int steplimit, int seed, double mu, double gamma, double kappa)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskill check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskill order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+
+		double entropyC=Math.log(aem.M);
+		
+		//generate the skill matrix
+		
+		aem.skill[0]=1;
+		for(int j=1; j<aem.M; j++)
+		{
+			aem.skill[j]=aem.skill[j-1]*kappa;
+		}
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.SkillSubTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			if(t%50==0)
+			{
+				PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        output(aem, saveas);
+			}
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void GaussianSkill(AEMStructure aem, int steplimit, int seed, double mu, double gamma, double kappa)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		Random grand= new Random(seed+1);
+		String total="/Users/liukang2002507/Desktop/simulation/AEM/"+"Gskill check <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		String entropy="/Users/liukang2002507/Desktop/simulation/AEM/"+"Gskill order <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+
+		double entropyC=Math.log(aem.M);
+		
+		//generate the skill matrix
+		
+		
+		for(int j=0; j<aem.M; j++)
+		{
+			aem.skill[j]=1+kappa*grand.nextGaussian();
+			if(aem.skill[j]<0)
+				aem.skill[j]=0;
+		}
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.SkillSubTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			PrintUtil.printlnToFile(total, t+1, aem.totalwealth);
+			if(t%50==0)
+			{
+				PrintUtil.printlnToFile(entropy, t+1, aem.order, aem.order/M+entropyC);
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+			if(t==500)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Gskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        skilloutput(aem, saveas);
+			}
+			if(t==2000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Gskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        skilloutput(aem, saveas);
+			}
+			if(t==5000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Gskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        skilloutput(aem, saveas);
+			}
+			if(t==10000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Gskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        skilloutput(aem, saveas);
+			}
+			if(t==50000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Gskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        skilloutput(aem, saveas);
+			}	
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"Gskill wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+">.txt";
+		        skilloutput(aem, saveas);
+			}
+
+		}
+		
+		
+		//String log="/Users/liukang2002507/Desktop/simulation/AEM/log "+"<"+bmt.format(steplimit)+">.txt";
+		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
+	}
+	
+	public void CorrelationRun(AEMStructure aem, int steplimit, int seed, double mu, double gamma, int stepsize)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String path="/Users/liukang2002507/Desktop/simulation/AEM/"+"correlation <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+", step= "+fmt.format(stepsize)+">.txt";
+		
+		double[] wi= new double[aem.M];
+		double[] wf= new double[aem.M];
+		double correlation=0;
+		
+		
+		for(int j=0; j<aem.M; j++)
+		{
+			wi[j]=aem.wealth[j];
+		}
+		
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.SublinearTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			
+			if(t%stepsize==0)
+			{
+				
+				for(int jj=0; jj<aem.M; jj++)
+				{
+					wf[jj]=aem.wealth[jj];
+					
+				}
+				correlation=Tools.Correlation(wi, wf, aem.M);
+				PrintUtil.printlnToFile(path, t+1, correlation, aem.totalwealth, aem.sumtrading, aem.sumflow);
+				for(int jf=0; jf<aem.M; jf++)
+				{
+					wi[jf]=aem.wealth[jf];           //reset the initial wealth distribution
+				}
+				
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+
+            
+
+		}
+		
+	}
+	
+	public void SkillCorrelationRun(AEMStructure aem, int steplimit, int seed, double mu, double gamma, int stepsize, double kappa)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String path="/Users/liukang2002507/Desktop/simulation/AEM/"+"skillcorrelation <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*100)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+", step= "+fmt.format(stepsize)+">.txt";
+		
+		double[] wi= new double[aem.M];
+		double[] wf= new double[aem.M];
+		double correlation=0;
+		double skillC=0;  // the correlation with the skill distribution
+		
+		//generate the skill matrix
+		for(int j=0; j<aem.M; j++)
+		{
+			aem.skill[j]=Math.pow(j+1, kappa);
+		}
+		
+		
+		for(int j=0; j<aem.M; j++)
+		{
+			wi[j]=aem.wealth[j];
+		}
+		
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.SkillSubTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			
+			if(t%stepsize==0)
+			{
+				
+				for(int jj=0; jj<aem.M; jj++)
+				{
+					wf[jj]=aem.wealth[jj];
+					
+				}
+				correlation=Tools.Correlation(wi, wf, aem.M);
+				skillC=Tools.Correlation(aem.skill, wf, aem.M);
+				PrintUtil.printlnToFile(path, t+1, correlation, aem.totalwealth, aem.sumtrading, aem.sumflow, skillC);
+				for(int jf=0; jf<aem.M; jf++)
+				{
+					wi[jf]=aem.wealth[jf];           //reset the initial wealth distribution
+				}
+				
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+
+            
+
+		}
+		
+	}
+	
+	public void EXPSkillCorrelationRun(AEMStructure aem, int steplimit, int seed, double mu, double gamma, int stepsize, double kappa)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String path="/Users/liukang2002507/Desktop/simulation/AEM/"+"EXPskillcorrelation <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", kappa= "+fmt.format(kappa*10000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+", step= "+fmt.format(stepsize)+">.txt";
+		
+		double[] wi= new double[aem.M];
+		double[] wf= new double[aem.M];
+		double correlation=0;
+		double skillC=0;  // the correlation with the skill distribution
+		
+		//generate the skill matrix
+		aem.skill[0]=1;
+		for(int j=1; j<aem.M; j++)
+		{
+			aem.skill[j]=aem.skill[j-1]*kappa;
+		}
+		
+		
+		for(int j=0; j<aem.M; j++)
+		{
+			wi[j]=aem.wealth[j];
+		}
+		
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.SkillSubTS(rand, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			
+			if(t%stepsize==0)
+			{
+				
+				for(int jj=0; jj<aem.M; jj++)
+				{
+					wf[jj]=aem.wealth[jj];
+					
+				}
+				correlation=Tools.Correlation(wi, wf, aem.M);
+				skillC=Tools.Correlation(aem.skill, wf, aem.M);
+				PrintUtil.printlnToFile(path, t+1, correlation, aem.totalwealth, aem.sumtrading, aem.sumflow, skillC);
+				for(int jf=0; jf<aem.M; jf++)
+				{
+					wi[jf]=aem.wealth[jf];           //reset the initial wealth distribution
+				}
+				
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+
+            
+
+		}
+		
+	}
+	
+	public void BiasCorrelationRun(AEMStructure aem, int steplimit, int seed, double mu, double gamma, int stepsize, double biasp)
+	{
+		double ngrowth=aem.Ngrowth;
+		Random rand= new Random(seed);
+		String path="/Users/liukang2002507/Desktop/simulation/AEM/"+"biascorrelation <L="+fmt.format(aem.L1)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", biasp= "+fmt.format(biasp*1000)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+", step= "+fmt.format(stepsize)+">.txt";
+		
+		double[] wi= new double[aem.M];
+		double[] wf= new double[aem.M];
+		double correlation=0;
+		
+		
+		for(int j=0; j<aem.M; j++)
+		{
+			wi[j]=aem.wealth[j];
+		}
+		
+		
+		for(int t=0; t<steplimit; t++)
+		{
+			
+			aem.BiasSubTS(rand, biasp, aem.percent, aem.tax, aem.alpha, ngrowth, gamma);
+			ngrowth=ngrowth*(1+mu);
+			
+			if(t%stepsize==0)
+			{
+				
+				for(int jj=0; jj<aem.M; jj++)
+				{
+					wf[jj]=aem.wealth[jj];
+					
+				}
+				correlation=Tools.Correlation(wi, wf, aem.M);
+				PrintUtil.printlnToFile(path, t+1, correlation, aem.totalwealth, aem.sumtrading, aem.sumflow);
+				for(int jf=0; jf<aem.M; jf++)
+				{
+					wi[jf]=aem.wealth[jf];           //reset the initial wealth distribution
+				}
+				
+			}
+			
+			params.set("time", t+1);
+			Job.animate();
+
+            
+
+		}
+		
 	}
 	
 	public void CAPexp(AEMStructure aem, int steplimit, int seed, int richpeople, double mu, double gamma)
@@ -399,7 +1041,6 @@ public class Globaltrading extends Simulation{
 		//PrintUtil.printlnToFile(log, aem.percent, aem.growth, aem.meanwealth);
 	}
 	
-	
 	public void singlerunexp(AEMStructure aem, int steplimit, int seed, double mu)   // geometric growth with uniform distribution
 	{
 		double ngrowth=aem.Ngrowth;
@@ -440,8 +1081,14 @@ public class Globaltrading extends Simulation{
 			{
 				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"exp wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
 		        output(aem, saveas);
-			}	
+			}
+			if(t==100000)
+			{
+				String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"exp wealth <L="+fmt.format(aem.L1)+", t="+bmt.format(t)+", mu="+fmt.format(mu*10000)+", p= "+fmt.format(aem.percent*1000)+", growth= "+bmt.format(aem.Ngrowth)+">.txt";
+		        output(aem, saveas);
+			}
 
+			
 		}
 		
 		
@@ -711,6 +1358,144 @@ public class Globaltrading extends Simulation{
 	
 	}
 	
+	public void ScanP(AEMStructure aem, int steplimit, double minP, double maxP, double dP, double gamma, Boolean oneseed, int number)
+	{
+		
+		//String saveas="/Users/liukang2002507/Desktop/simulation/AEM/"+"ScanP <L="+fmt.format(aem.L1)+", t="+bmt.format(steplimit)+", growth= "+bmt.format(0)+", gamma= "+fmt.format(gamma*1000)+", n= "+bmt.format(number)+">.txt";
+		
+		String saveas;
+		if(oneseed)
+		{
+			saveas="/Users/liukang2002507/Desktop/simulation/AEM/ScanP data/1seed/"+"ScanP <L="+fmt.format(aem.L1)+", t="+bmt.format(steplimit)+", growth= "+bmt.format(0)+", gamma= "+fmt.format(gamma*1000)+", n= "+bmt.format(number)+">.txt";
+		}
+		else
+		{
+			saveas="/Users/liukang2002507/Desktop/simulation/AEM/ScanP data/nseed/"+"ScanP <L="+fmt.format(aem.L1)+", t="+bmt.format(steplimit)+", growth= "+bmt.format(0)+", gamma= "+fmt.format(gamma*1000)+", n= "+bmt.format(number)+">.txt";
+		}
+		
+		
+		Random rand;
+		int seed=1;
+		
+		for(double percent=minP; percent<maxP; percent+=dP)
+		{
+			params.set("percent", percent);
+			AHtemp=new AEMStructure(aem.L1,aem.L2,R,percent, tax, 0, aem.Ngrowth);
+			
+
+				AHtemp.Uinitialization(1);
+				params.set("mu", 0);
+				double ngrowth=0;
+				rand=new Random(seed);
+				if(oneseed)
+				{
+					
+				}
+				else
+				{
+					seed++;
+				}
+				
+				
+				Job.animate();
+				
+				for(int t=0; t<steplimit; t++)
+				{
+					
+					AHtemp.SublinearTS(rand, percent, AHtemp.tax, AHtemp.alpha, ngrowth, gamma);
+					ngrowth=0;
+					params.set("time", t+1);
+					Job.animate();
+				
+				}
+				
+				double poordata[]=new double[number];
+				poordata=findpoor(AHtemp.wealth, number);
+				double poorest=Tools.Mean(poordata, number);
+				//double poorest=poorest(AHtemp.wealth);
+				PrintUtil.printlnToFile(saveas, percent, poorest);
+				
+			
+		}
+	}
+	
+	public void ScanMuP(AEMStructure aem, int steplimit, double minMu, double maxMu, double dMu, double gamma, Boolean oneseed, int number)
+	{
+		double minP=0.01;
+		double maxP=0.40;
+		double dP=0.01;
+		
+		
+		String saveas;
+		if(oneseed)
+		{
+			saveas="/Users/liukang2002507/Desktop/simulation/AEM/ScanMuP data/1seed/"+"Scan <L="+fmt.format(aem.L1)+", t="+bmt.format(steplimit)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+", n= "+bmt.format(number)+">.txt";
+		}
+		else
+		{
+			saveas="/Users/liukang2002507/Desktop/simulation/AEM/ScanMuP data/nseed/"+"Scan <L="+fmt.format(aem.L1)+", t="+bmt.format(steplimit)+", growth= "+bmt.format(aem.Ngrowth)+", gamma= "+fmt.format(gamma*1000)+", n= "+bmt.format(number)+">.txt";
+		}
+		
+		int randseed=1;
+		
+		for(double percent=minP; percent<maxP; percent+=dP)
+		{
+			params.set("percent", percent);
+			AHtemp=new AEMStructure(aem.L1,aem.L2,R,percent, tax, 0, aem.Ngrowth);
+			
+			Random rand;
+			
+			for(double mutemp=minMu; mutemp<maxMu; mutemp+=dMu)
+			{
+				
+				AHtemp.Uinitialization(1);
+				params.set("mu", mutemp);
+				double ngrowth=AHtemp.Ngrowth;
+				
+				if(oneseed)
+				{
+					rand=new Random(1);
+				}
+				else
+				{
+					rand=new Random(randseed);
+					randseed++;
+				}
+		
+
+				Job.animate();
+				
+				for(int t=0; t<steplimit; t++)
+				{
+					
+					AHtemp.SublinearTS(rand, percent, AHtemp.tax, AHtemp.alpha, ngrowth, gamma);
+					ngrowth=ngrowth*(1+mutemp);
+					params.set("time", t+1);
+					Job.animate();
+				
+				}
+				
+				double poordata[]=new double[number];
+				poordata=findpoor(AHtemp.wealth, number);
+				double poorest=Tools.Mean(poordata, number);
+				//double poorest=poorest(AHtemp.wealth);
+				PrintUtil.printlnToFile(saveas, percent, mutemp, poorest);
+				
+			}
+		}
+
+	}
+	
+	public double poorest(double data[])
+	{
+		double poorest=data[0];
+		for(int i=0; i<data.length; i++)
+		{
+			if(data[i]<=poorest)
+				poorest=data[i];
+		}
+		return poorest;
+	}
 	
 	public double[] findrich(double data[], int number)   // the function to find the richest agents in the array
 	{
@@ -893,6 +1678,14 @@ public class Globaltrading extends Simulation{
 		}
 	}
 	
+	public void skilloutput(AEMStructure aem, String path)
+	{
+		for(int i=0; i<aem.M; i++)
+		{
+			PrintUtil.printlnToFile(path, i+1, aem.wealth[i], aem.skill[i]);
+		}
+	}
+	
 	
 	public void load(Control Globaltrading)
 	{
@@ -903,7 +1696,7 @@ public class Globaltrading extends Simulation{
 		params.add("R", 50);
 		
 	    params.add("tax",0.00);
-		params.add("percent", 0.10);
+		params.add("percent", 0.01);
 		params.add("Ngrowth", 1.0);
 		params.add("mu",0.0010);     //for mu=0.0001    for pmu=0.000001
 		
@@ -937,7 +1730,7 @@ public class Globaltrading extends Simulation{
 	    
 	    {//initialization
 	    	
-	    	AH.Uinitialization(100);
+	    	AH.Uinitialization(1);
 
 	    	AHtemp=AH.clone();
 	    	
@@ -947,7 +1740,9 @@ public class Globaltrading extends Simulation{
 	   
 	    //singlerun(AHtemp, 101000,1);
 	    //singlerunfast(AHtemp, 101000,1);
-	    //singlerunexp(AHtemp, 51000, 1, mu);
+	    
+	    //singlerunexp(AHtemp, 101000, 1, mu);
+	    
 	    //entropyrunEXP(AHtemp, 101000, 1, mu);
 	    //FIXentropyrunEXP(AHtemp, 101000, 1, mu, 5);
 	    //PFIXentropyrunEXP(AHtemp, 101000, 1, mu, 0.0005);
@@ -960,7 +1755,23 @@ public class Globaltrading extends Simulation{
 	    //Unfairsinglerunexp(AHtemp, 101000, 1, mu);
 	    
 	    
-	    sublinearexp(AHtemp, 101000, 1, mu, 0.700);
+	    //sublinearexp(AHtemp, 101000, 9, mu, 1.100);
+	    
+	    //CompareSeed(AH, 11000, 5, mu, 0.500);
+	    
+	    
+	    //Biassublinearexp(AHtemp, 101000, 1, mu, 1.000, 0.50);
+	    //Skillsublinearexp(AHtemp, 101000, 1, mu, 0.000, 10.00);
+	    
+	    //EXPSkillsublinearexp(AHtemp, 101000, 1, mu, 0.000, 1.1000);
+	    //IndexSkill(AHtemp, 101000, 1, mu, 0.000);
+	    //Volsubexp(AHtemp, 101000, 1, mu, 0.000, 0.00);
+	    
+	    //GaussianSkill(AHtemp, 101000, 1, mu, 0.000, 2.0000);
+	    
+	    //CorrelationRun(AHtemp, 101000, 1, mu, 0.000, 100);
+	    //BiasCorrelationRun(AHtemp, 101000, 1, mu, 0.000, 100, 0.55);
+	    //SkillCorrelationRun(AHtemp, 101000, 1, mu, 0.000, 100, 2.00);
 	    
 	    
 	    //CAPexp(AHtemp, 101000, 1, 2500, mu, 0.000);
@@ -968,7 +1779,11 @@ public class Globaltrading extends Simulation{
 	    //negsubexp(AHtemp, 101000, 1, mu, 9.000);
 	    
 	    
-	    //extremerun(AHtemp, 50000, 25, 1);
+	    ScanMuP(AH, 2000, 0.0000, 0.4000, 0.0100, 1.000, true, 25);
+	    
+	    //ScanP(AH, 20000, 0.02, 0.40, 0.02, 1, false, 1);
+	    
+	    //extremerun(AHtemp, 10000, 1, 1);
 	    //extremerunexp(AHtemp, 50000, 25, 1, mu);
 	    
 	    /*{
