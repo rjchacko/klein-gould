@@ -310,6 +310,8 @@ public class IsingStructure{
 		return ratio;
 	}
 
+	
+	
 	public int X(int bx)
 	{
 		int realx=bx;
@@ -628,6 +630,22 @@ public class IsingStructure{
  		return SpinE;
  	}
  	
+ 	public double[] LocalEnergy(double field)
+ 	{
+ 		double localenergy[]=new double[M];
+ 		for(int le=0; le<M; le++)
+ 		{
+ 			if(spin[le]!=0)
+ 			{
+ 				localenergy[le]=SpinIntEnergy(le)-field*spin[le];
+ 			}
+ 			else 
+ 			    localenergy[le]=0;
+ 		}
+ 		
+ 		return localenergy;
+ 	}
+ 
  	public double TotalIntEnergy()
  	{
  		double TotalE=0;

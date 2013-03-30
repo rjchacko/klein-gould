@@ -200,6 +200,303 @@ public class AEMStructure{
 
 	}
 	
+	public void BiasSubTS(Random flip, double biasp, double percent, double tax, double alpha, double Ngrowth, double gamma)  //the rich gets richer in a sublinear way using the growthmatrix[]
+	{
+        int j=0;
+        int target=0;
+        int richer=0;    // not used, just a label for the richer
+        int poorer=0;
+        double tradeamount=0;
+        double aftertax=0;
+        double totaltax=0;
+	    double totalorder=0;
+	    growthmatrix=new double[M];
+	    
+	    sumtrading=0;
+	    sumflow=0;
+	    int direction=1;  //the parameter to determine the direction of the flow
+	   
+	    double totalgrowth= Ngrowth*M;
+	    
+	    
+	    for (int f=0; f< M; f++)
+	    {
+		   j=flip.nextInt(M);
+		   target=findInRange(j, R, flip);    //choose the trading target, then decide who is richer
+		   if(wealth[j]>=wealth[target])
+		   {
+			   richer=j;
+			   poorer=target;
+			   direction=1;
+		   }
+		   else
+		   {
+			   richer=target;
+			   poorer=j;
+			   direction=-1;  //because j is the poor, so if j wins, the flow is negative
+		   }
+		   //after deciding who is the poorer, we can decide the trading amount=percent*wealth[poorer]
+		   tradeamount=percent*wealth[poorer];
+		   aftertax=(1-tax)*tradeamount;
+		   totaltax+=tax*tradeamount;	 
+		   
+		   sumtrading+=aftertax;
+		  
+		   
+		   //now decide who win this trade
+		   if(flip.nextDouble()<=biasp)    //assume this means poor lose, rich wins
+		   {
+			   wealth[poorer]-=aftertax;
+			   wealth[richer]+=aftertax;
+			   sumflow+=aftertax;
+		   }
+		   else     // this means poor wins
+		   {
+			   wealth[poorer]+=aftertax;
+			   wealth[richer]-=aftertax;
+			   sumflow-=aftertax;
+		   }
+		   
+		   
+		   
+		   
+	    }
+	    
+	    totalwealth=0;
+	    
+	    
+	    //now generate the growthmatrix
+	    normalization=0;
+	    for(int gm=0; gm<M; gm++)
+	    {
+	    	growthmatrix[gm]=Math.pow(wealth[gm], gamma);
+	    	normalization+=growthmatrix[gm];
+	    	
+	    }
+	    
+	    
+	    
+		for(int g=0; g<M; g++)   //now everyone's wealth will grow with the amount proportional to growthmatrix[]
+		   {
+			   wealth[g]=wealth[g]+growthmatrix[g]*totalgrowth/normalization;
+			   totalwealth+=wealth[g];
+			   
+		   }
+		
+	
+		   meanwealth=totalwealth/M;
+	    
+	    
+	    for(int ii=0; ii<M; ii++)
+	    {
+	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
+	    	
+	    	if(wealth[ii]!=0)
+	    		totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);    //might be problematic if there is tax because of the change in the total wealth
+	    }
+	    
+	    order=totalorder;
+	}
+
+	
+	public void SkillSubTS(Random flip, double percent, double tax, double alpha, double Ngrowth, double gamma)  //the agents trade based on their skills and rich gets richer in a sublinear way using the growthmatrix[]
+	{
+        int j=0;
+        int target=0;
+        int richer=0;    // not used, just a label for the richer
+        int poorer=0;
+        double tradeamount=0;
+        double aftertax=0;
+        double totaltax=0;
+	    double totalorder=0;
+	    growthmatrix=new double[M];
+	    
+	    
+	    sumtrading=0;
+	    sumflow=0;
+	    int direction=1;  //the parameter to determine the direction of the flow
+	   
+	    double totalgrowth= Ngrowth*M;
+	    
+	    
+	    for (int f=0; f< M; f++)
+	    {
+		   j=flip.nextInt(M);
+		   target=findInRange(j, R, flip);    //choose the trading target, then decide who is richer
+		   if(wealth[j]>=wealth[target])
+		   {
+			   richer=j;
+			   poorer=target;
+			   direction=1;
+		   }
+		   else
+		   {
+			   richer=target;
+			   poorer=j;
+			   direction=-1;  //because j is the poor, so if j wins, the flow is negative
+		   }
+		   //after deciding who is the poorer, we can decide the trading amount=percent*wealth[poorer]
+		   tradeamount=percent*wealth[poorer];
+		   aftertax=(1-tax)*tradeamount;
+		   totaltax+=tax*tradeamount;	 
+		   
+		   sumtrading+=aftertax;
+		  
+		   double prob=0;
+		   if((skill[richer]==0)&&(skill[poorer]==0))
+			   prob=0.5;
+		   else
+			   prob=skill[richer]/(skill[richer]+skill[poorer]);
+		   
+		   //now decide who win this trade
+		   if(flip.nextDouble()<=prob)    //assume this means poor lose, rich wins
+		   {
+			   wealth[poorer]-=aftertax;
+			   wealth[richer]+=aftertax;
+			   sumflow+=aftertax;
+		   }
+		   else     // this means poor wins
+		   {
+			   wealth[poorer]+=aftertax;
+			   wealth[richer]-=aftertax;
+			   sumflow-=aftertax;
+		   }
+		   
+		   
+	    }
+	    
+	    totalwealth=0;
+	    
+	    
+	    //now generate the growthmatrix
+	    normalization=0;
+	    for(int gm=0; gm<M; gm++)
+	    {
+	    	growthmatrix[gm]=Math.pow(wealth[gm], gamma);
+	    	normalization+=growthmatrix[gm];
+	    	
+	    }
+	    
+	    
+	    
+		for(int g=0; g<M; g++)   //now everyone's wealth will grow with the amount proportional to growthmatrix[]
+		   {
+			   wealth[g]=wealth[g]+growthmatrix[g]*totalgrowth/normalization;
+			   totalwealth+=wealth[g];
+			   
+		   }
+		
+	
+		   meanwealth=totalwealth/M;
+	    
+	    
+	    for(int ii=0; ii<M; ii++)
+	    {
+	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
+	    	
+	    	if(wealth[ii]!=0)
+	    		totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);    //might be problematic if there is tax because of the change in the total wealth
+	    }
+	    
+	    order=totalorder;
+	}
+
+	public void IndexSkillTS(Random flip, double percent, double tax, double alpha, double Ngrowth, double gamma)  //the agents trade based on their skills and rich gets richer in a sublinear way using the growthmatrix[]
+	{
+        int j=0;
+        int target=0;
+        int richer=0;    // not used, just a label for the richer
+        int poorer=0;
+        double tradeamount=0;
+        double aftertax=0;
+        double totaltax=0;
+	    double totalorder=0;
+	    growthmatrix=new double[M];
+	    
+	    
+	    sumtrading=0;
+	    sumflow=0;
+	    int direction=1;  //the parameter to determine the direction of the flow
+	   
+	    double totalgrowth= Ngrowth*M;
+	    
+	    
+	    for (int f=0; f< M; f++)
+	    {
+		   j=flip.nextInt(M);
+		   target=findInRange(j, R, flip);    //choose the trading target, then decide who is richer
+		   if(wealth[j]>=wealth[target])
+		   {
+			   richer=j;
+			   poorer=target;
+			   direction=1;
+		   }
+		   else
+		   {
+			   richer=target;
+			   poorer=j;
+			   direction=-1;  //because j is the poor, so if j wins, the flow is negative
+		   }
+		   //after deciding who is the poorer, we can decide the trading amount=percent*wealth[poorer]
+		   tradeamount=percent*wealth[poorer];
+		   aftertax=(1-tax)*tradeamount;
+		   totaltax+=tax*tradeamount;	 
+		   
+		   sumtrading+=aftertax;
+		  
+		   //now decide who win this trade
+		   if(poorer<richer)    //assume this means poor lose, rich wins
+		   {
+			   wealth[poorer]-=aftertax;
+			   wealth[richer]+=aftertax;
+			   sumflow+=aftertax;
+		   }
+		   else     // this means poor wins
+		   {
+			   wealth[poorer]+=aftertax;
+			   wealth[richer]-=aftertax;
+			   sumflow-=aftertax;
+		   }
+		   
+		   
+	    }
+	    
+	    totalwealth=0;
+	    
+	    
+	    //now generate the growthmatrix
+	    normalization=0;
+	    for(int gm=0; gm<M; gm++)
+	    {
+	    	growthmatrix[gm]=Math.pow(wealth[gm], gamma);
+	    	normalization+=growthmatrix[gm];
+	    	
+	    }
+	    
+	    
+	    
+		for(int g=0; g<M; g++)   //now everyone's wealth will grow with the amount proportional to growthmatrix[]
+		   {
+			   wealth[g]=wealth[g]+growthmatrix[g]*totalgrowth/normalization;
+			   totalwealth+=wealth[g];
+			   
+		   }
+		
+	
+		   meanwealth=totalwealth/M;
+	    
+	    
+	    for(int ii=0; ii<M; ii++)
+	    {
+	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
+	    	
+	    	if(wealth[ii]!=0)
+	    		totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);    //might be problematic if there is tax because of the change in the total wealth
+	    }
+	    
+	    order=totalorder;
+	}
+	
 	public void SublinearTS(Random flip, double percent, double tax, double alpha, double Ngrowth, double gamma)  //the rich gets richer in a sublinear way using the growthmatrix[]
 	{
         int j=0;
@@ -244,6 +541,101 @@ public class AEMStructure{
 		   
 		   //now decide who win this trade
 		   if(flip.nextBoolean())    //assume this means j lose
+		   {
+			   wealth[j]-=aftertax;
+			   wealth[target]+=aftertax;
+			   sumflow-=direction*aftertax;
+		   }
+		   else     // this means j wins
+		   {
+			   wealth[j]+=aftertax;
+			   wealth[target]-=aftertax;
+			   sumflow+=direction*aftertax;
+		   }
+		   
+	    }
+	    
+	    totalwealth=0;
+	    
+	    
+	    //now generate the growthmatrix
+	    normalization=0;
+	    for(int gm=0; gm<M; gm++)
+	    {
+	    	growthmatrix[gm]=Math.pow(wealth[gm], gamma);
+	    	normalization+=growthmatrix[gm];
+	    	
+	    }
+	    
+	    
+	    
+		for(int g=0; g<M; g++)   //now everyone's wealth will grow with the amount proportional to growthmatrix[]
+		   {
+			   wealth[g]=wealth[g]+growthmatrix[g]*totalgrowth/normalization;
+			   totalwealth+=wealth[g];
+			   
+		   }
+		
+	
+		   meanwealth=totalwealth/M;
+	    
+	    
+	    for(int ii=0; ii<M; ii++)
+	    {
+	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
+	    	
+	    	if(wealth[ii]!=0)
+	    		totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);    //might be problematic if there is tax because of the change in the total wealth
+	    }
+	    
+	    order=totalorder;
+	}
+	
+	
+	public void VolSubTS(Random flip, double percent, double tax, double alpha, double Ngrowth, double gamma, double sigma)  //the rich gets richer in a sublinear way using the growthmatrix[], and the percentage of the poor winning is not 50%, but 50%+sigma*(rand(0,1)-0.5)
+	{
+        int j=0;
+        int target=0;
+        int richer=0;    // not used, just a label for the richer
+        int poorer=0;
+        double tradeamount=0;
+        double aftertax=0;
+        double totaltax=0;
+	    double totalorder=0;
+	    growthmatrix=new double[M];
+	    
+	    sumtrading=0;
+	    sumflow=0;
+	    int direction=1;  //the parameter to determine the direction of the flow
+	   
+	    double totalgrowth= Ngrowth*M;
+	    Random rand=flip.clone();
+	    
+	    for (int f=0; f< M; f++)
+	    {
+		   j=flip.nextInt(M);
+		   target=findInRange(j, R, flip);    //choose the trading target, then decide who is richer
+		   if(wealth[j]>=wealth[target])
+		   {
+			   richer=j;
+			   poorer=target;
+			   direction=1;
+		   }
+		   else
+		   {
+			   richer=target;
+			   poorer=j;
+			   direction=-1;  //because j is the poor, so if j wins, the flow is negative
+		   }
+		   //after deciding who is the poorer, we can decide the trading amount=percent*wealth[poorer]
+		   tradeamount=percent*wealth[poorer];
+		   aftertax=(1-tax)*tradeamount;
+		   totaltax+=tax*tradeamount;	 
+		   
+		   sumtrading+=aftertax;
+		   
+		   //now decide who win this trade
+		   if(flip.nextDouble()<(0.5+sigma*(2*rand.nextDouble()-1)))    //assume this means j lose
 		   {
 			   wealth[j]-=aftertax;
 			   wealth[target]+=aftertax;
