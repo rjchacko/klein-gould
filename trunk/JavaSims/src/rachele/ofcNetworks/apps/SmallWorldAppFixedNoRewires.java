@@ -3,7 +3,7 @@ package rachele.ofcNetworks.apps;
 import java.awt.Color;
 import java.io.File;
 
-import rachele.ofcNetworks.SmallWorldLattice;
+import rachele.ofcNetworks.SmallWorldLatticeFixedNoRewire;
 import rachele.util.FileUtil;
 import scikit.dataset.Histogram;
 import scikit.graphics.dim2.Geom2D;
@@ -13,12 +13,12 @@ import scikit.jobs.Job;
 import scikit.jobs.Simulation;
 import scikit.jobs.params.DirectoryValue;
 
-public class SmallWorldApp extends Simulation{
+public class SmallWorldAppFixedNoRewires extends Simulation{
 
 
 	Grid latticeGrid = new Grid("Lattice");
 	Grid connectionGrid = new Grid("Connections");
-	SmallWorldLattice ofc;
+	SmallWorldLatticeFixedNoRewire ofc;
 	Histogram sizeHist = new Histogram(1);
 	Histogram cumSizeHist = new Histogram(1);
 	String sizeHistFile;
@@ -27,7 +27,7 @@ public class SmallWorldApp extends Simulation{
 	int shCount = 1;
 	
 	public static void main(String[] args) {
-		new Control(new SmallWorldApp(), "Small World OFC");
+		new Control(new SmallWorldAppFixedNoRewires(), "Small World OFC Fixed No Rewires");
 	}
 
 	public void load(Control c) {
@@ -60,8 +60,10 @@ public class SmallWorldApp extends Simulation{
 	
 	public void run() {
 		//construct a new lattice
-		ofc = new SmallWorldLattice(params);
-		drawConnections();
+		ofc = new SmallWorldLatticeFixedNoRewire(params);
+		if(ofc.L<128){
+			drawConnections();
+		}
 		Job.animate();
 		initFiles();
 
@@ -122,6 +124,7 @@ public class SmallWorldApp extends Simulation{
 	}
 	
 	void drawConnections(){
+		System.out.println("Drawing connections");
 		connectionGrid.setScale(0.0, 1.0);
 		double [] blank = new double[ofc.N];
 		for(int i = 0; i < ofc.N; i++){
@@ -140,6 +143,7 @@ public class SmallWorldApp extends Simulation{
 				}
 			}
 		}
+		System.out.println("Finished Drawing connections");
 		
 	}
 
