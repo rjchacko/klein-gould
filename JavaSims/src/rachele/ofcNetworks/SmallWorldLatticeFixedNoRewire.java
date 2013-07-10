@@ -36,52 +36,55 @@ public class SmallWorldLatticeFixedNoRewire extends AbstractOFC_Lattice{
 		randomOrder = new int [N];
 	}
 	void rewireSetNo(){
-		randomizeOrder();
 		int noToRewire = (int)(prob*N);
-		System.out.println("No of nodes to rewire = " + noToRewire);
-		for(int k = 0; k < noToRewire; k++){
-			int site1 = randomOrder[k];
+		//need to do this 4 times to rewire every link
+		for(int j = 0; j < noNbors; j++){
+			randomizeOrder();
+			System.out.println("No of nodes to rewire = " + noToRewire);
+			for(int k = 0; k < noToRewire; k++){
+				int site1 = randomOrder[k];
+				int site2 = -1;	
+				int nbor1Index = -1;
+				int nbor2Index = -1;
 
+				//Select a random neighbor from i-th node to rewire.
+				int nbor1 = -1;
+				while(nbor1==-1){							//You have to pick a proper neighbor.  If the neighbor you picked is on an edge, then pick again.
+					nbor1Index = (int)(random.nextDouble()*noNbors); 
+					nbor1 = nbor[site1][nbor1Index];					//Makes sure you didn't pick a dead site?
+				}
 
-			int site2 = -1;	
-			int nbor1Index = -1;
-			int nbor2Index = -1;
-			
-			//Select a random link from ith node to rewire.
-			int nbor1 = -1;
-			while(nbor1==-1){
-				nbor1Index = (int)(random.nextDouble()*noNbors); 
-				nbor1 = nbor[site1][nbor1Index];					//Makes sure you didn't pick a dead site?
+				//choose a random second site
+				site2 = (int)(random.nextDouble()*N);  
+				while(site1 == site2 | site2==nbor1){						
+					site2 = (int)(random.nextDouble()*N); 	//Make sure you didn't choose the original site itself or the nbor you already chose.
+				}
+
+				//Choose a random neighbor of that site
+				int nbor2 = -1;
+				while(nbor2 == -1 | nbor2 == site1 | nbor2 == site2 | nbor2 == nbor1){							//You have to pick a proper neighbor.  If the neighbor you picked is on an edge, then pick again.
+					nbor2Index = (int)(random.nextDouble()*noNbors);			
+					nbor2 = nbor[site2][nbor2Index];
+				}
+				//System.out.println("nbor2 = " + nbor2 + " site2 = " + site2 + " nbors of nbor2 = " +nbor[nbor2][0] + " " +nbor[nbor2][1]+ " " +nbor[nbor2][2]+ " " +nbor[nbor2][3]);
+				// Rewire!!!
+				// nbor[nbor1][site1Index] = site1
+				// nbor[nbor2][site2Index] = site2
+				int site1Index = noNbors;  //This will cause an array out of bounds exception
+				int site2Index = noNbors;
+				for(int i = 0; i < noNbors; i++){  //find the correct site index
+					//Possible problem if these nbors are boundary sites
+					if(nbor[nbor1][i]==site1) site1Index = i;
+					if(nbor[nbor2][i]==site2) site2Index = i;
+				}
+				//System.out.println("site2Index = " + site2Index + " nbor2 = " + nbor2 +" site2 = " + site2 + " nbors of nbor2 = " + nbor[nbor2][0] + " " +nbor[nbor2][1]+ " " +nbor[nbor2][2]+ " " +nbor[nbor2][3]);
+				nbor[site1][nbor1Index] = site2;
+				nbor[site2][nbor2Index] = site1;
+				nbor[nbor2][site2Index] = nbor1;
+				nbor[nbor1][site1Index] = nbor2;
+				//System.out.println("Rewired sites s1 " + site1 + " s2 " + site2 + " n1 " + nbor1 + " n2 " + nbor2);
+				//System.out.println("Not Ready = " + notReady);
 			}
-			
-			//choose a random second site
-			site2 = (int)(random.nextDouble()*N);  
-			while(site1 == site2){						
-				site2 = (int)(random.nextDouble()*N); 	//Make sure you didn't choose the original site itself.
-			}
-			
-			//Choose a random neighbor of that site
-			int nbor2 = -1;
-			while(nbor2 == -1){
-				nbor2Index = (int)(random.nextDouble()*noNbors);			
-				nbor2 = nbor[site2][nbor2Index];
-			}
-			// Rewire!!!
-			// nbor[nbor1][site1Index] = site1
-			// nbor[nbor2][site2Index] = site2
-			int site1Index = noNbors;
-			int site2Index = noNbors;
-			for(int i = 0; i < noNbors; i++){
-				//Possible problem if these nbors are boundary sites
-				if(nbor[nbor1][i]==site1) site1Index = i;
-				if(nbor[nbor2][i]==site2) site2Index = i;
-			}
-			nbor[site1][nbor1Index] = site2;
-			nbor[site2][nbor2Index] = site1;
-			nbor[nbor2][site2Index] = nbor1;
-			nbor[nbor1][site1Index] = nbor2;
-			//System.out.println("Rewired sites " + site1 + " and " + site2);
-			//System.out.println("Not Ready = " + notReady);
 		}
 	}
 	

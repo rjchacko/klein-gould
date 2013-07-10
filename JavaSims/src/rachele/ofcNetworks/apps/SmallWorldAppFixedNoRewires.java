@@ -39,7 +39,8 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 		params.addm("L",Lstart);
 		params.addm("alpha", 0.1);
 //		params.addm("R", 1);
-		params.addm("Rewire Probability", 0.00586);
+//		params.addm("Rewire Probability", 0.00586);
+		params.addm("Rewire Probability", 1.0);
 		int equilStart = Lstart*Lstart*100;
 		params.addm("Equilibration Updates", equilStart);
 		params.add("Av Size");
@@ -121,6 +122,7 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 		cumSizeHistFile = parentDir + "ch.txt";
 		infoFile = parentDir + "info.txt";
 		FileUtil.printlnToFile(infoFile, "Percent Rewired = ", ofc.percentRewired);
+		FileUtil.printlnToFile(infoFile, "Using app SmallWorldAppFixedNoRewires");
 	}
 	
 	void drawConnections(){
