@@ -31,8 +31,10 @@ public class AbstractOFC_Lattice {
 	double rStress = 0;				// base residual stress		
 	double maxResNoise = 0.0; 		// actual residual stress = rStress + residual noise with maxResNoise = max residual noise
 	int [] sitesToFail;
+	boolean [] failedSite;
 	public int noNbors;
 	public int failCount;
+	public int failedSiteCount;
 	
 	protected Random random = new Random();
 	
@@ -49,6 +51,9 @@ public class AbstractOFC_Lattice {
 	 */
 	public void ofcStep(){
 		failCount = 0;
+		for (int i = 0; i < N; i++){
+			failedSite[i] = false;
+		}
 		initialScanLattice();
 		while(sitesToFail[0] >= 0){
 			clearStressAdd();
@@ -65,6 +70,10 @@ public class AbstractOFC_Lattice {
 			//for (int j = 0; j < N; j++) totalStress += stress[j];
 			//System.out.println("Total stress = " + totalStress);
 		}
+		failedSiteCount = 0;
+		for (int i = 0; i < N; i++){
+			if(failedSite[i]) failedSiteCount ++;
+		}
 		plateUpdates += 1;
 		//System.out.println("PU = " + plateUpdates);
 	}
@@ -75,6 +84,7 @@ public class AbstractOFC_Lattice {
 	 */
 	void fail(int failingSite){
 		failCount ++;
+		failedSite[failingSite] = true;
 		double stressPerNbor = (stress[failingSite] - rStress)*(1.0 - alpha)/(double)noNbors;
 		for(int i = 0; i < noNbors; i++){
 			int neighbor = nbor[failingSite][i];
