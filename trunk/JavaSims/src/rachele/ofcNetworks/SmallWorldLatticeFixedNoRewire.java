@@ -32,6 +32,7 @@ public class SmallWorldLatticeFixedNoRewire extends AbstractOFC_Lattice{
 		nbor = new int [N][4];			// 4 neighbors for nearest neighbor lattice
 		noNbors = 4;
 		sitesToFail = new int [N+1];
+		failedSite = new boolean [N];
 		stressAdd = new double [N];
 		randomOrder = new int [N];
 	}

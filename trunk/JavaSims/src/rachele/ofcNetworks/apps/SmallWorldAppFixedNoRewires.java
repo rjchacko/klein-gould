@@ -20,8 +20,10 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 	Grid connectionGrid = new Grid("Connections");
 	SmallWorldLatticeFixedNoRewire ofc;
 	Histogram sizeHist = new Histogram(1);
+	Histogram failedSiteHist = new Histogram(1);
 	Histogram cumSizeHist = new Histogram(1);
 	String sizeHistFile;
+	String failedSiteHistFile;
 	String cumSizeHistFile;
 	String infoFile;
 	int shCount = 1;
@@ -33,11 +35,11 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 	public void load(Control c) {
 		c.frame(latticeGrid);
 		c.frame(connectionGrid);
-		params.add("Data Dir",new DirectoryValue("/Users/racheledominguez/data/RM/OFC_networks/testRuns/"));
+		params.add("Data Dir",new DirectoryValue("/Users/racheledominguez/data/RMC-Summer2013/testRuns/"));
 		params.addm("Random Seed", 0);
 		int Lstart = 128;
 		params.addm("L",Lstart);
-		params.addm("alpha", 0.1);
+		params.addm("alpha", 0.00001);
 //		params.addm("R", 1);
 //		params.addm("Rewire Probability", 0.00586);
 		params.addm("Rewire Probability", 1.0);
@@ -78,6 +80,7 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 			}else{
 				ofc.ofcStep();
 				sizeHist.accum(ofc.failCount);
+				failedSiteHist.accum(ofc.failedSiteCount);
 				int count = ofc.failCount;
 				while(count>0){
 					cumSizeHist.accum(count);
@@ -114,11 +117,13 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 		FileUtil.printHistToFile(sizeHistFile, sizeHist);
 		FileUtil.initFile(cumSizeHistFile, params, " Cumulative Avalanch Size Histogram Data File");
 		FileUtil.printHistToFile(cumSizeHistFile, cumSizeHist);
+		FileUtil.printHistToFile(failedSiteHistFile, failedSiteHist);
 	}
 	
 	void initFiles(){
 		String parentDir = params.sget("Data Dir") + File.separator;
 		sizeHistFile = parentDir + "sh.txt";
+		failedSiteHistFile = parentDir + "fs.txt";
 		cumSizeHistFile = parentDir + "ch.txt";
 		infoFile = parentDir + "info.txt";
 		FileUtil.printlnToFile(infoFile, "Percent Rewired = ", ofc.percentRewired);
