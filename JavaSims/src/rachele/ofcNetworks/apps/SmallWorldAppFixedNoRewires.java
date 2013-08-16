@@ -39,10 +39,10 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 		params.addm("Random Seed", 0);
 		int Lstart = 128;
 		params.addm("L",Lstart);
-		params.addm("alpha", 0.00001);
+		params.addm("alpha", 0.001);
 //		params.addm("R", 1);
-//		params.addm("Rewire Probability", 0.00586);
-		params.addm("Rewire Probability", 1.0);
+		params.addm("Rewire Probability", 0.00586);
+//		params.addm("Rewire Probability", 1.0);
 		int equilStart = Lstart*Lstart*100;
 		params.addm("Equilibration Updates", equilStart);
 		params.add("Av Size");
@@ -104,9 +104,12 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 	void writeShFile(int i){
 		String parentDir = params.sget("Data Dir") + File.separator;
 		String newShFile = parentDir + "sh" + i + ".txt";
+		String newFsFile = parentDir + "sh" + i + ".txt";
 		String newCumShFile = parentDir + "ch" + i + ".txt";
 		FileUtil.initFile(newShFile, params, " Avalanch Size Histogram Data File");
 		FileUtil.printHistToFile(newShFile, sizeHist);
+		FileUtil.initFile(newFsFile, params, " No of Failed sites Size Histogram Data File");
+		FileUtil.printHistToFile(newFsFile, failedSiteHist);
 		FileUtil.initFile(newCumShFile, params, " Cumulative Avalanch Size Histogram Data File");
 		FileUtil.printHistToFile(newCumShFile, cumSizeHist);
 		shCount += 1;
@@ -117,6 +120,7 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 		FileUtil.printHistToFile(sizeHistFile, sizeHist);
 		FileUtil.initFile(cumSizeHistFile, params, " Cumulative Avalanch Size Histogram Data File");
 		FileUtil.printHistToFile(cumSizeHistFile, cumSizeHist);
+		FileUtil.initFile(failedSiteHistFile, params, " No of Failed sites Size Histogram Data File");
 		FileUtil.printHistToFile(failedSiteHistFile, failedSiteHist);
 	}
 	
