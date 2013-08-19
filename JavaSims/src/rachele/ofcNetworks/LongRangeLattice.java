@@ -25,6 +25,7 @@ public class LongRangeLattice extends AbstractOFC_Lattice{
 		noNbors = findNoCircleNbors();
 		nbor = new int [N][noNbors];
 		sitesToFail = new int [N+1];
+		failedSite = new boolean [N];
 		stressAdd = new double [N];
 	}
 	
