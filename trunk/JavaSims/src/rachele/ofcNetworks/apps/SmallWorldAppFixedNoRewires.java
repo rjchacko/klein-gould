@@ -104,23 +104,23 @@ public class SmallWorldAppFixedNoRewires extends Simulation{
 	void writeShFile(int i){
 		String parentDir = params.sget("Data Dir") + File.separator;
 		String newShFile = parentDir + "sh" + i + ".txt";
-		String newFsFile = parentDir + "sh" + i + ".txt";
+		String newFsFile = parentDir + "fs" + i + ".txt";
 		String newCumShFile = parentDir + "ch" + i + ".txt";
-		FileUtil.initFile(newShFile, params, " Avalanch Size Histogram Data File");
+		FileUtil.initFile(newShFile, params, " Avalanch Size Histogram Data File for Small World App Fixed No Rewires");
 		FileUtil.printHistToFile(newShFile, sizeHist);
-		FileUtil.initFile(newFsFile, params, " No of Failed sites Size Histogram Data File");
+		FileUtil.initFile(newFsFile, params, " No of Failed sites Size Histogram Data File for Small World App Fixed No Rewires");
 		FileUtil.printHistToFile(newFsFile, failedSiteHist);
-		FileUtil.initFile(newCumShFile, params, " Cumulative Avalanch Size Histogram Data File");
+		FileUtil.initFile(newCumShFile, params, " Cumulative Avalanch Size Histogram Data File for Small World App Fixed No Rewires");
 		FileUtil.printHistToFile(newCumShFile, cumSizeHist);
 		shCount += 1;
 	}
 	
 	void writeAccumulatedData(){
-		FileUtil.initFile(sizeHistFile, params, " Avalanch Size Histogram Data File");
+		FileUtil.initFile(sizeHistFile, params, " Avalanch Size Histogram Data File for Small World App Fixed No Rewires");
 		FileUtil.printHistToFile(sizeHistFile, sizeHist);
-		FileUtil.initFile(cumSizeHistFile, params, " Cumulative Avalanch Size Histogram Data File");
+		FileUtil.initFile(cumSizeHistFile, params, " Cumulative Avalanch Size Histogram Data File for Small World App Fixed No Rewires");
 		FileUtil.printHistToFile(cumSizeHistFile, cumSizeHist);
-		FileUtil.initFile(failedSiteHistFile, params, " No of Failed sites Size Histogram Data File");
+		FileUtil.initFile(failedSiteHistFile, params, " No of Failed sites Size Histogram Data File for Small World App Fixed No Rewires");
 		FileUtil.printHistToFile(failedSiteHistFile, failedSiteHist);
 	}
 	
