@@ -28,7 +28,9 @@ public class AEMStructure{
 	public int R;   //interaction range R=0 is NN interaction
 	
     public double order; // a parameter to measure the inequality (entropy!=order   entropy=order/N+ln(N))
- 
+    public double psi;  //sum^N_{i=1}ln(w_i/W)
+    
+    
     public double sumtrading; // the total trading amount in a trading step
     public double sumflow;   //the total amount of wealth flow towards the rich people, negative represent the flow is towards the poor
    
@@ -507,6 +509,7 @@ public class AEMStructure{
         double aftertax=0;
         double totaltax=0;
 	    double totalorder=0;
+	    double totalpsi=0;
 	    growthmatrix=new double[M];
 	    
 	    sumtrading=0;
@@ -583,12 +586,14 @@ public class AEMStructure{
 	    for(int ii=0; ii<M; ii++)
 	    {
 	    	wealth[ii]+=totaltax*(1-alpha)/M;       //after all the trading within one step, everybody gets a benefit from the tax after a dissipation alpha
+	    	totalpsi+=Math.log(wealth[ii]/totalwealth);
 	    	
 	    	if(wealth[ii]!=0)
 	    		totalorder-=wealth[ii]/meanwealth*Math.log(wealth[ii]/meanwealth);    //might be problematic if there is tax because of the change in the total wealth
 	    }
 	    
 	    order=totalorder;
+	    psi=totalpsi;
 	}
 	
 	

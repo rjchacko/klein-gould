@@ -155,8 +155,8 @@ public class CNTdilution extends Simulation{
 		params.add("NJ",-4.0);
 	    params.add("deadsites");
 
-		params.add("percent", 0.111);
-		params.add("biaspercent", 0.111);
+		params.add("percent", 0.0);
+		params.add("biaspercent", 0.0);
 		params.add("totalruns",20);     //the number of total intervention runs
 		 		
 		params.addm("Dynamics", new ChoiceValue("Metropolis","Glauber"));
@@ -164,8 +164,8 @@ public class CNTdilution extends Simulation{
 		//params.add("Dseed",1);    //seed for dilution configuration
 		//params.add("Sseed",1);    //seed for spin flip
 		
-		params.addm("T", 0.826);
-		params.addm("H", 0.18);
+		params.addm("T", 2.269);
+		params.addm("H", 0.0);
 		params.add("Emcs");    //MCS time for evolution
 		params.add("Imcs");     //MCS clock for each intervention run
 		
