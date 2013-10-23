@@ -1,4 +1,4 @@
-package kang.ising.BasicStructure;
+package kang.util;
 
 import java.io.File;
 import java.io.IOException;
@@ -345,4 +345,55 @@ public class BasicTools{
 		
 	}
 	
+	public double[] LorentzData(double[] data, int[] index, boolean sorted)   //the function to generate the Lorentz plot data point for data[]
+	{
+		int N=data.length;
+		double Ldata[]=new double [N];
+		
+		double total=0;   //the sum of data
+		
+		for(int i=0; i<N; i++)
+		{
+			total+=data[i];
+		}
+					
+		
+		if(sorted)
+		{
+
+			// if the original data is already sorted in ascending order, then index[i]=i
+		}
+		else
+		{
+		   index=BubbleSortIndex(data, index, true);
+		}
+		
+		//after sorting, calculate the Lorentz data
+		
+		for(int j=0; j<N; j++)
+		{
+			Ldata[j]=0;
+			
+			for(int k=0; k<j; k++)
+			{
+				Ldata[j]+=(data[index[k]]/total);
+			}
+				
+		}
+		
+		return Ldata;
+	}
+	
+	public double Gini(double[] Ldata)  //calculate the Gini coefficient from the Lorentz data point
+	{
+		int N=Ldata.length;
+		double G=0;
+		double totalLdata=0;
+		for(int i=0; i<N; i++)
+		{
+			totalLdata+=Ldata[i];
+		}
+		G=1-2*totalLdata/(N+1);
+		return G;
+	}
 }

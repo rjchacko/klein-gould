@@ -1113,9 +1113,9 @@ public class SPNdilution extends Simulation{
 	    
 	    Random rand=new Random(Sseed);
 	    
-	    //testrun(Istemp);
+	    testrun(Istemp);
 	    
-	    Properh(IS, rand, T, 0.05, 0.23, 0.005);
+	    //Properh(IS, rand, T, 0.05, 0.23, 0.005);
 	    
 	    //Singlerun(IS, rand, T, H);
         //Clusterrun(IS, rand, T, H);
