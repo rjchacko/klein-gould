@@ -590,7 +590,7 @@ public class LRtrading extends Simulation{
 	    //Metric(AHtemp, 50000, 200000, 1000, 1, mu, 0.100);
 	    
 	    
-	    sublinearexp(AHtemp, 101000, 9, mu, 0.000, true);
+	    sublinearexp(AHtemp, 101000, 9, mu, 0.900, true);
 	    
 	    //CompareSeed(AH, 11000, 5, mu, 0.500);
 	    

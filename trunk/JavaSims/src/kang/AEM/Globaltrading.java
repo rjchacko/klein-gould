@@ -3353,7 +3353,7 @@ public class Globaltrading extends Simulation{
 	    //findsteadystate(AHtemp, 101000, 9, mu, 0.500);
 	    //populationrun(AHtemp, 100000, 9, mu, 0.000);
 	    
-	    GINIrun(AHtemp, 3000, 9, mu, 1.000);
+	    GINIrun(AHtemp, 13000, 9, mu, 1.000);
 	    //GINIScanMuP(AH, 1000, 0.0000, 0.4000, 0.0100, 0.000, true);
 	    
 	    
